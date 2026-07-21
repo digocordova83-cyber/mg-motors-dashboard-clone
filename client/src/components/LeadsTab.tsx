@@ -544,30 +544,6 @@ export function ChannelUpdatingNotice({
   );
 }
 
-export function WebmotorsPendingNotice({ locale = "pt-BR" }: { locale?: Locale }) {
-  return (
-    <div
-      role="status"
-      data-testid="webmotors-pending-notice"
-      className="flex items-start gap-3 rounded-xl border border-amber-400/25 bg-amber-400/[0.08] px-4 py-3 text-amber-100 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
-    >
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
-      <div className="min-w-0">
-        <p className="text-xs font-semibold">
-          {ui(locale, "Dados recentes da Webmotors pendentes", "Recent Webmotors data pending")}
-        </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-amber-100/75">
-          {ui(
-            locale,
-            "Os dados da Webmotors ainda não foram recebidos para esta atualização. Os registros históricos permanecem visíveis no dashboard.",
-            "Webmotors data has not yet been received for this update. Historical records remain visible in the dashboard.",
-          )}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function LeadsTab({
   dateFrom,
   dateTo,
@@ -704,7 +680,6 @@ export function LeadsTab({
         />
       ) : null}
 
-      <WebmotorsPendingNotice locale={locale} />
       <ChannelUpdatingNotice
         locale={locale}
         date={data.channelUpdate.date}

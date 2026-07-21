@@ -447,3 +447,10 @@
 - [x] Preservar a data final e os demais atalhos de período existentes
 - [x] Adicionar teste de regressão para o início padrão em `30/06/2026`
 - [x] Validar a identidade visual do filtro após o ajuste
+
+## Remoção do alerta específico da Webmotors
+
+- [x] Remover o aviso fixo de dados recentes pendentes da Webmotors na área de Leads
+- [x] Preservar o alerta automático geral para canais com 0 Leads no dia
+- [x] Atualizar os testes para comprovar que o aviso específico não é mais renderizado
+- [x] Executar tipagem, testes relacionados e build

@@ -1,7 +1,8 @@
+import { readFileSync } from "node:fs";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ChannelUpdatingNotice, WebmotorsPendingNotice } from "./LeadsTab";
+import { ChannelUpdatingNotice } from "./LeadsTab";
 
 describe("ChannelUpdatingNotice", () => {
   it("lista em português somente os canais elegíveis com zero Leads", () => {
@@ -49,21 +50,13 @@ describe("ChannelUpdatingNotice", () => {
   });
 });
 
-describe("WebmotorsPendingNotice", () => {
-  it("informa em português que os dados recentes ainda não chegaram e preserva o histórico", () => {
-    const markup = renderToStaticMarkup(<WebmotorsPendingNotice locale="pt-BR" />);
+describe("Área de avisos de Leads", () => {
+  it("não mantém o aviso específico da Webmotors e preserva o alerta geral", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
-    expect(markup).toContain('role="status"');
-    expect(markup).toContain("Dados recentes da Webmotors pendentes");
-    expect(markup).toContain("ainda não foram recebidos");
-    expect(markup).toContain("registros históricos permanecem visíveis");
-  });
-
-  it("mantém a mesma informação na interface em inglês", () => {
-    const markup = renderToStaticMarkup(<WebmotorsPendingNotice locale="en-US" />);
-
-    expect(markup).toContain("Recent Webmotors data pending");
-    expect(markup).toContain("has not yet been received");
-    expect(markup).toContain("Historical records remain visible");
+    expect(source).not.toContain("WebmotorsPendingNotice");
+    expect(source).not.toContain("webmotors-pending-notice");
+    expect(source).not.toContain("Dados recentes da Webmotors pendentes");
+    expect(source).toContain("<ChannelUpdatingNotice");
   });
 });
