@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CampaignIdentity } from "@/components/CampaignIdentity";
 import { OptimizationHistoryTab } from "@/components/OptimizationHistoryTab";
+import { LeadsTab } from "@/components/LeadsTab";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -41,6 +42,7 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  UsersRound,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import {
@@ -66,7 +68,7 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type DashboardData = RouterOutputs["dashboard"]["getData"];
 type DailyPoint = DashboardData["daily"][number];
 type Campaign = DashboardData["campaigns"][number];
-type TabId = "overview" | "daily" | "investment" | "optimizations" | "history";
+type TabId = "overview" | "leads" | "daily" | "investment" | "optimizations" | "history";
 type OptimizationTask = RouterOutputs["dashboard"]["optimizationWorkspace"]["tasks"][number];
 type TaskStatusFilter = "ALL" | OptimizationTask["status"];
 
@@ -77,6 +79,7 @@ const NUMBER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 const tabs: Array<{ id: TabId; label: string; icon: typeof BarChart3 }> = [
   { id: "overview", label: "Visão Geral", icon: BarChart3 },
+  { id: "leads", label: "Leads", icon: UsersRound },
   { id: "daily", label: "Acompanhamento Diário", icon: Clock3 },
   { id: "investment", label: "Investimento", icon: CircleDollarSign },
   { id: "optimizations", label: "Otimizações", icon: Sparkles },
@@ -1144,6 +1147,9 @@ function DashboardScreen() {
     onSuccess: async () => {
       await utils.dashboardAuth.session.invalidate();
       utils.dashboard.getData.reset();
+      utils.leads.analytics.reset();
+      utils.leads.bounds.reset();
+      utils.leads.importHistory.reset();
     },
   });
   const queryInput = useMemo(() => ({ dateFrom, dateTo }), [dateFrom, dateTo]);
@@ -1151,6 +1157,7 @@ function DashboardScreen() {
     retry: 1,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    enabled: activeTab !== "leads",
   });
 
   function applyPreset(preset: string) {
@@ -1171,6 +1178,7 @@ function DashboardScreen() {
   }
 
   const data = dashboard.data;
+  const isLeads = activeTab === "leads";
   const correctionVisible = dateFrom <= TAG_CORRECTION_DATE && dateTo >= TAG_CORRECTION_DATE;
   const selectTab = (tab: TabId) => {
     setActiveTab(tab);
@@ -1229,22 +1237,24 @@ function DashboardScreen() {
           </div>
         </header>
 
-        <div className="border-b border-amber-500/20 bg-[#20170a]/95 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-[1680px] items-start gap-3 px-4 py-2.5 lg:px-6">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-            <p className="text-[11px] leading-5 text-amber-100/75"><strong className="font-semibold text-amber-300">Correção de Tag Google — 15/07/2026:</strong> os dados de conversão anteriores a esta data podem estar subestimados. A marcação aparece em todas as séries temporais para orientar a leitura do histórico.</p>
+        {!isLeads ? (
+          <div className="border-b border-amber-500/20 bg-[#20170a]/95 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-[1680px] items-start gap-3 px-4 py-2.5 lg:px-6">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              <p className="text-[11px] leading-5 text-amber-100/75"><strong className="font-semibold text-amber-300">Correção de Tag Google — 15/07/2026:</strong> os dados de conversão anteriores a esta data podem estar subestimados. A marcação aparece em todas as séries temporais para orientar a leitura do histórico.</p>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       <main className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]"><BarChart3 className="h-3.5 w-3.5" />Google Ads</div>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">Performance de Mídia</h1>
-            <p className="mt-1 text-[11px] text-slate-600">Conta MG Motors • {formatLongDate(dateFrom)} a {formatLongDate(dateTo)}</p>
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">{isLeads ? <UsersRound className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}{isLeads ? "Base Comercial" : "Google Ads"}</div>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{isLeads ? "Gestão e Auditoria de Leads" : "Performance de Mídia"}</h1>
+            <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(dateFrom)} a {formatLongDate(dateTo)}</p>
           </div>
-          {data ? (
+          {!isLeads && data ? (
             <div className="hidden text-right md:block">
               <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? "Windsor.ai atualizado" : "Windsor.ai • snapshot validado"}</div>
               <p className="mt-1 text-[9px] text-slate-700">{data.metadata.campaignCount} campanhas • {data.metadata.rowCount} registros {data.metadata.cacheHit ? "• cache" : ""}</p>
@@ -1252,7 +1262,7 @@ function DashboardScreen() {
           ) : null}
         </div>
 
-        <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-[#1d2737]" aria-label="Áreas do Google Ads">
+        <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-[#1d2737]" aria-label="Áreas do dashboard">
           {tabs.map(tab => {
             const Icon = tab.icon;
             return (
@@ -1264,7 +1274,9 @@ function DashboardScreen() {
           })}
         </nav>
 
-        {dashboard.isLoading ? (
+        {isLeads ? (
+          <LeadsTab dateFrom={dateFrom} dateTo={dateTo} />
+        ) : dashboard.isLoading ? (
           <div className="grid min-h-[520px] place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
             <div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-xs text-slate-500">Atualizando dados do Google Ads...</p></div>
           </div>

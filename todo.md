@@ -124,30 +124,36 @@
 - [x] Gerar, revisar e aplicar migração não destrutiva das tabelas do módulo de Leads
 - [x] Implementar parser CSV com validação de formato, encoding, datas e campos obrigatórios
 - [x] Implementar importação autenticada, atômica, idempotente e auditável sem duplicar leads já carregados
-- [ ] Exibir pré-validação do arquivo com linhas válidas, inválidas, duplicadas e resumo por período antes da confirmação
+- [x] Exibir pré-validação do arquivo com linhas válidas, inválidas, duplicadas e resumo por período antes da confirmação
 - [x] Implementar histórico de atualizações com arquivo, hash, usuário, data e resultado do processamento
 - [x] Implementar métricas de total de leads, média diária, canal principal e canais ativos
 - [x] Implementar pacing mensal com meta, atual, percentual, média/dia, projeção, diferença e dias restantes
 - [x] Implementar série diária empilhada por canal e tendência diária total sem dupla contagem
 - [x] Implementar distribuição e resumo por canal com leads, média/dia e participação
 - [x] Implementar análises por modelo, região e concessionária apenas quando os campos reais permitirem classificação segura
-- [ ] Criar página/aba navegável `Leads` integrada ao dashboard atual e acessível por `?tab=leads`
-- [ ] Reproduzir o layout de referência no padrão visual MG Motors, com filtros 7d, 14d, mês e intervalo personalizado
-- [ ] Adicionar ação Atualizar CSV com seleção, pré-validação, confirmação, progresso, sucesso e erro
-- [ ] Adicionar edição protegida da meta mensal diretamente no painel de pacing
-- [ ] Exibir estados de carregamento, erro, arquivo inválido, ausência de dados e análises indisponíveis
-- [ ] Garantir que valores ausentes apareçam como indisponíveis, sem fabricar canal, modelo, região ou concessionária
-- [ ] Escrever testes Vitest para parser, datas, deduplicação, importação, pacing e agregações de Leads
-- [ ] Escrever testes TSX para identidade dos filtros, estados vazios e resumo da pré-validação
+- [x] Criar página/aba navegável `Leads` integrada ao dashboard atual e acessível por `?tab=leads`
+- [x] Reproduzir o layout de referência no padrão visual MG Motors, com filtros 7d, 14d, mês e intervalo personalizado
+- [x] Adicionar ação Atualizar CSV com seleção, pré-validação, confirmação, progresso, sucesso e erro
+- [x] Adicionar edição protegida da meta mensal diretamente no painel de pacing
+- [x] Exibir estados de carregamento, erro, arquivo inválido, ausência de dados e análises indisponíveis
+- [x] Garantir que valores ausentes apareçam como indisponíveis, sem fabricar canal, modelo, região ou concessionária
+- [x] Escrever testes Vitest para parser, datas, deduplicação, importação, pacing e agregações de Leads
+- [x] Escrever testes TSX para identidade dos filtros, estados vazios e resumo da pré-validação
 - [x] Importar e validar o CSV fornecido sem persistir duplicidades
-- [ ] Validar tipagem, suíte completa e build de produção
-- [ ] Validar visualmente a aba Leads em desktop, tablet e mobile, sem overflow horizontal do documento
-- [ ] Revisar todo.md e salvar checkpoint da versão com o módulo de Leads
+- [x] Validar tipagem, suíte completa e build de produção
+- [x] Validar visualmente a aba Leads em desktop, tablet e mobile, sem overflow horizontal do documento
+- [x] Revisar todo.md e salvar checkpoint da versão com o módulo de Leads
 - [x] Inserir a meta inicial de Leads de julho/2026 (`competencia` = `2026-07`, `goalCount` = 10000) no banco sem duplicação
 - [x] Implementar helper/procedure autenticado para ler e editar a meta mensal de Leads com persistência auditável
 - [x] Definir explicitamente `Data Corrigida`, `Modelo` e `Canal` como campos obrigatórios por linha no parser de Leads
 - [x] Adicionar teste Vitest para linhas sem campos obrigatórios e sua contagem como inválidas
 - [x] Calcular auditoria por concessionária com volume, participação, média diária, dias com e sem recebimento e primeira/última data no período
-- [ ] Criar visão navegável por concessionária com busca, ordenação, sinalização de ausência e evolução diária de recebimento
+- [x] Criar visão navegável por concessionária com busca, ordenação, sinalização de ausência e evolução diária de recebimento
 - [x] Separar explicitamente concessionárias indisponíveis/placeholders dos nomes válidos na auditoria
 - [x] Adicionar testes de reconciliação da auditoria por concessionária com o total filtrado de Leads
+- [x] Documentar comparação verificável entre os quatro prints de referência e a estrutura visual implementada na aba Leads
+- [x] Validar o fluxo de sucesso e progresso da atualização CSV pela interface sem deixar dados sanitizados persistidos
+- [x] Comprovar por testes os estados de carregamento, erro de consulta e ausência de dados da aba Leads
+- [x] Adicionar teste Vitest do caminho transacional completo da importação, incluindo upload mockado, inserções, contagens e conclusão do lote
+- [x] Adicionar teste Vitest do bloqueio de importação quando o CSV contém linha inválida
+- [x] Validar no navegador a confirmação de um CSV já consolidado, comprovando sucesso idempotente e zero novos Leads persistidos
