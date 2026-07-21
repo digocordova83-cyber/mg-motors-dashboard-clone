@@ -7,7 +7,20 @@ import {
   setDashboardSession,
   validateDashboardCredentials,
 } from "./dashboardAuth";
-import { loadDashboardData } from "./dashboardService";
+import { loadDashboardData, MG_MOTORS_ACCOUNT_ID } from "./dashboardService";
+import {
+  assignOptimizationTask,
+  completeOptimizationTask,
+  getOptimizationWorkspace,
+  OptimizationRecommendationInput,
+  reopenOptimizationTask,
+  rolloverOptimizationCycle,
+  startOptimizationTask,
+  syncOptimizationFollowUps,
+  syncRecommendationsToActiveCycle,
+  upsertMonthlyBudgetGoal,
+} from "./db";
+import { buildOptimizationHistory } from "./optimizationHistory";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -21,6 +34,58 @@ const dashboardProcedure = publicProcedure.use(async ({ ctx, next }) => {
 });
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
+const dashboardPeriodSchema = z
+  .object({ dateFrom: dateSchema, dateTo: dateSchema })
+  .refine(input => input.dateFrom <= input.dateTo, "A data inicial deve anteceder a data final");
+
+function buildTaskSnapshot(
+  data: Awaited<ReturnType<typeof loadDashboardData>>,
+  campaignId: string,
+): OptimizationRecommendationInput["snapshot"] | null {
+  const campaign = data.campaigns.find(item => item.campaignId === campaignId);
+  if (!campaign) return null;
+  return {
+    snapshotDate: data.daily.at(-1)?.date ?? data.period.dateTo,
+    windowDateFrom: data.period.dateFrom,
+    windowDateTo: data.period.dateTo,
+    spend: campaign.spend,
+    conversions: campaign.conversions,
+    cpa: campaign.cpa,
+    ctr: campaign.ctr,
+    cpc: campaign.cpc,
+    clicks: campaign.clicks,
+    impressions: campaign.impressions,
+    dailyBudget: campaign.budget || null,
+    optimizationScore: campaign.optimizationScore,
+    searchImpressionShare: campaign.searchImpressionShare,
+  };
+}
+
+function mapRecommendationToTask(
+  data: Awaited<ReturnType<typeof loadDashboardData>>,
+  sourceSignature: string,
+): OptimizationRecommendationInput {
+  const recommendation = data.recommendations.find(item => item.sourceSignature === sourceSignature);
+  if (!recommendation) throw new TRPCError({ code: "NOT_FOUND", message: "Recomendação não encontrada no período" });
+  const snapshot = buildTaskSnapshot(data, recommendation.campaignId);
+  if (!snapshot) throw new TRPCError({ code: "NOT_FOUND", message: "Campanha não encontrada no período" });
+  return {
+    sourceSignature: recommendation.sourceSignature,
+    campaignId: recommendation.campaignId,
+    campaignName: recommendation.campaign,
+    region: recommendation.region,
+    monthlyLeadGoal: recommendation.monthlyLeadGoal,
+    actionType: recommendation.actionType,
+    description: recommendation.description,
+    rationale: recommendation.rationale,
+    evidence: recommendation.evidence,
+    steps: recommendation.steps,
+    expectedImpact: recommendation.expectedImpact,
+    risk: recommendation.risk,
+    priority: recommendation.priority as OptimizationRecommendationInput["priority"],
+    snapshot,
+  };
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -49,12 +114,133 @@ export const appRouter = router({
   }),
   dashboard: router({
     getData: dashboardProcedure
-      .input(
-        z
-          .object({ dateFrom: dateSchema, dateTo: dateSchema })
-          .refine(input => input.dateFrom <= input.dateTo, "A data inicial deve anteceder a data final"),
-      )
+      .input(dashboardPeriodSchema)
       .query(({ input }) => loadDashboardData(input.dateFrom, input.dateTo)),
+    updateMonthlyBudgetGoal: dashboardProcedure
+      .input(
+        z.object({
+          competencia: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida"),
+          amount: z.number().finite().positive().max(100_000_000),
+        }),
+      )
+      .mutation(({ ctx, input }) =>
+        upsertMonthlyBudgetGoal({
+          accountId: MG_MOTORS_ACCOUNT_ID,
+          competencia: input.competencia,
+          amount: input.amount,
+          actor: ctx.dashboardSession.username,
+        }),
+      ),
+    optimizationWorkspace: dashboardProcedure.query(() => getOptimizationWorkspace()),
+    optimizationHistory: dashboardProcedure.query(async () =>
+      buildOptimizationHistory(await getOptimizationWorkspace()),
+    ),
+    captureOptimizationFollowUps: dashboardProcedure
+      .input(dashboardPeriodSchema)
+      .mutation(async ({ input }) => {
+        const workspace = await getOptimizationWorkspace();
+        const data = await loadDashboardData(input.dateFrom, input.dateTo);
+        const eligibleTasks = workspace.tasks.filter(task => {
+          if (task.status !== "COMPLETED" || !task.completedAt) return false;
+          const completedDate = new Date(task.completedAt).toISOString().slice(0, 10);
+          return input.dateFrom > completedDate;
+        });
+        const snapshots = eligibleTasks.flatMap(task => {
+          const snapshot = buildTaskSnapshot(data, task.campaignId);
+          return snapshot
+            ? [{ ...snapshot, taskId: task.id, campaignId: task.campaignId, campaignName: task.campaignName }]
+            : [];
+        });
+        const result = await syncOptimizationFollowUps({ snapshots });
+        return {
+          ...result,
+          eligibleTaskCount: eligibleTasks.length,
+          unavailableCampaignCount: eligibleTasks.length - snapshots.length,
+        } as const;
+      }),
+    createOptimizationTask: dashboardProcedure
+      .input(dashboardPeriodSchema.and(z.object({ sourceSignature: z.string().min(3).max(255) })))
+      .mutation(async ({ ctx, input }) => {
+        const data = await loadDashboardData(input.dateFrom, input.dateTo);
+        const recommendation = mapRecommendationToTask(data, input.sourceSignature);
+        return syncRecommendationsToActiveCycle({
+          recommendations: [recommendation],
+          actor: ctx.dashboardSession.username,
+        });
+      }),
+    createAllOptimizationTasks: dashboardProcedure
+      .input(dashboardPeriodSchema)
+      .mutation(async ({ ctx, input }) => {
+        const data = await loadDashboardData(input.dateFrom, input.dateTo);
+        return syncRecommendationsToActiveCycle({
+          recommendations: data.recommendations.map(recommendation =>
+            mapRecommendationToTask(data, recommendation.sourceSignature),
+          ),
+          actor: ctx.dashboardSession.username,
+        });
+      }),
+    assignOptimizationTask: dashboardProcedure
+      .input(z.object({ taskId: z.number().int().positive(), assignee: z.string().trim().min(2).max(120) }))
+      .mutation(({ ctx, input }) =>
+        assignOptimizationTask({ ...input, actor: ctx.dashboardSession.username }),
+      ),
+    startOptimizationTask: dashboardProcedure
+      .input(z.object({ taskId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) => startOptimizationTask({ ...input, actor: ctx.dashboardSession.username })),
+    completeOptimizationTask: dashboardProcedure
+      .input(
+        dashboardPeriodSchema.and(
+          z.object({
+            taskId: z.number().int().positive(),
+            notes: z.string().trim().min(3).max(4_000),
+          }),
+        ),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOptimizationWorkspace();
+        const task = workspace.tasks.find(item => item.id === input.taskId);
+        if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
+        const data = await loadDashboardData(input.dateFrom, input.dateTo);
+        const snapshot = buildTaskSnapshot(data, task.campaignId);
+        return completeOptimizationTask({
+          taskId: task.id,
+          notes: input.notes,
+          actor: ctx.dashboardSession.username,
+          snapshot: snapshot ? { ...snapshot, campaignId: task.campaignId, campaignName: task.campaignName } : null,
+        });
+      }),
+    rolloverOptimizationCycle: dashboardProcedure
+      .input(dashboardPeriodSchema)
+      .mutation(async ({ ctx, input }) => {
+        const data = await loadDashboardData(input.dateFrom, input.dateTo);
+        const campaignSnapshots = data.campaigns.flatMap(campaign => {
+          const snapshot = buildTaskSnapshot(data, campaign.campaignId);
+          return snapshot
+            ? [{ ...snapshot, campaignId: campaign.campaignId, campaignName: campaign.campaign }]
+            : [];
+        });
+        return rolloverOptimizationCycle({
+          actor: ctx.dashboardSession.username,
+          recommendations: data.recommendations.map(recommendation =>
+            mapRecommendationToTask(data, recommendation.sourceSignature),
+          ),
+          campaignSnapshots,
+        });
+      }),
+    reopenOptimizationTask: dashboardProcedure
+      .input(dashboardPeriodSchema.and(z.object({ taskId: z.number().int().positive() })))
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOptimizationWorkspace();
+        const task = workspace.tasks.find(item => item.id === input.taskId);
+        if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
+        const data = await loadDashboardData(input.dateFrom, input.dateTo);
+        const snapshot = buildTaskSnapshot(data, task.campaignId);
+        return reopenOptimizationTask({
+          taskId: task.id,
+          actor: ctx.dashboardSession.username,
+          snapshot: snapshot ? { ...snapshot, campaignId: task.campaignId, campaignName: task.campaignName } : null,
+        });
+      }),
   }),
 });
 

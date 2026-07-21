@@ -1,9 +1,23 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { CampaignIdentity } from "@/components/CampaignIdentity";
+import { OptimizationHistoryTab } from "@/components/OptimizationHistoryTab";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
+  ArrowRightLeft,
   BarChart3,
   CalendarDays,
   CheckCircle2,
@@ -14,11 +28,14 @@ import {
   Eye,
   EyeOff,
   Gauge,
+  History,
   Info,
   Loader2,
   LogOut,
   MousePointerClick,
+  PencilLine,
   RefreshCcw,
+  RotateCcw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -49,8 +66,9 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type DashboardData = RouterOutputs["dashboard"]["getData"];
 type DailyPoint = DashboardData["daily"][number];
 type Campaign = DashboardData["campaigns"][number];
-type TabId = "overview" | "daily" | "investment" | "optimizations";
-type StatusFilter = "Todas" | Campaign["status"];
+type TabId = "overview" | "daily" | "investment" | "optimizations" | "history";
+type OptimizationTask = RouterOutputs["dashboard"]["optimizationWorkspace"]["tasks"][number];
+type TaskStatusFilter = "ALL" | OptimizationTask["status"];
 
 const DATA_END = "2026-07-19";
 const TAG_CORRECTION_DATE = "2026-07-15";
@@ -62,7 +80,14 @@ const tabs: Array<{ id: TabId; label: string; icon: typeof BarChart3 }> = [
   { id: "daily", label: "Acompanhamento Diário", icon: Clock3 },
   { id: "investment", label: "Investimento", icon: CircleDollarSign },
   { id: "optimizations", label: "Otimizações", icon: Sparkles },
+  { id: "history", label: "Histórico", icon: History },
 ];
+
+function getTabFromUrl(): TabId {
+  if (typeof window === "undefined") return "overview";
+  const candidate = new URLSearchParams(window.location.search).get("tab");
+  return tabs.some(tab => tab.id === candidate) ? (candidate as TabId) : "overview";
+}
 
 function isoDateFromEnd(days: number) {
   const date = new Date(`${DATA_END}T12:00:00`);
@@ -234,10 +259,10 @@ function MetricCard({
 
 function Panel({ title, subtitle, action, children, className = "" }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-[#1e293b] bg-[#0d1421] shadow-[0_8px_24px_rgba(0,0,0,0.14)] ${className}`}>
-      <header className="flex min-h-16 items-center justify-between gap-4 border-b border-[#1b2535] px-5 py-4">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
+    <section className={`min-w-0 max-w-full overflow-hidden rounded-xl border border-[#1e293b] bg-[#0d1421] shadow-[0_8px_24px_rgba(0,0,0,0.14)] ${className}`}>
+      <header className="flex min-h-16 flex-col items-start justify-between gap-4 border-b border-[#1b2535] px-5 py-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
+          <h2 className="break-words text-sm font-semibold text-slate-100">{title}</h2>
           {subtitle ? <p className="mt-1 text-[11px] text-slate-600">{subtitle}</p> : null}
         </div>
         {action}
@@ -331,6 +356,16 @@ function EmptyState({ title, description }: { title: string; description: string
 }
 
 function OverviewTab({ data, correctionVisible }: { data: DashboardData; correctionVisible: boolean }) {
+  const rankingPanels = [
+    { title: "Top 10 — Melhor CPA", subtitle: "Menor custo por aquisição entre campanhas elegíveis", rows: data.rankings.best, tone: "emerald" as const },
+    { title: "Top 10 — Pior CPA", subtitle: "Maior custo por aquisição entre campanhas elegíveis", rows: data.rankings.worst, tone: "red" as const },
+  ];
+  const regionStyles: Record<string, string> = {
+    Favorável: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+    Neutro: "border-slate-500/20 bg-slate-500/10 text-slate-300",
+    Desfavorável: "border-red-500/20 bg-red-500/10 text-red-300",
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 xl:grid-cols-3">
@@ -338,6 +373,125 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
         <TimeSeriesChart data={data.daily} title="Conversões Diárias" subtitle="Conversões registradas pelo Google Ads" dataKey="conversions" type="number" color="#38bdf8" correctionVisible={correctionVisible} />
         <TimeSeriesChart data={data.daily} title="CPA Diário" subtitle="Custo por aquisição ao longo do tempo" dataKey="cpa" type="currency" color="#a78bfa" correctionVisible={correctionVisible} />
       </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {rankingPanels.map(panel => (
+          <Panel
+            key={panel.title}
+            title={panel.title}
+            subtitle={panel.subtitle}
+            action={<span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[9px] text-slate-500">mín. {data.rankings.criteria.minimumConversions} conversões</span>}
+          >
+            {panel.rows.length ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[690px] text-left text-xs">
+                  <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+                    <tr><th className="px-4 py-3">#</th><th className="px-3 py-3">Campanha</th><th className="px-3 py-3">Produto</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-4 py-3 text-right">CPA</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#182231]">
+                    {panel.rows.map((campaign, index) => (
+                      <tr key={campaign.campaignId} className="hover:bg-white/[0.02]">
+                        <td className="px-4 py-3"><span className={`inline-grid h-6 w-6 place-items-center rounded-md border text-[9px] font-bold ${panel.tone === "emerald" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300"}`}>{index + 1}</span></td>
+                        <td className="max-w-[260px] px-3 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
+                        <td className="px-3 py-3 text-slate-500">{campaign.product}</td>
+                        <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
+                        <td className="px-3 py-3 text-right tabular-nums text-slate-400">{BRL.format(campaign.spend)}</td>
+                        <td className={`px-4 py-3 text-right font-semibold tabular-nums ${panel.tone === "emerald" ? "text-emerald-300" : "text-red-300"}`}>{BRL.format(campaign.cpa)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <EmptyState title="Ranking indisponível" description={data.rankings.criteria.message} />}
+          </Panel>
+        ))}
+      </div>
+
+      {data.rankings.excludedCount > 0 ? (
+        <details className="group rounded-xl border border-amber-500/15 bg-amber-500/[0.04]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-xs font-medium text-amber-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50">
+            <span>{data.rankings.excludedCount} campanha(s) excluída(s) dos rankings por amostra insuficiente</span>
+            <span className="text-[10px] text-amber-400/70 transition-transform group-open:rotate-180">▼</span>
+          </summary>
+          <div className="overflow-x-auto border-t border-amber-500/10">
+            <table className="w-full min-w-[720px] text-left text-xs">
+              <thead className="bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-5 py-3">Campanha</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-5 py-3">Motivo</th></tr></thead>
+              <tbody className="divide-y divide-[#182231]">
+                {data.rankings.excluded.map(campaign => (
+                  <tr key={campaign.campaignId}>
+                    <td className="px-5 py-3"><p className="font-medium text-slate-300">{campaign.campaign}</p><p className="mt-0.5 font-mono text-[9px] text-slate-700">ID {campaign.campaignId}</p></td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{BRL.format(campaign.spend)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
+                    <td className="px-5 py-3 text-amber-200/80">{campaign.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      ) : null}
+
+      <Panel
+        title="Performance por Produto"
+        subtitle="Investimento, participação, conversões, CTR e CPA por classificação determinística"
+        action={data.rankings.excludedCount ? <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] text-amber-300">{data.rankings.excludedCount} fora do ranking por amostra</span> : null}
+      >
+        <div className="grid xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="h-[360px] border-b border-[#1b2535] p-4 xl:border-b-0 xl:border-r">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart layout="vertical" data={data.productPerformance} margin={{ top: 4, right: 24, left: 12, bottom: 4 }}>
+                <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tickFormatter={value => formatCompactCurrency(Number(value))} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="product" width={104} tick={{ fill: "#94a3b8", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <Tooltip formatter={value => BRL.format(Number(value))} contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                <Bar dataKey="spend" name="Investimento" fill="#e2212d" radius={[0, 4, 4, 0]} maxBarSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left text-xs">
+              <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+                <tr><th className="px-5 py-3">Produto</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Participação</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">CTR</th><th className="px-5 py-3 text-right">CPA</th></tr>
+              </thead>
+              <tbody className="divide-y divide-[#182231]">
+                {data.productPerformance.map(product => (
+                  <tr key={product.product} className="hover:bg-white/[0.02]">
+                    <td className="px-5 py-3 font-medium text-slate-300">{product.product}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(product.spend)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-500">{NUMBER.format(product.participation)}%</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(product.conversions)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(product.ctr)}%</td>
+                    <td className="px-5 py-3 text-right font-medium tabular-nums text-slate-300">{BRL.format(product.cpa)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel title="Performance por Região" subtitle={`Comparação segura com o CPA médio geral de ${BRL.format(data.summary.cpa)} • metas mensais somente quando a região foi identificada`}>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[880px] text-left text-xs">
+            <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+              <tr><th className="px-5 py-3">Região</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">CPA</th><th className="px-3 py-3 text-right">Desvio vs média</th><th className="px-3 py-3 text-center">Estado</th><th className="px-5 py-3 text-right">Meta mensal leads</th></tr>
+            </thead>
+            <tbody className="divide-y divide-[#182231]">
+              {data.regionPerformance.map(region => (
+                <tr key={region.regionKey} className="hover:bg-white/[0.02]">
+                  <td className="px-5 py-3"><p className="font-medium text-slate-300">{region.region}</p><p className="mt-0.5 font-mono text-[9px] text-slate-700">{region.regionKey}</p></td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(region.spend)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(region.conversions)}</td>
+                  <td className="px-3 py-3 text-right font-medium tabular-nums text-slate-300">{BRL.format(region.cpa)}</td>
+                  <td className={`px-3 py-3 text-right font-medium tabular-nums ${region.deviation > 0 ? "text-red-300" : region.deviation < 0 ? "text-emerald-300" : "text-slate-400"}`}>{region.deviation >= 0 ? "+" : ""}{NUMBER.format(region.deviation)}%</td>
+                  <td className="px-3 py-3 text-center"><span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-semibold ${regionStyles[region.classification]}`}>{region.classification}</span></td>
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-400">{region.monthlyLeadGoal == null ? <span className="italic text-slate-700">Não mapeada</span> : NUMBER.format(region.monthlyLeadGoal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
 
       <Panel
         title="Insights Automáticos"
@@ -347,37 +501,33 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
         {data.insights.length ? (
           <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
             {data.insights.map(insight => (
-              <article key={`${insight.campaign}-${insight.severity}`} className={`rounded-lg border p-4 ${insight.severity === "Crítico" ? "border-red-500/20 bg-red-500/[0.06]" : "border-amber-500/20 bg-amber-500/[0.06]"}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <StatusBadge status={insight.severity} />
-                  <span className="text-[10px] text-slate-600">{insight.ratio}x média</span>
-                </div>
-                <p className="mt-3 truncate text-xs font-semibold text-slate-200" title={insight.campaign}>{insight.campaign}</p>
+              <article key={`${insight.campaignId}-${insight.severity}`} className={`rounded-lg border p-4 ${insight.severity === "Crítico" ? "border-red-500/20 bg-red-500/[0.06]" : "border-amber-500/20 bg-amber-500/[0.06]"}`}>
+                <div className="flex items-center justify-between gap-3"><StatusBadge status={insight.severity} /><span className="text-[10px] text-slate-600">{insight.ratio}x média</span></div>
+                <CampaignIdentity name={insight.campaign} campaignId={insight.campaignId} nameClassName="mt-3 text-xs font-semibold text-slate-200" />
                 <p className="mt-2 text-lg font-semibold text-white">{BRL.format(insight.cpa)}</p>
                 <p className="mt-1 text-[11px] leading-4 text-slate-500">{insight.message}</p>
               </article>
             ))}
           </div>
-        ) : (
-          <EmptyState title="Nenhum alerta no período" description="As campanhas estão dentro da faixa de CPA esperada." />
-        )}
+        ) : <EmptyState title="Nenhum alerta no período" description="As campanhas estão dentro da faixa de CPA esperada." />}
       </Panel>
 
-      <Panel title="Performance por Campanha" subtitle="Campanhas ativas ordenadas por investimento">
+      <Panel title="Performance por Campanha" subtitle="Campanhas ativas ou com investimento, ordenadas pelo gasto do período">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] text-left text-xs">
-            <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.12em] text-slate-600">
-              <tr><th className="px-5 py-3">Status</th><th className="px-4 py-3">Campanha</th><th className="px-4 py-3">Produto</th><th className="px-4 py-3 text-right">Investimento</th><th className="px-4 py-3 text-right">Conversões</th><th className="px-4 py-3 text-right">CPA</th><th className="px-5 py-3 text-right">CTR</th></tr>
+          <table className="w-full min-w-[1020px] text-left text-xs">
+            <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+              <tr><th className="px-5 py-3">Saúde</th><th className="px-3 py-3">Google Ads</th><th className="px-3 py-3">Campanha</th><th className="px-3 py-3">Produto</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">CPA</th><th className="px-5 py-3 text-right">CTR</th></tr>
             </thead>
             <tbody className="divide-y divide-[#182231]">
               {data.campaigns.slice(0, 15).map(campaign => (
-                <tr key={campaign.campaign} className="transition-colors hover:bg-white/[0.02]">
+                <tr key={campaign.campaignId} className="transition-colors hover:bg-white/[0.02]">
                   <td className="px-5 py-3"><StatusBadge status={campaign.status} /></td>
-                  <td className="max-w-[280px] truncate px-4 py-3 font-medium text-slate-300" title={campaign.campaign}>{campaign.campaign}</td>
-                  <td className="px-4 py-3 text-slate-500">{campaign.product}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.spend)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.cpa)}</td>
+                  <td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-semibold ${campaign.googleStatus === "ENABLED" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-slate-500/20 bg-slate-500/10 text-slate-400"}`}>{campaign.googleStatus === "ENABLED" ? "Ativada" : campaign.googleStatus === "PAUSED" ? "Pausada" : campaign.googleStatus}</span></td>
+                  <td className="max-w-[300px] px-3 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
+                  <td className="px-3 py-3 text-slate-500">{campaign.product}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.spend)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.cpa)}</td>
                   <td className="px-5 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.ctr)}%</td>
                 </tr>
               ))}
@@ -389,43 +539,112 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
   );
 }
 
-function ChangeValue({ current, previous, inverse = false, suffix = "" }: { current: number; previous: number; inverse?: boolean; suffix?: string }) {
-  const variation = previous ? ((current - previous) / previous) * 100 : 0;
-  const positive = inverse ? variation <= 0 : variation >= 0;
-  return (
-    <span className={`text-[10px] ${positive ? "text-emerald-400" : "text-red-400"}`}>
-      {variation >= 0 ? "+" : ""}{NUMBER.format(variation)}% {suffix}
-    </span>
-  );
+function NullableMetric({ value, format }: { value: number | null; format: "currency" | "number" | "percent" }) {
+  if (value == null) return <span className="text-[10px] italic text-slate-700">Indisponível</span>;
+  return <>{formatMetric(value, format)}</>;
+}
+
+function ComparisonDelta({ value, preference, suffix = "" }: { value: number | null; preference: "higher" | "lower" | "contextual"; suffix?: string }) {
+  if (value == null) return <span className="text-[10px] italic text-slate-700">Indisponível</span>;
+  const favorable = preference === "contextual" ? null : preference === "lower" ? value <= 0 : value >= 0;
+  const tone = favorable == null ? "border-sky-500/20 bg-sky-500/10 text-sky-300" : favorable ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300";
+  return <span className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-semibold ${tone}`}>{value >= 0 ? "+" : ""}{NUMBER.format(value)}%{suffix ? ` ${suffix}` : ""}</span>;
 }
 
 function DailyTab({ data, correctionVisible }: { data: DashboardData; correctionVisible: boolean }) {
-  const latest = data.daily.at(-1);
-  const previous = data.daily.at(-2);
-  if (!latest || !previous) return <Panel title="Acompanhamento Diário"><EmptyState title="Dados insuficientes" description="Selecione um período com pelo menos dois dias." /></Panel>;
+  const [campaignSearch, setCampaignSearch] = useState("");
+  const comparison = data.dailyComparison;
+  const normalizedSearch = campaignSearch.trim().toLowerCase();
+  const filteredCampaigns = comparison.campaigns.filter(item =>
+    !normalizedSearch || item.campaign.toLowerCase().includes(normalizedSearch) || item.campaignId.includes(normalizedSearch),
+  );
+  if (!comparison.referenceDate) return <Panel title="Acompanhamento Diário"><EmptyState title="Dados insuficientes" description="Não há um dia fechado disponível no período." /></Panel>;
 
-  const dailyCards = [
-    { title: "Investimento D-1", value: BRL.format(latest.spend), current: latest.spend, previous: previous.spend, inverse: true, icon: <Coins className="h-4 w-4" /> },
-    { title: "Conversões D-1", value: NUMBER.format(latest.conversions), current: latest.conversions, previous: previous.conversions, icon: <Target className="h-4 w-4" /> },
-    { title: "CPA D-1", value: BRL.format(latest.cpa), current: latest.cpa, previous: previous.cpa, inverse: true, icon: <Gauge className="h-4 w-4" /> },
-    { title: "CTR D-1", value: `${NUMBER.format(latest.ctr)}%`, current: latest.ctr, previous: previous.ctr, icon: <MousePointerClick className="h-4 w-4" /> },
-    { title: "CPC D-1", value: BRL.format(latest.cpc), current: latest.cpc, previous: previous.cpc, inverse: true, icon: <CircleDollarSign className="h-4 w-4" /> },
-    { title: "Taxa de Conv. D-1", value: `${NUMBER.format(latest.conversionRate)}%`, current: latest.conversionRate, previous: previous.conversionRate, icon: <TrendingUp className="h-4 w-4" /> },
-  ];
+  const cardIcons: Record<string, ReactNode> = {
+    investment: <Coins className="h-4 w-4" />,
+    conversions: <Target className="h-4 w-4" />,
+    cpa: <Gauge className="h-4 w-4" />,
+    ctr: <MousePointerClick className="h-4 w-4" />,
+    conversionRate: <TrendingUp className="h-4 w-4" />,
+    cpc: <CircleDollarSign className="h-4 w-4" />,
+  };
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {dailyCards.map(card => (
-          <article key={card.title} className="rounded-xl border border-[#1e293b] bg-[#0d1421] p-4">
-            <div className="flex items-center justify-between text-slate-600"><p className="text-[9px] font-semibold uppercase tracking-[0.12em]">{card.title}</p>{card.icon}</div>
-            <p className="mt-2 text-lg font-semibold text-white">{card.value}</p>
-            <div className="mt-1 flex items-center justify-between"><ChangeValue current={card.current} previous={card.previous} inverse={card.inverse} suffix="vs D-2" /><span className="text-[9px] text-slate-700">{formatDate(latest.date)}</span></div>
+        {comparison.cards.map(card => (
+          <article key={card.key} className="rounded-xl border border-[#1e293b] bg-[#0d1421] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+            <div className="flex items-center justify-between text-slate-600"><p className="text-[9px] font-semibold uppercase tracking-[0.12em]">{card.label} D-1</p>{cardIcons[card.key]}</div>
+            <p className="mt-2 text-lg font-semibold text-white"><NullableMetric value={card.d1} format={card.format} /></p>
+            <div className="mt-2 flex items-center justify-between gap-2"><ComparisonDelta value={card.deltaVsD2} preference={card.preference} suffix="vs D-2" /><span className="text-[9px] text-slate-700">{formatDate(comparison.referenceDate)}</span></div>
           </article>
         ))}
       </div>
 
-      <Panel title="Evolução Diária — Investimento e Conversões" subtitle="Comparativo completo do período selecionado" action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • Correção de Tag</span> : null}>
+      <Panel title="Acompanhamento Diário — Comparativo" subtitle={`D-1 fechado em ${formatLongDate(comparison.referenceDate)} • referências e médias independentes`}>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1140px] text-left text-xs">
+            <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.11em] text-slate-600">
+              <tr><th className="px-5 py-3">Métrica</th><th className="px-4 py-3 text-right">D-1</th><th className="px-4 py-3 text-right">D-2</th><th className="px-4 py-3 text-center">Variação</th><th className="px-4 py-3 text-right">7 dias atrás</th><th className="px-4 py-3 text-center">Variação 7d</th><th className="px-4 py-3 text-right">Média 7d</th><th className="px-5 py-3 text-right">Média 30d</th></tr>
+            </thead>
+            <tbody className="divide-y divide-[#182231]">
+              {comparison.table.map(metric => (
+                <tr key={metric.key} className="hover:bg-white/[0.02]">
+                  <td className="px-5 py-3"><p className="font-medium text-slate-300">{metric.label}</p><p className="mt-0.5 text-[9px] text-slate-700">{formatDate(comparison.referenceDate)}</p></td>
+                  <td className="px-4 py-3 text-right font-medium tabular-nums text-white"><NullableMetric value={metric.d1} format={metric.format} /></td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.d2} format={metric.format} /></td>
+                  <td className="px-4 py-3 text-center"><ComparisonDelta value={metric.deltaVsD2} preference={metric.preference} /></td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.weekAgo} format={metric.format} /></td>
+                  <td className="px-4 py-3 text-center"><ComparisonDelta value={metric.deltaVsWeekAgo} preference={metric.preference} /></td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.average7d} format={metric.format} /></td>
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.average30d} format={metric.format} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel
+        title="Campanhas — Ontem vs Anteontem"
+        subtitle={`ID e nome exatos • ${formatLongDate(comparison.referenceDate)} contra ${comparison.previousDate ? formatLongDate(comparison.previousDate) : "indisponível"}`}
+        action={<span className="hidden rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400 sm:inline-flex">{filteredCampaigns.length} campanhas</span>}
+      >
+        <div className="border-b border-[#1b2535] p-4">
+          <label className="relative block w-full max-w-[420px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+            <Input value={campaignSearch} onChange={event => setCampaignSearch(event.target.value)} placeholder="Buscar por ID ou nome da campanha..." className="h-9 border-[#273247] bg-[#101827] pl-9 text-xs text-white placeholder:text-slate-600 focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" />
+          </label>
+        </div>
+        {filteredCampaigns.length ? (
+          <div className="max-h-[720px] overflow-auto">
+            <table className="w-full min-w-[1420px] text-left text-xs">
+              <thead className="sticky top-0 z-10 border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+                <tr><th className="px-5 py-3">Campanha</th><th className="px-4 py-3 text-right">Orçamento/dia</th><th className="px-4 py-3 text-right">Inv. D-1</th><th className="px-4 py-3 text-right">Inv. D-2</th><th className="px-4 py-3 text-center">Var. Inv.</th><th className="px-4 py-3 text-right">Conv. D-1</th><th className="px-4 py-3 text-right">Conv. D-2</th><th className="px-4 py-3 text-center">Var. Conv.</th><th className="px-4 py-3 text-right">CPA D-1</th><th className="px-4 py-3 text-right">CPA D-2</th><th className="px-5 py-3 text-center">Var. CPA</th></tr>
+              </thead>
+              <tbody className="divide-y divide-[#182231]">
+                {filteredCampaigns.map(campaign => (
+                  <tr key={campaign.campaignId} className="hover:bg-white/[0.02]">
+                    <td className="max-w-[320px] px-5 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.budget} format="currency" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric value={campaign.d1?.investment ?? null} format="currency" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.d2?.investment ?? null} format="currency" /></td>
+                    <td className="px-4 py-3 text-center"><ComparisonDelta value={campaign.deltas.investment} preference="contextual" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric value={campaign.d1?.conversions ?? null} format="number" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.d2?.conversions ?? null} format="number" /></td>
+                    <td className="px-4 py-3 text-center"><ComparisonDelta value={campaign.deltas.conversions} preference="higher" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric value={campaign.d1?.cpa ?? null} format="currency" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.d2?.cpa ?? null} format="currency" /></td>
+                    <td className="px-5 py-3 text-center"><ComparisonDelta value={campaign.deltas.cpa} preference="lower" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <EmptyState title="Nenhuma campanha encontrada" description="Ajuste a busca por ID ou nome da campanha." />}
+      </Panel>
+
+      <Panel title="Evolução Diária — Investimento e Conversões" subtitle="Série completa do período selecionado" action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • Correção de Tag</span> : null}>
         <div className="h-[340px] px-3 pb-4 pt-5">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data.daily} margin={{ top: 15, right: 16, left: 2, bottom: 0 }}>
@@ -443,7 +662,7 @@ function DailyTab({ data, correctionVisible }: { data: DashboardData; correction
         </div>
       </Panel>
 
-      <Panel title="Acompanhamento Diário — Comparativo" subtitle="Spend, conversões, CPA, CTR e CPC por dia">
+      <Panel title="Histórico Diário" subtitle="Spend, conversões, CPA, CTR, CPC e cliques por data">
         <div className="max-h-[620px] overflow-auto">
           <table className="w-full min-w-[860px] text-left text-xs">
             <thead className="sticky top-0 z-10 border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.12em] text-slate-600">
@@ -470,9 +689,121 @@ function DailyTab({ data, correctionVisible }: { data: DashboardData; correction
 }
 
 function InvestmentTab({ data, correctionVisible }: { data: DashboardData; correctionVisible: boolean }) {
+  const utils = trpc.useUtils();
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("");
   const topCampaigns = data.campaigns.slice(0, 15).map(campaign => ({ ...campaign, shortName: campaign.campaign.length > 27 ? `${campaign.campaign.slice(0, 27)}…` : campaign.campaign }));
+  const pacing = data.pacing;
+  const updateGoal = trpc.dashboard.updateMonthlyBudgetGoal.useMutation({
+    onSuccess: async () => {
+      setEditingGoal(false);
+      await utils.dashboard.getData.invalidate();
+    },
+  });
+
+  function openGoalEditor() {
+    if (!pacing) return;
+    setGoalInput(pacing.monthlyGoal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    setEditingGoal(true);
+  }
+
+  function saveGoal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pacing) return;
+    const amount = Number(goalInput.replace(/\./g, "").replace(",", "."));
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    updateGoal.mutate({ competencia: pacing.competencia, amount });
+  }
+
+  const paceState = !pacing
+    ? null
+    : pacing.pacePercent > 105
+      ? { label: "Acima do ritmo ideal", className: "border-red-500/20 bg-red-500/10 text-red-300", bar: "bg-red-500" }
+      : pacing.pacePercent < 95
+        ? { label: "Abaixo do ritmo ideal", className: "border-amber-500/20 bg-amber-500/10 text-amber-300", bar: "bg-amber-400" }
+        : { label: "Dentro do ritmo ideal", className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300", bar: "bg-emerald-400" };
+
   return (
     <div className="space-y-4">
+      {pacing && paceState ? (
+        <>
+          <Panel
+            title={`Pacing Mensal • ${pacing.competencia.split("-").reverse().join("/")}`}
+            subtitle={`Último dia fechado: ${formatLongDate(pacing.lastClosedDate)} • ${pacing.closedDays} de ${pacing.totalDays} dias`}
+            action={
+              <button type="button" onClick={openGoalEditor} className="inline-flex items-center gap-1.5 rounded-md border border-[#344158] bg-[#111a29] px-2.5 py-2 text-[10px] font-semibold text-slate-300 transition-colors hover:border-[#e2212d]/60 hover:text-white active:scale-[0.97]">
+                <PencilLine className="h-3.5 w-3.5 text-[#e2212d]" /> Editar meta
+              </button>
+            }
+          >
+            {editingGoal ? (
+              <form onSubmit={saveGoal} className="flex flex-col gap-3 border-b border-[#1b2535] bg-[#0a101b]/70 px-5 py-4 sm:flex-row sm:items-end">
+                <label className="block flex-1">
+                  <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.13em] text-slate-600">Meta mensal de mídia</span>
+                  <Input value={goalInput} onChange={event => setGoalInput(event.target.value)} inputMode="decimal" aria-label="Meta mensal de mídia" className="h-10 border-[#344158] bg-[#101827] text-sm text-white focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" autoFocus />
+                </label>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => setEditingGoal(false)} className="h-10 border-[#344158] bg-transparent text-xs text-slate-400 hover:bg-white/5 hover:text-white">Cancelar</Button>
+                  <Button type="submit" disabled={updateGoal.isPending} className="h-10 bg-[#e2212d] text-xs text-white hover:bg-[#c91622]">{updateGoal.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}Salvar meta</Button>
+                </div>
+                {updateGoal.error ? <p className="text-[10px] text-red-400">Não foi possível atualizar a meta. Tente novamente.</p> : null}
+              </form>
+            ) : null}
+
+            <div className="grid gap-px bg-[#1b2535] sm:grid-cols-2 xl:grid-cols-6">
+              {[
+                { label: "Meta mensal", value: BRL.format(pacing.monthlyGoal), detail: "configuração persistente" },
+                { label: "Investido", value: BRL.format(pacing.invested), detail: `${NUMBER.format(pacing.achievedPercent)}% da meta` },
+                { label: "Restante", value: BRL.format(pacing.remaining), detail: `${pacing.remainingDays} dias restantes` },
+                { label: "Projeção", value: BRL.format(pacing.projected), detail: `${pacing.projectedDifference >= 0 ? "+" : ""}${BRL.format(pacing.projectedDifference)} vs meta` },
+                { label: "Média real/dia", value: BRL.format(pacing.averageDaily), detail: `ideal ${BRL.format(pacing.idealDaily)}` },
+                { label: "Ideal restante/dia", value: BRL.format(pacing.idealDailyRemaining), detail: `${NUMBER.format(pacing.pacePercent)}% do ritmo` },
+              ].map(item => (
+                <article key={item.label} className="bg-[#0d1421] px-5 py-4">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-slate-600">{item.label}</p>
+                  <p className="mt-2 text-base font-semibold tracking-tight text-white">{item.value}</p>
+                  <p className="mt-1 text-[10px] text-slate-600">{item.detail}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-medium text-slate-400">Ritmo acumulado contra o ideal até D-1</p>
+                  <p className="mt-1 text-[10px] text-slate-600">100% representa aderência exata ao plano mensal.</p>
+                </div>
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${paceState.className}`}>{paceState.label} • {NUMBER.format(pacing.pacePercent)}%</span>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#172132]">
+                <div className={`h-full rounded-full ${paceState.bar}`} style={{ width: `${Math.min(pacing.pacePercent, 100)}%` }} />
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Pacing Mensal Acumulado" subtitle="Real, ideal, projeção pelo ritmo observado e meta mensal">
+            <div className="h-[360px] px-3 pb-4 pt-5">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={pacing.series} margin={{ top: 15, right: 16, left: 2, bottom: 0 }}>
+                  <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={22} />
+                  <YAxis tickFormatter={value => formatCompactCurrency(Number(value))} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={62} />
+                  <Tooltip content={<ChartTooltip type="currency" />} cursor={{ stroke: "#475569", strokeDasharray: "3 3" }} />
+                  <Legend wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
+                  <Line type="monotone" dataKey="real" name="Real" stroke="#e2212d" strokeWidth={2.5} dot={false} connectNulls={false} />
+                  <Line type="monotone" dataKey="ideal" name="Ideal" stroke="#38bdf8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="projection" name="Projeção" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 4" dot={false} />
+                  <Line type="linear" dataKey="monthlyGoal" name="Meta mensal" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="2 4" dot={false} />
+                  {correctionVisible ? <ReferenceLine x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2} label={{ value: "Correção de Tag", position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Panel>
+        </>
+      ) : (
+        <Panel title="Pacing Mensal"><EmptyState title="Meta mensal não configurada" description="Cadastre uma meta de mídia para calcular ritmo, projeção e necessidade diária." /></Panel>
+      )}
+
       <Panel title="Investimento por Período" subtitle="Série diária com referência da correção de tag" action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • Correção de Tag</span> : null}>
         <div className="h-[320px] px-3 pb-4 pt-5">
           <ResponsiveContainer width="100%" height="100%">
@@ -512,8 +843,8 @@ function InvestmentTab({ data, correctionVisible }: { data: DashboardData; corre
             </thead>
             <tbody className="divide-y divide-[#182231]">
               {data.campaigns.map(campaign => (
-                <tr key={campaign.campaign} className="hover:bg-white/[0.02]">
-                  <td className="max-w-[300px] truncate px-5 py-3 font-medium text-slate-300" title={campaign.campaign}>{campaign.campaign}</td>
+                <tr key={campaign.campaignId} className="hover:bg-white/[0.02]">
+                  <td className="max-w-[320px] px-5 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
                   <td className="px-4 py-3 text-right tabular-nums text-slate-500">{BRL.format(campaign.budget)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.spend)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-slate-500">{data.summary.investment ? NUMBER.format((campaign.spend / data.summary.investment) * 100) : 0}%</td>
@@ -530,81 +861,282 @@ function InvestmentTab({ data, correctionVisible }: { data: DashboardData; corre
   );
 }
 
-function OptimizationsTab({ data }: { data: DashboardData }) {
-  const [status, setStatus] = useState<StatusFilter>("Todas");
+function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dateFrom: string; dateTo: string }) {
+  const utils = trpc.useUtils();
+  const workspace = trpc.dashboard.optimizationWorkspace.useQuery(undefined, { refetchOnWindowFocus: false });
+  const [taskStatus, setTaskStatus] = useState<TaskStatusFilter>("ALL");
   const [search, setSearch] = useState("");
-  const filtered = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-    return data.campaigns.filter(campaign => (status === "Todas" || campaign.status === status) && (!normalized || campaign.campaign.toLowerCase().includes(normalized)));
-  }, [data.campaigns, search, status]);
+  const [assignees, setAssignees] = useState<Record<number, string>>({});
+  const [completionNotes, setCompletionNotes] = useState<Record<number, string>>({});
 
-  const counts = useMemo(() => ({
-    Todas: data.campaigns.length,
-    Crítico: data.campaigns.filter(item => item.status === "Crítico").length,
-    Atenção: data.campaigns.filter(item => item.status === "Atenção").length,
-    Saudável: data.campaigns.filter(item => item.status === "Saudável").length,
-  }), [data.campaigns]);
+  const invalidateWorkspace = () => utils.dashboard.optimizationWorkspace.invalidate();
+  const createTask = trpc.dashboard.createOptimizationTask.useMutation({ onSuccess: invalidateWorkspace });
+  const createAll = trpc.dashboard.createAllOptimizationTasks.useMutation({ onSuccess: invalidateWorkspace });
+  const assignTask = trpc.dashboard.assignOptimizationTask.useMutation({ onSuccess: invalidateWorkspace });
+  const startTask = trpc.dashboard.startOptimizationTask.useMutation({ onSuccess: invalidateWorkspace });
+  const completeTask = trpc.dashboard.completeOptimizationTask.useMutation({
+    onSuccess: async () => {
+      setCompletionNotes({});
+      await invalidateWorkspace();
+    },
+  });
+  const rolloverCycle = trpc.dashboard.rolloverOptimizationCycle.useMutation({
+    onSuccess: async () => {
+      setTaskStatus("ALL");
+      setSearch("");
+      await invalidateWorkspace();
+    },
+  });
+  const reopenTask = trpc.dashboard.reopenOptimizationTask.useMutation({
+    onSuccess: invalidateWorkspace,
+  });
+
+  const actionLabels: Record<string, string> = {
+    INCREASE_BUDGET: "Aumentar orçamento",
+    REDUCE_WASTE: "Reduzir desperdício",
+    REVIEW_BIDDING: "Revisar lances",
+  };
+  const priorityLabels: Record<OptimizationTask["priority"], string> = {
+    CRITICAL: "Crítica",
+    HIGH: "Alta",
+    MEDIUM: "Média",
+    LOW: "Baixa",
+  };
+  const statusLabels: Record<OptimizationTask["status"], string> = {
+    PENDING: "Pendente",
+    IN_PROGRESS: "Em andamento",
+    COMPLETED: "Concluída",
+    REOPENED: "Reaberta",
+  };
+  const tasks = workspace.data?.tasks ?? [];
+  const activeCycle = workspace.data?.activeCycle ?? null;
+  const activeTasks = activeCycle ? tasks.filter(task => task.cycleId === activeCycle.id) : [];
+  const existingSignatures = new Set(activeTasks.map(task => task.sourceSignature));
+  const normalized = search.trim().toLowerCase();
+  const filteredTasks = activeTasks.filter(task => {
+    const matchesStatus =
+      taskStatus === "ALL" ||
+      (taskStatus === "PENDING"
+        ? task.status === "PENDING" || task.status === "REOPENED"
+        : task.status === taskStatus);
+    return matchesStatus &&
+      (!normalized || task.campaignName.toLowerCase().includes(normalized) || task.campaignId.toLowerCase().includes(normalized));
+  });
+  const taskCounts = {
+    ALL: activeTasks.length,
+    PENDING: activeTasks.filter(task => task.status === "PENDING" || task.status === "REOPENED").length,
+    IN_PROGRESS: activeTasks.filter(task => task.status === "IN_PROGRESS").length,
+    COMPLETED: activeTasks.filter(task => task.status === "COMPLETED").length,
+    REOPENED: activeTasks.filter(task => task.status === "REOPENED").length,
+  };
+  const openTaskCount = activeTasks.filter(task => task.status !== "COMPLETED").length;
+  const mutationError =
+    createTask.error ??
+    createAll.error ??
+    assignTask.error ??
+    startTask.error ??
+    completeTask.error ??
+    rolloverCycle.error ??
+    reopenTask.error;
 
   return (
-    <Panel
-      title="Campanhas Ativas — Otimizações"
-      subtitle={`Status calculado pelo CPA médio do período (${BRL.format(data.summary.cpa)})`}
-      action={<span className="hidden rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400 sm:inline-flex">{filtered.length} campanhas</span>}
-    >
-      <div className="border-b border-[#1b2535] p-4">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-wrap gap-2">
-            {(["Todas", "Crítico", "Atenção", "Saudável"] as StatusFilter[]).map(item => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setStatus(item)}
-                className={`rounded-md border px-3 py-2 text-[11px] font-medium transition-all active:scale-[0.97] ${status === item ? "border-[#e2212d] bg-[#e2212d] text-white" : "border-[#273247] bg-[#111927] text-slate-400 hover:border-[#3a465c] hover:text-white"}`}
-              >
-                {item} <span className={`ml-1 ${status === item ? "text-white/70" : "text-slate-600"}`}>{counts[item]}</span>
-              </button>
-            ))}
-          </div>
-          <label className="relative block w-full xl:w-[340px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
-            <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar campanha..." className="h-9 border-[#273247] bg-[#101827] pl-9 text-xs text-white placeholder:text-slate-600 focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" />
-          </label>
+    <div className="space-y-4">
+      <Panel
+        title="Recomendações baseadas em evidências"
+        subtitle={`${data.recommendations.length} ação(ões) primária(s) • uma recomendação por campanha • sem ações contraditórias`}
+        action={
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => createAll.mutate({ dateFrom, dateTo })}
+            disabled={!data.recommendations.length || createAll.isPending}
+            className="h-8 bg-[#e2212d] px-3 text-[10px] hover:bg-[#c91622]"
+          >
+            {createAll.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+            Criar todas as tarefas
+          </Button>
+        }
+      >
+        <div className="grid gap-3 p-4 lg:grid-cols-2 2xl:grid-cols-3">
+          {data.recommendations.map(recommendation => {
+            const exists = existingSignatures.has(recommendation.sourceSignature);
+            return (
+              <article key={recommendation.sourceSignature} className="rounded-xl border border-[#202b3d] bg-[#0b121e] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <CampaignIdentity name={recommendation.campaign} campaignId={recommendation.campaignId} nameClassName="text-xs font-semibold text-white" idClassName="mt-1" />
+                  </div>
+                  <span className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold ${recommendation.priority === "CRITICAL" ? "border-red-500/25 bg-red-500/10 text-red-300" : recommendation.priority === "HIGH" ? "border-amber-500/25 bg-amber-500/10 text-amber-300" : "border-sky-500/25 bg-sky-500/10 text-sky-300"}`}>{priorityLabels[recommendation.priority as OptimizationTask["priority"]]}</span>
+                </div>
+                <p className="mt-3 text-xs font-medium text-slate-200">{actionLabels[recommendation.actionType] ?? recommendation.actionType}</p>
+                <p className="mt-2 text-[11px] leading-5 text-slate-500">{recommendation.description}</p>
+                <dl className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-[#080e18] p-3 text-center">
+                  <div><dt className="text-[8px] uppercase tracking-wider text-slate-700">Investimento</dt><dd className="mt-1 text-[10px] tabular-nums text-slate-300">{BRL.format(Number(recommendation.evidence.spend ?? 0))}</dd></div>
+                  <div><dt className="text-[8px] uppercase tracking-wider text-slate-700">Conversões</dt><dd className="mt-1 text-[10px] tabular-nums text-slate-300">{NUMBER.format(Number(recommendation.evidence.conversions ?? 0))}</dd></div>
+                  <div><dt className="text-[8px] uppercase tracking-wider text-slate-700">CPA</dt><dd className="mt-1 text-[10px] tabular-nums text-slate-300">{BRL.format(Number(recommendation.evidence.cpa ?? 0))}</dd></div>
+                </dl>
+                <details className="mt-3 rounded-lg border border-[#1b2637] bg-[#0a111d]">
+                  <summary className="cursor-pointer px-3 py-2 text-[10px] font-medium text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-[#e2212d]/40">Motivo, impacto, risco e passo a passo</summary>
+                  <div className="space-y-3 border-t border-[#1b2637] px-3 py-3 text-[10px] leading-5 text-slate-500">
+                    <p><strong className="text-slate-300">Motivo:</strong> {recommendation.rationale}</p>
+                    <p><strong className="text-emerald-300">Impacto esperado:</strong> {recommendation.expectedImpact}</p>
+                    <p><strong className="text-amber-300">Risco:</strong> {recommendation.risk}</p>
+                    <ol className="list-decimal space-y-1 pl-4">{recommendation.steps.map(step => <li key={step}>{step}</li>)}</ol>
+                  </div>
+                </details>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => createTask.mutate({ dateFrom, dateTo, sourceSignature: recommendation.sourceSignature })}
+                  disabled={exists || createTask.isPending}
+                  className="mt-3 h-8 w-full border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338]"
+                >
+                  {exists ? <><CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />Tarefa no ciclo</> : <><Target className="mr-1.5 h-3.5 w-3.5" />Criar tarefa</>}
+                </Button>
+              </article>
+            );
+          })}
         </div>
-      </div>
+        {!data.recommendations.length ? <EmptyState title="Nenhuma recomendação elegível" description={data.recommendationPolicy.message} /> : null}
+      </Panel>
 
-      {filtered.length ? (
-        <div className="max-h-[760px] overflow-auto">
-          <table className="w-full min-w-[1220px] text-left text-xs">
-            <thead className="sticky top-0 z-10 border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.12em] text-slate-600">
-              <tr><th className="px-5 py-3">Status</th><th className="px-4 py-3">Campanha</th><th className="px-4 py-3">Produto</th><th className="px-4 py-3">Tipo de Otimização</th><th className="px-4 py-3 text-right">Orçamento Diário</th><th className="px-4 py-3 text-right">Investimento</th><th className="px-4 py-3 text-right">Conversões</th><th className="px-4 py-3 text-right">CPA</th><th className="px-5 py-3 text-right">CTR</th></tr>
-            </thead>
-            <tbody className="divide-y divide-[#182231]">
-              {filtered.map(campaign => (
-                <tr key={campaign.campaign} className="transition-colors hover:bg-white/[0.025]">
-                  <td className="px-5 py-3"><StatusBadge status={campaign.status} /></td>
-                  <td className="max-w-[280px] truncate px-4 py-3 font-medium text-slate-300" title={campaign.campaign}>{campaign.campaign}</td>
-                  <td className="px-4 py-3 text-slate-500">{campaign.product}</td>
-                  <td className="px-4 py-3 text-slate-400">{campaign.optimizationType}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-500">{BRL.format(campaign.budget)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.spend)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
-                  <td className={`px-4 py-3 text-right font-medium tabular-nums ${campaign.status === "Crítico" ? "text-red-400" : campaign.status === "Atenção" ? "text-amber-300" : "text-slate-300"}`}>{BRL.format(campaign.cpa)}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.ctr)}%</td>
-                </tr>
+      <Panel
+        title={activeCycle ? `${activeCycle.name} — tarefas executáveis` : "Ciclo de otimização — tarefas executáveis"}
+        subtitle={activeCycle ? `Iniciado em ${formatLongDate(activeCycle.startDate)} • ciclo ativo` : "Crie uma tarefa recomendada para iniciar automaticamente o primeiro ciclo."}
+        action={
+          <div className="flex max-w-full flex-wrap items-center gap-2">
+            <span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400">{activeTasks.length} tarefa(s)</span>
+            {activeCycle ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" size="sm" variant="outline" disabled={rolloverCycle.isPending} className="h-8 max-w-full border-[#e2212d]/30 bg-[#e2212d]/10 px-3 text-[10px] text-[#ff8087] hover:bg-[#e2212d]/15">
+                    {rolloverCycle.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />}
+                    Gerar novo ciclo
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="border-[#263247] bg-[#0d1522] text-white">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Gerar o próximo ciclo de otimização?</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-3 text-slate-400">
+                      <span className="block">Esta ação encerrará <strong className="text-white">{activeCycle.name}</strong> e criará o próximo ciclo com rastreabilidade completa.</span>
+                      <span className="block rounded-lg border border-[#273247] bg-[#0a111d] p-3 text-[11px] leading-5">
+                        <strong className="text-white">{openTaskCount} pendência(s)</strong> serão transferidas sem alterar o ciclo anterior. As <strong className="text-white">{data.recommendations.length} recomendações atuais</strong> serão reavaliadas e só gerarão tarefas novas quando não houver equivalente transferida.
+                      </span>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="border-[#2b374b] bg-[#111a29] text-slate-300 hover:bg-[#182338] hover:text-white">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => rolloverCycle.mutate({ dateFrom, dateTo })} className="bg-[#e2212d] text-white hover:bg-[#c91622]">Confirmar novo ciclo</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : null}
+          </div>
+        }
+      >
+        {rolloverCycle.data ? (
+          <div className="border-b border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-[10px] text-emerald-300">
+            {rolloverCycle.data.newCycle.name} criado: {rolloverCycle.data.transferredCount} pendência(s) transferida(s) e {rolloverCycle.data.recommendationCreatedCount} nova(s) tarefa(s) sugerida(s).
+          </div>
+        ) : null}
+        <div className="border-b border-[#1b2535] p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {(["ALL", "PENDING", "IN_PROGRESS", "COMPLETED"] as TaskStatusFilter[]).map(item => (
+                <button key={item} type="button" onClick={() => setTaskStatus(item)} className={`rounded-md border px-3 py-2 text-[10px] font-medium transition-all active:scale-[0.97] ${taskStatus === item ? "border-[#e2212d] bg-[#e2212d] text-white" : "border-[#273247] bg-[#111927] text-slate-400 hover:border-[#3a465c] hover:text-white"}`}>
+                  {item === "ALL" ? "Todas" : statusLabels[item]} <span className="ml-1 opacity-60">{taskCounts[item]}</span>
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+            <label className="relative block w-full xl:w-[340px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+              <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar por ID ou campanha..." className="h-9 border-[#273247] bg-[#101827] pl-9 text-xs text-white placeholder:text-slate-600 focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" />
+            </label>
+          </div>
         </div>
-      ) : (
-        <EmptyState title="Nenhuma campanha encontrada" description="Ajuste o filtro de status ou o termo de busca." />
-      )}
-    </Panel>
+
+        {workspace.isLoading ? (
+          <div className="grid min-h-[220px] place-items-center"><Loader2 className="h-6 w-6 animate-spin text-[#e2212d]" /></div>
+        ) : workspace.error ? (
+          <EmptyState title="Não foi possível carregar as tarefas" description={workspace.error.message} />
+        ) : filteredTasks.length ? (
+          <div className="grid gap-3 p-4 xl:grid-cols-2">
+            {filteredTasks.map(task => {
+              const assignee = assignees[task.id] ?? task.assignee ?? "";
+              const notes = completionNotes[task.id] ?? "";
+              const evidence = task.evidence as Record<string, number | string | boolean | null>;
+              const sourceTask = task.sourceTaskId ? tasks.find(item => item.id === task.sourceTaskId) : null;
+              const sourceCycle = sourceTask
+                ? workspace.data?.cycles.find(cycle => cycle.id === sourceTask.cycleId)
+                : null;
+              return (
+                <article key={task.id} className="min-w-0 max-w-full overflow-hidden rounded-xl border border-[#202b3d] bg-[#0b121e] p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-[#2b374b] bg-[#111a29] px-2 py-1 text-[9px] text-slate-400">#{task.id}</span>
+                        <span className={`rounded-full border px-2 py-1 text-[9px] font-semibold ${task.status === "COMPLETED" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : task.status === "IN_PROGRESS" ? "border-sky-500/25 bg-sky-500/10 text-sky-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}>{statusLabels[task.status]}</span>
+                        {task.sourceTaskId ? (
+                          <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-[9px] font-medium text-violet-300">
+                            {task.status === "REOPENED" ? "Reaberta" : "Transferida"} • origem #{task.sourceTaskId}{sourceCycle ? ` (${sourceCycle.name})` : ""}
+                          </span>
+                        ) : null}
+                        <span className="text-[9px] font-semibold text-slate-500">Prioridade {priorityLabels[task.priority]}</span>
+                      </div>
+                      <p className="mt-3 break-words text-xs font-semibold text-white [overflow-wrap:anywhere]" title={task.campaignName}>{task.campaignName}</p>
+                      <p className="mt-1 font-mono text-[9px] text-slate-700">ID {task.campaignId}</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] font-medium text-[#f45b65]">{actionLabels[task.actionType] ?? task.actionType}</span>
+                  </div>
+                  <p className="mt-3 text-[11px] leading-5 text-slate-400">{task.description}</p>
+                  <p className="mt-2 text-[10px] leading-5 text-slate-600"><strong className="text-slate-400">Motivo da otimização:</strong> {task.rationale}</p>
+                  <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-[#080e18] p-3 text-center">
+                    <div><p className="text-[8px] uppercase text-slate-700">Investimento</p><p className="mt-1 text-[10px] text-slate-300">{BRL.format(Number(evidence.spend ?? 0))}</p></div>
+                    <div><p className="text-[8px] uppercase text-slate-700">Conversões</p><p className="mt-1 text-[10px] text-slate-300">{NUMBER.format(Number(evidence.conversions ?? 0))}</p></div>
+                    <div><p className="text-[8px] uppercase text-slate-700">CPA</p><p className="mt-1 text-[10px] text-slate-300">{BRL.format(Number(evidence.cpa ?? 0))}</p></div>
+                  </div>
+                  <details className="mt-3 rounded-lg border border-[#1b2637] bg-[#0a111d]"><summary className="cursor-pointer px-3 py-2 text-[10px] text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-[#e2212d]/40">Ver impacto, risco e instruções do Google Ads</summary><div className="space-y-3 border-t border-[#1b2637] p-3 text-[10px] leading-5 text-slate-500"><p><strong className="text-emerald-300">Impacto:</strong> {task.expectedImpact}</p><p><strong className="text-amber-300">Risco:</strong> {task.risk}</p><ol className="list-decimal space-y-1 pl-4">{task.steps.map(step => <li key={step}>{step}</li>)}</ol></div></details>
+
+                  {task.status !== "COMPLETED" ? (
+                    <div className="mt-4 space-y-3 border-t border-[#1b2637] pt-4">
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Input value={assignee} onChange={event => setAssignees(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Responsável pela tarefa" className="h-9 flex-1 border-[#273247] bg-[#101827] text-xs text-white placeholder:text-slate-600" />
+                        <Button type="button" size="sm" variant="outline" onClick={() => assignTask.mutate({ taskId: task.id, assignee })} disabled={assignee.trim().length < 2 || assignTask.isPending} className="h-9 border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338]">Definir responsável</Button>
+                        {task.status !== "IN_PROGRESS" ? <Button type="button" size="sm" variant="outline" onClick={() => startTask.mutate({ taskId: task.id })} disabled={!task.assignee || startTask.isPending} className="h-9 border-sky-500/20 bg-sky-500/10 text-[10px] text-sky-300 hover:bg-sky-500/15"><Clock3 className="mr-1.5 h-3.5 w-3.5" />Iniciar</Button> : null}
+                      </div>
+                      {task.status === "IN_PROGRESS" ? (
+                        <>
+                          <textarea value={notes} onChange={event => setCompletionNotes(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Notas obrigatórias da execução: o que foi alterado, valor anterior e novo valor..." rows={3} className="w-full resize-y rounded-md border border-[#273247] bg-[#101827] px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-[#e2212d] focus:ring-2 focus:ring-[#e2212d]/20" />
+                          <Button type="button" size="sm" onClick={() => completeTask.mutate({ taskId: task.id, notes, dateFrom, dateTo })} disabled={notes.trim().length < 3 || completeTask.isPending} className="h-9 w-full bg-emerald-600 text-[10px] hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Concluir e registrar snapshot</Button>
+                        </>
+                      ) : <p className="text-[10px] leading-5 text-slate-600">Defina o responsável e inicie a tarefa antes de registrar a conclusão.</p>}
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.06] px-3 py-2 text-[10px] text-emerald-300"><CheckCircle2 className="h-4 w-4" />Concluída por {workspace.data?.completions.find(item => item.taskId === task.id)?.completedBy ?? "usuário autenticado"}</div>
+                      <Button type="button" size="sm" variant="outline" onClick={() => reopenTask.mutate({ taskId: task.id, dateFrom, dateTo })} disabled={reopenTask.isPending} className="h-9 w-full border-violet-500/20 bg-violet-500/10 text-[10px] text-violet-300 hover:bg-violet-500/15">
+                        {reopenTask.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1.5 h-3.5 w-3.5" />}Reabrir no ciclo ativo
+                      </Button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState title={activeCycle ? "Nenhuma tarefa neste filtro" : "Nenhum ciclo ativo"} description={activeCycle ? "Ajuste o status ou a busca." : "Crie uma tarefa a partir de uma recomendação para iniciar o ciclo."} />
+        )}
+      </Panel>
+
+      {mutationError ? <div className="rounded-xl border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-xs text-red-300">{mutationError.message}</div> : null}
+    </div>
   );
 }
 
 function DashboardScreen() {
   const utils = trpc.useUtils();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>(getTabFromUrl);
   const [activePreset, setActivePreset] = useState("30d");
   const [dateFrom, setDateFrom] = useState(isoDateFromEnd(30));
   const [dateTo, setDateTo] = useState(DATA_END);
@@ -640,6 +1172,13 @@ function DashboardScreen() {
 
   const data = dashboard.data;
   const correctionVisible = dateFrom <= TAG_CORRECTION_DATE && dateTo >= TAG_CORRECTION_DATE;
+  const selectTab = (tab: TabId) => {
+    setActiveTab(tab);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  };
   const metricCards = data
     ? [
         { title: "Investimento Total", value: BRL.format(data.summary.investment), subtitle: "Google Ads • período", icon: <Coins className="h-4 w-4" />, accent: "#e2212d" },
@@ -717,7 +1256,7 @@ function DashboardScreen() {
           {tabs.map(tab => {
             const Icon = tab.icon;
             return (
-              <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`relative flex shrink-0 items-center gap-2 px-4 py-3 text-[11px] font-medium transition-colors ${activeTab === tab.id ? "text-white" : "text-slate-600 hover:text-slate-300"}`}>
+              <button key={tab.id} type="button" onClick={() => selectTab(tab.id)} className={`relative flex shrink-0 items-center gap-2 px-4 py-3 text-[11px] font-medium transition-colors ${activeTab === tab.id ? "text-white" : "text-slate-600 hover:text-slate-300"}`}>
                 <Icon className={`h-3.5 w-3.5 ${activeTab === tab.id ? "text-[#e2212d]" : ""}`} />{tab.label}
                 {activeTab === tab.id ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#e2212d]" /> : null}
               </button>
@@ -741,7 +1280,8 @@ function DashboardScreen() {
             {activeTab === "overview" ? <OverviewTab data={data} correctionVisible={correctionVisible} /> : null}
             {activeTab === "daily" ? <DailyTab data={data} correctionVisible={correctionVisible} /> : null}
             {activeTab === "investment" ? <InvestmentTab data={data} correctionVisible={correctionVisible} /> : null}
-            {activeTab === "optimizations" ? <OptimizationsTab data={data} /> : null}
+            {activeTab === "optimizations" ? <OptimizationsTab data={data} dateFrom={dateFrom} dateTo={dateTo} /> : null}
+            {activeTab === "history" ? <OptimizationHistoryTab dateFrom={dateFrom} dateTo={dateTo} /> : null}
           </>
         ) : (
           <Panel title="Google Ads"><EmptyState title="Nenhum dado no período" description="Selecione outro intervalo de datas para continuar." /></Panel>

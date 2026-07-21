@@ -8,7 +8,7 @@
 - [x] Remover completamente qualquer aba ou referência a Metas
 - [x] Exibir banner fixo sobre a Correção de Tag Google de 15/07/2026
 - [x] Integrar o servidor aos dados reais de Google Ads da conta MG Motors obtidos via Windsor.ai
-- [x] Utilizar obrigatoriamente campaign, date, spend, conversions, clicks, impressions, ctr e cpc
+- [x] Utilizar obrigatoriamente campaign, campaign_id, date, spend, conversions, clicks, impressions, ctr, cpc, budget_amount, campaign_status, bidding_strategy_type, optimization_score, search_impression_share e search_budget_lost_impression_share
 - [x] Implementar cache server-side por conta e intervalo de datas para evitar chamadas repetidas
 - [x] Calcular Investimento Total, Conversões, CPA Médio, CTR, Taxa de Conversão e CPC Médio sem duplicação
 - [x] Implementar sub-aba Visão Geral com Investimento Diário, Conversões Diárias e CPA Diário
@@ -36,3 +36,78 @@
 - [x] Validar visualmente login e dashboard autenticado com o logo oficial
 - [x] Executar tipagem, testes e build após a atualização de marca
 - [x] Revisar todo.md e salvar um novo checkpoint com o logo oficial
+- [x] Adicionar a meta mensal de mídia de julho/2026 de R$ 397.620,71 como configuração persistente e editável
+- [x] Cadastrar metas regionais de leads Google fornecidas para os 21 mercados
+- [x] Ampliar a consulta Windsor.ai com campaign_id e campos reais de orçamento disponíveis
+- [x] Exibir sempre ID e nome exatos do Google Ads em campanhas, recomendações, tarefas e histórico
+- [x] Implementar cálculo de pacing mensal com meta, investido, restante, projeção, dias fechados e ritmo percentual
+- [x] Implementar série acumulada Real, Ideal, Projeção e Meta Mensal na aba Investimento
+- [x] Exibir ideal diário, média real diária e ideal diário restante no painel de pacing
+- [x] Vincular cada campanha a uma região apenas quando o nome permitir correspondência determinística
+- [x] Impedir sugestões regionais quando a campanha ou região não puder ser identificada com segurança
+- [x] Implementar motor determinístico de ações para campanhas Críticas e em Atenção focado em melhoria de CPA
+- [x] Considerar CPA, conversões, investimento, orçamento diário, limitação por orçamento, meta regional e pacing antes de recomendar aumento
+- [x] Bloquear ações contraditórias, redundantes ou sem evidência suficiente
+- [x] Incluir motivo, evidências, impacto esperado, risco e prioridade em cada recomendação
+- [x] Incluir passo a passo específico do Google Ads para executar cada tipo de ação recomendada
+- [x] Criar tabela persistente de metas mensais de mídia
+- [x] Criar tabela persistente de metas regionais de leads
+- [x] Criar tabela persistente de tarefas de otimização por campanha
+- [x] Criar tabela persistente de eventos e histórico de cada tarefa
+- [x] Registrar usuário criador, responsável, usuário que concluiu e datas de criação/conclusão
+- [x] Permitir criar uma tarefa a partir de uma recomendação sem duplicar tarefa aberta equivalente
+- [x] Permitir atribuir, iniciar, concluir e reabrir tarefas com observação obrigatória na conclusão
+- [x] Exibir histórico separado por campanha e por usuário
+- [x] Atualizar a sub-aba Otimizações com recomendações executáveis, filtros e gestão de tarefas
+- [x] Adicionar estados de carregamento, erro, ausência de recomendação e ausência de tarefas
+- [x] Escrever testes Vitest para pacing, elegibilidade de orçamento, recomendações, deduplicação e transições de tarefas
+- [x] Aplicar migração de banco e validar persistência das metas, tarefas e histórico
+- [x] Validar visualmente pacing e Otimizações em desktop, tablet e mobile
+- [x] Executar tipagem, testes e build após a implementação operacional
+- [x] Revisar todo.md e salvar novo checkpoint da versão com pacing e tarefas
+- [x] Criar modelo persistente de ciclos de otimização com número, nome, período e status
+- [x] Exibir o ciclo ativo na sub-aba Otimizações
+- [x] Adicionar botão Gerar Novo Ciclo com confirmação e resumo das pendências transferidas
+- [x] Encerrar o ciclo anterior ao gerar um novo ciclo
+- [x] Transferir automaticamente todas as tarefas não concluídas para o novo ciclo sem perder autoria ou histórico
+- [x] Registrar evento de transferência com ciclo de origem, ciclo de destino, data e usuário
+- [x] Impedir duplicação de tarefas ao transferir pendências para o novo ciclo
+- [x] Preservar tarefas concluídas exclusivamente no ciclo em que foram finalizadas
+- [x] Criar snapshots de desempenho da campanha na criação e na conclusão da tarefa
+- [x] Criar snapshot de acompanhamento posterior para medir efeito pós-otimização
+- [x] Adicionar a sub-aba Histórico ao módulo de Google Ads
+- [x] Exibir histórico filtrável por ciclo, campanha, ID da campanha, usuário, status e tipo de ação
+- [x] Comparar CPA, conversões, investimento, CTR e CPC antes e depois da otimização
+- [x] Classificar o resultado como Melhorou, Estável, Piorou ou Aguardando dados com critérios explícitos
+- [x] Exibir variações absolutas e percentuais sem atribuir causalidade indevida
+- [x] Mostrar linha do tempo completa de criação, atribuição, execução, conclusão, transferência e reabertura
+- [x] Escrever testes Vitest para criação de ciclo, transferência de pendências, deduplicação e classificação de impacto
+- [x] Validar visualmente o botão Novo Ciclo, o ciclo ativo e a aba Histórico em desktop, tablet e mobile
+- [x] Adicionar seis cards D-1 para Investimento, Conversões, CPA Médio, CTR, Taxa de Conversão e CPC Médio
+- [x] Calcular e exibir variação percentual de D-1 contra D-2 com semântica positiva ou negativa por métrica
+- [x] Adicionar tabela Acompanhamento Diário Comparativo com D-1, D-2, variação, sete dias atrás, variação contra sete dias, média 7d e média 30d
+- [x] Usar como referência o último dia fechado disponível no Windsor.ai, sem presumir que hoje possui dados completos
+- [x] Adicionar tabela Campanhas — Ontem vs Anteontem com ID, nome, orçamento diário, investimento, conversões e CPA
+- [x] Calcular variações por campanha de investimento, conversões e CPA entre D-1 e D-2
+- [x] Ordenar o comparativo de campanhas por investimento de D-1 e manter busca por ID ou nome
+- [x] Exibir indisponível quando não houver amostra real para D-2, sete dias atrás ou médias móveis
+- [x] Validar comparativos diários com agregações independentes para evitar dupla contagem de métricas
+- [x] Validar visualmente os cards e as duas tabelas comparativas em desktop, tablet e mobile
+- [x] Adicionar Top 10 Melhor CPA na Visão Geral com ID, nome, produto, conversões, investimento e CPA reais
+- [x] Adicionar Top 10 Pior CPA na Visão Geral com ID, nome, produto, conversões, investimento e CPA reais
+- [x] Excluir dos rankings campanhas sem investimento ou sem conversões suficientes para um CPA válido
+- [x] Aplicar critério mínimo de amostra e sinalizar campanhas que não podem ser comparadas com segurança
+- [x] Adicionar Performance por Produto/Linha com investimento, conversões, participação, CTR e CPA
+- [x] Classificar produto por regras determinísticas e agrupar ambiguidades em Não classificada
+- [x] Adicionar CPA por Região com investimento, conversões, CPA e desvio percentual contra o CPA médio
+- [x] Classificar região somente por correspondência inequívoca no nome da campanha
+- [x] Agrupar campanhas nacionais e não identificáveis separadamente sem inventar localização
+- [x] Exibir estados favorável, neutro e desfavorável por região com base no desvio do CPA médio
+- [x] Validar que totais por produto e região conciliam com os totais gerais do período
+- [x] Validar visualmente os quatro novos painéis da Visão Geral em desktop, tablet e mobile
+- [x] Comprovar por teste TSX a renderização de variação absoluta e percentual no Histórico, inclusive no estado indisponível e sem linguagem causal
+- [x] Permitir abrir diretamente cada aba por `?tab=overview|daily|investment|optimizations|history` para validação responsiva e compartilhamento de contexto
+- [x] Corrigir overflow horizontal mobile da tabela Performance por Campanha na Visão Geral, preservando rolagem interna
+- [x] Corrigir overflow horizontal mobile do cabeçalho de ciclo em Otimizações e garantir quebra segura de nomes longos
+- [x] Remover truncamentos remanescentes para exibir sempre o nome completo da campanha junto do ID nas áreas operacionais
+- [x] Adicionar teste de interface que garanta nome completo e ID real visíveis sem depender de tooltip

@@ -8,6 +8,7 @@ import {
 
 const baseRow: GoogleAdsRow = {
   campaign: "MG4_PMax_SP",
+  campaign_id: "1001",
   date: "2026-07-14",
   spend: 100,
   conversions: 10,
@@ -17,6 +18,9 @@ const baseRow: GoogleAdsRow = {
   cpc: 2,
   budget_amount: 120,
   campaign_status: "ENABLED",
+  bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+  optimization_score: 0.82,
+  search_impression_share: 0.34,
   account_name: "MG Motors",
   datasource: "google_ads",
 };
@@ -28,6 +32,7 @@ describe("buildDashboardData", () => {
       {
         ...baseRow,
         campaign: "MGS5_PMax_RJ",
+        campaign_id: "1002",
         date: "2026-07-15",
         spend: 300,
         conversions: 10,
@@ -55,9 +60,15 @@ describe("buildDashboardData", () => {
 
   it("classifica CPA a partir da média geral, usando 2x para crítico", () => {
     const rows: GoogleAdsRow[] = [
-      { ...baseRow, campaign: "MG4_PMax_SP", spend: 100, conversions: 10 },
-      { ...baseRow, campaign: "MGS5_PMax_SP", spend: 100, conversions: 5 },
-      { ...baseRow, campaign: "MGCybester_PMax_SP", spend: 300, conversions: 3 },
+      { ...baseRow, campaign: "MG4_PMax_SP", campaign_id: "1001", spend: 100, conversions: 10 },
+      { ...baseRow, campaign: "MGS5_PMax_SP", campaign_id: "1002", spend: 100, conversions: 5 },
+      {
+        ...baseRow,
+        campaign: "MGCybester_PMax_SP",
+        campaign_id: "1003",
+        spend: 300,
+        conversions: 3,
+      },
     ];
 
     const result = buildDashboardData(
@@ -68,8 +79,13 @@ describe("buildDashboardData", () => {
     );
 
     const critical = result.campaigns.find(item => item.campaign === "MGCybester_PMax_SP");
+    expect(critical?.campaignId).toBe("1003");
     expect(critical?.status).toBe("Crítico");
-    expect(result.insights.some(item => item.severity === "Crítico")).toBe(true);
+    expect(critical?.optimizationScore).toBe(82);
+    expect(critical?.searchImpressionShare).toBe(34);
+    expect(result.insights.some(item => item.campaignId === "1003" && item.severity === "Crítico")).toBe(
+      true,
+    );
   });
 });
 

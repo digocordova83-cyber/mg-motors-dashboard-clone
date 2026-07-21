@@ -1,4 +1,18 @@
 import snapshotRows from "./data/mg-motors-google-ads.json" with { type: "json" };
+import {
+  addDays,
+  aggregateCampaigns,
+  buildDailyComparison,
+  buildPacing,
+  buildProductPerformance,
+  buildRankings,
+  buildRecommendations,
+  buildRegionPerformance,
+  type AnalyticsRow,
+  type CampaignHealth,
+  type GoalConfig,
+} from "./dashboardAnalytics";
+import { getCampaignGoals } from "./db";
 
 export const MG_MOTORS_ACCOUNT_ID = "535-798-6801";
 export const MG_MOTORS_ACCOUNT_NAME = "MG Motors";
@@ -6,22 +20,14 @@ export const TAG_CORRECTION_DATE = "2026-07-15";
 const WINDSOR_API_URL = "https://connectors.windsor.ai/google_ads";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-export type GoogleAdsRow = {
-  campaign: string;
-  date: string;
-  spend: number;
-  conversions: number;
-  clicks: number;
-  impressions: number;
+export type GoogleAdsRow = AnalyticsRow & {
   ctr: number | null;
   cpc: number | null;
-  budget_amount: number | null;
-  campaign_status: string;
   account_name: string;
   datasource: string;
 };
 
-export type CampaignHealth = "Saudável" | "Atenção" | "Crítico";
+export type { CampaignHealth };
 
 type CacheEntry = {
   expiresAt: number;
@@ -35,6 +41,12 @@ const cache = new Map<string, CacheEntry>();
 function numberOrZero(value: unknown) {
   const parsed = typeof value === "number" ? value : Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function numberOrNull(value: unknown) {
+  if (value == null || value === "") return null;
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function normalizeRows(payload: unknown): GoogleAdsRow[] {
@@ -52,21 +64,29 @@ function normalizeRows(payload: unknown): GoogleAdsRow[] {
       const item = row as Record<string, unknown>;
       return {
         campaign: String(item.campaign ?? "Campanha sem nome"),
+        campaign_id: String(item.campaign_id ?? ""),
         date: String(item.date ?? ""),
         spend: numberOrZero(item.spend),
         conversions: numberOrZero(item.conversions),
         clicks: numberOrZero(item.clicks),
         impressions: numberOrZero(item.impressions),
-        ctr: item.ctr == null ? null : numberOrZero(item.ctr),
-        cpc: item.cpc == null ? null : numberOrZero(item.cpc),
-        budget_amount: item.budget_amount == null ? null : numberOrZero(item.budget_amount),
+        ctr: numberOrNull(item.ctr),
+        cpc: numberOrNull(item.cpc),
+        budget_amount: numberOrNull(item.budget_amount),
         campaign_status: String(item.campaign_status ?? "UNKNOWN"),
+        bidding_strategy_type: String(item.bidding_strategy_type ?? "UNKNOWN"),
+        optimization_score: numberOrNull(item.optimization_score),
+        search_impression_share: numberOrNull(item.search_impression_share),
+        search_budget_lost_impression_share: numberOrNull(
+          item.search_budget_lost_impression_share,
+        ),
         account_name: String(item.account_name ?? ""),
         datasource: String(item.datasource ?? ""),
       } satisfies GoogleAdsRow;
     })
     .filter(
       row =>
+        row.campaign_id.length > 0 &&
         row.date.length === 10 &&
         row.account_name === MG_MOTORS_ACCOUNT_NAME &&
         row.datasource === "google_ads",
@@ -86,7 +106,7 @@ async function fetchWindsorRows(dateFrom: string, dateTo: string) {
   const params = new URLSearchParams({
     api_key: apiKey,
     fields:
-      "campaign,date,spend,conversions,clicks,impressions,ctr,cpc,budget_amount,campaign_status,account_name,datasource",
+      "campaign,campaign_id,date,spend,conversions,clicks,impressions,ctr,cpc,budget_amount,campaign_status,bidding_strategy_type,optimization_score,search_impression_share,search_budget_lost_impression_share,account_name,datasource",
     date_from: dateFrom,
     date_to: dateTo,
     filter: JSON.stringify([["account_name", "eq", MG_MOTORS_ACCOUNT_NAME]]),
@@ -124,7 +144,7 @@ export async function getGoogleAdsRows(dateFrom: string, dateTo: string) {
     const entry: CacheEntry = {
       rows: filterByDate(normalizedSnapshot, dateFrom, dateTo),
       source: "windsor-snapshot",
-      updatedAt: "2026-07-20T23:50:24.000Z",
+      updatedAt: "2026-07-21T00:45:58.000Z",
       expiresAt: Date.now() + CACHE_TTL_MS,
     };
     cache.set(cacheKey, entry);
@@ -145,15 +165,6 @@ function safeDivide(numerator: number, denominator: number) {
   return denominator > 0 ? numerator / denominator : 0;
 }
 
-function getProduct(campaign: string) {
-  const normalized = campaign.toUpperCase();
-  if (normalized.includes("CYB")) return "MG Cyberster";
-  if (normalized.includes("MGS5") || normalized.includes("MG_S5")) return "MG S5";
-  if (normalized.includes("MG4")) return "MG4";
-  if (normalized.includes("MARCA")) return "Marca MG";
-  return "Portfólio MG";
-}
-
 function getOptimizationType(campaign: string) {
   const normalized = campaign.toUpperCase();
   if (normalized.includes("SEM") || normalized.includes("SEARCH")) return "Otimizar termos de busca";
@@ -161,15 +172,14 @@ function getOptimizationType(campaign: string) {
   return "Revisar estratégia de lances";
 }
 
-function classifyCampaign(cpa: number, conversions: number, spend: number, averageCpa: number): CampaignHealth {
-  if (spend > 0 && conversions <= 0) return "Crítico";
-  if (averageCpa <= 0) return "Saudável";
-  if (cpa >= averageCpa * 2) return "Crítico";
-  if (cpa >= averageCpa * 1.35) return "Atenção";
-  return "Saudável";
-}
-
-export function buildDashboardData(rows: GoogleAdsRow[], metadata: { source: string; updatedAt: string; cacheHit: boolean }, dateFrom: string, dateTo: string) {
+export function buildDashboardData(
+  rows: GoogleAdsRow[],
+  metadata: { source: string; updatedAt: string; cacheHit: boolean },
+  dateFrom: string,
+  dateTo: string,
+  goals: GoalConfig[] = [],
+  historyRows: GoogleAdsRow[] = rows,
+) {
   const totals = rows.reduce(
     (acc, row) => {
       acc.spend += row.spend;
@@ -193,38 +203,13 @@ export function buildDashboardData(rows: GoogleAdsRow[], metadata: { source: str
   };
 
   const dailyMap = new Map<string, typeof totals>();
-  const campaignMap = new Map<
-    string,
-    typeof totals & { budget: number; campaignStatus: string; lastDate: string }
-  >();
-
   for (const row of rows) {
-    const daily = dailyMap.get(row.date) ?? { spend: 0, conversions: 0, clicks: 0, impressions: 0 };
-    daily.spend += row.spend;
-    daily.conversions += row.conversions;
-    daily.clicks += row.clicks;
-    daily.impressions += row.impressions;
-    dailyMap.set(row.date, daily);
-
-    const campaign = campaignMap.get(row.campaign) ?? {
-      spend: 0,
-      conversions: 0,
-      clicks: 0,
-      impressions: 0,
-      budget: 0,
-      campaignStatus: row.campaign_status,
-      lastDate: "",
-    };
-    campaign.spend += row.spend;
-    campaign.conversions += row.conversions;
-    campaign.clicks += row.clicks;
-    campaign.impressions += row.impressions;
-    if (row.date >= campaign.lastDate) {
-      campaign.budget = row.budget_amount ?? campaign.budget;
-      campaign.campaignStatus = row.campaign_status;
-      campaign.lastDate = row.date;
-    }
-    campaignMap.set(row.campaign, campaign);
+    const current = dailyMap.get(row.date) ?? { spend: 0, conversions: 0, clicks: 0, impressions: 0 };
+    current.spend += row.spend;
+    current.conversions += row.conversions;
+    current.clicks += row.clicks;
+    current.impressions += row.impressions;
+    dailyMap.set(row.date, current);
   }
 
   const daily = Array.from(dailyMap.entries())
@@ -241,27 +226,11 @@ export function buildDashboardData(rows: GoogleAdsRow[], metadata: { source: str
       conversionRate: round(safeDivide(value.conversions, value.clicks) * 100),
     }));
 
-  const campaigns = Array.from(campaignMap.entries())
-    .filter(([, value]) => value.campaignStatus === "ENABLED" || value.spend > 0)
-    .map(([campaign, value]) => {
-      const cpa = round(safeDivide(value.spend, value.conversions));
-      return {
-        campaign,
-        product: getProduct(campaign),
-        optimizationType: getOptimizationType(campaign),
-        budget: round(value.budget),
-        spend: round(value.spend),
-        conversions: round(value.conversions, 1),
-        cpa,
-        ctr: round(safeDivide(value.clicks, value.impressions) * 100),
-        cpc: round(safeDivide(value.spend, value.clicks)),
-        clicks: round(value.clicks),
-        impressions: round(value.impressions),
-        googleStatus: value.campaignStatus,
-        status: classifyCampaign(cpa, value.conversions, value.spend, summary.cpa),
-      };
-    })
-    .sort((left, right) => right.spend - left.spend);
+  const campaignAnalytics = aggregateCampaigns(rows, goals, summary.cpa);
+  const campaigns = campaignAnalytics.map(campaign => ({
+    ...campaign,
+    optimizationType: getOptimizationType(campaign.campaign),
+  }));
 
   const statusOrder: Record<CampaignHealth, number> = { Crítico: 0, Atenção: 1, Saudável: 2 };
   const insights = campaigns
@@ -270,6 +239,7 @@ export function buildDashboardData(rows: GoogleAdsRow[], metadata: { source: str
     .slice(0, 8)
     .map(campaign => ({
       severity: campaign.status,
+      campaignId: campaign.campaignId,
       campaign: campaign.campaign,
       cpa: campaign.cpa,
       averageCpa: summary.cpa,
@@ -280,6 +250,14 @@ export function buildDashboardData(rows: GoogleAdsRow[], metadata: { source: str
           : "CPA acima da faixa de atenção do período.",
     }));
 
+  const mediaGoal = goals.find(goal => goal.goalType === "MEDIA_BUDGET" && goal.scopeKey === "ACCOUNT");
+  const pacing = buildPacing(historyRows, mediaGoal?.monthlyBudgetGoal ?? null);
+  const dailyComparison = buildDailyComparison(historyRows);
+  const rankings = buildRankings(campaignAnalytics);
+  const productPerformance = buildProductPerformance(campaignAnalytics);
+  const regionPerformance = buildRegionPerformance(campaignAnalytics, summary.cpa);
+  const recommendationEngine = buildRecommendations(campaignAnalytics, summary.cpa, pacing);
+
   return {
     account: { id: MG_MOTORS_ACCOUNT_ID, name: MG_MOTORS_ACCOUNT_NAME, datasource: "google_ads" },
     period: { dateFrom, dateTo },
@@ -288,21 +266,69 @@ export function buildDashboardData(rows: GoogleAdsRow[], metadata: { source: str
     daily,
     campaigns,
     insights,
+    pacing,
+    dailyComparison,
+    rankings,
+    productPerformance,
+    regionPerformance,
+    recommendations: recommendationEngine.recommendations,
+    recommendationPolicy: recommendationEngine.policy,
+    goals: {
+      competencia: pacing?.competencia ?? dailyComparison.referenceDate?.slice(0, 7) ?? dateTo.slice(0, 7),
+      monthlyBudget: mediaGoal?.monthlyBudgetGoal ?? null,
+      regional: goals
+        .filter(goal => goal.goalType === "REGIONAL_LEADS")
+        .map(goal => ({
+          scopeKey: goal.scopeKey,
+          region: goal.region,
+          monthlyLeadGoal: goal.monthlyLeadGoal,
+        })),
+    },
     metadata: {
       ...metadata,
       rowCount: rows.length,
+      historyRowCount: historyRows.length,
       campaignCount: campaigns.length,
+      lastClosedDate: dailyComparison.referenceDate,
       cacheTtlSeconds: CACHE_TTL_MS / 1000,
     },
   };
 }
 
+function getHistoricalStart(dateFrom: string, dateTo: string) {
+  return [dateFrom, addDays(dateTo, -29), `${dateTo.slice(0, 7)}-01`].sort()[0];
+}
+
+async function loadGoals(competencia: string): Promise<GoalConfig[]> {
+  try {
+    const goals = await getCampaignGoals(MG_MOTORS_ACCOUNT_ID, competencia);
+    return goals.map(goal => ({
+      goalType: goal.goalType,
+      scopeKey: goal.scopeKey,
+      region: goal.region,
+      monthlyLeadGoal: goal.monthlyLeadGoal,
+      monthlyBudgetGoal:
+        goal.monthlyBudgetGoal == null ? null : numberOrNull(goal.monthlyBudgetGoal),
+    }));
+  } catch (error) {
+    console.warn("[Goals] Metas persistentes indisponíveis:", error instanceof Error ? error.message : error);
+    return [];
+  }
+}
+
 export async function loadDashboardData(dateFrom: string, dateTo: string) {
-  const result = await getGoogleAdsRows(dateFrom, dateTo);
+  const historyDateFrom = getHistoricalStart(dateFrom, dateTo);
+  const result = await getGoogleAdsRows(historyDateFrom, dateTo);
+  const rows = filterByDate(result.rows, dateFrom, dateTo);
+  const lastClosedDate = result.rows.map(row => row.date).sort().at(-1);
+  const goals = await loadGoals(lastClosedDate?.slice(0, 7) ?? dateTo.slice(0, 7));
+
   return buildDashboardData(
-    result.rows,
+    rows,
     { source: result.source, updatedAt: result.updatedAt, cacheHit: result.cacheHit },
     dateFrom,
     dateTo,
+    goals,
+    result.rows,
   );
 }
