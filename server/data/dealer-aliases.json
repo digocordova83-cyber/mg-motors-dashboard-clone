@@ -1,0 +1,531 @@
+{
+  "sourceWorkbook": "pasted_file_5zD9JE_Delears_nova_tratada(1).xlsx",
+  "sourceSheet": "Página1",
+  "sourceHeaders": [
+    "Nome Antigo",
+    "Nome Padrão"
+  ],
+  "sourceModifiedAt": "2026-07-21T05:18:40.151750Z",
+  "sourceRowCount": 86,
+  "mappingCount": 86,
+  "uniqueAliasCount": 75,
+  "canonicalCount": 26,
+  "mappings": [
+    {
+      "source": "vega_belém_-_belém/pa_",
+      "sourceKey": "VEGA BELEM BELEM PA",
+      "canonical": "VEGA LONGWALL",
+      "canonicalKey": "VEGA LONGWALL"
+    },
+    {
+      "source": "VEGA LONGWALL AUTOMOTORES COMERCIAL LTDA",
+      "sourceKey": "VEGA LONGWALL AUTOMOTORES COMERCIAL LTDA",
+      "canonical": "VEGA LONGWALL",
+      "canonicalKey": "VEGA LONGWALL"
+    },
+    {
+      "source": "Vega Belém - 3966030",
+      "sourceKey": "VEGA BELEM 3966030",
+      "canonical": "VEGA LONGWALL",
+      "canonicalKey": "VEGA LONGWALL"
+    },
+    {
+      "source": "VEGA BELÉM",
+      "sourceKey": "VEGA BELEM",
+      "canonical": "VEGA LONGWALL",
+      "canonicalKey": "VEGA LONGWALL"
+    },
+    {
+      "source": "toriba_-_são_paulo/sp_",
+      "sourceKey": "TORIBA SAO PAULO SP",
+      "canonical": "TORIBA - CEASA",
+      "canonicalKey": "TORIBA CEASA"
+    },
+    {
+      "source": "Toriba Ceasa - 3964095",
+      "sourceKey": "TORIBA CEASA 3964095",
+      "canonical": "TORIBA - CEASA",
+      "canonicalKey": "TORIBA CEASA"
+    },
+    {
+      "source": "Toriba Ceasa",
+      "sourceKey": "TORIBA CEASA",
+      "canonical": "TORIBA - CEASA",
+      "canonicalKey": "TORIBA CEASA"
+    },
+    {
+      "source": "TORIBA - CEASA",
+      "sourceKey": "TORIBA CEASA",
+      "canonical": "TORIBA - CEASA",
+      "canonicalKey": "TORIBA CEASA"
+    },
+    {
+      "source": "tecar_sia_-_brasília/df_",
+      "sourceKey": "TECAR SIA BRASILIA DF",
+      "canonical": "TECAR - SIA BRASILIA",
+      "canonicalKey": "TECAR SIA BRASILIA"
+    },
+    {
+      "source": "tecar_bougainville_-_goiânia/go_",
+      "sourceKey": "TECAR BOUGAINVILLE GOIANIA GO",
+      "canonical": "TECAR SHOPPING - GOIÂNIA",
+      "canonicalKey": "TECAR SHOPPING GOIANIA"
+    },
+    {
+      "source": "Tecar Sia - 3964732",
+      "sourceKey": "TECAR SIA 3964732",
+      "canonical": "TECAR - SIA BRASILIA",
+      "canonicalKey": "TECAR SIA BRASILIA"
+    },
+    {
+      "source": "Tecar SIA",
+      "sourceKey": "TECAR SIA",
+      "canonical": "TECAR - SIA BRASILIA",
+      "canonicalKey": "TECAR SIA BRASILIA"
+    },
+    {
+      "source": "TECAR SHOPPING - GOIÂNIA/GO",
+      "sourceKey": "TECAR SHOPPING GOIANIA GO",
+      "canonical": "TECAR SHOPPING - GOIÂNIA",
+      "canonicalKey": "TECAR SHOPPING GOIANIA"
+    },
+    {
+      "source": "Tecar Goiania",
+      "sourceKey": "TECAR GOIANIA",
+      "canonical": "TECAR SHOPPING - GOIÂNIA",
+      "canonicalKey": "TECAR SHOPPING GOIANIA"
+    },
+    {
+      "source": "TECAR - SIA BRASILIA",
+      "sourceKey": "TECAR SIA BRASILIA",
+      "canonical": "TECAR - SIA BRASILIA",
+      "canonicalKey": "TECAR SIA BRASILIA"
+    },
+    {
+      "source": "stefanini_piracicaba_-_piracicaba/sp_",
+      "sourceKey": "STEFANINI PIRACICABA PIRACICABA SP",
+      "canonical": "STEFANINI - PIRACICABA",
+      "canonicalKey": "STEFANINI PIRACICABA"
+    },
+    {
+      "source": "stefanini_campinas_-_campinas/sp",
+      "sourceKey": "STEFANINI CAMPINAS CAMPINAS SP",
+      "canonical": "STEFANINI - CAMPINAS",
+      "canonicalKey": "STEFANINI CAMPINAS"
+    },
+    {
+      "source": "Stefanini Piracicaba - 3964541",
+      "sourceKey": "STEFANINI PIRACICABA 3964541",
+      "canonical": "STEFANINI - PIRACICABA",
+      "canonicalKey": "STEFANINI PIRACICABA"
+    },
+    {
+      "source": "Stefanini Piracicaba",
+      "sourceKey": "STEFANINI PIRACICABA",
+      "canonical": "STEFANINI - PIRACICABA",
+      "canonicalKey": "STEFANINI PIRACICABA"
+    },
+    {
+      "source": "Stefanini Campinas - 3964540",
+      "sourceKey": "STEFANINI CAMPINAS 3964540",
+      "canonical": "STEFANINI - CAMPINAS",
+      "canonicalKey": "STEFANINI CAMPINAS"
+    },
+    {
+      "source": "Stefanini Campinas",
+      "sourceKey": "STEFANINI CAMPINAS",
+      "canonical": "STEFANINI - CAMPINAS",
+      "canonicalKey": "STEFANINI CAMPINAS"
+    },
+    {
+      "source": "STEFANINI - PIRACICABA",
+      "sourceKey": "STEFANINI PIRACICABA",
+      "canonical": "STEFANINI - PIRACICABA",
+      "canonicalKey": "STEFANINI PIRACICABA"
+    },
+    {
+      "source": "STEFANINI - CAMPINAS",
+      "sourceKey": "STEFANINI CAMPINAS",
+      "canonical": "STEFANINI - CAMPINAS",
+      "canonicalKey": "STEFANINI CAMPINAS"
+    },
+    {
+      "source": "savol_-_são_caetano_do_sul/sp_",
+      "sourceKey": "SAVOL SAO CAETANO DO SUL SP",
+      "canonical": "SAVOL - SÃO CAETANO",
+      "canonicalKey": "SAVOL SAO CAETANO"
+    },
+    {
+      "source": "Savol São Caetano - 3966183",
+      "sourceKey": "SAVOL SAO CAETANO 3966183",
+      "canonical": "SAVOL - SÃO CAETANO",
+      "canonicalKey": "SAVOL SAO CAETANO"
+    },
+    {
+      "source": "SAVOL SÃO CAETANO",
+      "sourceKey": "SAVOL SAO CAETANO",
+      "canonical": "SAVOL - SÃO CAETANO",
+      "canonicalKey": "SAVOL SAO CAETANO"
+    },
+    {
+      "source": "SAVOL - SÃO CAETANO",
+      "sourceKey": "SAVOL SAO CAETANO",
+      "canonical": "SAVOL - SÃO CAETANO",
+      "canonicalKey": "SAVOL SAO CAETANO"
+    },
+    {
+      "source": "potenza_recreio_-_rio_de_janeiro/rj",
+      "sourceKey": "POTENZA RECREIO RIO DE JANEIRO RJ",
+      "canonical": "POTENZA - RECREIO",
+      "canonicalKey": "POTENZA RECREIO"
+    },
+    {
+      "source": "Potenza Recreio - 3965660",
+      "sourceKey": "POTENZA RECREIO 3965660",
+      "canonical": "POTENZA - RECREIO",
+      "canonicalKey": "POTENZA RECREIO"
+    },
+    {
+      "source": "Potenza Recreio",
+      "sourceKey": "POTENZA RECREIO",
+      "canonical": "POTENZA - RECREIO",
+      "canonicalKey": "POTENZA RECREIO"
+    },
+    {
+      "source": "POTENZA - RECREIO",
+      "sourceKey": "POTENZA RECREIO",
+      "canonical": "POTENZA - RECREIO",
+      "canonicalKey": "POTENZA RECREIO"
+    },
+    {
+      "source": "orvel_shopping_vitória_-_vitória/es_",
+      "sourceKey": "ORVEL SHOPPING VITORIA VITORIA ES",
+      "canonical": "orvel_shopping_vitória_-_vitória/es_",
+      "canonicalKey": "ORVEL SHOPPING VITORIA VITORIA ES"
+    },
+    {
+      "source": "orvel_-_vitória/es",
+      "sourceKey": "ORVEL VITORIA ES",
+      "canonical": "ORVEL - VITÓRIA",
+      "canonicalKey": "ORVEL VITORIA"
+    },
+    {
+      "source": "Orvel Vitória - 3966277",
+      "sourceKey": "ORVEL VITORIA 3966277",
+      "canonical": "ORVEL - VITÓRIA",
+      "canonicalKey": "ORVEL VITORIA"
+    },
+    {
+      "source": "ORVEL VITÓRIA",
+      "sourceKey": "ORVEL VITORIA",
+      "canonical": "ORVEL - VITÓRIA",
+      "canonicalKey": "ORVEL VITORIA"
+    },
+    {
+      "source": "ORVEL - VITÓRIA",
+      "sourceKey": "ORVEL VITORIA",
+      "canonical": "ORVEL - VITÓRIA",
+      "canonicalKey": "ORVEL VITORIA"
+    },
+    {
+      "source": "onne_sjrp_-_são_josé_do_rio_preto/sp_",
+      "sourceKey": "ONNE SJRP SAO JOSE DO RIO PRETO SP",
+      "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO",
+      "canonicalKey": "ONNE SAO JOSE DO RIO PRETO"
+    },
+    {
+      "source": "onne_ribeirão_-_ribeirão_preto/sp_",
+      "sourceKey": "ONNE RIBEIRAO RIBEIRAO PRETO SP",
+      "canonical": "ONNE - RIBEIRÃO PRETO",
+      "canonicalKey": "ONNE RIBEIRAO PRETO"
+    },
+    {
+      "source": "Onne São José do Rio Preto",
+      "sourceKey": "ONNE SAO JOSE DO RIO PRETO",
+      "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO",
+      "canonicalKey": "ONNE SAO JOSE DO RIO PRETO"
+    },
+    {
+      "source": "Onne Rio Preto - 3966095",
+      "sourceKey": "ONNE RIO PRETO 3966095",
+      "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO",
+      "canonicalKey": "ONNE SAO JOSE DO RIO PRETO"
+    },
+    {
+      "source": "ONNE RIO PRETO",
+      "sourceKey": "ONNE RIO PRETO",
+      "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO",
+      "canonicalKey": "ONNE SAO JOSE DO RIO PRETO"
+    },
+    {
+      "source": "Onne Ribeirão Preto",
+      "sourceKey": "ONNE RIBEIRAO PRETO",
+      "canonical": "ONNE - RIBEIRÃO PRETO",
+      "canonicalKey": "ONNE RIBEIRAO PRETO"
+    },
+    {
+      "source": "Onne Ribeirão - 3966096",
+      "sourceKey": "ONNE RIBEIRAO 3966096",
+      "canonical": "ONNE - RIBEIRÃO PRETO",
+      "canonicalKey": "ONNE RIBEIRAO PRETO"
+    },
+    {
+      "source": "ONNE RIBEIRÃO",
+      "sourceKey": "ONNE RIBEIRAO",
+      "canonical": "ONNE - RIBEIRÃO PRETO",
+      "canonicalKey": "ONNE RIBEIRAO PRETO"
+    },
+    {
+      "source": "ONNE - SÃO JOSÉ DO RIO PRETO",
+      "sourceKey": "ONNE SAO JOSE DO RIO PRETO",
+      "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO",
+      "canonicalKey": "ONNE SAO JOSE DO RIO PRETO"
+    },
+    {
+      "source": "ONNE - RIBEIRÃO PRETO",
+      "sourceKey": "ONNE RIBEIRAO PRETO",
+      "canonical": "ONNE - RIBEIRÃO PRETO",
+      "canonicalKey": "ONNE RIBEIRAO PRETO"
+    },
+    {
+      "source": "niscar_-_joão_pessoa/pb_",
+      "sourceKey": "NISCAR JOAO PESSOA PB",
+      "canonical": "NISCAR - JOÃO PESSOA",
+      "canonicalKey": "NISCAR JOAO PESSOA"
+    },
+    {
+      "source": "NISCAR - JOÃO PESSOA",
+      "sourceKey": "NISCAR JOAO PESSOA",
+      "canonical": "NISCAR - JOÃO PESSOA",
+      "canonicalKey": "NISCAR JOAO PESSOA"
+    },
+    {
+      "source": "mg_inglaterra_salvador_shopping_-_salvador/ba_",
+      "sourceKey": "MG INGLATERRA SALVADOR SHOPPING SALVADOR BA",
+      "canonical": "INGLATERRA SHOPPING - SALVADOR/BA",
+      "canonicalKey": "INGLATERRA SHOPPING SALVADOR BA"
+    },
+    {
+      "source": "mg_iguauto_-_fortaleza/ce_",
+      "sourceKey": "MG IGUAUTO FORTALEZA CE",
+      "canonical": "IGUALTO - MG FORTALEZA",
+      "canonicalKey": "IGUALTO MG FORTALEZA"
+    },
+    {
+      "source": "MEGAMIT - ALPHAVILLE",
+      "sourceKey": "MEGAMIT ALPHAVILLE",
+      "canonical": "MEGAMIT - ALPHAVILLE",
+      "canonicalKey": "MEGAMIT ALPHAVILLE"
+    },
+    {
+      "source": "jrca_-_maceió/al_",
+      "sourceKey": "JRCA MACEIO AL",
+      "canonical": "JRCA",
+      "canonicalKey": "JRCA"
+    },
+    {
+      "source": "INGLATERRA SHOPPING - SALVADOR/BA",
+      "sourceKey": "INGLATERRA SHOPPING SALVADOR BA",
+      "canonical": "INGLATERRA SHOPPING - SALVADOR/BA",
+      "canonicalKey": "INGLATERRA SHOPPING SALVADOR BA"
+    },
+    {
+      "source": "INGLATERRA SALVADOR",
+      "sourceKey": "INGLATERRA SALVADOR",
+      "canonical": "INGLATERRA SHOPPING - SALVADOR/BA",
+      "canonicalKey": "INGLATERRA SHOPPING SALVADOR BA"
+    },
+    {
+      "source": "Indiana Salvador - 3966031",
+      "sourceKey": "INDIANA SALVADOR 3966031",
+      "canonical": "Indiana Salvador - 3966031",
+      "canonicalKey": "INDIANA SALVADOR 3966031"
+    },
+    {
+      "source": "Iguauto Fortaleza - 3966026",
+      "sourceKey": "IGUAUTO FORTALEZA 3966026",
+      "canonical": "IGUALTO - MG FORTALEZA",
+      "canonicalKey": "IGUALTO MG FORTALEZA"
+    },
+    {
+      "source": "IGUAUTO FORTALEZA",
+      "sourceKey": "IGUAUTO FORTALEZA",
+      "canonical": "IGUALTO - MG FORTALEZA",
+      "canonicalKey": "IGUALTO MG FORTALEZA"
+    },
+    {
+      "source": "IGUALTO - MG",
+      "sourceKey": "IGUALTO MG",
+      "canonical": "IGUALTO - MG FORTALEZA",
+      "canonicalKey": "IGUALTO MG FORTALEZA"
+    },
+    {
+      "source": "euroville_-_belo_horizonte/mg_",
+      "sourceKey": "EUROVILLE BELO HORIZONTE MG",
+      "canonical": "EUROVILLE - BH BARÃO",
+      "canonicalKey": "EUROVILLE BH BARAO"
+    },
+    {
+      "source": "Euroville Belo Horizonte",
+      "sourceKey": "EUROVILLE BELO HORIZONTE",
+      "canonical": "EUROVILLE - BH BARÃO",
+      "canonicalKey": "EUROVILLE BH BARAO"
+    },
+    {
+      "source": "Euroville Barão - 3965142",
+      "sourceKey": "EUROVILLE BARAO 3965142",
+      "canonical": "EUROVILLE - BH BARÃO",
+      "canonicalKey": "EUROVILLE BH BARAO"
+    },
+    {
+      "source": "EUROVILLE BARÃO",
+      "sourceKey": "EUROVILLE BARAO",
+      "canonical": "EUROVILLE - BH BARÃO",
+      "canonicalKey": "EUROVILLE BH BARAO"
+    },
+    {
+      "source": "EUROVILLE - BH BARÃO",
+      "sourceKey": "EUROVILLE BH BARAO",
+      "canonical": "EUROVILLE - BH BARÃO",
+      "canonicalKey": "EUROVILLE BH BARAO"
+    },
+    {
+      "source": "DS AUTOMOTOR",
+      "sourceKey": "DS AUTOMOTOR",
+      "canonical": "DS AUTOMOTOR",
+      "canonicalKey": "DS AUTOMOTOR"
+    },
+    {
+      "source": "drsul_barra_shopping_sul_-_porto_alegre/rs_",
+      "sourceKey": "DRSUL BARRA SHOPPING SUL PORTO ALEGRE RS",
+      "canonical": "DRSUL - PORTO ALEGRE",
+      "canonicalKey": "DRSUL PORTO ALEGRE"
+    },
+    {
+      "source": "DRSUL Porto Alegre",
+      "sourceKey": "DRSUL PORTO ALEGRE",
+      "canonical": "DRSUL - PORTO ALEGRE",
+      "canonicalKey": "DRSUL PORTO ALEGRE"
+    },
+    {
+      "source": "Drsul Poa - 3966340",
+      "sourceKey": "DRSUL POA 3966340",
+      "canonical": "DRSUL - PORTO ALEGRE",
+      "canonicalKey": "DRSUL PORTO ALEGRE"
+    },
+    {
+      "source": "DRSUL POA",
+      "sourceKey": "DRSUL POA",
+      "canonical": "DRSUL - PORTO ALEGRE",
+      "canonicalKey": "DRSUL PORTO ALEGRE"
+    },
+    {
+      "source": "DRSUL - PORTO ALEGRE SHOPPING",
+      "sourceKey": "DRSUL PORTO ALEGRE SHOPPING",
+      "canonical": "DRSUL - PORTO ALEGRE",
+      "canonicalKey": "DRSUL PORTO ALEGRE"
+    },
+    {
+      "source": "DRSUL - PORTO ALEGRE",
+      "sourceKey": "DRSUL PORTO ALEGRE",
+      "canonical": "DRSUL - PORTO ALEGRE",
+      "canonicalKey": "DRSUL PORTO ALEGRE"
+    },
+    {
+      "source": "dão_silveira_-_natal/rn_",
+      "sourceKey": "DAO SILVEIRA NATAL RN",
+      "canonical": "DÃO SILVEIRA NATAL",
+      "canonicalKey": "DAO SILVEIRA NATAL"
+    },
+    {
+      "source": "DÃO SILVEIRA NATAL",
+      "sourceKey": "DAO SILVEIRA NATAL",
+      "canonical": "DÃO SILVEIRA NATAL",
+      "canonicalKey": "DAO SILVEIRA NATAL"
+    },
+    {
+      "source": "CONCESSIONÁRIA NÃO PREENCHIDA",
+      "sourceKey": "CONCESSIONARIA NAO PREENCHIDA",
+      "canonical": "CONCESSIONÁRIA NÃO PREENCHIDA",
+      "canonicalKey": "CONCESSIONARIA NAO PREENCHIDA"
+    },
+    {
+      "source": "barigui_mandarim_-_florianópolis/sc_",
+      "sourceKey": "BARIGUI MANDARIM FLORIANOPOLIS SC",
+      "canonical": "BARIGUI - FLORIPA",
+      "canonicalKey": "BARIGUI FLORIPA"
+    },
+    {
+      "source": "barigui_-_curitiba/pr_",
+      "sourceKey": "BARIGUI CURITIBA PR",
+      "canonical": "BARIGUI - CURITIBA",
+      "canonicalKey": "BARIGUI CURITIBA"
+    },
+    {
+      "source": "Barigui Floripa - 3964355",
+      "sourceKey": "BARIGUI FLORIPA 3964355",
+      "canonical": "BARIGUI - FLORIPA",
+      "canonicalKey": "BARIGUI FLORIPA"
+    },
+    {
+      "source": "BARIGUI FLORIPA",
+      "sourceKey": "BARIGUI FLORIPA",
+      "canonical": "BARIGUI - FLORIPA",
+      "canonicalKey": "BARIGUI FLORIPA"
+    },
+    {
+      "source": "Barigui Florianópolis",
+      "sourceKey": "BARIGUI FLORIANOPOLIS",
+      "canonical": "BARIGUI - FLORIPA",
+      "canonicalKey": "BARIGUI FLORIPA"
+    },
+    {
+      "source": "Barigui Curitiba - 3964357",
+      "sourceKey": "BARIGUI CURITIBA 3964357",
+      "canonical": "BARIGUI - CURITIBA",
+      "canonicalKey": "BARIGUI CURITIBA"
+    },
+    {
+      "source": "Barigui Curitiba",
+      "sourceKey": "BARIGUI CURITIBA",
+      "canonical": "BARIGUI - CURITIBA",
+      "canonicalKey": "BARIGUI CURITIBA"
+    },
+    {
+      "source": "BARIGUI - FLORIPA",
+      "sourceKey": "BARIGUI FLORIPA",
+      "canonical": "BARIGUI - FLORIPA",
+      "canonicalKey": "BARIGUI FLORIPA"
+    },
+    {
+      "source": "BARIGUI - CURITIBA",
+      "sourceKey": "BARIGUI CURITIBA",
+      "canonical": "BARIGUI - CURITIBA",
+      "canonicalKey": "BARIGUI CURITIBA"
+    },
+    {
+      "source": "baltic_shopping_tamboré_-_barueri/sp_",
+      "sourceKey": "BALTIC SHOPPING TAMBORE BARUERI SP",
+      "canonical": "Baltic Shopping Tamboré",
+      "canonicalKey": "BALTIC SHOPPING TAMBORE"
+    },
+    {
+      "source": "Baltic Shopping Tamboré",
+      "sourceKey": "BALTIC SHOPPING TAMBORE",
+      "canonical": "Baltic Shopping Tamboré",
+      "canonicalKey": "BALTIC SHOPPING TAMBORE"
+    },
+    {
+      "source": "Baltic Mall - 3964896",
+      "sourceKey": "BALTIC MALL 3964896",
+      "canonical": "Baltic Shopping Tamboré",
+      "canonicalKey": "BALTIC SHOPPING TAMBORE"
+    },
+    {
+      "source": "Mg Jrca - 3966029",
+      "sourceKey": "MG JRCA 3966029",
+      "canonical": "JRCA",
+      "canonicalKey": "JRCA"
+    }
+  ]
+}

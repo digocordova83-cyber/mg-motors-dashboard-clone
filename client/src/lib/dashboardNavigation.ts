@@ -1,4 +1,4 @@
-export type DashboardModuleId = "google-ads" | "meta-ads" | "leads";
+export type DashboardModuleId = "google-ads" | "meta-ads" | "leads" | "media-plan";
 export type GoogleAdsTabId = "overview" | "daily" | "investment" | "optimizations" | "history";
 
 export type DashboardRoute = {
@@ -15,7 +15,7 @@ export const GOOGLE_ADS_TAB_IDS: readonly GoogleAdsTabId[] = [
   "history",
 ];
 
-const DASHBOARD_MODULE_IDS: readonly DashboardModuleId[] = ["google-ads", "meta-ads", "leads"];
+const DASHBOARD_MODULE_IDS: readonly DashboardModuleId[] = ["google-ads", "meta-ads", "leads", "media-plan"];
 
 function isGoogleAdsTab(value: string | null): value is GoogleAdsTabId {
   return value !== null && GOOGLE_ADS_TAB_IDS.includes(value as GoogleAdsTabId);

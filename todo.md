@@ -187,3 +187,112 @@
 - [x] Adicionar campos próprios de data inicial e data final no módulo Leads, usando `Data Corrigida` como referência
 - [x] Aplicar o intervalo manual às métricas, gráficos e auditoria por concessionária, mantendo o pacing mensal pela competência
 - [x] Validar e impedir intervalo de Leads com data inicial posterior à data final
+
+## Consulta — Conta Meta via Windsor.ai
+
+- [x] Verificar se há uma conta Meta Ads da MG Motors conectada no Windsor.ai e registrar nome e ID disponíveis
+
+## Ajuste — Simplificação da auditoria de Leads
+
+- [x] Remover o gráfico `Evolução diária por concessionária` da área de auditoria
+- [x] Remover o card `Recebendo no último dia` da área de auditoria
+- [x] Atualizar testes e validar que o restante do módulo Leads permanece íntegro
+- [x] Revisar todo.md e salvar checkpoint do ajuste visual
+
+## Ajuste — Ciclo unificado e conclusão de tarefas
+
+- [x] Remover a seção independente `Recomendações baseadas em evidências`
+- [x] Incorporar as recomendações e evidências diretamente nas tarefas do ciclo de otimização
+- [x] Remover definição manual de responsável e o botão `Iniciar`
+- [x] Permitir que o usuário autenticado conclua diretamente uma tarefa pelo botão `Concluir`
+- [x] Registrar automaticamente nome e identificação do usuário que concluir a tarefa
+- [x] Exibir três tarefas por linha na grade do ciclo em telas amplas
+- [x] Atualizar testes de backend e interface para o novo fluxo de conclusão
+- [x] Validar navegador, tipagem, suíte completa e build junto aos ajustes pendentes de Leads
+- [x] Revisar todo.md e salvar checkpoint da versão consolidada
+
+## Módulo — Dashboard Meta Ads via Windsor.ai
+
+- [x] Consultar os campos e dimensões Meta Ads disponíveis para a conta `1418731006678061`
+- [x] Confirmar o período disponível, a atualização mais recente e a integridade de investimento, leads e CPL
+- [x] Mapear campanhas, conjuntos de anúncios, públicos, criativos e imagens acessíveis no Windsor.ai
+- [x] Definir um contrato analítico Meta Ads sem área de otimizações
+- [x] Implementar backend para consultar e agregar dados reais da conta Meta Ads vinculada
+- [x] Aplicar filtro configurável de datas com padrão do primeiro dia do mês até o último dia completo disponível
+- [x] Exibir KPIs de investimento, leads e CPL com comparação temporal quando houver dados
+- [x] Exibir evolução diária de investimento, leads e CPL sem duplicidade de agregação
+- [x] Extrair o modelo do veículo a partir do nome de campanha, conjunto ou criativo e consolidar leads por modelo
+- [x] Exibir principais campanhas e conjuntos de anúncios com status e métricas de performance
+- [x] Exibir principais públicos e segmentações com investimento, leads e CPL
+- [x] Exibir ranking de criativos por performance com nome, métricas e imagem quando disponibilizada pela fonte
+- [x] Exibir análise demográfica por gênero e faixa etária
+- [x] Exibir análise geográfica por região disponível na fonte
+- [x] Criar estados de carregamento, vazio, indisponibilidade e erro sem dados simulados
+- [x] Integrar o módulo Meta Ads à navegação existente mantendo a linguagem visual do Google Ads
+- [x] Cobrir agregações, rotas e interface com testes Vitest
+- [x] Validar dados, responsividade, navegador, tipagem, suíte completa e build
+- [x] Revisar todo.md e salvar checkpoint consolidado do dashboard Meta Ads
+
+## Acesso dedicado — MG Motors
+
+- [x] Criar autenticação local segura para o login `mg motors` sem armazenar a senha em texto puro
+- [x] Criar o usuário MG Motors com senha criptografada e sessão autenticada compatível com o dashboard
+- [x] Definir o idioma inglês como preferência obrigatória desse usuário
+- [x] Traduzir integralmente para inglês todos os módulos e estados acessíveis ao usuário MG Motors
+- [x] Permitir ao usuário MG Motors acesso a Google Ads, Leads e Meta Ads
+- [x] Ocultar e bloquear no backend as áreas Google Ads `Optimizations` e `History` para o usuário MG Motors
+- [x] Ocultar e bloquear no backend a atualização/importação CSV de Leads para o usuário MG Motors
+- [x] Preservar as permissões e a experiência atuais dos demais usuários
+- [x] Cobrir login, senha inválida, sessão, idioma e autorização por testes Vitest
+- [x] Validar o acesso MG Motors em desktop e mobile sem expor controles restritos
+
+## Acesso dedicado — winicius
+
+- [x] Criar o usuário `winicius` com autenticação local e senha armazenada somente como hash seguro
+- [x] Permitir ao usuário winicius acesso a Google Ads, Meta Ads, Leads, Optimizations e History
+- [x] Ocultar e bloquear no backend a atualização/importação CSV de Leads para o usuário winicius
+- [x] Preservar o idioma padrão atual para o usuário winicius
+- [x] Cobrir autenticação e autorização específicas do usuário winicius com testes Vitest
+
+## Controle — Última atualização do dashboard
+
+- [x] Registrar no backend o instante real da última atualização bem-sucedida das fontes do dashboard
+- [x] Exibir data e hora da última atualização ao lado da identificação do usuário no cabeçalho
+- [x] Traduzir o rótulo para inglês no acesso MG Motors
+- [x] Garantir que falhas de atualização não substituam o último horário válido
+- [x] Cobrir formatação, persistência e visibilidade do indicador com testes Vitest
+
+## Módulo — Plano de Mídia Digital
+
+- [x] Inspecionar todas as abas, fórmulas, formatos e valores da planilha de plano de mídia enviada
+- [x] Estruturar o plano de julho em um modelo mensal sem alterar os números fornecidos
+- [x] Criar o menu `Plano de Mídia Digital` acessível a todos os usuários
+- [x] Exibir o menu como `Digital Media Plan` e traduzir seu conteúdo no acesso MG Motors
+- [x] Organizar os planos por competência mensal com julho como primeiro mês disponível
+- [x] Exibir visão executiva de orçamento, canais, projeções, alocação e demais dimensões existentes na planilha
+- [x] Preservar a leitura das fórmulas e totais calculados da planilha como valores consolidados no dashboard
+- [x] Criar estados responsivos, vazio e erro para meses sem plano cadastrado
+- [x] Cobrir navegação, seleção mensal e cálculos exibidos com testes Vitest
+- [x] Validar a representação do plano de julho contra a planilha original
+
+## Normalização — De/para de concessionárias
+
+- [x] Inspecionar todas as abas e linhas da planilha `Delers.xlsx`
+- [x] Criar um mapa explícito entre cada grafia de origem e o nome canônico da concessionária
+- [x] Normalizar caixa, espaços, acentos e pontuação apenas como apoio à correspondência explícita
+- [x] Aplicar o nome canônico antes de todos os agrupamentos, filtros, KPIs, gráficos e tabelas por concessionária
+- [x] Preservar a grafia original de cada registro para auditoria
+- [x] Não agrupar automaticamente nomes desconhecidos sem correspondência no de/para
+- [x] Cobrir aliases, nomes canônicos e valores desconhecidos com testes Vitest
+- [x] Validar que os totais gerais permanecem inalterados após a consolidação das concessionárias
+
+## Atualização do de/para — nova base enviada em 21/07/2026
+
+- [x] Inspecionar todas as abas, cabeçalhos e linhas de `pasted_file_5zD9JE_Delears_nova_tratada(1).xlsx`
+- [x] Identificar inequivocamente a coluna de grafia de origem e a coluna de nome canônico
+- [x] Detectar células vazias, aliases conflitantes e nomes canônicos duplicados antes da aplicação
+- [x] Substituir o mapa anterior pela nova base oficial sem inferir correspondências ausentes
+- [x] Atualizar os testes Vitest com aliases reais da nova planilha
+- [x] Validar que aliases convergem ao nome canônico correto e nomes desconhecidos permanecem separados
+- [x] Validar que a consolidação não altera o total geral de Leads nem a grafia original armazenada
+- [x] Registrar no código a origem e a data da nova base de de/para para auditoria

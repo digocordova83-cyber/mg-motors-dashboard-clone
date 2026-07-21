@@ -1,30 +1,107 @@
 import type { Request } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+const dbMocks = vi.hoisted(() => ({
+  getDashboardAccountByUsername: vi.fn(),
+  updateDashboardAccountLastSignIn: vi.fn(),
+}));
+
+vi.mock("./db", () => dbMocks);
+
 import {
-  DASHBOARD_SESSION_COOKIE,
+  authenticateDashboardCredentials,
   createDashboardSession,
+  DASHBOARD_SESSION_COOKIE,
+  hashDashboardPassword,
   readDashboardSession,
-  validateDashboardCredentials,
+  verifyDashboardPassword,
+  type DashboardIdentity,
 } from "./dashboardAuth";
 
-beforeAll(() => {
+const testPassword = "senha-de-teste-segura";
+let testPasswordHash = "";
+
+const mgMotorsIdentity: DashboardIdentity = {
+  accountId: 2,
+  username: "mg motors",
+  displayName: "MG Motors",
+  locale: "en-US",
+  permissions: {
+    canAccessGoogleAds: true,
+    canAccessMetaAds: true,
+    canAccessLeads: true,
+    canAccessMediaPlan: true,
+    canAccessOptimizations: false,
+    canAccessHistory: false,
+    canImportLeads: false,
+  },
+};
+
+function accountFromIdentity(identity: DashboardIdentity, overrides: Record<string, unknown> = {}) {
+  return {
+    id: identity.accountId,
+    username: identity.username,
+    displayName: identity.displayName,
+    passwordHash: testPasswordHash,
+    locale: identity.locale,
+    ...identity.permissions,
+    isActive: true,
+    lastSignInAt: null,
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides,
+  };
+}
+
+beforeAll(async () => {
   process.env.JWT_SECRET ||= "test-secret-with-at-least-32-characters";
+  testPasswordHash = await hashDashboardPassword(testPassword);
+});
+
+beforeEach(() => {
+  dbMocks.getDashboardAccountByUsername.mockReset();
+  dbMocks.updateDashboardAccountLastSignIn.mockReset();
+  dbMocks.updateDashboardAccountLastSignIn.mockResolvedValue(undefined);
 });
 
 describe("autenticação do dashboard", () => {
-  it("aceita somente rodrigo/rodrigo", () => {
-    expect(validateDashboardCredentials("rodrigo", "rodrigo")).toBe(true);
-    expect(validateDashboardCredentials("rodrigo", "senha-errada")).toBe(false);
-    expect(validateDashboardCredentials("admin", "rodrigo")).toBe(false);
+  it("gera hash scrypt não reversível e valida apenas a senha correta", async () => {
+    expect(testPasswordHash).toMatch(/^scrypt\$16384\$8\$1\$/);
+    expect(testPasswordHash).not.toContain(testPassword);
+    await expect(verifyDashboardPassword(testPassword, testPasswordHash)).resolves.toBe(true);
+    await expect(verifyDashboardPassword("senha-incorreta", testPasswordHash)).resolves.toBe(false);
+    await expect(verifyDashboardPassword(testPassword, "hash-invalido")).resolves.toBe(false);
   });
 
-  it("lê uma sessão assinada válida do cookie HTTP-only", async () => {
-    const token = await createDashboardSession();
+  it("autentica uma conta ativa e devolve idioma e permissões sem expor o hash", async () => {
+    dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(mgMotorsIdentity));
+
+    await expect(authenticateDashboardCredentials("mg motors", testPassword)).resolves.toEqual(mgMotorsIdentity);
+    expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mg motors");
+    expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(2);
+  });
+
+  it("rejeita senha inválida, conta ausente e conta inativa", async () => {
+    dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(accountFromIdentity(mgMotorsIdentity));
+    await expect(authenticateDashboardCredentials("mg motors", "senha-incorreta")).resolves.toBeNull();
+
+    dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(null);
+    await expect(authenticateDashboardCredentials("desconhecido", testPassword)).resolves.toBeNull();
+
+    dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(
+      accountFromIdentity(mgMotorsIdentity, { isActive: false }),
+    );
+    await expect(authenticateDashboardCredentials("mg motors", testPassword)).resolves.toBeNull();
+    expect(dbMocks.updateDashboardAccountLastSignIn).not.toHaveBeenCalled();
+  });
+
+  it("lê uma sessão assinada com identidade, idioma e matriz de permissões", async () => {
+    const token = await createDashboardSession(mgMotorsIdentity);
     const req = {
       headers: { cookie: `${DASHBOARD_SESSION_COOKIE}=${token}` },
     } as Request;
 
-    await expect(readDashboardSession(req)).resolves.toMatchObject({ username: "rodrigo" });
+    await expect(readDashboardSession(req)).resolves.toMatchObject(mgMotorsIdentity);
   });
 
   it("rejeita cookie ausente ou adulterado", async () => {

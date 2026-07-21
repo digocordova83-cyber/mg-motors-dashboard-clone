@@ -1,5 +1,5 @@
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
-import { leadMonthlyGoals, leads, type LeadMonthlyGoal } from "../drizzle/schema";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { leadImports, leadMonthlyGoals, leads, type LeadMonthlyGoal } from "../drizzle/schema";
 import { getDb } from "./db";
 import {
   buildLeadAnalytics,
@@ -118,23 +118,37 @@ async function getLeadRows(dateFrom: string, dateTo: string): Promise<LeadAnalyt
     .orderBy(asc(leads.correctedDate), asc(leads.id));
 }
 
+async function getLatestLeadImportAt(): Promise<string | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [latestImport] = await db
+    .select({ createdAt: leadImports.createdAt, completedAt: leadImports.completedAt })
+    .from(leadImports)
+    .orderBy(desc(leadImports.createdAt))
+    .limit(1);
+  const latestAt = latestImport?.completedAt ?? latestImport?.createdAt;
+  return latestAt ? new Date(latestAt).toISOString() : null;
+}
+
 export async function getLeadAnalytics(input: {
   dateFrom: string;
   dateTo: string;
-}): Promise<LeadAnalytics & { dateFrom: string; dateTo: string }> {
+}): Promise<LeadAnalytics & { dateFrom: string; dateTo: string; metadata: { updatedAt: string | null } }> {
   assertDateRange(input.dateFrom, input.dateTo);
   const competence = input.dateTo.slice(0, 7);
   const monthStart = startOfUtcMonth(input.dateTo);
   const monthEnd = endOfUtcMonth(input.dateTo);
-  const [rows, pacingRows, goal] = await Promise.all([
+  const [rows, pacingRows, goal, updatedAt] = await Promise.all([
     getLeadRows(input.dateFrom, input.dateTo),
     getLeadRows(monthStart, monthEnd),
     getLeadMonthlyGoal(competence),
+    getLatestLeadImportAt(),
   ]);
 
   return {
     dateFrom: input.dateFrom,
     dateTo: input.dateTo,
+    metadata: { updatedAt },
     ...buildLeadAnalytics({
       rows,
       pacingRows,

@@ -36,6 +36,32 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+export const dashboardAccounts = mysqlTable(
+  "dashboard_accounts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    username: varchar("username", { length: 64 }).notNull(),
+    displayName: varchar("displayName", { length: 120 }).notNull(),
+    passwordHash: text("passwordHash").notNull(),
+    locale: mysqlEnum("locale", ["pt-BR", "en-US"]).default("pt-BR").notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    canAccessGoogleAds: boolean("canAccessGoogleAds").default(true).notNull(),
+    canAccessMetaAds: boolean("canAccessMetaAds").default(true).notNull(),
+    canAccessLeads: boolean("canAccessLeads").default(true).notNull(),
+    canAccessMediaPlan: boolean("canAccessMediaPlan").default(true).notNull(),
+    canAccessOptimizations: boolean("canAccessOptimizations").default(false).notNull(),
+    canAccessHistory: boolean("canAccessHistory").default(false).notNull(),
+    canImportLeads: boolean("canImportLeads").default(false).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+    lastSignedInAt: bigint("lastSignedInAt", { mode: "number" }),
+  },
+  table => [
+    uniqueIndex("dashboard_accounts_username_unique").on(table.username),
+    index("dashboard_accounts_active_idx").on(table.isActive, table.username),
+  ],
+);
+
 export const campaignGoals = mysqlTable(
   "campaign_goals",
   {
@@ -307,6 +333,8 @@ export const leadMonthlyGoals = mysqlTable(
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type DashboardAccount = typeof dashboardAccounts.$inferSelect;
+export type InsertDashboardAccount = typeof dashboardAccounts.$inferInsert;
 export type CampaignGoal = typeof campaignGoals.$inferSelect;
 export type InsertCampaignGoal = typeof campaignGoals.$inferInsert;
 export type OptimizationCycle = typeof optimizationCycles.$inferSelect;

@@ -2,20 +2,19 @@ import { COOKIE_NAME } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
+  authenticateDashboardCredentials,
   clearDashboardSession,
+  type DashboardPermissions,
   readDashboardSession,
   setDashboardSession,
-  validateDashboardCredentials,
 } from "./dashboardAuth";
 import { loadDashboardData, MG_MOTORS_ACCOUNT_ID } from "./dashboardService";
 import {
-  assignOptimizationTask,
   completeOptimizationTask,
   getOptimizationWorkspace,
   OptimizationRecommendationInput,
   reopenOptimizationTask,
   rolloverOptimizationCycle,
-  startOptimizationTask,
   syncOptimizationFollowUps,
   syncRecommendationsToActiveCycle,
   upsertMonthlyBudgetGoal,
@@ -34,6 +33,7 @@ import {
   getLeadMonthlyGoal,
   upsertLeadMonthlyGoal,
 } from "./leadsService";
+import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -45,6 +45,22 @@ const dashboardProcedure = publicProcedure.use(async ({ ctx, next }) => {
   }
   return next({ ctx: { ...ctx, dashboardSession: session } });
 });
+
+function createPermissionProcedure(permission: keyof DashboardPermissions) {
+  return dashboardProcedure.use(({ ctx, next }) => {
+    if (!ctx.dashboardSession.permissions[permission]) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Acesso não permitido para este usuário" });
+    }
+    return next({ ctx });
+  });
+}
+
+const googleAdsProcedure = createPermissionProcedure("canAccessGoogleAds");
+const metaAdsProcedure = createPermissionProcedure("canAccessMetaAds");
+const leadsProcedure = createPermissionProcedure("canAccessLeads");
+const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations");
+const historyProcedure = createPermissionProcedure("canAccessHistory");
+const importLeadsProcedure = createPermissionProcedure("canImportLeads");
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
 const dashboardPeriodSchema = z
@@ -128,13 +144,19 @@ export const appRouter = router({
   dashboardAuth: router({
     session: publicProcedure.query(async ({ ctx }) => readDashboardSession(ctx.req)),
     login: publicProcedure
-      .input(z.object({ username: z.string().min(1), password: z.string().min(1) }))
+      .input(
+        z.object({
+          username: z.string().trim().min(1).max(64),
+          password: z.string().min(1).max(200),
+        }),
+      )
       .mutation(async ({ ctx, input }) => {
-        if (!validateDashboardCredentials(input.username, input.password)) {
+        const identity = await authenticateDashboardCredentials(input.username, input.password);
+        if (!identity) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário ou senha inválidos" });
         }
-        await setDashboardSession(ctx.res, ctx.req);
-        return { success: true, username: "rodrigo" } as const;
+        await setDashboardSession(ctx.res, ctx.req, identity);
+        return { success: true as const, ...identity };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
       clearDashboardSession(ctx.res, ctx.req);
@@ -142,14 +164,14 @@ export const appRouter = router({
     }),
   }),
   leads: router({
-    bounds: dashboardProcedure.query(() => getLeadDataBounds()),
-    analytics: dashboardProcedure
+    bounds: leadsProcedure.query(() => getLeadDataBounds()),
+    analytics: leadsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => getLeadAnalytics(input)),
-    monthlyGoal: dashboardProcedure
+    monthlyGoal: leadsProcedure
       .input(z.object({ competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida") }))
       .query(({ input }) => getLeadMonthlyGoal(input.competence)),
-    updateMonthlyGoal: dashboardProcedure
+    updateMonthlyGoal: leadsProcedure
       .input(
         z.object({
           competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida"),
@@ -159,10 +181,10 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         upsertLeadMonthlyGoal({ ...input, actor: ctx.dashboardSession.username }),
       ),
-    importHistory: dashboardProcedure
+    importHistory: leadsProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }).optional())
       .query(({ input }) => getLeadImportHistory(input?.limit ?? 20)),
-    previewCsv: dashboardProcedure.input(leadCsvUploadSchema).mutation(({ input }) =>
+    previewCsv: importLeadsProcedure.input(leadCsvUploadSchema).mutation(({ input }) =>
       mapLeadCsvError(() =>
         previewLeadCsv({
           fileName: input.fileName,
@@ -170,7 +192,7 @@ export const appRouter = router({
         }),
       ),
     ),
-    importCsv: dashboardProcedure.input(leadCsvUploadSchema).mutation(({ ctx, input }) =>
+    importCsv: importLeadsProcedure.input(leadCsvUploadSchema).mutation(({ ctx, input }) =>
       mapLeadCsvError(() =>
         importLeadCsv({
           fileName: input.fileName,
@@ -180,11 +202,17 @@ export const appRouter = router({
       ),
     ),
   }),
+  metaAds: router({
+    bounds: metaAdsProcedure.query(() => getMetaAdsBounds()),
+    data: metaAdsProcedure
+      .input(dashboardPeriodSchema)
+      .query(({ input }) => loadMetaAdsData(input.dateFrom, input.dateTo)),
+  }),
   dashboard: router({
-    getData: dashboardProcedure
+    getData: googleAdsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => loadDashboardData(input.dateFrom, input.dateTo)),
-    updateMonthlyBudgetGoal: dashboardProcedure
+    updateMonthlyBudgetGoal: googleAdsProcedure
       .input(
         z.object({
           competencia: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida"),
@@ -199,11 +227,11 @@ export const appRouter = router({
           actor: ctx.dashboardSession.username,
         }),
       ),
-    optimizationWorkspace: dashboardProcedure.query(() => getOptimizationWorkspace()),
-    optimizationHistory: dashboardProcedure.query(async () =>
+    optimizationWorkspace: optimizationsProcedure.query(() => getOptimizationWorkspace()),
+    optimizationHistory: historyProcedure.query(async () =>
       buildOptimizationHistory(await getOptimizationWorkspace()),
     ),
-    captureOptimizationFollowUps: dashboardProcedure
+    captureOptimizationFollowUps: historyProcedure
       .input(dashboardPeriodSchema)
       .mutation(async ({ input }) => {
         const workspace = await getOptimizationWorkspace();
@@ -226,7 +254,7 @@ export const appRouter = router({
           unavailableCampaignCount: eligibleTasks.length - snapshots.length,
         } as const;
       }),
-    createOptimizationTask: dashboardProcedure
+    createOptimizationTask: optimizationsProcedure
       .input(dashboardPeriodSchema.and(z.object({ sourceSignature: z.string().min(3).max(255) })))
       .mutation(async ({ ctx, input }) => {
         const data = await loadDashboardData(input.dateFrom, input.dateTo);
@@ -236,7 +264,7 @@ export const appRouter = router({
           actor: ctx.dashboardSession.username,
         });
       }),
-    createAllOptimizationTasks: dashboardProcedure
+    createAllOptimizationTasks: optimizationsProcedure
       .input(dashboardPeriodSchema)
       .mutation(async ({ ctx, input }) => {
         const data = await loadDashboardData(input.dateFrom, input.dateTo);
@@ -247,15 +275,7 @@ export const appRouter = router({
           actor: ctx.dashboardSession.username,
         });
       }),
-    assignOptimizationTask: dashboardProcedure
-      .input(z.object({ taskId: z.number().int().positive(), assignee: z.string().trim().min(2).max(120) }))
-      .mutation(({ ctx, input }) =>
-        assignOptimizationTask({ ...input, actor: ctx.dashboardSession.username }),
-      ),
-    startOptimizationTask: dashboardProcedure
-      .input(z.object({ taskId: z.number().int().positive() }))
-      .mutation(({ ctx, input }) => startOptimizationTask({ ...input, actor: ctx.dashboardSession.username })),
-    completeOptimizationTask: dashboardProcedure
+    completeOptimizationTask: optimizationsProcedure
       .input(
         dashboardPeriodSchema.and(
           z.object({
@@ -277,7 +297,7 @@ export const appRouter = router({
           snapshot: snapshot ? { ...snapshot, campaignId: task.campaignId, campaignName: task.campaignName } : null,
         });
       }),
-    rolloverOptimizationCycle: dashboardProcedure
+    rolloverOptimizationCycle: optimizationsProcedure
       .input(dashboardPeriodSchema)
       .mutation(async ({ ctx, input }) => {
         const data = await loadDashboardData(input.dateFrom, input.dateTo);
@@ -295,7 +315,7 @@ export const appRouter = router({
           campaignSnapshots,
         });
       }),
-    reopenOptimizationTask: dashboardProcedure
+    reopenOptimizationTask: optimizationsProcedure
       .input(dashboardPeriodSchema.and(z.object({ taskId: z.number().int().positive() })))
       .mutation(async ({ ctx, input }) => {
         const workspace = await getOptimizationWorkspace();

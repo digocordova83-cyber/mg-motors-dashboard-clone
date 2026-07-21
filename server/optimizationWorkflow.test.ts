@@ -1,13 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import {
-  assignOptimizationTask,
   completeOptimizationTask,
   getDb,
   getOptimizationWorkspace,
   reopenOptimizationTaskInTransaction,
   rolloverOptimizationCycleInTransaction,
-  startOptimizationTask,
   syncOptimizationFollowUpsInTransaction,
   syncRecommendationsToActiveCycle,
 } from "./db";
@@ -34,7 +32,7 @@ describe.sequential("workflow integrado de otimização", () => {
   });
 
   it(
-    "deduplica a recomendação e preserva criador, responsável, concluidor e timestamps",
+    "deduplica a recomendação e registra o usuário autenticado como responsável e concluidor",
     async () => {
       const recommendation = {
         sourceSignature: signature,
@@ -83,19 +81,6 @@ describe.sequential("workflow integrado de otimização", () => {
       expect(matching[0].createdBy).toBe(actor);
       expect(matching[0].createdAt).toBeGreaterThan(0);
 
-      await expect(startOptimizationTask({ taskId, actor })).rejects.toThrow(
-        "Defina um responsável antes de iniciar a tarefa",
-      );
-      await assignOptimizationTask({ taskId, assignee: "Responsável Vitest", actor });
-      await expect(
-        completeOptimizationTask({
-          taskId,
-          actor,
-          notes: "Conclusão antecipada que deve ser bloqueada.",
-          snapshot: null,
-        }),
-      ).rejects.toThrow("Inicie a tarefa antes de concluí-la");
-      await startOptimizationTask({ taskId, actor });
       await expect(
         completeOptimizationTask({
           taskId,
@@ -120,7 +105,7 @@ describe.sequential("workflow integrado de otimização", () => {
       const completion = workspace.completions.find(item => item.taskId === taskId);
       expect(completed).toMatchObject({
         createdBy: actor,
-        assignee: "Responsável Vitest",
+        assignee: actor,
         status: "COMPLETED",
       });
       expect(completed?.startedAt).toBeGreaterThan(0);

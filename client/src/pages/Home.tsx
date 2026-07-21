@@ -13,9 +13,16 @@ import { Button } from "@/components/ui/button";
 import { CampaignIdentity } from "@/components/CampaignIdentity";
 import { OptimizationHistoryTab } from "@/components/OptimizationHistoryTab";
 import { LeadsTab } from "@/components/LeadsTab";
+import { MetaAdsDashboard } from "@/components/MetaAdsDashboard";
+import { MediaPlanDashboard } from "@/components/MediaPlanDashboard";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { isValidLeadDateRange, resolveLeadMonthRange } from "@/lib/leadDateRange";
+import {
+  DASHBOARD_UPDATE_COPY,
+  formatDashboardUpdatedAt,
+  preserveLastSuccessfulUpdate,
+} from "@/lib/dashboardUpdate";
 import {
   buildDashboardSearch,
   resolveDashboardRoute,
@@ -35,6 +42,7 @@ import {
   Coins,
   Eye,
   EyeOff,
+  FileSpreadsheet,
   Gauge,
   History,
   Info,
@@ -52,7 +60,7 @@ import {
   TrendingUp,
   UsersRound,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -74,6 +82,7 @@ import type { AppRouter } from "../../../server/routers";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type DashboardData = RouterOutputs["dashboard"]["getData"];
+type DashboardSession = NonNullable<RouterOutputs["dashboardAuth"]["session"]>;
 type DailyPoint = DashboardData["daily"][number];
 type Campaign = DashboardData["campaigns"][number];
 type OptimizationTask = RouterOutputs["dashboard"]["optimizationWorkspace"]["tasks"][number];
@@ -83,19 +92,71 @@ const DATA_END = "2026-07-19";
 const TAG_CORRECTION_DATE = "2026-07-15";
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const NUMBER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
+type DashboardLocale = DashboardSession["locale"];
 
-const dashboardModules: Array<{ id: DashboardModuleId; label: string; icon: typeof BarChart3 }> = [
-  { id: "google-ads", label: "Google Ads", icon: BarChart3 },
-  { id: "meta-ads", label: "Meta Ads", icon: Megaphone },
-  { id: "leads", label: "Leads", icon: UsersRound },
+function ui(locale: DashboardLocale, pt: string, en: string) {
+  return locale === "en-US" ? en : pt;
+}
+
+function formatCurrency(value: number, locale: DashboardLocale = "pt-BR") {
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(value);
+}
+
+function formatNumber(value: number, locale: DashboardLocale = "pt-BR") {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value);
+}
+
+function localizeStatus(locale: DashboardLocale, status: string) {
+  if (locale !== "en-US") return status;
+  return ({ "Saudável": "Healthy", "Atenção": "Attention", "Crítico": "Critical", "Favorável": "Favorable", "Neutro": "Neutral", "Desfavorável": "Unfavorable" } as Record<string, string>)[status] ?? status;
+}
+
+function localizeGoogleStatus(locale: DashboardLocale, status: string) {
+  if (locale !== "en-US") return status === "ENABLED" ? "Ativada" : status === "PAUSED" ? "Pausada" : status;
+  return status === "ENABLED" ? "Enabled" : status === "PAUSED" ? "Paused" : status;
+}
+
+function localizeUnavailable(locale: DashboardLocale) {
+  return ui(locale, "Indisponível", "Unavailable");
+}
+
+function localizeMetricLabel(locale: DashboardLocale, key: string, fallback: string) {
+  if (locale !== "en-US") return fallback;
+  return ({
+    investment: "Investment",
+    conversions: "Conversions",
+    cpa: "CPA",
+    ctr: "CTR",
+    conversionRate: "Conversion Rate",
+    cpc: "CPC",
+    clicks: "Clicks",
+    impressions: "Impressions",
+  } as Record<string, string>)[key] ?? fallback;
+}
+
+const dashboardModules: Array<{
+  id: DashboardModuleId;
+  labels: Record<"pt-BR" | "en-US", string>;
+  permission: keyof DashboardSession["permissions"];
+  icon: typeof BarChart3;
+}> = [
+  { id: "google-ads", labels: { "pt-BR": "Google Ads", "en-US": "Google Ads" }, permission: "canAccessGoogleAds", icon: BarChart3 },
+  { id: "meta-ads", labels: { "pt-BR": "Meta Ads", "en-US": "Meta Ads" }, permission: "canAccessMetaAds", icon: Megaphone },
+  { id: "leads", labels: { "pt-BR": "Leads", "en-US": "Leads" }, permission: "canAccessLeads", icon: UsersRound },
+  { id: "media-plan", labels: { "pt-BR": "Plano de Mídia", "en-US": "Media Plan" }, permission: "canAccessMediaPlan", icon: FileSpreadsheet },
 ];
 
-const googleAdsTabs: Array<{ id: GoogleAdsTabId; label: string; icon: typeof BarChart3 }> = [
-  { id: "overview", label: "Visão Geral", icon: BarChart3 },
-  { id: "daily", label: "Acompanhamento Diário", icon: Clock3 },
-  { id: "investment", label: "Investimento", icon: CircleDollarSign },
-  { id: "optimizations", label: "Otimizações", icon: Sparkles },
-  { id: "history", label: "Histórico", icon: History },
+const googleAdsTabs: Array<{
+  id: GoogleAdsTabId;
+  labels: Record<"pt-BR" | "en-US", string>;
+  permission?: "canAccessOptimizations" | "canAccessHistory";
+  icon: typeof BarChart3;
+}> = [
+  { id: "overview", labels: { "pt-BR": "Visão Geral", "en-US": "Overview" }, icon: BarChart3 },
+  { id: "daily", labels: { "pt-BR": "Acompanhamento Diário", "en-US": "Daily Tracking" }, icon: Clock3 },
+  { id: "investment", labels: { "pt-BR": "Investimento", "en-US": "Investment" }, icon: CircleDollarSign },
+  { id: "optimizations", labels: { "pt-BR": "Otimizações", "en-US": "Optimizations" }, permission: "canAccessOptimizations", icon: Sparkles },
+  { id: "history", labels: { "pt-BR": "Histórico", "en-US": "History" }, permission: "canAccessHistory", icon: History },
 ];
 
 function getRouteFromUrl() {
@@ -112,22 +173,22 @@ function isoDateFromEnd(days: number) {
   return isoDateFromDateEnd(DATA_END, days);
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(
+function formatDate(value: string, locale: DashboardLocale = "pt-BR") {
+  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit" }).format(
     new Date(`${value}T12:00:00`),
   );
 }
 
-function formatLongDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
+function formatLongDate(value: string, locale: DashboardLocale = "pt-BR") {
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
   }).format(new Date(`${value}T12:00:00`));
 }
 
-function formatCompactCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
+function formatCompactCurrency(value: number, locale: DashboardLocale = "pt-BR") {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "BRL",
     notation: value >= 10_000 ? "compact" : "standard",
@@ -135,10 +196,10 @@ function formatCompactCurrency(value: number) {
   }).format(value);
 }
 
-function formatMetric(value: number, type: "currency" | "number" | "percent") {
-  if (type === "currency") return BRL.format(value);
-  if (type === "percent") return `${NUMBER.format(value)}%`;
-  return NUMBER.format(value);
+function formatMetric(value: number, type: "currency" | "number" | "percent", locale: DashboardLocale = "pt-BR") {
+  if (type === "currency") return formatCurrency(value, locale);
+  if (type === "percent") return `${formatNumber(value, locale)}%`;
+  return formatNumber(value, locale);
 }
 
 const MG_LOGO_URL = "/manus-storage/logo-mg-horizontal_fb43b204.svg";
@@ -289,14 +350,14 @@ function Panel({ title, subtitle, action, children, className = "" }: { title: s
   );
 }
 
-function ChartTooltip({ active, payload, label, type }: { active?: boolean; payload?: Array<{ value?: number; name?: string; color?: string }>; label?: string; type: "currency" | "number" | "percent" }) {
+function ChartTooltip({ active, payload, label, type, locale }: { active?: boolean; payload?: Array<{ value?: number; name?: string; color?: string }>; label?: string; type: "currency" | "number" | "percent"; locale: DashboardLocale }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-[#2a364b] bg-[#0a101b]/95 px-3 py-2 text-xs shadow-xl backdrop-blur">
-      <p className="mb-1.5 font-medium text-slate-300">{label ? formatLongDate(label) : ""}</p>
+      <p className="mb-1.5 font-medium text-slate-300">{label ? formatLongDate(label, locale) : ""}</p>
       {payload.map((item, index) => (
         <p key={`${item.name}-${index}`} style={{ color: item.color ?? "#f8fafc" }}>
-          {item.name}: <strong>{formatMetric(Number(item.value ?? 0), type)}</strong>
+          {item.name}: <strong>{formatMetric(Number(item.value ?? 0), type, locale)}</strong>
         </p>
       ))}
     </div>
@@ -311,6 +372,7 @@ function TimeSeriesChart({
   type,
   color,
   correctionVisible,
+  locale,
 }: {
   data: DailyPoint[];
   title: string;
@@ -319,10 +381,11 @@ function TimeSeriesChart({
   type: "currency" | "number";
   color: string;
   correctionVisible: boolean;
+  locale: DashboardLocale;
 }) {
   const gradientId = `gradient-${dataKey}`;
   return (
-    <Panel title={title} subtitle={subtitle} action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • Correção de Tag</span> : null}>
+    <Panel title={title} subtitle={subtitle} action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • {ui(locale, "Correção de Tag", "Tag Fix")}</span> : null}>
       <div className="h-[270px] px-2 pb-3 pt-5">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 12, right: 12, left: 2, bottom: 0 }}>
@@ -333,11 +396,11 @@ function TimeSeriesChart({
               </linearGradient>
             </defs>
             <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" tickFormatter={formatDate} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
-            <YAxis stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={48} tickFormatter={value => (type === "currency" ? formatCompactCurrency(Number(value)) : NUMBER.format(Number(value)))} />
-            <Tooltip content={<ChartTooltip type={type} />} cursor={{ stroke: "#475569", strokeDasharray: "3 3" }} />
+            <XAxis dataKey="date" tickFormatter={value => formatDate(String(value), locale)} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
+            <YAxis stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={48} tickFormatter={value => (type === "currency" ? formatCompactCurrency(Number(value), locale) : formatNumber(Number(value), locale))} />
+            <Tooltip content={<ChartTooltip type={type} locale={locale} />} cursor={{ stroke: "#475569", strokeDasharray: "3 3" }} />
             <Area type="monotone" dataKey={dataKey} name={title.replace(" Diário", "")} stroke={color} strokeWidth={2} fill={`url(#${gradientId})`} activeDot={{ r: 4, fill: color, stroke: "#0d1421", strokeWidth: 2 }} />
-            {correctionVisible ? <ReferenceLine x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2.5} label={{ value: "Correção de Tag", position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
+            {correctionVisible ? <ReferenceLine x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2.5} label={{ value: ui(locale, "Correção de Tag", "Tag Fix"), position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -345,7 +408,7 @@ function TimeSeriesChart({
   );
 }
 
-function StatusBadge({ status }: { status: Campaign["status"] }) {
+function StatusBadge({ status, locale = "pt-BR" }: { status: Campaign["status"]; locale?: DashboardLocale }) {
   const styles = {
     Saudável: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
     Atenção: "border-amber-500/20 bg-amber-500/10 text-amber-300",
@@ -355,7 +418,7 @@ function StatusBadge({ status }: { status: Campaign["status"] }) {
   return (
     <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-1 text-[10px] font-semibold ${styles}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-      {status}
+      {localizeStatus(locale, status)}
     </span>
   );
 }
@@ -372,10 +435,10 @@ function EmptyState({ title, description }: { title: string; description: string
   );
 }
 
-function OverviewTab({ data, correctionVisible }: { data: DashboardData; correctionVisible: boolean }) {
+function OverviewTab({ data, correctionVisible, locale }: { data: DashboardData; correctionVisible: boolean; locale: DashboardLocale }) {
   const rankingPanels = [
-    { title: "Top 10 — Melhor CPA", subtitle: "Menor custo por aquisição entre campanhas elegíveis", rows: data.rankings.best, tone: "emerald" as const },
-    { title: "Top 10 — Pior CPA", subtitle: "Maior custo por aquisição entre campanhas elegíveis", rows: data.rankings.worst, tone: "red" as const },
+    { title: ui(locale, "Top 10 — Melhor CPA", "Top 10 — Best CPA"), subtitle: ui(locale, "Menor custo por aquisição entre campanhas elegíveis", "Lowest cost per acquisition among eligible campaigns"), rows: data.rankings.best, tone: "emerald" as const },
+    { title: ui(locale, "Top 10 — Pior CPA", "Top 10 — Worst CPA"), subtitle: ui(locale, "Maior custo por aquisição entre campanhas elegíveis", "Highest cost per acquisition among eligible campaigns"), rows: data.rankings.worst, tone: "red" as const },
   ];
   const regionStyles: Record<string, string> = {
     Favorável: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
@@ -386,9 +449,9 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
   return (
     <div className="space-y-4">
       <div className="grid gap-4 xl:grid-cols-3">
-        <TimeSeriesChart data={data.daily} title="Investimento Diário" subtitle="Distribuição do investimento no período" dataKey="spend" type="currency" color="#e2212d" correctionVisible={correctionVisible} />
-        <TimeSeriesChart data={data.daily} title="Conversões Diárias" subtitle="Conversões registradas pelo Google Ads" dataKey="conversions" type="number" color="#38bdf8" correctionVisible={correctionVisible} />
-        <TimeSeriesChart data={data.daily} title="CPA Diário" subtitle="Custo por aquisição ao longo do tempo" dataKey="cpa" type="currency" color="#a78bfa" correctionVisible={correctionVisible} />
+        <TimeSeriesChart data={data.daily} title={ui(locale, "Investimento Diário", "Daily Investment")} subtitle={ui(locale, "Distribuição do investimento no período", "Investment distribution over the period")} dataKey="spend" type="currency" color="#e2212d" correctionVisible={correctionVisible} locale={locale} />
+        <TimeSeriesChart data={data.daily} title={ui(locale, "Conversões Diárias", "Daily Conversions")} subtitle={ui(locale, "Conversões registradas pelo Google Ads", "Conversions recorded by Google Ads")} dataKey="conversions" type="number" color="#38bdf8" correctionVisible={correctionVisible} locale={locale} />
+        <TimeSeriesChart data={data.daily} title={ui(locale, "CPA Diário", "Daily CPA")} subtitle={ui(locale, "Custo por aquisição ao longo do tempo", "Cost per acquisition over time")} dataKey="cpa" type="currency" color="#a78bfa" correctionVisible={correctionVisible} locale={locale} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -397,13 +460,13 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
             key={panel.title}
             title={panel.title}
             subtitle={panel.subtitle}
-            action={<span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[9px] text-slate-500">mín. {data.rankings.criteria.minimumConversions} conversões</span>}
+            action={<span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[9px] text-slate-500">{ui(locale, "mín.", "min.")} {formatNumber(data.rankings.criteria.minimumConversions, locale)} {ui(locale, "conversões", "conversions")}</span>}
           >
             {panel.rows.length ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[690px] text-left text-xs">
                   <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
-                    <tr><th className="px-4 py-3">#</th><th className="px-3 py-3">Campanha</th><th className="px-3 py-3">Produto</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-4 py-3 text-right">CPA</th></tr>
+                    <tr><th className="px-4 py-3">#</th><th className="px-3 py-3">{ui(locale, "Campanha", "Campaign")}</th><th className="px-3 py-3">{ui(locale, "Produto", "Product")}</th><th className="px-3 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-3 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-4 py-3 text-right">CPA</th></tr>
                   </thead>
                   <tbody className="divide-y divide-[#182231]">
                     {panel.rows.map((campaign, index) => (
@@ -411,15 +474,15 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
                         <td className="px-4 py-3"><span className={`inline-grid h-6 w-6 place-items-center rounded-md border text-[9px] font-bold ${panel.tone === "emerald" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300"}`}>{index + 1}</span></td>
                         <td className="max-w-[260px] px-3 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
                         <td className="px-3 py-3 text-slate-500">{campaign.product}</td>
-                        <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
-                        <td className="px-3 py-3 text-right tabular-nums text-slate-400">{BRL.format(campaign.spend)}</td>
-                        <td className={`px-4 py-3 text-right font-semibold tabular-nums ${panel.tone === "emerald" ? "text-emerald-300" : "text-red-300"}`}>{BRL.format(campaign.cpa)}</td>
+                        <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatNumber(campaign.conversions, locale)}</td>
+                        <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatCurrency(campaign.spend, locale)}</td>
+                        <td className={`px-4 py-3 text-right font-semibold tabular-nums ${panel.tone === "emerald" ? "text-emerald-300" : "text-red-300"}`}>{formatCurrency(campaign.cpa, locale)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            ) : <EmptyState title="Ranking indisponível" description={data.rankings.criteria.message} />}
+            ) : <EmptyState title={ui(locale, "Ranking indisponível", "Ranking unavailable")} description={locale === "en-US" ? "The minimum sample was not reached for this period." : data.rankings.criteria.message} />}
           </Panel>
         ))}
       </div>
@@ -427,19 +490,19 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
       {data.rankings.excludedCount > 0 ? (
         <details className="group rounded-xl border border-amber-500/15 bg-amber-500/[0.04]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-xs font-medium text-amber-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50">
-            <span>{data.rankings.excludedCount} campanha(s) excluída(s) dos rankings por amostra insuficiente</span>
+            <span>{data.rankings.excludedCount} {ui(locale, "campanha(s) excluída(s) dos rankings por amostra insuficiente", "campaign(s) excluded from rankings due to insufficient sample size")}</span>
             <span className="text-[10px] text-amber-400/70 transition-transform group-open:rotate-180">▼</span>
           </summary>
           <div className="overflow-x-auto border-t border-amber-500/10">
             <table className="w-full min-w-[720px] text-left text-xs">
-              <thead className="bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-5 py-3">Campanha</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-5 py-3">Motivo</th></tr></thead>
+              <thead className="bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-5 py-3">{ui(locale, "Campanha", "Campaign")}</th><th className="px-3 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-3 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-5 py-3">{ui(locale, "Motivo", "Reason")}</th></tr></thead>
               <tbody className="divide-y divide-[#182231]">
                 {data.rankings.excluded.map(campaign => (
                   <tr key={campaign.campaignId}>
                     <td className="px-5 py-3"><p className="font-medium text-slate-300">{campaign.campaign}</p><p className="mt-0.5 font-mono text-[9px] text-slate-700">ID {campaign.campaignId}</p></td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{BRL.format(campaign.spend)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
-                    <td className="px-5 py-3 text-amber-200/80">{campaign.reason}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatCurrency(campaign.spend, locale)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatNumber(campaign.conversions, locale)}</td>
+                    <td className="px-5 py-3 text-amber-200/80">{locale === "en-US" ? "Insufficient conversions for a reliable comparison." : campaign.reason}</td>
                   </tr>
                 ))}
               </tbody>
@@ -449,36 +512,36 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
       ) : null}
 
       <Panel
-        title="Performance por Produto"
-        subtitle="Investimento, participação, conversões, CTR e CPA por classificação determinística"
-        action={data.rankings.excludedCount ? <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] text-amber-300">{data.rankings.excludedCount} fora do ranking por amostra</span> : null}
+        title={ui(locale, "Performance por Produto", "Performance by Product")}
+        subtitle={ui(locale, "Investimento, participação, conversões, CTR e CPA por classificação determinística", "Investment, share, conversions, CTR and CPA by deterministic classification")}
+        action={data.rankings.excludedCount ? <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[9px] text-amber-300">{data.rankings.excludedCount} {ui(locale, "fora do ranking por amostra", "excluded due to sample size")}</span> : null}
       >
         <div className="grid xl:grid-cols-[0.9fr_1.1fr]">
           <div className="h-[360px] border-b border-[#1b2535] p-4 xl:border-b-0 xl:border-r">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart layout="vertical" data={data.productPerformance} margin={{ top: 4, right: 24, left: 12, bottom: 4 }}>
                 <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" tickFormatter={value => formatCompactCurrency(Number(value))} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} />
+                <XAxis type="number" tickFormatter={value => formatCompactCurrency(Number(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} />
                 <YAxis type="category" dataKey="product" width={104} tick={{ fill: "#94a3b8", fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip formatter={value => BRL.format(Number(value))} contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-                <Bar dataKey="spend" name="Investimento" fill="#e2212d" radius={[0, 4, 4, 0]} maxBarSize={24} />
+                <Tooltip formatter={value => formatCurrency(Number(value), locale)} contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                <Bar dataKey="spend" name={ui(locale, "Investimento", "Investment")} fill="#e2212d" radius={[0, 4, 4, 0]} maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-xs">
               <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
-                <tr><th className="px-5 py-3">Produto</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Participação</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">CTR</th><th className="px-5 py-3 text-right">CPA</th></tr>
+                <tr><th className="px-5 py-3">{ui(locale, "Produto", "Product")}</th><th className="px-3 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-3 py-3 text-right">{ui(locale, "Participação", "Share")}</th><th className="px-3 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-3 py-3 text-right">CTR</th><th className="px-5 py-3 text-right">CPA</th></tr>
               </thead>
               <tbody className="divide-y divide-[#182231]">
                 {data.productPerformance.map(product => (
                   <tr key={product.product} className="hover:bg-white/[0.02]">
                     <td className="px-5 py-3 font-medium text-slate-300">{product.product}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(product.spend)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-500">{NUMBER.format(product.participation)}%</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(product.conversions)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(product.ctr)}%</td>
-                    <td className="px-5 py-3 text-right font-medium tabular-nums text-slate-300">{BRL.format(product.cpa)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-300">{formatCurrency(product.spend, locale)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-500">{formatNumber(product.participation, locale)}%</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatNumber(product.conversions, locale)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatNumber(product.ctr, locale)}%</td>
+                    <td className="px-5 py-3 text-right font-medium tabular-nums text-slate-300">{formatCurrency(product.cpa, locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -487,22 +550,22 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
         </div>
       </Panel>
 
-      <Panel title="Performance por Região" subtitle={`Comparação segura com o CPA médio geral de ${BRL.format(data.summary.cpa)} • metas mensais somente quando a região foi identificada`}>
+      <Panel title={ui(locale, "Performance por Região", "Performance by Region")} subtitle={`${ui(locale, "Comparação segura com o CPA médio geral de", "Reliable comparison with the overall average CPA of")} ${formatCurrency(data.summary.cpa, locale)} • ${ui(locale, "metas mensais somente quando a região foi identificada", "monthly targets only when the region was identified")}`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[880px] text-left text-xs">
             <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
-              <tr><th className="px-5 py-3">Região</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">CPA</th><th className="px-3 py-3 text-right">Desvio vs média</th><th className="px-3 py-3 text-center">Estado</th><th className="px-5 py-3 text-right">Meta mensal leads</th></tr>
+              <tr><th className="px-5 py-3">{ui(locale, "Região", "Region")}</th><th className="px-3 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-3 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-3 py-3 text-right">CPA</th><th className="px-3 py-3 text-right">{ui(locale, "Desvio vs média", "Variance vs average")}</th><th className="px-3 py-3 text-center">{ui(locale, "Estado", "Status")}</th><th className="px-5 py-3 text-right">{ui(locale, "Meta mensal leads", "Monthly lead target")}</th></tr>
             </thead>
             <tbody className="divide-y divide-[#182231]">
               {data.regionPerformance.map(region => (
                 <tr key={region.regionKey} className="hover:bg-white/[0.02]">
                   <td className="px-5 py-3"><p className="font-medium text-slate-300">{region.region}</p><p className="mt-0.5 font-mono text-[9px] text-slate-700">{region.regionKey}</p></td>
-                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(region.spend)}</td>
-                  <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(region.conversions)}</td>
-                  <td className="px-3 py-3 text-right font-medium tabular-nums text-slate-300">{BRL.format(region.cpa)}</td>
-                  <td className={`px-3 py-3 text-right font-medium tabular-nums ${region.deviation > 0 ? "text-red-300" : region.deviation < 0 ? "text-emerald-300" : "text-slate-400"}`}>{region.deviation >= 0 ? "+" : ""}{NUMBER.format(region.deviation)}%</td>
-                  <td className="px-3 py-3 text-center"><span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-semibold ${regionStyles[region.classification]}`}>{region.classification}</span></td>
-                  <td className="px-5 py-3 text-right tabular-nums text-slate-400">{region.monthlyLeadGoal == null ? <span className="italic text-slate-700">Não mapeada</span> : NUMBER.format(region.monthlyLeadGoal)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{formatCurrency(region.spend, locale)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatNumber(region.conversions, locale)}</td>
+                  <td className="px-3 py-3 text-right font-medium tabular-nums text-slate-300">{formatCurrency(region.cpa, locale)}</td>
+                  <td className={`px-3 py-3 text-right font-medium tabular-nums ${region.deviation > 0 ? "text-red-300" : region.deviation < 0 ? "text-emerald-300" : "text-slate-400"}`}>{region.deviation >= 0 ? "+" : ""}{formatNumber(region.deviation, locale)}%</td>
+                  <td className="px-3 py-3 text-center"><span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-semibold ${regionStyles[region.classification]}`}>{localizeStatus(locale, region.classification)}</span></td>
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-400">{region.monthlyLeadGoal == null ? <span className="italic text-slate-700">{ui(locale, "Não mapeada", "Not mapped")}</span> : formatNumber(region.monthlyLeadGoal, locale)}</td>
                 </tr>
               ))}
             </tbody>
@@ -511,41 +574,41 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
       </Panel>
 
       <Panel
-        title="Insights Automáticos"
-        subtitle={`Classificação dinâmica: atenção a partir de 1,35x e crítico a partir de 2x o CPA médio de ${BRL.format(data.summary.cpa)}`}
-        action={<span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400">{data.insights.length} alertas</span>}
+        title={ui(locale, "Insights Automáticos", "Automated Insights")}
+        subtitle={`${ui(locale, "Classificação dinâmica: atenção a partir de 1,35x e crítico a partir de 2x o CPA médio de", "Dynamic classification: attention from 1.35x and critical from 2x the average CPA of")} ${formatCurrency(data.summary.cpa, locale)}`}
+        action={<span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400">{data.insights.length} {ui(locale, "alertas", "alerts")}</span>}
       >
         {data.insights.length ? (
           <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
             {data.insights.map(insight => (
               <article key={`${insight.campaignId}-${insight.severity}`} className={`rounded-lg border p-4 ${insight.severity === "Crítico" ? "border-red-500/20 bg-red-500/[0.06]" : "border-amber-500/20 bg-amber-500/[0.06]"}`}>
-                <div className="flex items-center justify-between gap-3"><StatusBadge status={insight.severity} /><span className="text-[10px] text-slate-600">{insight.ratio}x média</span></div>
+                <div className="flex items-center justify-between gap-3"><StatusBadge status={insight.severity} locale={locale} /><span className="text-[10px] text-slate-600">{insight.ratio}x {ui(locale, "média", "average")}</span></div>
                 <CampaignIdentity name={insight.campaign} campaignId={insight.campaignId} nameClassName="mt-3 text-xs font-semibold text-slate-200" />
                 <p className="mt-2 text-lg font-semibold text-white">{BRL.format(insight.cpa)}</p>
-                <p className="mt-1 text-[11px] leading-4 text-slate-500">{insight.message}</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">{locale === "en-US" ? "CPA above the expected range for the selected period." : insight.message}</p>
               </article>
             ))}
           </div>
-        ) : <EmptyState title="Nenhum alerta no período" description="As campanhas estão dentro da faixa de CPA esperada." />}
+        ) : <EmptyState title={ui(locale, "Nenhum alerta no período", "No alerts in this period")} description={ui(locale, "As campanhas estão dentro da faixa de CPA esperada.", "Campaigns are within the expected CPA range.")} />}
       </Panel>
 
-      <Panel title="Performance por Campanha" subtitle="Campanhas ativas ou com investimento, ordenadas pelo gasto do período">
+      <Panel title={ui(locale, "Performance por Campanha", "Performance by Campaign")} subtitle={ui(locale, "Campanhas ativas ou com investimento, ordenadas pelo gasto do período", "Active campaigns or campaigns with spend, ordered by investment in the period")}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1020px] text-left text-xs">
             <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
-              <tr><th className="px-5 py-3">Saúde</th><th className="px-3 py-3">Google Ads</th><th className="px-3 py-3">Campanha</th><th className="px-3 py-3">Produto</th><th className="px-3 py-3 text-right">Investimento</th><th className="px-3 py-3 text-right">Conversões</th><th className="px-3 py-3 text-right">CPA</th><th className="px-5 py-3 text-right">CTR</th></tr>
+              <tr><th className="px-5 py-3">{ui(locale, "Saúde", "Health")}</th><th className="px-3 py-3">Google Ads</th><th className="px-3 py-3">{ui(locale, "Campanha", "Campaign")}</th><th className="px-3 py-3">{ui(locale, "Produto", "Product")}</th><th className="px-3 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-3 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-3 py-3 text-right">CPA</th><th className="px-5 py-3 text-right">CTR</th></tr>
             </thead>
             <tbody className="divide-y divide-[#182231]">
               {data.campaigns.slice(0, 15).map(campaign => (
                 <tr key={campaign.campaignId} className="transition-colors hover:bg-white/[0.02]">
-                  <td className="px-5 py-3"><StatusBadge status={campaign.status} /></td>
-                  <td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-semibold ${campaign.googleStatus === "ENABLED" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-slate-500/20 bg-slate-500/10 text-slate-400"}`}>{campaign.googleStatus === "ENABLED" ? "Ativada" : campaign.googleStatus === "PAUSED" ? "Pausada" : campaign.googleStatus}</span></td>
+                  <td className="px-5 py-3"><StatusBadge status={campaign.status} locale={locale} /></td>
+                  <td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-semibold ${campaign.googleStatus === "ENABLED" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-slate-500/20 bg-slate-500/10 text-slate-400"}`}>{localizeGoogleStatus(locale, campaign.googleStatus)}</span></td>
                   <td className="max-w-[300px] px-3 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
                   <td className="px-3 py-3 text-slate-500">{campaign.product}</td>
-                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.spend)}</td>
-                  <td className="px-3 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
-                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.cpa)}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.ctr)}%</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{formatCurrency(campaign.spend, locale)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-400">{formatNumber(campaign.conversions, locale)}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-slate-300">{formatCurrency(campaign.cpa, locale)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-400">{formatNumber(campaign.ctr, locale)}%</td>
                 </tr>
               ))}
             </tbody>
@@ -556,26 +619,26 @@ function OverviewTab({ data, correctionVisible }: { data: DashboardData; correct
   );
 }
 
-function NullableMetric({ value, format }: { value: number | null; format: "currency" | "number" | "percent" }) {
-  if (value == null) return <span className="text-[10px] italic text-slate-700">Indisponível</span>;
-  return <>{formatMetric(value, format)}</>;
+function NullableMetric({ value, format, locale }: { value: number | null; format: "currency" | "number" | "percent"; locale: DashboardLocale }) {
+  if (value == null) return <span className="text-[10px] italic text-slate-700">{localizeUnavailable(locale)}</span>;
+  return <>{formatMetric(value, format, locale)}</>;
 }
 
-function ComparisonDelta({ value, preference, suffix = "" }: { value: number | null; preference: "higher" | "lower" | "contextual"; suffix?: string }) {
-  if (value == null) return <span className="text-[10px] italic text-slate-700">Indisponível</span>;
+function ComparisonDelta({ value, preference, suffix = "", locale }: { value: number | null; preference: "higher" | "lower" | "contextual"; suffix?: string; locale: DashboardLocale }) {
+  if (value == null) return <span className="text-[10px] italic text-slate-700">{localizeUnavailable(locale)}</span>;
   const favorable = preference === "contextual" ? null : preference === "lower" ? value <= 0 : value >= 0;
   const tone = favorable == null ? "border-sky-500/20 bg-sky-500/10 text-sky-300" : favorable ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300";
-  return <span className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-semibold ${tone}`}>{value >= 0 ? "+" : ""}{NUMBER.format(value)}%{suffix ? ` ${suffix}` : ""}</span>;
+  return <span className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-semibold ${tone}`}>{value >= 0 ? "+" : ""}{formatNumber(value, locale)}%{suffix ? ` ${suffix}` : ""}</span>;
 }
 
-function DailyTab({ data, correctionVisible }: { data: DashboardData; correctionVisible: boolean }) {
+function DailyTab({ data, correctionVisible, locale }: { data: DashboardData; correctionVisible: boolean; locale: DashboardLocale }) {
   const [campaignSearch, setCampaignSearch] = useState("");
   const comparison = data.dailyComparison;
   const normalizedSearch = campaignSearch.trim().toLowerCase();
   const filteredCampaigns = comparison.campaigns.filter(item =>
     !normalizedSearch || item.campaign.toLowerCase().includes(normalizedSearch) || item.campaignId.includes(normalizedSearch),
   );
-  if (!comparison.referenceDate) return <Panel title="Acompanhamento Diário"><EmptyState title="Dados insuficientes" description="Não há um dia fechado disponível no período." /></Panel>;
+  if (!comparison.referenceDate) return <Panel title={ui(locale, "Acompanhamento Diário", "Daily Tracking")}><EmptyState title={ui(locale, "Dados insuficientes", "Insufficient data")} description={ui(locale, "Não há um dia fechado disponível no período.", "There is no closed day available in this period.")} /></Panel>;
 
   const cardIcons: Record<string, ReactNode> = {
     investment: <Coins className="h-4 w-4" />,
@@ -591,30 +654,30 @@ function DailyTab({ data, correctionVisible }: { data: DashboardData; correction
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {comparison.cards.map(card => (
           <article key={card.key} className="rounded-xl border border-[#1e293b] bg-[#0d1421] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
-            <div className="flex items-center justify-between text-slate-600"><p className="text-[9px] font-semibold uppercase tracking-[0.12em]">{card.label} D-1</p>{cardIcons[card.key]}</div>
-            <p className="mt-2 text-lg font-semibold text-white"><NullableMetric value={card.d1} format={card.format} /></p>
-            <div className="mt-2 flex items-center justify-between gap-2"><ComparisonDelta value={card.deltaVsD2} preference={card.preference} suffix="vs D-2" /><span className="text-[9px] text-slate-700">{formatDate(comparison.referenceDate)}</span></div>
+            <div className="flex items-center justify-between text-slate-600"><p className="text-[9px] font-semibold uppercase tracking-[0.12em]">{localizeMetricLabel(locale, card.key, card.label)} D-1</p>{cardIcons[card.key]}</div>
+            <p className="mt-2 text-lg font-semibold text-white"><NullableMetric locale={locale} value={card.d1} format={card.format} /></p>
+            <div className="mt-2 flex items-center justify-between gap-2"><ComparisonDelta locale={locale} value={card.deltaVsD2} preference={card.preference} suffix="vs D-2" /><span className="text-[9px] text-slate-700">{formatDate(comparison.referenceDate, locale)}</span></div>
           </article>
         ))}
       </div>
 
-      <Panel title="Acompanhamento Diário — Comparativo" subtitle={`D-1 fechado em ${formatLongDate(comparison.referenceDate)} • referências e médias independentes`}>
+      <Panel title={ui(locale, "Acompanhamento Diário — Comparativo", "Daily Tracking — Comparison")} subtitle={`D-1 ${ui(locale, "fechado em", "closed on")} ${formatLongDate(comparison.referenceDate, locale)} • ${ui(locale, "referências e médias independentes", "independent references and averages")}`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1140px] text-left text-xs">
             <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.11em] text-slate-600">
-              <tr><th className="px-5 py-3">Métrica</th><th className="px-4 py-3 text-right">D-1</th><th className="px-4 py-3 text-right">D-2</th><th className="px-4 py-3 text-center">Variação</th><th className="px-4 py-3 text-right">7 dias atrás</th><th className="px-4 py-3 text-center">Variação 7d</th><th className="px-4 py-3 text-right">Média 7d</th><th className="px-5 py-3 text-right">Média 30d</th></tr>
+              <tr><th className="px-5 py-3">{ui(locale, "Métrica", "Metric")}</th><th className="px-4 py-3 text-right">D-1</th><th className="px-4 py-3 text-right">D-2</th><th className="px-4 py-3 text-center">{ui(locale, "Variação", "Change")}</th><th className="px-4 py-3 text-right">{ui(locale, "7 dias atrás", "7 days ago")}</th><th className="px-4 py-3 text-center">{ui(locale, "Variação 7d", "7d change")}</th><th className="px-4 py-3 text-right">{ui(locale, "Média 7d", "7d average")}</th><th className="px-5 py-3 text-right">{ui(locale, "Média 30d", "30d average")}</th></tr>
             </thead>
             <tbody className="divide-y divide-[#182231]">
               {comparison.table.map(metric => (
                 <tr key={metric.key} className="hover:bg-white/[0.02]">
-                  <td className="px-5 py-3"><p className="font-medium text-slate-300">{metric.label}</p><p className="mt-0.5 text-[9px] text-slate-700">{formatDate(comparison.referenceDate)}</p></td>
-                  <td className="px-4 py-3 text-right font-medium tabular-nums text-white"><NullableMetric value={metric.d1} format={metric.format} /></td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.d2} format={metric.format} /></td>
-                  <td className="px-4 py-3 text-center"><ComparisonDelta value={metric.deltaVsD2} preference={metric.preference} /></td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.weekAgo} format={metric.format} /></td>
-                  <td className="px-4 py-3 text-center"><ComparisonDelta value={metric.deltaVsWeekAgo} preference={metric.preference} /></td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.average7d} format={metric.format} /></td>
-                  <td className="px-5 py-3 text-right tabular-nums text-slate-400"><NullableMetric value={metric.average30d} format={metric.format} /></td>
+                  <td className="px-5 py-3"><p className="font-medium text-slate-300">{localizeMetricLabel(locale, metric.key, metric.label)}</p><p className="mt-0.5 text-[9px] text-slate-700">{formatDate(comparison.referenceDate, locale)}</p></td>
+                  <td className="px-4 py-3 text-right font-medium tabular-nums text-white"><NullableMetric locale={locale} value={metric.d1} format={metric.format} /></td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric locale={locale} value={metric.d2} format={metric.format} /></td>
+                  <td className="px-4 py-3 text-center"><ComparisonDelta locale={locale} value={metric.deltaVsD2} preference={metric.preference} /></td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric locale={locale} value={metric.weekAgo} format={metric.format} /></td>
+                  <td className="px-4 py-3 text-center"><ComparisonDelta locale={locale} value={metric.deltaVsWeekAgo} preference={metric.preference} /></td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400"><NullableMetric locale={locale} value={metric.average7d} format={metric.format} /></td>
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-400"><NullableMetric locale={locale} value={metric.average30d} format={metric.format} /></td>
                 </tr>
               ))}
             </tbody>
@@ -623,78 +686,78 @@ function DailyTab({ data, correctionVisible }: { data: DashboardData; correction
       </Panel>
 
       <Panel
-        title="Campanhas — Ontem vs Anteontem"
-        subtitle={`ID e nome exatos • ${formatLongDate(comparison.referenceDate)} contra ${comparison.previousDate ? formatLongDate(comparison.previousDate) : "indisponível"}`}
-        action={<span className="hidden rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400 sm:inline-flex">{filteredCampaigns.length} campanhas</span>}
+        title={ui(locale, "Campanhas — Ontem vs Anteontem", "Campaigns — Yesterday vs Previous Day")}
+        subtitle={`${ui(locale, "ID e nome exatos", "Exact ID and name")} • ${formatLongDate(comparison.referenceDate, locale)} ${ui(locale, "contra", "vs")} ${comparison.previousDate ? formatLongDate(comparison.previousDate, locale) : localizeUnavailable(locale).toLowerCase()}`}
+        action={<span className="hidden rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400 sm:inline-flex">{filteredCampaigns.length} {ui(locale, "campanhas", "campaigns")}</span>}
       >
         <div className="border-b border-[#1b2535] p-4">
           <label className="relative block w-full max-w-[420px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
-            <Input value={campaignSearch} onChange={event => setCampaignSearch(event.target.value)} placeholder="Buscar por ID ou nome da campanha..." className="h-9 border-[#273247] bg-[#101827] pl-9 text-xs text-white placeholder:text-slate-600 focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" />
+            <Input value={campaignSearch} onChange={event => setCampaignSearch(event.target.value)} placeholder={ui(locale, "Buscar por ID ou nome da campanha...", "Search by campaign ID or name...")} className="h-9 border-[#273247] bg-[#101827] pl-9 text-xs text-white placeholder:text-slate-600 focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" />
           </label>
         </div>
         {filteredCampaigns.length ? (
           <div className="max-h-[720px] overflow-auto">
             <table className="w-full min-w-[1420px] text-left text-xs">
               <thead className="sticky top-0 z-10 border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">
-                <tr><th className="px-5 py-3">Campanha</th><th className="px-4 py-3 text-right">Orçamento/dia</th><th className="px-4 py-3 text-right">Inv. D-1</th><th className="px-4 py-3 text-right">Inv. D-2</th><th className="px-4 py-3 text-center">Var. Inv.</th><th className="px-4 py-3 text-right">Conv. D-1</th><th className="px-4 py-3 text-right">Conv. D-2</th><th className="px-4 py-3 text-center">Var. Conv.</th><th className="px-4 py-3 text-right">CPA D-1</th><th className="px-4 py-3 text-right">CPA D-2</th><th className="px-5 py-3 text-center">Var. CPA</th></tr>
+                <tr><th className="px-5 py-3">{ui(locale, "Campanha", "Campaign")}</th><th className="px-4 py-3 text-right">{ui(locale, "Orçamento/dia", "Daily budget")}</th><th className="px-4 py-3 text-right">{ui(locale, "Inv. D-1", "Spend D-1")}</th><th className="px-4 py-3 text-right">{ui(locale, "Inv. D-2", "Spend D-2")}</th><th className="px-4 py-3 text-center">{ui(locale, "Var. Inv.", "Spend Chg.")}</th><th className="px-4 py-3 text-right">{ui(locale, "Conv. D-1", "Conv. D-1")}</th><th className="px-4 py-3 text-right">{ui(locale, "Conv. D-2", "Conv. D-2")}</th><th className="px-4 py-3 text-center">{ui(locale, "Var. Conv.", "Conv. Chg.")}</th><th className="px-4 py-3 text-right">CPA D-1</th><th className="px-4 py-3 text-right">CPA D-2</th><th className="px-5 py-3 text-center">{ui(locale, "Var. CPA", "CPA Chg.")}</th></tr>
               </thead>
               <tbody className="divide-y divide-[#182231]">
                 {filteredCampaigns.map(campaign => (
                   <tr key={campaign.campaignId} className="hover:bg-white/[0.02]">
                     <td className="max-w-[320px] px-5 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.budget} format="currency" /></td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric value={campaign.d1?.investment ?? null} format="currency" /></td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.d2?.investment ?? null} format="currency" /></td>
-                    <td className="px-4 py-3 text-center"><ComparisonDelta value={campaign.deltas.investment} preference="contextual" /></td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric value={campaign.d1?.conversions ?? null} format="number" /></td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.d2?.conversions ?? null} format="number" /></td>
-                    <td className="px-4 py-3 text-center"><ComparisonDelta value={campaign.deltas.conversions} preference="higher" /></td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric value={campaign.d1?.cpa ?? null} format="currency" /></td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric value={campaign.d2?.cpa ?? null} format="currency" /></td>
-                    <td className="px-5 py-3 text-center"><ComparisonDelta value={campaign.deltas.cpa} preference="lower" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric locale={locale} value={campaign.budget} format="currency" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric locale={locale} value={campaign.d1?.investment ?? null} format="currency" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric locale={locale} value={campaign.d2?.investment ?? null} format="currency" /></td>
+                    <td className="px-4 py-3 text-center"><ComparisonDelta locale={locale} value={campaign.deltas.investment} preference="contextual" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric locale={locale} value={campaign.d1?.conversions ?? null} format="number" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric locale={locale} value={campaign.d2?.conversions ?? null} format="number" /></td>
+                    <td className="px-4 py-3 text-center"><ComparisonDelta locale={locale} value={campaign.deltas.conversions} preference="higher" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-300"><NullableMetric locale={locale} value={campaign.d1?.cpa ?? null} format="currency" /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-500"><NullableMetric locale={locale} value={campaign.d2?.cpa ?? null} format="currency" /></td>
+                    <td className="px-5 py-3 text-center"><ComparisonDelta locale={locale} value={campaign.deltas.cpa} preference="lower" /></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : <EmptyState title="Nenhuma campanha encontrada" description="Ajuste a busca por ID ou nome da campanha." />}
+        ) : <EmptyState title={ui(locale, "Nenhuma campanha encontrada", "No campaign found")} description={ui(locale, "Ajuste a busca por ID ou nome da campanha.", "Adjust the search by campaign ID or name.")} />}
       </Panel>
 
-      <Panel title="Evolução Diária — Investimento e Conversões" subtitle="Série completa do período selecionado" action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • Correção de Tag</span> : null}>
+      <Panel title={ui(locale, "Evolução Diária — Investimento e Conversões", "Daily Trend — Investment and Conversions")} subtitle={ui(locale, "Série completa do período selecionado", "Complete series for the selected period")} action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • {ui(locale, "Correção de Tag", "Tag Fix")}</span> : null}>
         <div className="h-[340px] px-3 pb-4 pt-5">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data.daily} margin={{ top: 15, right: 16, left: 2, bottom: 0 }}>
               <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
-              <YAxis yAxisId="money" tickFormatter={value => formatCompactCurrency(Number(value))} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={56} />
+              <XAxis dataKey="date" tickFormatter={value => formatDate(String(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
+              <YAxis yAxisId="money" tickFormatter={value => formatCompactCurrency(Number(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={56} />
               <YAxis yAxisId="volume" orientation="right" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={44} />
-              <Tooltip content={<ChartTooltip type="currency" />} />
+              <Tooltip content={<ChartTooltip type="currency" locale={locale} />} />
               <Legend wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
-              <Bar yAxisId="money" dataKey="spend" name="Investimento" fill="#e2212d" radius={[3, 3, 0, 0]} maxBarSize={26} opacity={0.75} />
-              <Line yAxisId="volume" type="monotone" dataKey="conversions" name="Conversões" stroke="#38bdf8" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-              {correctionVisible ? <ReferenceLine yAxisId="money" x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2.5} label={{ value: "Correção de Tag", position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
+              <Bar yAxisId="money" dataKey="spend" name={ui(locale, "Investimento", "Investment")} fill="#e2212d" radius={[3, 3, 0, 0]} maxBarSize={26} opacity={0.75} />
+              <Line yAxisId="volume" type="monotone" dataKey="conversions" name={ui(locale, "Conversões", "Conversions")} stroke="#38bdf8" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              {correctionVisible ? <ReferenceLine yAxisId="money" x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2.5} label={{ value: ui(locale, "Correção de Tag", "Tag Fix"), position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </Panel>
 
-      <Panel title="Histórico Diário" subtitle="Spend, conversões, CPA, CTR, CPC e cliques por data">
+      <Panel title={ui(locale, "Histórico Diário", "Daily History")} subtitle={ui(locale, "Spend, conversões, CPA, CTR, CPC e cliques por data", "Spend, conversions, CPA, CTR, CPC and clicks by date")}>
         <div className="max-h-[620px] overflow-auto">
           <table className="w-full min-w-[860px] text-left text-xs">
             <thead className="sticky top-0 z-10 border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.12em] text-slate-600">
-              <tr><th className="px-5 py-3">Data</th><th className="px-4 py-3 text-right">Investimento</th><th className="px-4 py-3 text-right">Conversões</th><th className="px-4 py-3 text-right">CPA</th><th className="px-4 py-3 text-right">CTR</th><th className="px-4 py-3 text-right">CPC</th><th className="px-5 py-3 text-right">Cliques</th></tr>
+              <tr><th className="px-5 py-3">{ui(locale, "Data", "Date")}</th><th className="px-4 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-4 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-4 py-3 text-right">CPA</th><th className="px-4 py-3 text-right">CTR</th><th className="px-4 py-3 text-right">CPC</th><th className="px-5 py-3 text-right">{ui(locale, "Cliques", "Clicks")}</th></tr>
             </thead>
             <tbody className="divide-y divide-[#182231]">
               {[...data.daily].reverse().map(day => (
                 <tr key={day.date} className={day.date === TAG_CORRECTION_DATE ? "bg-amber-500/[0.06]" : "hover:bg-white/[0.02]"}>
-                  <td className="px-5 py-3 font-medium text-slate-300">{formatLongDate(day.date)} {day.date === TAG_CORRECTION_DATE ? <span className="ml-2 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] text-amber-300">Correção de Tag</span> : null}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(day.spend)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(day.conversions)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(day.cpa)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(day.ctr)}%</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{BRL.format(day.cpc)}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-slate-500">{NUMBER.format(day.clicks)}</td>
+                  <td className="px-5 py-3 font-medium text-slate-300">{formatLongDate(day.date, locale)} {day.date === TAG_CORRECTION_DATE ? <span className="ml-2 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] text-amber-300">{ui(locale, "Correção de Tag", "Tag Fix")}</span> : null}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatCurrency(day.spend, locale)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{formatNumber(day.conversions, locale)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatCurrency(day.cpa, locale)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{formatNumber(day.ctr, locale)}%</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{formatCurrency(day.cpc, locale)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-slate-500">{formatNumber(day.clicks, locale)}</td>
                 </tr>
               ))}
             </tbody>
@@ -705,7 +768,7 @@ function DailyTab({ data, correctionVisible }: { data: DashboardData; correction
   );
 }
 
-function InvestmentTab({ data, correctionVisible }: { data: DashboardData; correctionVisible: boolean }) {
+function InvestmentTab({ data, correctionVisible, locale }: { data: DashboardData; correctionVisible: boolean; locale: DashboardLocale }) {
   const utils = trpc.useUtils();
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState("");
@@ -720,14 +783,16 @@ function InvestmentTab({ data, correctionVisible }: { data: DashboardData; corre
 
   function openGoalEditor() {
     if (!pacing) return;
-    setGoalInput(pacing.monthlyGoal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    setGoalInput(pacing.monthlyGoal.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     setEditingGoal(true);
   }
 
   function saveGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!pacing) return;
-    const amount = Number(goalInput.replace(/\./g, "").replace(",", "."));
+    const amount = locale === "en-US"
+      ? Number(goalInput.replace(/,/g, ""))
+      : Number(goalInput.replace(/\./g, "").replace(",", "."));
     if (!Number.isFinite(amount) || amount <= 0) return;
     updateGoal.mutate({ competencia: pacing.competencia, amount });
   }
@@ -735,46 +800,46 @@ function InvestmentTab({ data, correctionVisible }: { data: DashboardData; corre
   const paceState = !pacing
     ? null
     : pacing.pacePercent > 105
-      ? { label: "Acima do ritmo ideal", className: "border-red-500/20 bg-red-500/10 text-red-300", bar: "bg-red-500" }
+      ? { label: ui(locale, "Acima do ritmo ideal", "Above ideal pace"), className: "border-red-500/20 bg-red-500/10 text-red-300", bar: "bg-red-500" }
       : pacing.pacePercent < 95
-        ? { label: "Abaixo do ritmo ideal", className: "border-amber-500/20 bg-amber-500/10 text-amber-300", bar: "bg-amber-400" }
-        : { label: "Dentro do ritmo ideal", className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300", bar: "bg-emerald-400" };
+        ? { label: ui(locale, "Abaixo do ritmo ideal", "Below ideal pace"), className: "border-amber-500/20 bg-amber-500/10 text-amber-300", bar: "bg-amber-400" }
+        : { label: ui(locale, "Dentro do ritmo ideal", "Within ideal pace"), className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300", bar: "bg-emerald-400" };
 
   return (
     <div className="space-y-4">
       {pacing && paceState ? (
         <>
           <Panel
-            title={`Pacing Mensal • ${pacing.competencia.split("-").reverse().join("/")}`}
-            subtitle={`Último dia fechado: ${formatLongDate(pacing.lastClosedDate)} • ${pacing.closedDays} de ${pacing.totalDays} dias`}
+            title={`${ui(locale, "Pacing Mensal", "Monthly Pacing")} • ${pacing.competencia.split("-").reverse().join("/")}`}
+            subtitle={`${ui(locale, "Último dia fechado", "Last closed day")}: ${formatLongDate(pacing.lastClosedDate, locale)} • ${pacing.closedDays} ${ui(locale, "de", "of")} ${pacing.totalDays} ${ui(locale, "dias", "days")}`}
             action={
               <button type="button" onClick={openGoalEditor} className="inline-flex items-center gap-1.5 rounded-md border border-[#344158] bg-[#111a29] px-2.5 py-2 text-[10px] font-semibold text-slate-300 transition-colors hover:border-[#e2212d]/60 hover:text-white active:scale-[0.97]">
-                <PencilLine className="h-3.5 w-3.5 text-[#e2212d]" /> Editar meta
+                <PencilLine className="h-3.5 w-3.5 text-[#e2212d]" /> {ui(locale, "Editar meta", "Edit target")}
               </button>
             }
           >
             {editingGoal ? (
               <form onSubmit={saveGoal} className="flex flex-col gap-3 border-b border-[#1b2535] bg-[#0a101b]/70 px-5 py-4 sm:flex-row sm:items-end">
                 <label className="block flex-1">
-                  <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.13em] text-slate-600">Meta mensal de mídia</span>
-                  <Input value={goalInput} onChange={event => setGoalInput(event.target.value)} inputMode="decimal" aria-label="Meta mensal de mídia" className="h-10 border-[#344158] bg-[#101827] text-sm text-white focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" autoFocus />
+                  <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.13em] text-slate-600">{ui(locale, "Meta mensal de mídia", "Monthly media target")}</span>
+                  <Input value={goalInput} onChange={event => setGoalInput(event.target.value)} inputMode="decimal" aria-label={ui(locale, "Meta mensal de mídia", "Monthly media target")} className="h-10 border-[#344158] bg-[#101827] text-sm text-white focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20" autoFocus />
                 </label>
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => setEditingGoal(false)} className="h-10 border-[#344158] bg-transparent text-xs text-slate-400 hover:bg-white/5 hover:text-white">Cancelar</Button>
-                  <Button type="submit" disabled={updateGoal.isPending} className="h-10 bg-[#e2212d] text-xs text-white hover:bg-[#c91622]">{updateGoal.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}Salvar meta</Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingGoal(false)} className="h-10 border-[#344158] bg-transparent text-xs text-slate-400 hover:bg-white/5 hover:text-white">{ui(locale, "Cancelar", "Cancel")}</Button>
+                  <Button type="submit" disabled={updateGoal.isPending} className="h-10 bg-[#e2212d] text-xs text-white hover:bg-[#c91622]">{updateGoal.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}{ui(locale, "Salvar meta", "Save target")}</Button>
                 </div>
-                {updateGoal.error ? <p className="text-[10px] text-red-400">Não foi possível atualizar a meta. Tente novamente.</p> : null}
+                {updateGoal.error ? <p className="text-[10px] text-red-400">{ui(locale, "Não foi possível atualizar a meta. Tente novamente.", "The target could not be updated. Please try again.")}</p> : null}
               </form>
             ) : null}
 
             <div className="grid gap-px bg-[#1b2535] sm:grid-cols-2 xl:grid-cols-6">
               {[
-                { label: "Meta mensal", value: BRL.format(pacing.monthlyGoal), detail: "configuração persistente" },
-                { label: "Investido", value: BRL.format(pacing.invested), detail: `${NUMBER.format(pacing.achievedPercent)}% da meta` },
-                { label: "Restante", value: BRL.format(pacing.remaining), detail: `${pacing.remainingDays} dias restantes` },
-                { label: "Projeção", value: BRL.format(pacing.projected), detail: `${pacing.projectedDifference >= 0 ? "+" : ""}${BRL.format(pacing.projectedDifference)} vs meta` },
-                { label: "Média real/dia", value: BRL.format(pacing.averageDaily), detail: `ideal ${BRL.format(pacing.idealDaily)}` },
-                { label: "Ideal restante/dia", value: BRL.format(pacing.idealDailyRemaining), detail: `${NUMBER.format(pacing.pacePercent)}% do ritmo` },
+                { label: ui(locale, "Meta mensal", "Monthly target"), value: formatCurrency(pacing.monthlyGoal, locale), detail: ui(locale, "configuração persistente", "persistent setting") },
+                { label: ui(locale, "Investido", "Invested"), value: formatCurrency(pacing.invested, locale), detail: `${formatNumber(pacing.achievedPercent, locale)}% ${ui(locale, "da meta", "of target")}` },
+                { label: ui(locale, "Restante", "Remaining"), value: formatCurrency(pacing.remaining, locale), detail: `${pacing.remainingDays} ${ui(locale, "dias restantes", "days remaining")}` },
+                { label: ui(locale, "Projeção", "Projection"), value: formatCurrency(pacing.projected, locale), detail: `${pacing.projectedDifference >= 0 ? "+" : ""}${formatCurrency(pacing.projectedDifference, locale)} ${ui(locale, "vs meta", "vs target")}` },
+                { label: ui(locale, "Média real/dia", "Actual average/day"), value: formatCurrency(pacing.averageDaily, locale), detail: `${ui(locale, "ideal", "ideal")} ${formatCurrency(pacing.idealDaily, locale)}` },
+                { label: ui(locale, "Ideal restante/dia", "Required remaining/day"), value: formatCurrency(pacing.idealDailyRemaining, locale), detail: `${formatNumber(pacing.pacePercent, locale)}% ${ui(locale, "do ritmo", "of pace")}` },
               ].map(item => (
                 <article key={item.label} className="bg-[#0d1421] px-5 py-4">
                   <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-slate-600">{item.label}</p>
@@ -787,10 +852,10 @@ function InvestmentTab({ data, correctionVisible }: { data: DashboardData; corre
             <div className="px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-[10px] font-medium text-slate-400">Ritmo acumulado contra o ideal até D-1</p>
-                  <p className="mt-1 text-[10px] text-slate-600">100% representa aderência exata ao plano mensal.</p>
+                  <p className="text-[10px] font-medium text-slate-400">{ui(locale, "Ritmo acumulado contra o ideal até D-1", "Cumulative pace versus ideal through D-1")}</p>
+                  <p className="mt-1 text-[10px] text-slate-600">{ui(locale, "100% representa aderência exata ao plano mensal.", "100% represents exact alignment with the monthly plan.")}</p>
                 </div>
-                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${paceState.className}`}>{paceState.label} • {NUMBER.format(pacing.pacePercent)}%</span>
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${paceState.className}`}>{paceState.label} • {formatNumber(pacing.pacePercent, locale)}%</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#172132]">
                 <div className={`h-full rounded-full ${paceState.bar}`} style={{ width: `${Math.min(pacing.pacePercent, 100)}%` }} />
@@ -798,53 +863,53 @@ function InvestmentTab({ data, correctionVisible }: { data: DashboardData; corre
             </div>
           </Panel>
 
-          <Panel title="Pacing Mensal Acumulado" subtitle="Real, ideal, projeção pelo ritmo observado e meta mensal">
+          <Panel title={ui(locale, "Pacing Mensal Acumulado", "Cumulative Monthly Pacing")} subtitle={ui(locale, "Real, ideal, projeção pelo ritmo observado e meta mensal", "Actual, ideal, observed-pace projection and monthly target")}>
             <div className="h-[360px] px-3 pb-4 pt-5">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={pacing.series} margin={{ top: 15, right: 16, left: 2, bottom: 0 }}>
                   <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={22} />
-                  <YAxis tickFormatter={value => formatCompactCurrency(Number(value))} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={62} />
-                  <Tooltip content={<ChartTooltip type="currency" />} cursor={{ stroke: "#475569", strokeDasharray: "3 3" }} />
+                  <XAxis dataKey="date" tickFormatter={value => formatDate(String(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={22} />
+                  <YAxis tickFormatter={value => formatCompactCurrency(Number(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={62} />
+                  <Tooltip content={<ChartTooltip type="currency" locale={locale} />} cursor={{ stroke: "#475569", strokeDasharray: "3 3" }} />
                   <Legend wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
                   <Line type="monotone" dataKey="real" name="Real" stroke="#e2212d" strokeWidth={2.5} dot={false} connectNulls={false} />
                   <Line type="monotone" dataKey="ideal" name="Ideal" stroke="#38bdf8" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="projection" name="Projeção" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 4" dot={false} />
-                  <Line type="linear" dataKey="monthlyGoal" name="Meta mensal" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="2 4" dot={false} />
-                  {correctionVisible ? <ReferenceLine x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2} label={{ value: "Correção de Tag", position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
+                  <Line type="monotone" dataKey="projection" name={ui(locale, "Projeção", "Projection")} stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 4" dot={false} />
+                  <Line type="linear" dataKey="monthlyGoal" name={ui(locale, "Meta mensal", "Monthly target")} stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="2 4" dot={false} />
+                  {correctionVisible ? <ReferenceLine x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2} label={{ value: ui(locale, "Correção de Tag", "Tag Fix"), position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </Panel>
         </>
       ) : (
-        <Panel title="Pacing Mensal"><EmptyState title="Meta mensal não configurada" description="Cadastre uma meta de mídia para calcular ritmo, projeção e necessidade diária." /></Panel>
+        <Panel title={ui(locale, "Pacing Mensal", "Monthly Pacing")}><EmptyState title={ui(locale, "Meta mensal não configurada", "Monthly target not configured")} description={ui(locale, "Cadastre uma meta de mídia para calcular ritmo, projeção e necessidade diária.", "Set a media target to calculate pace, projection and daily requirement.")} /></Panel>
       )}
 
-      <Panel title="Investimento por Período" subtitle="Série diária com referência da correção de tag" action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • Correção de Tag</span> : null}>
+      <Panel title={ui(locale, "Investimento por Período", "Investment by Period")} subtitle={ui(locale, "Série diária com referência da correção de tag", "Daily series with tag-fix reference")} action={correctionVisible ? <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">15/07 • {ui(locale, "Correção de Tag", "Tag Fix")}</span> : null}>
         <div className="h-[320px] px-3 pb-4 pt-5">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.daily} margin={{ top: 15, right: 16, left: 2, bottom: 0 }}>
               <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
-              <YAxis tickFormatter={value => formatCompactCurrency(Number(value))} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={60} />
-              <Tooltip content={<ChartTooltip type="currency" />} />
-              <Bar dataKey="spend" name="Investimento" fill="#e2212d" radius={[4, 4, 0, 0]} maxBarSize={30} />
-              {correctionVisible ? <ReferenceLine x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2.5} label={{ value: "Correção de Tag", position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
+              <XAxis dataKey="date" tickFormatter={value => formatDate(String(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
+              <YAxis tickFormatter={value => formatCompactCurrency(Number(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={60} />
+              <Tooltip content={<ChartTooltip type="currency" locale={locale} />} />
+              <Bar dataKey="spend" name={ui(locale, "Investimento", "Investment")} fill="#e2212d" radius={[4, 4, 0, 0]} maxBarSize={30} />
+              {correctionVisible ? <ReferenceLine x={TAG_CORRECTION_DATE} stroke="#fbbf24" strokeDasharray="3 3" strokeWidth={2.5} label={{ value: ui(locale, "Correção de Tag", "Tag Fix"), position: "insideTopLeft", fill: "#fde68a", fontSize: 10, fontWeight: 700 }} /> : null}
             </BarChart>
           </ResponsiveContainer>
         </div>
       </Panel>
 
-      <Panel title="Distribuição de Orçamento — Top 15 Campanhas" subtitle="Campanhas ordenadas pelo investimento acumulado no período">
+      <Panel title={ui(locale, "Distribuição de Orçamento — Top 15 Campanhas", "Budget Distribution — Top 15 Campaigns")} subtitle={ui(locale, "Campanhas ordenadas pelo investimento acumulado no período", "Campaigns ordered by cumulative investment in the period")}>
         <div className="h-[520px] px-2 py-5 md:px-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={topCampaigns} layout="vertical" margin={{ top: 0, right: 24, left: 8, bottom: 0 }}>
               <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tickFormatter={value => formatCompactCurrency(Number(value))} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} />
+              <XAxis type="number" tickFormatter={value => formatCompactCurrency(Number(value), locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} />
               <YAxis type="category" dataKey="shortName" width={188} tick={{ fill: "#94a3b8", fontSize: 9 }} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(value: number) => BRL.format(value)} contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} cursor={{ fill: "rgba(255,255,255,0.025)" }} />
-              <Bar dataKey="spend" name="Investimento" radius={[0, 4, 4, 0]} maxBarSize={22}>
+              <Tooltip formatter={(value: number) => formatCurrency(value, locale)} contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} cursor={{ fill: "rgba(255,255,255,0.025)" }} />
+              <Bar dataKey="spend" name={ui(locale, "Investimento", "Investment")} radius={[0, 4, 4, 0]} maxBarSize={22}>
                 {topCampaigns.map(campaign => <Cell key={campaign.campaign} fill={campaign.status === "Crítico" ? "#ef4444" : campaign.status === "Atenção" ? "#f59e0b" : "#10b981"} />)}
               </Bar>
             </BarChart>
@@ -852,22 +917,22 @@ function InvestmentTab({ data, correctionVisible }: { data: DashboardData; corre
         </div>
       </Panel>
 
-      <Panel title="Detalhamento de Orçamento por Campanha" subtitle="Participação, conversões, CPA e eficiência no período">
+      <Panel title={ui(locale, "Detalhamento de Orçamento por Campanha", "Budget Details by Campaign")} subtitle={ui(locale, "Participação, conversões, CPA e eficiência no período", "Share, conversions, CPA and efficiency in the period")}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-left text-xs">
             <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.12em] text-slate-600">
-              <tr><th className="px-5 py-3">Campanha</th><th className="px-4 py-3 text-right">Orçamento Diário</th><th className="px-4 py-3 text-right">Investimento</th><th className="px-4 py-3 text-right">% do Total</th><th className="px-4 py-3 text-right">Conversões</th><th className="px-4 py-3 text-right">CPA</th><th className="px-5 py-3">Eficiência</th></tr>
+              <tr><th className="px-5 py-3">{ui(locale, "Campanha", "Campaign")}</th><th className="px-4 py-3 text-right">{ui(locale, "Orçamento Diário", "Daily Budget")}</th><th className="px-4 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-4 py-3 text-right">{ui(locale, "% do Total", "% of Total")}</th><th className="px-4 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-4 py-3 text-right">CPA</th><th className="px-5 py-3">{ui(locale, "Eficiência", "Efficiency")}</th></tr>
             </thead>
             <tbody className="divide-y divide-[#182231]">
               {data.campaigns.map(campaign => (
                 <tr key={campaign.campaignId} className="hover:bg-white/[0.02]">
                   <td className="max-w-[320px] px-5 py-3" title={`${campaign.campaignId} • ${campaign.campaign}`}><CampaignIdentity name={campaign.campaign} campaignId={campaign.campaignId} /></td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-500">{BRL.format(campaign.budget)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.spend)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-500">{data.summary.investment ? NUMBER.format((campaign.spend / data.summary.investment) * 100) : 0}%</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{NUMBER.format(campaign.conversions)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{BRL.format(campaign.cpa)}</td>
-                  <td className="px-5 py-3"><StatusBadge status={campaign.status} /></td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-500">{formatCurrency(campaign.budget, locale)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatCurrency(campaign.spend, locale)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-500">{data.summary.investment ? formatNumber((campaign.spend / data.summary.investment) * 100, locale) : 0}%</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-400">{formatNumber(campaign.conversions, locale)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-slate-300">{formatCurrency(campaign.cpa, locale)}</td>
+                  <td className="px-5 py-3"><StatusBadge status={campaign.status} locale={locale} /></td>
                 </tr>
               ))}
             </tbody>
@@ -883,14 +948,10 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
   const workspace = trpc.dashboard.optimizationWorkspace.useQuery(undefined, { refetchOnWindowFocus: false });
   const [taskStatus, setTaskStatus] = useState<TaskStatusFilter>("ALL");
   const [search, setSearch] = useState("");
-  const [assignees, setAssignees] = useState<Record<number, string>>({});
   const [completionNotes, setCompletionNotes] = useState<Record<number, string>>({});
 
   const invalidateWorkspace = () => utils.dashboard.optimizationWorkspace.invalidate();
-  const createTask = trpc.dashboard.createOptimizationTask.useMutation({ onSuccess: invalidateWorkspace });
   const createAll = trpc.dashboard.createAllOptimizationTasks.useMutation({ onSuccess: invalidateWorkspace });
-  const assignTask = trpc.dashboard.assignOptimizationTask.useMutation({ onSuccess: invalidateWorkspace });
-  const startTask = trpc.dashboard.startOptimizationTask.useMutation({ onSuccess: invalidateWorkspace });
   const completeTask = trpc.dashboard.completeOptimizationTask.useMutation({
     onSuccess: async () => {
       setCompletionNotes({});
@@ -948,10 +1009,7 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
   };
   const openTaskCount = activeTasks.filter(task => task.status !== "COMPLETED").length;
   const mutationError =
-    createTask.error ??
     createAll.error ??
-    assignTask.error ??
-    startTask.error ??
     completeTask.error ??
     rolloverCycle.error ??
     reopenTask.error;
@@ -959,70 +1017,20 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
   return (
     <div className="space-y-4">
       <Panel
-        title="Recomendações baseadas em evidências"
-        subtitle={`${data.recommendations.length} ação(ões) primária(s) • uma recomendação por campanha • sem ações contraditórias`}
-        action={
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => createAll.mutate({ dateFrom, dateTo })}
-            disabled={!data.recommendations.length || createAll.isPending}
-            className="h-8 bg-[#e2212d] px-3 text-[10px] hover:bg-[#c91622]"
-          >
-            {createAll.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
-            Criar todas as tarefas
-          </Button>
-        }
-      >
-        <div className="grid gap-3 p-4 lg:grid-cols-2 2xl:grid-cols-3">
-          {data.recommendations.map(recommendation => {
-            const exists = existingSignatures.has(recommendation.sourceSignature);
-            return (
-              <article key={recommendation.sourceSignature} className="rounded-xl border border-[#202b3d] bg-[#0b121e] p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <CampaignIdentity name={recommendation.campaign} campaignId={recommendation.campaignId} nameClassName="text-xs font-semibold text-white" idClassName="mt-1" />
-                  </div>
-                  <span className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold ${recommendation.priority === "CRITICAL" ? "border-red-500/25 bg-red-500/10 text-red-300" : recommendation.priority === "HIGH" ? "border-amber-500/25 bg-amber-500/10 text-amber-300" : "border-sky-500/25 bg-sky-500/10 text-sky-300"}`}>{priorityLabels[recommendation.priority as OptimizationTask["priority"]]}</span>
-                </div>
-                <p className="mt-3 text-xs font-medium text-slate-200">{actionLabels[recommendation.actionType] ?? recommendation.actionType}</p>
-                <p className="mt-2 text-[11px] leading-5 text-slate-500">{recommendation.description}</p>
-                <dl className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-[#080e18] p-3 text-center">
-                  <div><dt className="text-[8px] uppercase tracking-wider text-slate-700">Investimento</dt><dd className="mt-1 text-[10px] tabular-nums text-slate-300">{BRL.format(Number(recommendation.evidence.spend ?? 0))}</dd></div>
-                  <div><dt className="text-[8px] uppercase tracking-wider text-slate-700">Conversões</dt><dd className="mt-1 text-[10px] tabular-nums text-slate-300">{NUMBER.format(Number(recommendation.evidence.conversions ?? 0))}</dd></div>
-                  <div><dt className="text-[8px] uppercase tracking-wider text-slate-700">CPA</dt><dd className="mt-1 text-[10px] tabular-nums text-slate-300">{BRL.format(Number(recommendation.evidence.cpa ?? 0))}</dd></div>
-                </dl>
-                <details className="mt-3 rounded-lg border border-[#1b2637] bg-[#0a111d]">
-                  <summary className="cursor-pointer px-3 py-2 text-[10px] font-medium text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-[#e2212d]/40">Motivo, impacto, risco e passo a passo</summary>
-                  <div className="space-y-3 border-t border-[#1b2637] px-3 py-3 text-[10px] leading-5 text-slate-500">
-                    <p><strong className="text-slate-300">Motivo:</strong> {recommendation.rationale}</p>
-                    <p><strong className="text-emerald-300">Impacto esperado:</strong> {recommendation.expectedImpact}</p>
-                    <p><strong className="text-amber-300">Risco:</strong> {recommendation.risk}</p>
-                    <ol className="list-decimal space-y-1 pl-4">{recommendation.steps.map(step => <li key={step}>{step}</li>)}</ol>
-                  </div>
-                </details>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => createTask.mutate({ dateFrom, dateTo, sourceSignature: recommendation.sourceSignature })}
-                  disabled={exists || createTask.isPending}
-                  className="mt-3 h-8 w-full border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338]"
-                >
-                  {exists ? <><CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />Tarefa no ciclo</> : <><Target className="mr-1.5 h-3.5 w-3.5" />Criar tarefa</>}
-                </Button>
-              </article>
-            );
-          })}
-        </div>
-        {!data.recommendations.length ? <EmptyState title="Nenhuma recomendação elegível" description={data.recommendationPolicy.message} /> : null}
-      </Panel>
-
-      <Panel
         title={activeCycle ? `${activeCycle.name} — tarefas executáveis` : "Ciclo de otimização — tarefas executáveis"}
         subtitle={activeCycle ? `Iniciado em ${formatLongDate(activeCycle.startDate)} • ciclo ativo` : "Crie uma tarefa recomendada para iniciar automaticamente o primeiro ciclo."}
         action={
           <div className="flex max-w-full flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => createAll.mutate({ dateFrom, dateTo })}
+              disabled={!data.recommendations.length || createAll.isPending}
+              className="h-8 bg-[#e2212d] px-3 text-[10px] hover:bg-[#c91622]"
+            >
+              {createAll.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+              Sincronizar tarefas sugeridas
+            </Button>
             <span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400">{activeTasks.length} tarefa(s)</span>
             {activeCycle ? (
               <AlertDialog>
@@ -1078,9 +1086,8 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
         ) : workspace.error ? (
           <EmptyState title="Não foi possível carregar as tarefas" description={workspace.error.message} />
         ) : filteredTasks.length ? (
-          <div className="grid gap-3 p-4 xl:grid-cols-2">
+          <div className="grid gap-3 p-4 lg:grid-cols-2 xl:grid-cols-3">
             {filteredTasks.map(task => {
-              const assignee = assignees[task.id] ?? task.assignee ?? "";
               const notes = completionNotes[task.id] ?? "";
               const evidence = task.evidence as Record<string, number | string | boolean | null>;
               const sourceTask = task.sourceTaskId ? tasks.find(item => item.id === task.sourceTaskId) : null;
@@ -1117,17 +1124,9 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
 
                   {task.status !== "COMPLETED" ? (
                     <div className="mt-4 space-y-3 border-t border-[#1b2637] pt-4">
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <Input value={assignee} onChange={event => setAssignees(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Responsável pela tarefa" className="h-9 flex-1 border-[#273247] bg-[#101827] text-xs text-white placeholder:text-slate-600" />
-                        <Button type="button" size="sm" variant="outline" onClick={() => assignTask.mutate({ taskId: task.id, assignee })} disabled={assignee.trim().length < 2 || assignTask.isPending} className="h-9 border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338]">Definir responsável</Button>
-                        {task.status !== "IN_PROGRESS" ? <Button type="button" size="sm" variant="outline" onClick={() => startTask.mutate({ taskId: task.id })} disabled={!task.assignee || startTask.isPending} className="h-9 border-sky-500/20 bg-sky-500/10 text-[10px] text-sky-300 hover:bg-sky-500/15"><Clock3 className="mr-1.5 h-3.5 w-3.5" />Iniciar</Button> : null}
-                      </div>
-                      {task.status === "IN_PROGRESS" ? (
-                        <>
-                          <textarea value={notes} onChange={event => setCompletionNotes(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Notas obrigatórias da execução: o que foi alterado, valor anterior e novo valor..." rows={3} className="w-full resize-y rounded-md border border-[#273247] bg-[#101827] px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-[#e2212d] focus:ring-2 focus:ring-[#e2212d]/20" />
-                          <Button type="button" size="sm" onClick={() => completeTask.mutate({ taskId: task.id, notes, dateFrom, dateTo })} disabled={notes.trim().length < 3 || completeTask.isPending} className="h-9 w-full bg-emerald-600 text-[10px] hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Concluir e registrar snapshot</Button>
-                        </>
-                      ) : <p className="text-[10px] leading-5 text-slate-600">Defina o responsável e inicie a tarefa antes de registrar a conclusão.</p>}
+                      <textarea value={notes} onChange={event => setCompletionNotes(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Notas obrigatórias da execução: o que foi alterado, valor anterior e novo valor..." rows={3} className="w-full resize-y rounded-md border border-[#273247] bg-[#101827] px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-[#e2212d] focus:ring-2 focus:ring-[#e2212d]/20" />
+                      <Button type="button" size="sm" onClick={() => completeTask.mutate({ taskId: task.id, notes, dateFrom, dateTo })} disabled={notes.trim().length < 3 || completeTask.isPending} className="h-9 w-full bg-emerald-600 text-[10px] hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Concluir e registrar snapshot</Button>
+                      <p className="text-[9px] leading-4 text-slate-600">A autoria e a responsabilidade serão registradas automaticamente com o usuário autenticado.</p>
                     </div>
                   ) : (
                     <div className="mt-4 space-y-2">
@@ -1151,11 +1150,30 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
   );
 }
 
-function DashboardScreen() {
+function DashboardScreen({ session }: { session: DashboardSession }) {
   const utils = trpc.useUtils();
+  const { locale, permissions } = session;
   const initialRoute = useMemo(getRouteFromUrl, []);
-  const [activeModule, setActiveModule] = useState<DashboardModuleId>(initialRoute.module);
-  const [activeGoogleTab, setActiveGoogleTab] = useState<GoogleAdsTabId>(initialRoute.googleTab);
+  const accessibleModules = useMemo(
+    () => dashboardModules.filter(module => permissions[module.permission]),
+    [permissions],
+  );
+  const accessibleGoogleTabs = useMemo(
+    () => googleAdsTabs.filter(tab => !tab.permission || permissions[tab.permission]),
+    [permissions],
+  );
+  const initialModule = accessibleModules.some(module => module.id === initialRoute.module)
+    ? initialRoute.module
+    : (accessibleModules[0]?.id ?? "google-ads");
+  const initialGoogleTab = accessibleGoogleTabs.some(tab => tab.id === initialRoute.googleTab)
+    ? initialRoute.googleTab
+    : (accessibleGoogleTabs[0]?.id ?? "overview");
+  const [activeModule, setActiveModule] = useState<DashboardModuleId>(initialModule);
+  const [activeGoogleTab, setActiveGoogleTab] = useState<GoogleAdsTabId>(initialGoogleTab);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const handleUpdatedAt = useCallback((candidate: string) => {
+    setLastUpdatedAt(current => preserveLastSuccessfulUpdate(current, candidate));
+  }, []);
   const [googlePreset, setGooglePreset] = useState("30d");
   const [googleDateFrom, setGoogleDateFrom] = useState(isoDateFromEnd(30));
   const [googleDateTo, setGoogleDateTo] = useState(DATA_END);
@@ -1180,14 +1198,18 @@ function DashboardScreen() {
     retry: 1,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    enabled: activeModule === "google-ads",
+    enabled: activeModule === "google-ads" && permissions.canAccessGoogleAds,
   });
   const leadsBounds = trpc.leads.bounds.useQuery(undefined, {
     retry: 1,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    enabled: activeModule === "leads",
+    enabled: activeModule === "leads" && permissions.canAccessLeads,
   });
+
+  useEffect(() => {
+    if (dashboard.data?.metadata.updatedAt) handleUpdatedAt(dashboard.data.metadata.updatedAt);
+  }, [dashboard.data?.metadata.updatedAt, handleUpdatedAt]);
 
   useEffect(() => {
     if (leadsRangeInitialized || !leadsBounds.data?.dateFrom || !leadsBounds.data.dateTo) return;
@@ -1205,11 +1227,13 @@ function DashboardScreen() {
   }
 
   function selectModule(module: DashboardModuleId) {
+    if (!accessibleModules.some(item => item.id === module)) return;
     setActiveModule(module);
     replaceDashboardUrl(module, activeGoogleTab);
   }
 
   function selectGoogleTab(tab: GoogleAdsTabId) {
+    if (!accessibleGoogleTabs.some(item => item.id === tab)) return;
     setActiveGoogleTab(tab);
     setActiveModule("google-ads");
     replaceDashboardUrl("google-ads", tab);
@@ -1270,14 +1294,30 @@ function DashboardScreen() {
   const activePreset = isLeads ? leadsPreset : googlePreset;
   const leadMaxDate = leadsBounds.data?.dateTo ?? DATA_END;
   const leadMinDate = leadsBounds.data?.dateFrom ?? undefined;
+  const copy = locale === "en-US"
+    ? {
+        dashboard: "Operations Dashboard",
+        activeAccess: "Active access",
+        signOut: "Sign out",
+        lastUpdated: DASHBOARD_UPDATE_COPY["en-US"].label,
+        waitingUpdate: DASHBOARD_UPDATE_COPY["en-US"].waiting,
+      }
+    : {
+        dashboard: "Dashboard Operacional",
+        activeAccess: "Acesso ativo",
+        signOut: "Sair",
+        lastUpdated: DASHBOARD_UPDATE_COPY["pt-BR"].label,
+        waitingUpdate: DASHBOARD_UPDATE_COPY["pt-BR"].waiting,
+      };
+  const formattedLastUpdated = formatDashboardUpdatedAt(lastUpdatedAt, locale);
   const metricCards = data
     ? [
-        { title: "Investimento Total", value: BRL.format(data.summary.investment), subtitle: "Google Ads • período", icon: <Coins className="h-4 w-4" />, accent: "#e2212d" },
-        { title: "Conversões", value: NUMBER.format(data.summary.conversions), subtitle: "Ações registradas", icon: <Target className="h-4 w-4" />, accent: "#38bdf8" },
-        { title: "CPA Médio", value: BRL.format(data.summary.cpa), subtitle: "Investimento ÷ conversões", icon: <Gauge className="h-4 w-4" />, accent: "#a78bfa" },
-        { title: "CTR", value: `${NUMBER.format(data.summary.ctr)}%`, subtitle: `${NUMBER.format(data.summary.clicks)} cliques`, icon: <MousePointerClick className="h-4 w-4" />, accent: "#f59e0b" },
-        { title: "Taxa de Conversão", value: `${NUMBER.format(data.summary.conversionRate)}%`, subtitle: "Conversões ÷ cliques", icon: <TrendingUp className="h-4 w-4" />, accent: "#10b981" },
-        { title: "CPC Médio", value: BRL.format(data.summary.cpc), subtitle: `${NUMBER.format(data.summary.impressions)} impressões`, icon: <CircleDollarSign className="h-4 w-4" />, accent: "#60a5fa" },
+        { title: ui(locale, "Investimento Total", "Total Investment"), value: formatCurrency(data.summary.investment, locale), subtitle: `Google Ads • ${ui(locale, "período", "period")}`, icon: <Coins className="h-4 w-4" />, accent: "#e2212d" },
+        { title: ui(locale, "Conversões", "Conversions"), value: formatNumber(data.summary.conversions, locale), subtitle: ui(locale, "Ações registradas", "Recorded actions"), icon: <Target className="h-4 w-4" />, accent: "#38bdf8" },
+        { title: ui(locale, "CPA Médio", "Average CPA"), value: formatCurrency(data.summary.cpa, locale), subtitle: ui(locale, "Investimento ÷ conversões", "Investment ÷ conversions"), icon: <Gauge className="h-4 w-4" />, accent: "#a78bfa" },
+        { title: "CTR", value: `${formatNumber(data.summary.ctr, locale)}%`, subtitle: `${formatNumber(data.summary.clicks, locale)} ${ui(locale, "cliques", "clicks")}`, icon: <MousePointerClick className="h-4 w-4" />, accent: "#f59e0b" },
+        { title: ui(locale, "Taxa de Conversão", "Conversion Rate"), value: `${formatNumber(data.summary.conversionRate, locale)}%`, subtitle: ui(locale, "Conversões ÷ cliques", "Conversions ÷ clicks"), icon: <TrendingUp className="h-4 w-4" />, accent: "#10b981" },
+        { title: ui(locale, "CPC Médio", "Average CPC"), value: formatCurrency(data.summary.cpc, locale), subtitle: `${formatNumber(data.summary.impressions, locale)} ${ui(locale, "impressões", "impressions")}`, icon: <CircleDollarSign className="h-4 w-4" />, accent: "#60a5fa" },
       ]
     : [];
 
@@ -1291,15 +1331,15 @@ function DashboardScreen() {
                 <div className="flex items-center gap-3">
                   <MgLogo size="sm" />
                   <span className="hidden h-5 w-px bg-[#263044] sm:block" />
-                  <p className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600 sm:block">Dashboard Operacional</p>
+                  <p className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600 sm:block">{copy.dashboard}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="border-[#283349] bg-[#111827] text-slate-400 hover:bg-[#182236] hover:text-white lg:hidden">
                   <LogOut className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
-              <nav className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-[#242f42] bg-[#0d1421] p-1" aria-label="Módulos do dashboard">
-                {dashboardModules.map(module => {
+              <nav className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-[#242f42] bg-[#0d1421] p-1" aria-label={ui(locale, "Módulos do dashboard", "Dashboard modules")}>
+                {accessibleModules.map(module => {
                   const Icon = module.icon;
                   const isActive = activeModule === module.id;
                   return (
@@ -1311,7 +1351,7 @@ function DashboardScreen() {
                       className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-[11px] font-semibold transition-all active:scale-[0.97] ${isActive ? "bg-[#e2212d] text-white shadow-[0_8px_20px_rgba(226,33,45,0.18)]" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}
                     >
                       <Icon className="h-3.5 w-3.5" />
-                      {module.label}
+                      {module.labels[locale]}
                     </button>
                   );
                 })}
@@ -1319,8 +1359,12 @@ function DashboardScreen() {
             </div>
 
             <div className="hidden items-center gap-3 border-l border-[#263146] pl-4 lg:flex">
-              <div className="text-right"><p className="text-[11px] font-medium text-slate-300">Rodrigo</p><p className="text-[9px] text-emerald-500">Acesso ativo</p></div>
-              <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="h-8 border-[#283349] bg-[#111827] px-3 text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><LogOut className="mr-1.5 h-3.5 w-3.5" />Sair</Button>
+              <div className="text-right">
+                <p className="text-[11px] font-medium text-slate-300">{session.displayName}</p>
+                <p className="text-[9px] text-emerald-500">{copy.activeAccess}</p>
+                <p className="mt-0.5 text-[9px] text-slate-600">{copy.lastUpdated}: {formattedLastUpdated}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="h-8 border-[#283349] bg-[#111827] px-3 text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><LogOut className="mr-1.5 h-3.5 w-3.5" />{copy.signOut}</Button>
             </div>
           </div>
         </header>
@@ -1329,33 +1373,33 @@ function DashboardScreen() {
           <div className="border-b border-amber-500/20 bg-[#20170a]/95 backdrop-blur-xl">
             <div className="mx-auto flex max-w-[1680px] items-start gap-3 px-4 py-2.5 lg:px-6">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-              <p className="text-[11px] leading-5 text-amber-100/75"><strong className="font-semibold text-amber-300">Correção de Tag Google — 15/07/2026:</strong> os dados de conversão anteriores a esta data podem estar subestimados. A marcação aparece em todas as séries temporais para orientar a leitura do histórico.</p>
+              <p className="text-[11px] leading-5 text-amber-100/75"><strong className="font-semibold text-amber-300">{ui(locale, "Correção de Tag Google — 15/07/2026:", "Google Tag Fix — 07/15/2026:")}</strong> {ui(locale, "os dados de conversão anteriores a esta data podem estar subestimados. A marcação aparece em todas as séries temporais para orientar a leitura do histórico.", "conversion data before this date may be understated. The marker appears in every time series to guide historical analysis.")}</p>
             </div>
           </div>
         ) : null}
       </div>
 
-      {activeModule === "meta-ads" ? <main className="mx-auto min-h-[calc(100vh-88px)] max-w-[1680px]" aria-label="Área Meta Ads vazia" /> : (
+      {activeModule === "meta-ads" ? <MetaAdsDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : activeModule === "media-plan" ? <MediaPlanDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : (
         <main className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6">
           <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">{isLeads ? <UsersRound className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}{isLeads ? "Base Comercial" : "Google Ads"}</div>
-              <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{isLeads ? "Gestão e Auditoria de Leads" : "Performance de Mídia"}</h1>
-              <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(activeDateFrom)} a {formatLongDate(activeDateTo)}</p>
+              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">{isLeads ? <UsersRound className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}{isLeads ? ui(locale, "Base Comercial", "Sales Database") : "Google Ads"}</div>
+              <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{isLeads ? ui(locale, "Gestão e Auditoria de Leads", "Lead Management and Audit") : ui(locale, "Performance de Mídia", "Media Performance")}</h1>
+              <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(activeDateFrom, locale)} {ui(locale, "a", "to")} {formatLongDate(activeDateTo, locale)}</p>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-[#242f42] bg-[#0d1421] p-1" aria-label={`Atalhos de período de ${isLeads ? "Leads" : "Google Ads"}`}>
+              <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-[#242f42] bg-[#0d1421] p-1" aria-label={`${ui(locale, "Atalhos de período de", "Period shortcuts for")} ${isLeads ? "Leads" : "Google Ads"}`}>
                 {["7d", "14d", "30d", "60d"].map(preset => (
                   <button key={preset} type="button" onClick={() => isLeads ? applyLeadsPreset(preset) : applyGooglePreset(preset)} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === preset ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{preset}</button>
                 ))}
-                <button type="button" onClick={() => isLeads ? applyLeadsPreset("month") : applyGooglePreset("month")} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>Mês</button>
+                <button type="button" onClick={() => isLeads ? applyLeadsPreset("month") : applyGooglePreset("month")} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{ui(locale, "Mês", "Month")}</button>
               </div>
 
               <div className="flex items-center gap-2 rounded-lg border border-[#242f42] bg-[#0d1421] px-3 py-1.5">
                 <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-600" />
                 <input
-                  aria-label={isLeads ? "Data inicial de Leads" : "Data inicial de Google Ads"}
+                  aria-label={isLeads ? ui(locale, "Data inicial de Leads", "Leads start date") : ui(locale, "Data inicial de Google Ads", "Google Ads start date")}
                   type="date"
                   min={isLeads ? leadMinDate : undefined}
                   max={activeDateTo}
@@ -1365,7 +1409,7 @@ function DashboardScreen() {
                 />
                 <span className="text-slate-700">—</span>
                 <input
-                  aria-label={isLeads ? "Data final de Leads" : "Data final de Google Ads"}
+                  aria-label={isLeads ? ui(locale, "Data final de Leads", "Leads end date") : ui(locale, "Data final de Google Ads", "Google Ads end date")}
                   type="date"
                   min={activeDateFrom}
                   max={isLeads ? leadMaxDate : DATA_END}
@@ -1377,20 +1421,20 @@ function DashboardScreen() {
 
               {isGoogleAds && data ? (
                 <div className="hidden text-right 2xl:block">
-                  <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? "Windsor.ai atualizado" : "Windsor.ai • snapshot validado"}</div>
-                  <p className="mt-1 text-[9px] text-slate-700">{data.metadata.campaignCount} campanhas • {data.metadata.rowCount} registros {data.metadata.cacheHit ? "• cache" : ""}</p>
+                  <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? ui(locale, "Windsor.ai atualizado", "Windsor.ai updated") : ui(locale, "Windsor.ai • snapshot validado", "Windsor.ai • validated snapshot")}</div>
+                  <p className="mt-1 text-[9px] text-slate-700">{formatNumber(data.metadata.campaignCount, locale)} {ui(locale, "campanhas", "campaigns")} • {formatNumber(data.metadata.rowCount, locale)} {ui(locale, "registros", "records")} {data.metadata.cacheHit ? "• cache" : ""}</p>
                 </div>
               ) : null}
             </div>
           </div>
 
           {isGoogleAds ? (
-            <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-[#1d2737]" aria-label="Áreas de Google Ads">
-              {googleAdsTabs.map(tab => {
+            <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-[#1d2737]" aria-label={ui(locale, "Áreas de Google Ads", "Google Ads areas")}>
+              {accessibleGoogleTabs.map(tab => {
                 const Icon = tab.icon;
                 return (
                   <button key={tab.id} type="button" onClick={() => selectGoogleTab(tab.id)} aria-current={activeGoogleTab === tab.id ? "page" : undefined} className={`relative flex shrink-0 items-center gap-2 px-4 py-3 text-[11px] font-medium transition-colors ${activeGoogleTab === tab.id ? "text-white" : "text-slate-600 hover:text-slate-300"}`}>
-                    <Icon className={`h-3.5 w-3.5 ${activeGoogleTab === tab.id ? "text-[#e2212d]" : ""}`} />{tab.label}
+                    <Icon className={`h-3.5 w-3.5 ${activeGoogleTab === tab.id ? "text-[#e2212d]" : ""}`} />{tab.labels[locale]}
                     {activeGoogleTab === tab.id ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#e2212d]" /> : null}
                   </button>
                 );
@@ -1399,28 +1443,28 @@ function DashboardScreen() {
           ) : null}
 
           {isLeads ? (
-            <LeadsTab dateFrom={leadsDateFrom} dateTo={leadsDateTo} />
+            <LeadsTab dateFrom={leadsDateFrom} dateTo={leadsDateTo} locale={locale} canImportLeads={permissions.canImportLeads} onUpdatedAt={handleUpdatedAt} />
           ) : dashboard.isLoading ? (
             <div className="grid min-h-[520px] place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
-              <div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-xs text-slate-500">Atualizando dados do Google Ads...</p></div>
+              <div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-xs text-slate-500">{ui(locale, "Atualizando dados do Google Ads...", "Updating Google Ads data...")}</p></div>
             </div>
           ) : dashboard.error ? (
             <div className="grid min-h-[420px] place-items-center rounded-xl border border-red-500/20 bg-red-500/[0.04] px-6 text-center">
-              <div><AlertTriangle className="mx-auto h-8 w-8 text-red-400" /><h2 className="mt-3 text-sm font-semibold text-white">Não foi possível carregar os dados</h2><p className="mt-1 max-w-md text-xs leading-5 text-slate-500">A conexão pode estar temporariamente indisponível. Tente novamente.</p><Button onClick={() => dashboard.refetch()} className="mt-5 bg-[#e2212d] hover:bg-[#c91622]"><RefreshCcw className="mr-2 h-4 w-4" />Tentar novamente</Button></div>
+              <div><AlertTriangle className="mx-auto h-8 w-8 text-red-400" /><h2 className="mt-3 text-sm font-semibold text-white">{ui(locale, "Não foi possível carregar os dados", "Data could not be loaded")}</h2><p className="mt-1 max-w-md text-xs leading-5 text-slate-500">{ui(locale, "A conexão pode estar temporariamente indisponível. Tente novamente.", "The connection may be temporarily unavailable. Please try again.")}</p><Button onClick={() => dashboard.refetch()} className="mt-5 bg-[#e2212d] hover:bg-[#c91622]"><RefreshCcw className="mr-2 h-4 w-4" />{ui(locale, "Tentar novamente", "Try again")}</Button></div>
             </div>
           ) : data && data.daily.length ? (
             <>
               <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 {metricCards.map(card => <MetricCard key={card.title} {...card} />)}
               </div>
-              {activeGoogleTab === "overview" ? <OverviewTab data={data} correctionVisible={correctionVisible} /> : null}
-              {activeGoogleTab === "daily" ? <DailyTab data={data} correctionVisible={correctionVisible} /> : null}
-              {activeGoogleTab === "investment" ? <InvestmentTab data={data} correctionVisible={correctionVisible} /> : null}
+              {activeGoogleTab === "overview" ? <OverviewTab data={data} correctionVisible={correctionVisible} locale={locale} /> : null}
+              {activeGoogleTab === "daily" ? <DailyTab data={data} correctionVisible={correctionVisible} locale={locale} /> : null}
+              {activeGoogleTab === "investment" ? <InvestmentTab data={data} correctionVisible={correctionVisible} locale={locale} /> : null}
               {activeGoogleTab === "optimizations" ? <OptimizationsTab data={data} dateFrom={googleDateFrom} dateTo={googleDateTo} /> : null}
               {activeGoogleTab === "history" ? <OptimizationHistoryTab dateFrom={googleDateFrom} dateTo={googleDateTo} /> : null}
             </>
           ) : (
-            <Panel title="Google Ads"><EmptyState title="Nenhum dado no período" description="Selecione outro intervalo de datas para continuar." /></Panel>
+            <Panel title="Google Ads"><EmptyState title={ui(locale, "Nenhum dado no período", "No data in this period")} description={ui(locale, "Selecione outro intervalo de datas para continuar.", "Select another date range to continue.")} /></Panel>
           )}
         </main>
       )}
@@ -1442,5 +1486,5 @@ export default function Home() {
     );
   }
 
-  return session.data ? <DashboardScreen /> : <LoginScreen />;
+  return session.data ? <DashboardScreen session={session.data} /> : <LoginScreen />;
 }

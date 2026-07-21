@@ -1,3 +1,5 @@
+import { canonicalizeDealerName } from "./dealerNormalization";
+
 export const LEADS_UNAVAILABLE = "Indisponível";
 
 export type LeadAnalyticsRow = {
@@ -349,9 +351,12 @@ function buildPacing(
 
 export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytics {
   const calendarDays = calendarDaysInclusive(input.dateFrom, input.dateTo);
-  const rows = input.rows.filter(
-    row => row.correctedDate >= input.dateFrom && row.correctedDate <= input.dateTo,
-  );
+  const rows = input.rows
+    .filter(row => row.correctedDate >= input.dateFrom && row.correctedDate <= input.dateTo)
+    .map(row => ({
+      ...row,
+      dealerName: canonicalizeDealerName(row.dealerName),
+    }));
   const channels = buildBreakdown(rows, row => row.channel, calendarDays);
   const dealers = buildBreakdown(rows, row => row.dealerName, calendarDays);
   const dealerAudit = buildDealerAudit(rows, input.dateFrom, input.dateTo, calendarDays);

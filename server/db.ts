@@ -2,6 +2,8 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   campaignGoals,
+  dashboardAccounts,
+  InsertDashboardAccount,
   InsertUser,
   optimizationCycles,
   optimizationTasks,
@@ -96,6 +98,46 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getDashboardAccountByUsername(username: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const normalizedUsername = username.trim().toLocaleLowerCase("en-US");
+  const result = await db
+    .select()
+    .from(dashboardAccounts)
+    .where(eq(dashboardAccounts.username, normalizedUsername))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function createDashboardAccount(input: InsertDashboardAccount) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const now = Date.now();
+  await db.insert(dashboardAccounts).values({
+    ...input,
+    username: input.username.trim().toLocaleLowerCase("en-US"),
+    createdAt: input.createdAt ?? now,
+    updatedAt: input.updatedAt ?? now,
+  });
+
+  return getDashboardAccountByUsername(input.username);
+}
+
+export async function updateDashboardAccountLastSignIn(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const now = Date.now();
+  await db
+    .update(dashboardAccounts)
+    .set({ lastSignedInAt: now, updatedAt: now })
+    .where(eq(dashboardAccounts.id, id));
 }
 
 export async function getCampaignGoals(accountId: string, competencia: string) {
@@ -433,11 +475,15 @@ export async function completeOptimizationTask(input: {
   return db.transaction(async tx => {
     const task = await getTaskForUpdate(tx, input.taskId);
     if (task.status === "COMPLETED") throw new Error("Tarefa já concluída");
-    if (!task.assignee?.trim()) throw new Error("Defina um responsável antes de concluir a tarefa");
-    if (task.status !== "IN_PROGRESS") throw new Error("Inicie a tarefa antes de concluí-la");
     await tx
       .update(optimizationTasks)
-      .set({ status: "COMPLETED", completedAt: now, updatedAt: now })
+      .set({
+        status: "COMPLETED",
+        assignee: input.actor,
+        startedAt: task.startedAt ?? now,
+        completedAt: now,
+        updatedAt: now,
+      })
       .where(eq(optimizationTasks.id, task.id));
     await tx.insert(taskCompletions).values({
       taskId: task.id,
