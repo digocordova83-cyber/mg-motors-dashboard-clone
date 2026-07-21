@@ -60,7 +60,7 @@ describe("daily scheduled D-1 refresh", () => {
     );
   });
 
-  it("atualiza as duas fontes para o mesmo D-1 e persiste uma identidade por fonte/data", async () => {
+  it("valida o mesmo D-1, aquece os períodos padrão e persiste uma identidade por fonte/data", async () => {
     const dependencies = buildDependencies();
 
     const result = await executeDailyRefresh(
@@ -71,12 +71,14 @@ describe("daily scheduled D-1 refresh", () => {
     expect(result.ok).toBe(true);
     expect(result.partialFailure).toBe(false);
     expect(dependencies.loadGoogleAds).toHaveBeenCalledWith(
+      "2026-06-21",
       "2026-07-20",
-      "2026-07-20",
+      { forceRefresh: true },
     );
     expect(dependencies.loadMetaAds).toHaveBeenCalledWith(
+      "2026-07-14",
       "2026-07-20",
-      "2026-07-20",
+      { forceRefresh: true },
     );
     expect(dependencies.persistRefresh).toHaveBeenCalledTimes(2);
     expect(dependencies.persistRefresh).toHaveBeenCalledWith(
@@ -85,6 +87,10 @@ describe("daily scheduled D-1 refresh", () => {
         refreshDate: "2026-07-20",
         status: "SUCCESS",
         taskUid: "task_daily",
+        metadata: expect.objectContaining({
+          warmedFrom: "2026-06-21",
+          warmedTo: "2026-07-20",
+        }),
       }),
     );
     expect(dependencies.persistRefresh).toHaveBeenCalledWith(
@@ -93,6 +99,10 @@ describe("daily scheduled D-1 refresh", () => {
         refreshDate: "2026-07-20",
         status: "SUCCESS",
         taskUid: "task_daily",
+        metadata: expect.objectContaining({
+          warmedFrom: "2026-07-14",
+          warmedTo: "2026-07-20",
+        }),
       }),
     );
   });

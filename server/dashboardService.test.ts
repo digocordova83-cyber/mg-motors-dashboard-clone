@@ -1,4 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const dbMocks = vi.hoisted(() => ({
+  getCampaignGoals: vi.fn(),
+  getDashboardDataSnapshot: vi.fn(),
+  upsertDashboardDataSnapshot: vi.fn(),
+}));
+
+vi.mock("./db", () => dbMocks);
+
 import {
   buildDashboardData,
   clearDashboardCache,
@@ -92,6 +101,9 @@ describe("buildDashboardData", () => {
 describe("cache Windsor.ai", () => {
   beforeEach(() => {
     clearDashboardCache();
+    dbMocks.getCampaignGoals.mockReset().mockResolvedValue([]);
+    dbMocks.getDashboardDataSnapshot.mockReset().mockResolvedValue(undefined);
+    dbMocks.upsertDashboardDataSnapshot.mockReset().mockResolvedValue(undefined);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("indisponível")));
   });
 
@@ -106,5 +118,62 @@ describe("cache Windsor.ai", () => {
     expect(first.cacheHit).toBe(false);
     expect(second.cacheHit).toBe(true);
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("responde pelo snapshot persistente após cold start sem chamar a fonte externa", async () => {
+    dbMocks.getDashboardDataSnapshot.mockResolvedValue({
+      dataThroughDate: "2026-07-14",
+      refreshedAt: Date.parse("2026-07-15T08:30:00.000Z"),
+      payload: {
+        rows: [baseRow],
+        updatedAt: "2026-07-15T08:30:00.000Z",
+      },
+    });
+
+    const result = await getGoogleAdsRows("2026-07-14", "2026-07-14");
+
+    expect(result.source).toBe("persistent-snapshot");
+    expect(result.cacheHit).toBe(true);
+    expect(result.rows).toEqual([expect.objectContaining(baseRow)]);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("consolida três solicitações simultâneas em uma única chamada Windsor", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [baseRow] }),
+    } as Response);
+
+    const [first, second, third] = await Promise.all([
+      getGoogleAdsRows("2026-07-14", "2026-07-14"),
+      getGoogleAdsRows("2026-07-14", "2026-07-14"),
+      getGoogleAdsRows("2026-07-14", "2026-07-14"),
+    ]);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(first.source).toBe("windsor-live");
+    expect(second.cacheHit).toBe(true);
+    expect(third.cacheHit).toBe(true);
+    expect(dbMocks.upsertDashboardDataSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignora snapshots existentes quando o job solicita refresh forçado", async () => {
+    dbMocks.getDashboardDataSnapshot.mockResolvedValue({
+      dataThroughDate: "2026-07-14",
+      refreshedAt: Date.parse("2026-07-15T08:30:00.000Z"),
+      payload: { rows: [baseRow], updatedAt: "2026-07-15T08:30:00.000Z" },
+    });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [baseRow] }),
+    } as Response);
+
+    const result = await getGoogleAdsRows("2026-07-14", "2026-07-14", {
+      forceRefresh: true,
+    });
+
+    expect(result.source).toBe("windsor-live");
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(dbMocks.upsertDashboardDataSnapshot).toHaveBeenCalledTimes(1);
   });
 });

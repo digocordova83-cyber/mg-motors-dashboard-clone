@@ -43,3 +43,13 @@ A interface autenticada exibiu **7.611 Leads na base ativa**, com cobertura de *
 ## Validação móvel autenticada
 
 Em viewport real de **390 × 844 px**, a sessão `mgmotors` exibiu o módulo Leads em inglês com `scrollWidth = clientWidth = 390`, confirmando ausência de overflow horizontal. O card da base mostrou **7.611 Leads** e cobertura até **20/07/2026**. O alerta `Recent Webmotors data pending` permaneceu legível e informou que os registros históricos continuam visíveis. A captura interna foi salva em `/home/ubuntu/webdev-static-assets/leads-webmotors-mobile-validation.png`.
+
+## Correção final do intervalo — confirmação do usuário
+
+Em 21/07/2026, o usuário confirmou que **todos os registros do arquivo pertencem ao intervalo de 01/07/2026 a 20/07/2026**. Por essa razão, as 20 linhas cuja data normalizada estava em 30/06/2026 foram corrigidas exclusivamente no campo `correctedDate` para 01/07/2026. Os valores brutos (`correctedDateRaw`, `sourceDateRaw` e `rawPayload`), IDs e hashes foram preservados para auditoria.
+
+A reconciliação imediatamente posterior confirmou: **7.611 registros totais**, intervalo normalizado de **01/07/2026 a 20/07/2026**, **7.611 registros dentro do período** e **zero registros fora do intervalo**. Nenhuma linha foi adicionada, removida ou deduplicada.
+
+## Validação visual após correção do intervalo
+
+O preview autenticado em inglês foi validado novamente após a atualização das 20 datas. A área de Leads passou a exibir **7.611 Leads na base**, intervalo **01/07/2026 a 20/07/2026**, filtro padrão no mesmo período e card **Total Leads = 7.611**. O pacing mensal também reconciliou em **7.611 / 10.000**, sem registros fora do intervalo.

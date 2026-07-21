@@ -96,6 +96,34 @@ export const dashboardSourceRefreshes = mysqlTable(
   ],
 );
 
+export const dashboardDataSnapshots = mysqlTable(
+  "dashboard_data_snapshots",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    source: mysqlEnum("source", ["GOOGLE_ADS", "META_ADS"]).notNull(),
+    periodFrom: date("periodFrom", { mode: "string" }).notNull(),
+    periodTo: date("periodTo", { mode: "string" }).notNull(),
+    dataThroughDate: date("dataThroughDate", { mode: "string" }).notNull(),
+    sourceName: varchar("sourceName", { length: 64 }).notNull(),
+    payload: json("payload").$type<Record<string, unknown>>().notNull(),
+    refreshedAt: bigint("refreshedAt", { mode: "number" }).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("dashboard_data_snapshots_source_period_unique").on(
+      table.source,
+      table.periodFrom,
+      table.periodTo,
+    ),
+    index("dashboard_data_snapshots_period_idx").on(
+      table.source,
+      table.periodTo,
+      table.refreshedAt,
+    ),
+  ],
+);
+
 export const campaignGoals = mysqlTable(
   "campaign_goals",
   {
@@ -286,6 +314,8 @@ export const leadImports = mysqlTable(
     rowsInserted: int("rowsInserted").default(0).notNull(),
     rowsSkipped: int("rowsSkipped").default(0).notNull(),
     rowsInvalid: int("rowsInvalid").default(0).notNull(),
+    fallbackDateUsed: date("fallbackDateUsed", { mode: "string" }),
+    fallbackDateCount: int("fallbackDateCount").default(0).notNull(),
     errorSummary: json("errorSummary").$type<string[]>(),
     importedBy: varchar("importedBy", { length: 120 }).notNull(),
     createdAt: bigint("createdAt", { mode: "number" }).notNull(),

@@ -45,6 +45,55 @@ describe("buildLeadAnalytics", () => {
     expect(result.daily.at(-1)).toMatchObject({ date: "2026-07-04", total: 0 });
     expect(result.daily.reduce((sum, point) => sum + point.total, 0)).toBe(5);
     expect(result.channels.reduce((sum, item) => sum + item.leads, 0)).toBe(5);
+    expect(result.channelUpdate).toEqual({
+      date: "2026-07-04",
+      updatingChannels: ["Site", "Meta"],
+    });
+  });
+
+  it("sinaliza canais esperados zerados no último dia, remove o preenchido e ignora Campanha Urban", () => {
+    const previousRows = [
+      row("2026-07-19", "Site", "Dealer A"),
+      row("2026-07-19", "Meta", "Dealer A"),
+      row("2026-07-19", "Webmotors", "Dealer B"),
+      row("2026-07-19", "Campanha Urban", "Dealer C"),
+      row("2026-07-20", "Site", "Dealer A"),
+    ];
+    const expectedChannels = ["Site", "Meta", "Webmotors", "Campanha Urban"];
+    const beforeFill = buildLeadAnalytics({
+      rows: previousRows,
+      pacingRows: previousRows,
+      dateFrom: "2026-07-19",
+      dateTo: "2026-07-20",
+      competence: "2026-07",
+      goal: 100,
+      expectedChannels,
+    });
+
+    expect(beforeFill.daily.at(-1)?.values).toMatchObject({
+      Site: 1,
+      Meta: 0,
+      Webmotors: 0,
+      "Campanha Urban": 0,
+    });
+    expect(beforeFill.channelUpdate).toEqual({
+      date: "2026-07-20",
+      updatingChannels: ["Meta", "Webmotors"],
+    });
+
+    const afterFill = buildLeadAnalytics({
+      rows: [...previousRows, row("2026-07-20", "Meta", "Dealer A")],
+      pacingRows: previousRows,
+      dateFrom: "2026-07-19",
+      dateTo: "2026-07-20",
+      competence: "2026-07",
+      goal: 100,
+      expectedChannels,
+    });
+
+    expect(afterFill.channelUpdate.updatingChannels).toEqual(["Webmotors"]);
+    expect(afterFill.channelUpdate.updatingChannels).not.toContain("Campanha Urban");
+    expect(afterFill.daily.reduce((sum, point) => sum + point.total, 0)).toBe(6);
   });
 
   it("reconcilia auditoria por concessionária e separa registros indisponíveis", () => {

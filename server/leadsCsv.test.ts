@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getYesterdayInSaoPaulo,
   LEAD_CSV_HEADERS,
   LeadCsvValidationError,
   parseLeadCsv,
@@ -95,7 +96,30 @@ describe("parseLeadCsv", () => {
     ]);
   });
 
-  it("marca Data Corrigida inválida por linha e mantém as linhas válidas para pré-validação", () => {
+  it("aplica uma única data D-1 às linhas sem Data Corrigida e preserva o valor bruto vazio", () => {
+    const missingDate = "2026-07-21T12:30:00,MG4,SP,São Paulo,Dealer Original,,,,Site,,Dealer A";
+    const explicitDate = "2026-07-19T12:30:00,MGS5,RJ,Rio de Janeiro,Dealer Original,,,,Meta,19/07/2026,Dealer B";
+    const result = parseLeadCsv(csv(missingDate, missingDate, explicitDate), "2026-07-20");
+
+    expect(result).toMatchObject({
+      rowsTotal: 3,
+      validRows: 3,
+      invalidRows: 0,
+      fallbackDateUsed: "2026-07-20",
+      fallbackDateCount: 2,
+      dateFrom: "2026-07-19",
+      dateTo: "2026-07-20",
+    });
+    expect(result.records.slice(0, 2).map(record => record.correctedDate)).toEqual([
+      "2026-07-20",
+      "2026-07-20",
+    ]);
+    expect(result.records.slice(0, 2).map(record => record.correctedDateRaw)).toEqual(["", ""]);
+    expect(result.records.slice(0, 2).map(record => record.rawPayload.correctedDate)).toEqual(["", ""]);
+    expect(result.duplicateRowsWithinFile).toBe(1);
+  });
+
+  it("mantém Data Corrigida inválida como erro em vez de aplicar o fallback", () => {
     const invalid = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,,,,Site,31/02/2026,Dealer A";
     const valid = "2026-07-20T12:30:00,MG4,Rio de Janeiro,Rio de Janeiro,Dealer Original,,,,Meta,20/07/2026,Dealer B";
     const result = parseLeadCsv(csv(invalid, valid));
@@ -126,6 +150,18 @@ describe("datas e envelope do upload", () => {
     expect(parseCorrectedLeadDate("29/02/2024")).toBe("2024-02-29");
     expect(parseCorrectedLeadDate("2026-07-19T23:59:00")).toBe("2026-07-19");
     expect(parseCorrectedLeadDate("29/02/2026")).toBeNull();
+  });
+
+  it("calcula ontem pelo calendário de São Paulo inclusive nas viradas de mês e ano", () => {
+    expect(getYesterdayInSaoPaulo(new Date("2026-08-01T03:30:00.000Z"))).toBe("2026-07-31");
+    expect(getYesterdayInSaoPaulo(new Date("2026-01-01T03:30:00.000Z"))).toBe("2025-12-31");
+    expect(getYesterdayInSaoPaulo(new Date("2026-08-01T02:30:00.000Z"))).toBe("2026-07-30");
+  });
+
+  it("rejeita uma data de fallback inválida ou fora do formato ISO canônico", () => {
+    const row = "2026-07-21T12:30:00,MG4,SP,São Paulo,Dealer Original,,,,Site,,Dealer A";
+    expect(() => parseLeadCsv(csv(row), "31/07/2026")).toThrowError(/fallback/);
+    expect(() => parseLeadCsv(csv(row), "2026-02-31")).toThrowError(/fallback/);
   });
 
   it("decodifica base64 estrito e sanitiza o nome do arquivo", () => {

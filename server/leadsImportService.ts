@@ -2,6 +2,8 @@ import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { leadImports, leads, type LeadImport } from "../drizzle/schema";
 import { getDb } from "./db";
 import {
+  getLeadCsvFileHash,
+  getYesterdayInSaoPaulo,
   LeadCsvValidationError,
   MAX_LEAD_CSV_BYTES,
   parseLeadCsv,
@@ -20,6 +22,8 @@ export type LeadCsvPreview = {
   rowsTotal: number;
   validRows: number;
   invalidRows: number;
+  fallbackDateUsed: string;
+  fallbackDateCount: number;
   uniqueValidRows: number;
   duplicateRowsWithinFile: number;
   rowsAlreadyStored: number;
@@ -120,6 +124,8 @@ function buildPreview(
     rowsTotal: parsed.rowsTotal,
     validRows: parsed.validRows,
     invalidRows: parsed.invalidRows,
+    fallbackDateUsed: parsed.fallbackDateUsed,
+    fallbackDateCount: parsed.fallbackDateCount,
     uniqueValidRows: parsed.uniqueValidRows,
     duplicateRowsWithinFile: parsed.duplicateRowsWithinFile,
     rowsAlreadyStored,
@@ -139,13 +145,16 @@ function buildPreview(
 export async function previewLeadCsv(input: {
   fileName: string;
   bytes: Buffer;
+  fallbackDate?: string;
 }): Promise<LeadCsvPreview> {
   const fileName = sanitizeLeadCsvFileName(input.fileName);
-  const parsed = parseLeadCsv(input.bytes);
-  const [existingImport, rowsAlreadyStored] = await Promise.all([
-    findImportByHash(parsed.fileHash),
-    countExistingRecords(parsed.records.map(record => record.recordHash)),
-  ]);
+  const existingImport = await findImportByHash(getLeadCsvFileHash(input.bytes));
+  const fallbackDate =
+    existingImport?.fallbackDateUsed ?? input.fallbackDate ?? getYesterdayInSaoPaulo();
+  const parsed = parseLeadCsv(input.bytes, fallbackDate);
+  const rowsAlreadyStored = await countExistingRecords(
+    parsed.records.map(record => record.recordHash),
+  );
   return buildPreview(parsed, fileName, rowsAlreadyStored, existingImport);
 }
 
@@ -192,6 +201,8 @@ async function createOrResetImport(input: {
         rowsInserted: 0,
         rowsSkipped: 0,
         rowsInvalid: input.parsed.invalidRows,
+        fallbackDateUsed: input.parsed.fallbackDateUsed,
+        fallbackDateCount: input.parsed.fallbackDateCount,
         errorSummary: null,
         importedBy: input.actor,
         createdAt: now,
@@ -210,6 +221,8 @@ async function createOrResetImport(input: {
     rowsInserted: 0,
     rowsSkipped: 0,
     rowsInvalid: input.parsed.invalidRows,
+    fallbackDateUsed: input.parsed.fallbackDateUsed,
+    fallbackDateCount: input.parsed.fallbackDateCount,
     importedBy: input.actor,
     createdAt: now,
   });
@@ -226,13 +239,16 @@ export async function importLeadCsv(input: {
   fileName: string;
   bytes: Buffer;
   actor: string;
+  fallbackDate?: string;
 }): Promise<LeadCsvImportResult> {
   const fileName = sanitizeLeadCsvFileName(input.fileName);
-  const parsed = parseLeadCsv(input.bytes);
+  const existingImport = await findImportByHash(getLeadCsvFileHash(input.bytes));
+  const fallbackDate =
+    existingImport?.fallbackDateUsed ?? input.fallbackDate ?? getYesterdayInSaoPaulo();
+  const parsed = parseLeadCsv(input.bytes, fallbackDate);
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
 
-  const existingImport = await findImportByHash(parsed.fileHash);
   const rowsAlreadyStored = await countExistingRecords(parsed.records.map(record => record.recordHash));
   const preview = buildPreview(parsed, fileName, rowsAlreadyStored, existingImport);
 
@@ -338,6 +354,8 @@ export async function importLeadCsv(input: {
           rowsInserted,
           rowsSkipped,
           rowsInvalid: parsed.invalidRows,
+          fallbackDateUsed: parsed.fallbackDateUsed,
+          fallbackDateCount: parsed.fallbackDateCount,
           errorSummary: null,
           completedAt: now,
         })

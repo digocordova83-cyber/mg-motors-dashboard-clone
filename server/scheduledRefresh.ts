@@ -8,6 +8,8 @@ import {
 import { sdk } from "./_core/sdk";
 
 export const DAILY_REFRESH_TIMEZONE = "America/Sao_Paulo";
+export const GOOGLE_ADS_DEFAULT_WINDOW_DAYS = 30;
+export const META_ADS_DEFAULT_WINDOW_DAYS = 7;
 
 type SerializableMetadata = Record<string, number | string | boolean | null>;
 
@@ -172,6 +174,18 @@ export async function executeDailyRefresh(
   dependencies: RefreshDependencies = defaultDependencies,
 ): Promise<DailyRefreshResult> {
   const startedAt = dependencies.now();
+  // O job continua validando e auditando D-1, mas busca os mesmos intervalos
+  // iniciais da interface. Assim, a chamada diária também aquece o snapshot
+  // que atende o primeiro acesso após cold start, sem aumentar o número de
+  // consultas externas por fonte.
+  const googleDateFrom = addIsoDays(
+    input.date,
+    -(GOOGLE_ADS_DEFAULT_WINDOW_DAYS - 1),
+  );
+  const metaDateFrom = addIsoDays(
+    input.date,
+    -(META_ADS_DEFAULT_WINDOW_DAYS - 1),
+  );
 
   const [googleAds, metaAds] = await Promise.all([
     refreshSource(dependencies, {
@@ -179,7 +193,9 @@ export async function executeDailyRefresh(
       date: input.date,
       taskUid: input.taskUid,
       load: async () => {
-        const data = await dependencies.loadGoogleAds(input.date, input.date);
+        const data = await dependencies.loadGoogleAds(googleDateFrom, input.date, {
+          forceRefresh: true,
+        });
         const hasClosedDay = data.daily.some(row => row.date === input.date);
         const liveSource = data.metadata.source;
         return {
@@ -192,6 +208,8 @@ export async function executeDailyRefresh(
             investment: data.summary.investment,
             conversions: data.summary.conversions,
             updatedAt: data.metadata.updatedAt,
+            warmedFrom: googleDateFrom,
+            warmedTo: input.date,
           },
         };
       },
@@ -201,7 +219,9 @@ export async function executeDailyRefresh(
       date: input.date,
       taskUid: input.taskUid,
       load: async () => {
-        const data = await dependencies.loadMetaAds(input.date, input.date);
+        const data = await dependencies.loadMetaAds(metaDateFrom, input.date, {
+          forceRefresh: true,
+        });
         const liveSource = data.metadata.source;
         return {
           liveSource,
@@ -217,6 +237,8 @@ export async function executeDailyRefresh(
             spend: data.summary.spend,
             leads: data.summary.leads,
             updatedAt: data.metadata.updatedAt,
+            warmedFrom: metaDateFrom,
+            warmedTo: input.date,
           },
         };
       },

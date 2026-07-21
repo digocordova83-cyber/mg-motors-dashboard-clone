@@ -70,6 +70,7 @@ const dashboardPeriodSchema = z
 const leadCsvUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
   base64: z.string().min(4).max(14_100_000, "O arquivo CSV excede o limite de 10 MB"),
+  fallbackDate: dateSchema.optional(),
 });
 
 async function mapLeadCsvError<T>(operation: () => Promise<T>): Promise<T> {
@@ -189,6 +190,7 @@ export const appRouter = router({
         previewLeadCsv({
           fileName: input.fileName,
           bytes: decodeLeadCsvBase64(input.base64),
+          fallbackDate: input.fallbackDate,
         }),
       ),
     ),
@@ -198,6 +200,7 @@ export const appRouter = router({
           fileName: input.fileName,
           bytes: decodeLeadCsvBase64(input.base64),
           actor: ctx.dashboardSession.username,
+          fallbackDate: input.fallbackDate,
         }),
       ),
     ),

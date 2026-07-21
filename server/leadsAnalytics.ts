@@ -1,6 +1,7 @@
 import { canonicalizeDealerName } from "./dealerNormalization";
 
 export const LEADS_UNAVAILABLE = "Indisponível";
+export const LEAD_CHANNEL_UPDATE_EXCLUSIONS = ["Campanha Urban"] as const;
 
 export type LeadAnalyticsRow = {
   correctedDate: string;
@@ -77,6 +78,11 @@ export type LeadPacing = {
   status: "AHEAD" | "BEHIND" | "ON_TRACK" | "NO_GOAL" | "NO_DATA";
 };
 
+export type LeadChannelUpdateStatus = {
+  date: string;
+  updatingChannels: string[];
+};
+
 export type LeadAnalytics = {
   summary: {
     totalLeads: number;
@@ -94,6 +100,7 @@ export type LeadAnalytics = {
   dealerAudit: LeadDealerAudit;
   daily: LeadDailyPoint[];
   channelOrder: string[];
+  channelUpdate: LeadChannelUpdateStatus;
 };
 
 export type BuildLeadAnalyticsInput = {
@@ -103,6 +110,7 @@ export type BuildLeadAnalyticsInput = {
   dateTo: string;
   competence: string;
   goal: number | null;
+  expectedChannels?: string[];
 };
 
 function round(value: number, decimals = 2): number {
@@ -155,6 +163,22 @@ export function listIsoDates(dateFrom: string, dateTo: string): string[] {
   return Array.from({ length: days }, (_, index) => addUtcDays(dateFrom, index));
 }
 
+const CHANNEL_UPDATE_EXCLUSION_KEYS = new Set(
+  LEAD_CHANNEL_UPDATE_EXCLUSIONS.map(channel => channel.toLocaleLowerCase("pt-BR")),
+);
+
+function normalizeChannel(value: string): string {
+  return value.trim() || LEADS_UNAVAILABLE;
+}
+
+function canShowChannelUpdate(channel: string): boolean {
+  const normalized = normalizeChannel(channel);
+  return (
+    normalized !== LEADS_UNAVAILABLE &&
+    !CHANNEL_UPDATE_EXCLUSION_KEYS.has(normalized.toLocaleLowerCase("pt-BR"))
+  );
+}
+
 function sortCounts(counter: Map<string, number>): Array<[string, number]> {
   return Array.from(counter.entries()).sort(
     ([valueA, countA], [valueB, countB]) => countB - countA || valueA.localeCompare(valueB, "pt-BR"),
@@ -188,7 +212,7 @@ function buildDaily(
 ): LeadDailyPoint[] {
   const byDate = new Map<string, Map<string, number>>();
   for (const row of rows) {
-    const channel = row.channel.trim() || LEADS_UNAVAILABLE;
+    const channel = normalizeChannel(row.channel);
     let channelCounts = byDate.get(row.correctedDate);
     if (!channelCounts) {
       channelCounts = new Map<string, number>();
@@ -360,7 +384,23 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
   const channels = buildBreakdown(rows, row => row.channel, calendarDays);
   const dealers = buildBreakdown(rows, row => row.dealerName, calendarDays);
   const dealerAudit = buildDealerAudit(rows, input.dateFrom, input.dateTo, calendarDays);
-  const channelOrder = channels.map(item => item.value);
+  const activeChannelOrder = channels.map(item => item.value);
+  const expectedChannels = Array.from(
+    new Set(
+      [...(input.expectedChannels ?? []), ...activeChannelOrder].map(normalizeChannel),
+    ),
+  ).filter(channel => channel !== LEADS_UNAVAILABLE);
+  const channelOrder = [
+    ...activeChannelOrder,
+    ...expectedChannels
+      .filter(channel => !activeChannelOrder.includes(channel))
+      .sort((a, b) => a.localeCompare(b, "pt-BR")),
+  ];
+  const daily = buildDaily(rows, input.dateFrom, input.dateTo, channelOrder);
+  const latestDay = daily.at(-1);
+  const updatingChannels = channelOrder.filter(
+    channel => canShowChannelUpdate(channel) && (latestDay?.values[channel] ?? 0) === 0,
+  );
   const primary = channels.find(item => item.value !== LEADS_UNAVAILABLE) ?? null;
   const activeChannels = channels.filter(item => item.value !== LEADS_UNAVAILABLE && item.leads > 0).length;
 
@@ -379,7 +419,11 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
     regions: buildBreakdown(rows, row => row.region, calendarDays),
     dealers,
     dealerAudit,
-    daily: buildDaily(rows, input.dateFrom, input.dateTo, channelOrder),
+    daily,
     channelOrder,
+    channelUpdate: {
+      date: input.dateTo,
+      updatingChannels,
+    },
   };
 }

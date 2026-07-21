@@ -1,5 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { buildMetaAdsData } from "./metaAdsService";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const dbMocks = vi.hoisted(() => ({
+  getDashboardDataSnapshot: vi.fn(),
+  upsertDashboardDataSnapshot: vi.fn(),
+}));
+
+vi.mock("./db", () => dbMocks);
+
+import {
+  buildMetaAdsData,
+  clearMetaAdsCache,
+  loadMetaAdsData,
+} from "./metaAdsService";
 
 describe("metaAdsService", () => {
   it("agrega KPIs diários sem duplicar campanhas e preserva a limitação regional", () => {
@@ -290,5 +302,85 @@ describe("associação de imagens aos criativos Meta Ads", () => {
     expect(result.creatives).toHaveLength(2);
     expect(result.creatives.every(item => item.imageUrl?.includes("/assets/mg4.jpg"))).toBe(true);
     expect(result.creatives.every(item => item.imageSource === "thumbnail_url")).toBe(true);
+  });
+});
+
+
+describe("cache persistente e concorrência Meta Ads", () => {
+  const cachedBundle = makeCreativeBundle([]);
+  const liveRow = {
+    account_name: "MG Motors",
+    account_currency: "BRL",
+    account_timezone: "America/Sao_Paulo",
+    date: "2026-07-20",
+    spend: 100,
+    actions_lead: 10,
+    impressions: 1_000,
+    clicks: 100,
+  };
+
+  beforeEach(() => {
+    clearMetaAdsCache();
+    dbMocks.getDashboardDataSnapshot.mockReset().mockResolvedValue(undefined);
+    dbMocks.upsertDashboardDataSnapshot.mockReset().mockResolvedValue(undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [liveRow] }),
+      } as Response),
+    );
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("responde pelo snapshot persistente após cold start sem consultar a fonte externa", async () => {
+    dbMocks.getDashboardDataSnapshot.mockResolvedValue({
+      dataThroughDate: "2026-07-20",
+      refreshedAt: Date.parse("2026-07-21T08:30:00.000Z"),
+      payload: {
+        bundle: cachedBundle,
+        updatedAt: "2026-07-21T08:30:00.000Z",
+      },
+    });
+
+    const result = await loadMetaAdsData("2026-07-20", "2026-07-20");
+
+    expect(result.metadata.source).toBe("persistent-snapshot");
+    expect(result.metadata.cacheHit).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("consolida três solicitações simultâneas nas mesmas seis consultas Windsor", async () => {
+    const [first, second, third] = await Promise.all([
+      loadMetaAdsData("2026-07-20", "2026-07-20"),
+      loadMetaAdsData("2026-07-20", "2026-07-20"),
+      loadMetaAdsData("2026-07-20", "2026-07-20"),
+    ]);
+
+    expect(fetch).toHaveBeenCalledTimes(6);
+    expect(first.metadata.source).toBe("windsor-live");
+    expect(second.metadata.cacheHit).toBe(true);
+    expect(third.metadata.cacheHit).toBe(true);
+    expect(dbMocks.upsertDashboardDataSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignora o snapshot existente quando o job diário solicita refresh forçado", async () => {
+    dbMocks.getDashboardDataSnapshot.mockResolvedValue({
+      dataThroughDate: "2026-07-20",
+      refreshedAt: Date.parse("2026-07-21T08:30:00.000Z"),
+      payload: {
+        bundle: cachedBundle,
+        updatedAt: "2026-07-21T08:30:00.000Z",
+      },
+    });
+
+    const result = await loadMetaAdsData("2026-07-20", "2026-07-20", {
+      forceRefresh: true,
+    });
+
+    expect(result.metadata.source).toBe("windsor-live");
+    expect(fetch).toHaveBeenCalledTimes(6);
+    expect(dbMocks.upsertDashboardDataSnapshot).toHaveBeenCalledTimes(1);
   });
 });

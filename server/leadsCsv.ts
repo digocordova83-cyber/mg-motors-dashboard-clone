@@ -22,7 +22,6 @@ export const MAX_LEAD_CSV_ROWS = 100_000;
 export type LeadCsvHeader = (typeof LEAD_CSV_HEADERS)[number];
 
 export const REQUIRED_LEAD_ROW_FIELDS = [
-  "Data Corrigida",
   "Modelo",
   "Canal",
   "Concessionarias corrijida",
@@ -80,6 +79,8 @@ export type ParsedLeadCsv = {
   rowsTotal: number;
   validRows: number;
   invalidRows: number;
+  fallbackDateUsed: string;
+  fallbackDateCount: number;
   uniqueValidRows: number;
   duplicateRowsWithinFile: number;
   dateFrom: string | null;
@@ -230,8 +231,40 @@ export function parseCorrectedLeadDate(value: string): string | null {
   return null;
 }
 
+export const LEADS_TIMEZONE = "America/Sao_Paulo";
+
+function formatDateInTimeZone(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function addIsoDays(date: string, days: number): string {
+  const value = new Date(`${date}T12:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+export function getYesterdayInSaoPaulo(now: Date = new Date()): string {
+  return addIsoDays(formatDateInTimeZone(now, LEADS_TIMEZONE), -1);
+}
+
+function assertFallbackDate(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || parseCorrectedLeadDate(value) !== value) {
+    throw new LeadCsvValidationError("A data de fallback precisa ser válida no formato AAAA-MM-DD.");
+  }
+  return value;
+}
+
 function sha256(value: Buffer | string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+export function getLeadCsvFileHash(bytes: Buffer): string {
+  return sha256(bytes);
 }
 
 function toComparable(value: string): string {
@@ -287,6 +320,7 @@ function normalizeRow(
   row: LeadRawRow,
   sourceRowNumber: number,
   fileHash: string,
+  fallbackDate: string,
 ): NormalizedLeadRecord | LeadCsvRowError {
   const missingFields = REQUIRED_LEAD_ROW_FIELDS.filter(field => !normalizeWhitespace(row[field] ?? ""));
   if (missingFields.length) {
@@ -297,11 +331,14 @@ function normalizeRow(
   }
 
   const correctedDateRaw = row["Data Corrigida"] ?? "";
-  const correctedDate = parseCorrectedLeadDate(correctedDateRaw);
+  const correctedDateMissing = !normalizeWhitespace(correctedDateRaw);
+  const correctedDate = correctedDateMissing
+    ? fallbackDate
+    : parseCorrectedLeadDate(correctedDateRaw);
   if (!correctedDate) {
     return {
       rowNumber: sourceRowNumber,
-      message: "Data Corrigida ausente ou inválida; use DD/MM/AAAA ou AAAA-MM-DD.",
+      message: "Data Corrigida inválida; use DD/MM/AAAA ou AAAA-MM-DD.",
     };
   }
 
@@ -378,13 +415,17 @@ function normalizeRow(
   };
 }
 
-export function parseLeadCsv(bytes: Buffer): ParsedLeadCsv {
+export function parseLeadCsv(
+  bytes: Buffer,
+  fallbackDate = getYesterdayInSaoPaulo(),
+): ParsedLeadCsv {
   if (!bytes.length) throw new LeadCsvValidationError("O arquivo CSV está vazio.");
   if (bytes.length > MAX_LEAD_CSV_BYTES) {
     throw new LeadCsvValidationError("O arquivo CSV excede o limite de 10 MB.");
   }
 
-  const fileHash = sha256(bytes);
+  const normalizedFallbackDate = assertFallbackDate(fallbackDate);
+  const fileHash = getLeadCsvFileHash(bytes);
   const text = decodeUtf8(bytes);
   const rawRows = parseRows(text);
   if (!rawRows.length) throw new LeadCsvValidationError("O CSV não contém registros de Leads.");
@@ -397,16 +438,18 @@ export function parseLeadCsv(bytes: Buffer): ParsedLeadCsv {
   const errors: LeadCsvRowError[] = [];
   let invalidRows = 0;
   let validRows = 0;
+  let fallbackDateCount = 0;
   let duplicateRowsWithinFile = 0;
 
   rawRows.forEach((row, index) => {
-    const normalized = normalizeRow(row, index + 2, fileHash);
+    const normalized = normalizeRow(row, index + 2, fileHash, normalizedFallbackDate);
     if ("message" in normalized) {
       invalidRows += 1;
       if (errors.length < 50) errors.push(normalized);
       return;
     }
     validRows += 1;
+    if (!normalizeWhitespace(normalized.correctedDateRaw)) fallbackDateCount += 1;
     if (seenContentHashes.has(normalized.contentHash)) duplicateRowsWithinFile += 1;
     else seenContentHashes.add(normalized.contentHash);
     records.push(normalized);
@@ -427,6 +470,8 @@ export function parseLeadCsv(bytes: Buffer): ParsedLeadCsv {
     rowsTotal: rawRows.length,
     validRows,
     invalidRows,
+    fallbackDateUsed: normalizedFallbackDate,
+    fallbackDateCount,
     uniqueValidRows: seenContentHashes.size,
     duplicateRowsWithinFile,
     dateFrom: dates.at(0) ?? null,

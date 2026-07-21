@@ -260,7 +260,13 @@ export function CsvImportFeedback({
   return null;
 }
 
-export function CsvPreviewSummary({ preview }: { preview: LeadPreview }) {
+export function CsvPreviewSummary({
+  preview,
+  locale = "pt-BR",
+}: {
+  preview: LeadPreview;
+  locale?: Locale;
+}) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-[#243044] bg-[#0a111d] p-3">
@@ -282,6 +288,15 @@ export function CsvPreviewSummary({ preview }: { preview: LeadPreview }) {
         ))}
       </div>
       <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-[11px] leading-5 text-amber-100">As linhas repetidas são mantidas e importadas como ocorrências do arquivo. O hash do arquivo impede apenas o reprocessamento integral do mesmo CSV.</div>
+      {preview.fallbackDateCount > 0 ? (
+        <div data-testid="lead-date-fallback-notice" className="rounded-lg border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-[11px] leading-5 text-sky-100">
+          {ui(
+            locale,
+            `${formatInteger(preview.fallbackDateCount, locale)} linha(s) sem Data Corrigida receberão automaticamente ${formatDate(preview.fallbackDateUsed, locale)} (ontem em São Paulo). O valor original vazio continuará preservado para auditoria.`,
+            `${formatInteger(preview.fallbackDateCount, locale)} row(s) without Corrected Date will automatically receive ${formatDate(preview.fallbackDateUsed, locale)} (yesterday in São Paulo). The original blank value will remain preserved for audit.`,
+          )}
+        </div>
+      ) : null}
       {preview.alreadyImported ? <div className="rounded-lg border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-[11px] leading-5 text-sky-200">Este arquivo já foi processado. A confirmação retornará o lote existente sem inserir as linhas novamente.</div> : null}
       {preview.errors.length ? <div className="max-h-32 overflow-y-auto rounded-lg border border-red-500/15 bg-red-500/[0.04] p-3 text-[10px] leading-5 text-red-300">{preview.errors.map(error => <p key={`${error.rowNumber}-${error.message}`}>Linha {error.rowNumber}: {error.message}</p>)}</div> : null}
     </div>
@@ -294,12 +309,14 @@ function CsvPreviewDialog({
   isImporting,
   onOpenChange,
   onConfirm,
+  locale,
 }: {
   preview: LeadPreview | null;
   open: boolean;
   isImporting: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  locale: Locale;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -308,7 +325,7 @@ function CsvPreviewDialog({
           <DialogTitle className="flex items-center gap-2"><FileCheck2 className="h-5 w-5 text-emerald-400" />Pré-validação do CSV</DialogTitle>
           <DialogDescription className="text-slate-500">Revise o resultado antes de confirmar. Nenhuma linha é gravada nesta etapa.</DialogDescription>
         </DialogHeader>
-        {preview ? <CsvPreviewSummary preview={preview} /> : null}
+        {preview ? <CsvPreviewSummary preview={preview} locale={locale} /> : null}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#2b374b] bg-[#111a29] text-slate-300 hover:bg-[#182338] hover:text-white">Cancelar</Button>
           <Button onClick={onConfirm} disabled={!preview || isImporting} className="bg-[#e2212d] text-white hover:bg-[#c91622]">
@@ -482,6 +499,51 @@ function BreakdownList({ title, subtitle, items, accent, locale }: { title: stri
   );
 }
 
+export function ChannelUpdatingNotice({
+  locale = "pt-BR",
+  date,
+  channels,
+}: {
+  locale?: Locale;
+  date: string;
+  channels: string[];
+}) {
+  const visibleChannels = channels.filter(
+    channel => channel.trim().toLocaleLowerCase("pt-BR") !== "campanha urban",
+  );
+  if (!visibleChannels.length) return null;
+
+  return (
+    <div
+      role="status"
+      data-testid="channel-updating-notice"
+      className="flex items-start gap-3 rounded-xl border border-sky-400/25 bg-sky-400/[0.08] px-4 py-3 text-sky-100 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+    >
+      <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" aria-hidden="true" />
+      <div className="min-w-0">
+        <p className="text-xs font-semibold">{ui(locale, "Em atualização", "Updating")}</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-sky-100/75">
+          {ui(
+            locale,
+            `Os canais abaixo estão com 0 Leads em ${formatDate(date, locale)}. O aviso será removido automaticamente assim que houver pelo menos 1 Lead no dia.`,
+            `The channels below have 0 Leads on ${formatDate(date, locale)}. This notice will be removed automatically as soon as at least 1 Lead is received for the day.`,
+          )}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {visibleChannels.map(channel => (
+            <span
+              key={channel}
+              className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[9px] font-semibold text-sky-100"
+            >
+              {formatCategoryLabel(channel, locale)} · 0 Leads
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function WebmotorsPendingNotice({ locale = "pt-BR" }: { locale?: Locale }) {
   return (
     <div
@@ -522,7 +584,11 @@ export function LeadsTab({
     { limit: 6 },
     { enabled: canImportLeads, staleTime: 60 * 1000, refetchOnWindowFocus: false },
   );
-  const [upload, setUpload] = useState<{ fileName: string; base64: string } | null>(null);
+  const [upload, setUpload] = useState<{
+    fileName: string;
+    base64: string;
+    fallbackDate?: string;
+  } | null>(null);
   const [preview, setPreview] = useState<LeadPreview | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -534,7 +600,12 @@ export function LeadsTab({
   }, [analytics.data?.metadata.updatedAt, onUpdatedAt]);
 
   const previewMutation = trpc.leads.previewCsv.useMutation({
-    onSuccess: data => {
+    onSuccess: (data, variables) => {
+      setUpload(current =>
+        current?.fileName === variables.fileName && current.base64 === variables.base64
+          ? { ...current, fallbackDate: data.fallbackDateUsed }
+          : current,
+      );
       setPreview(data);
       setPreviewOpen(true);
       setClientUploadError(null);
@@ -634,6 +705,11 @@ export function LeadsTab({
       ) : null}
 
       <WebmotorsPendingNotice locale={locale} />
+      <ChannelUpdatingNotice
+        locale={locale}
+        date={data.channelUpdate.date}
+        channels={data.channelUpdate.updatingChannels}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <LeadMetricCard title={ui(locale, "Total de Leads", "Total Leads")} value={formatInteger(data.summary.totalLeads, locale)} subtitle={ui(locale, `${data.summary.calendarDays} dia(s) no período`, `${data.summary.calendarDays} day(s) in period`)} icon={<UsersRound className="h-4 w-4" />} accent="#e2212d" />
@@ -725,7 +801,7 @@ export function LeadsTab({
       </LeadPanel>
       ) : null}
 
-      {canImportLeads ? <CsvPreviewDialog preview={preview} open={previewOpen} isImporting={importMutation.isPending} onOpenChange={setPreviewOpen} onConfirm={confirmImport} /> : null}
+      {canImportLeads ? <CsvPreviewDialog preview={preview} open={previewOpen} isImporting={importMutation.isPending} onOpenChange={setPreviewOpen} onConfirm={confirmImport} locale={locale} /> : null}
       <GoalDialog analytics={data} open={goalOpen} isSaving={goalMutation.isPending} error={goalMutation.error?.message ?? null} onOpenChange={setGoalOpen} onSave={goal => goalMutation.mutate({ competence: data.pacing.competence, goalCount: goal })} locale={locale} />
     </div>
   );

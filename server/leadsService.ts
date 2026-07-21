@@ -118,6 +118,16 @@ async function getLeadRows(dateFrom: string, dateTo: string): Promise<LeadAnalyt
     .orderBy(asc(leads.correctedDate), asc(leads.id));
 }
 
+async function getExpectedLeadChannels(): Promise<string[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const rows = await db
+    .selectDistinct({ channel: leads.channel })
+    .from(leads)
+    .orderBy(asc(leads.channel));
+  return rows.map(row => row.channel.trim()).filter(Boolean);
+}
+
 async function getLatestLeadImportAt(): Promise<string | null> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -138,11 +148,12 @@ export async function getLeadAnalytics(input: {
   const competence = input.dateTo.slice(0, 7);
   const monthStart = startOfUtcMonth(input.dateTo);
   const monthEnd = endOfUtcMonth(input.dateTo);
-  const [rows, pacingRows, goal, updatedAt] = await Promise.all([
+  const [rows, pacingRows, goal, updatedAt, expectedChannels] = await Promise.all([
     getLeadRows(input.dateFrom, input.dateTo),
     getLeadRows(monthStart, monthEnd),
     getLeadMonthlyGoal(competence),
     getLatestLeadImportAt(),
+    getExpectedLeadChannels(),
   ]);
 
   return {
@@ -156,6 +167,7 @@ export async function getLeadAnalytics(input: {
       dateTo: input.dateTo,
       competence,
       goal: goal?.goalCount ?? null,
+      expectedChannels,
     }),
   };
 }

@@ -356,7 +356,7 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
 
   const queryInput = useMemo(() => ({ dateFrom, dateTo }), [dateFrom, dateTo]);
   const query = trpc.metaAds.data.useQuery(queryInput, {
-    enabled: initialized || bounds.isError,
+    enabled: true,
     retry: 1,
     staleTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,

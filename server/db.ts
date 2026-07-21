@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   campaignGoals,
   dashboardAccounts,
+  dashboardDataSnapshots,
   dashboardSourceRefreshes,
   InsertDashboardAccount,
   InsertUser,
@@ -232,6 +233,87 @@ export async function getDashboardSourceRefresh(
     )
     .limit(1);
   return record;
+}
+
+function parseDashboardSnapshotPayload<T>(payload: unknown): T | null {
+  if (typeof payload === "string") {
+    try {
+      return JSON.parse(payload) as T;
+    } catch {
+      return null;
+    }
+  }
+  if (payload && typeof payload === "object") return payload as T;
+  return null;
+}
+
+export async function getDashboardDataSnapshot<T>(input: {
+  source: DashboardRefreshSource;
+  periodFrom: string;
+  periodTo: string;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const [record] = await db
+    .select()
+    .from(dashboardDataSnapshots)
+    .where(
+      and(
+        eq(dashboardDataSnapshots.source, input.source),
+        eq(dashboardDataSnapshots.periodFrom, input.periodFrom),
+        eq(dashboardDataSnapshots.periodTo, input.periodTo),
+      ),
+    )
+    .limit(1);
+  if (!record) return undefined;
+
+  const payload = parseDashboardSnapshotPayload<T>(record.payload);
+  return payload == null ? undefined : { ...record, payload };
+}
+
+export async function upsertDashboardDataSnapshot(input: {
+  source: DashboardRefreshSource;
+  periodFrom: string;
+  periodTo: string;
+  dataThroughDate: string;
+  sourceName: string;
+  payload: unknown;
+  refreshedAt?: number;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const now = input.refreshedAt ?? Date.now();
+  const payload = input.payload as Record<string, unknown>;
+  await db
+    .insert(dashboardDataSnapshots)
+    .values({
+      source: input.source,
+      periodFrom: input.periodFrom,
+      periodTo: input.periodTo,
+      dataThroughDate: input.dataThroughDate,
+      sourceName: input.sourceName,
+      payload,
+      refreshedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        dataThroughDate: input.dataThroughDate,
+        sourceName: input.sourceName,
+        payload,
+        refreshedAt: now,
+        updatedAt: now,
+      },
+    });
+
+  return getDashboardDataSnapshot({
+    source: input.source,
+    periodFrom: input.periodFrom,
+    periodTo: input.periodTo,
+  });
 }
 
 export async function getCampaignGoals(accountId: string, competencia: string) {

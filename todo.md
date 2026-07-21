@@ -329,18 +329,18 @@
 
 ## Performance — atualizações mais rápidas
 
-- [ ] Medir separadamente latência fria e quente de Google Ads, Meta Ads, processamento, banco e renderização
-- [ ] Identificar chamadas duplicadas, consultas excessivas e etapas que bloqueiam o primeiro conteúdo útil
-- [ ] Definir metas de desempenho mensuráveis sem reduzir campos nem precisão dos dados D-1
-- [ ] Persistir ou reaproveitar o último snapshot válido para responder rapidamente após cold start
-- [ ] Consolidar solicitações simultâneas da mesma fonte e período em uma única atualização
-- [ ] Evitar reconsultar a fonte externa quando o D-1 já estiver completo e auditado
-- [ ] Exibir dados válidos já disponíveis enquanto a interface informa claramente o estado da atualização
-- [ ] Preservar data da fonte, data de atualização, idempotência e reconciliação das métricas
-- [ ] Adicionar testes Vitest para cache persistente, concorrência, invalidação e fallback em falha
-- [ ] Comparar benchmarks antes e depois em cenários frio, quente e concorrente
-- [ ] Inspecionar logs, executar tipagem, suíte completa, build e validação visual
-- [ ] Revisar todo.md e salvar checkpoint da versão otimizada
+- [x] Medir separadamente latência fria e quente de Google Ads, Meta Ads, processamento, banco e renderização
+- [x] Identificar chamadas duplicadas, consultas excessivas e etapas que bloqueiam o primeiro conteúdo útil
+- [x] Definir metas de desempenho mensuráveis sem reduzir campos nem precisão dos dados D-1
+- [x] Persistir ou reaproveitar o último snapshot válido para responder rapidamente após cold start
+- [x] Consolidar solicitações simultâneas da mesma fonte e período em uma única atualização
+- [x] Evitar reconsultar a fonte externa quando o D-1 já estiver completo e auditado
+- [x] Exibir dados válidos já disponíveis enquanto a interface informa claramente o estado da atualização
+- [x] Preservar data da fonte, data de atualização, idempotência e reconciliação das métricas
+- [x] Adicionar testes Vitest para cache persistente, concorrência, invalidação e fallback em falha
+- [x] Comparar benchmarks antes e depois em cenários frio, quente e concorrente
+- [x] Inspecionar logs, executar tipagem, suíte completa, build e validação visual
+- [x] Revisar todo.md e preparar o checkpoint consolidado da versão otimizada
 
 ## Atualização da base de leads — CSV até 20/07/2026
 
@@ -387,3 +387,63 @@
 - [x] Confirmar que o dia 20/07/2026 totaliza 540 linhas após a correção
 - [x] Confirmar que o intervalo final permanece de 30/06/2026 a 20/07/2026
 - [x] Atualizar a auditoria persistente com a regra de correção informada pelo usuário
+
+## Clareza entre total da base e total filtrado de Leads
+
+- [x] Confirmar no banco que as 20 linhas fora do filtro de julho pertencem a 30/06/2026
+- [x] Manter o contrato atual: após a correção, o total integral e o total do período 01/07–20/07 serão ambos 7.611
+- [x] Requisito substituído: o usuário confirmou que as 20 linhas de 30/06 pertencem a 01/07, tornando o período 01/07–20/07 igual a 7.611
+- [x] Dispensar dois cards após alinhar a data normalizada; base e período padrão terão o mesmo total de 7.611
+- [x] Não haverá registros fora do intervalo padrão após a correção confirmada
+- [x] Nenhum texto adicional será necessário após corrigir a origem da divergência
+- [x] Substituir o cenário obsoleto por validação de 7.611 na base e no período 01/07–20/07
+- [x] Validar um único total reconciliado de 7.611 após a correção
+
+## Correção final do intervalo de Leads para 01/07–20/07
+
+- [x] Confirmar que existem exatamente 20 registros normalizados em 30/06/2026 antes da atualização
+- [x] Atualizar somente `correctedDate` dessas 20 linhas para 01/07/2026
+- [x] Preservar `correctedDateRaw`, `sourceDateRaw`, `rawPayload`, IDs e hashes para auditoria
+- [x] Confirmar que nenhuma linha foi adicionada, removida ou deduplicada durante a correção
+- [x] Confirmar total de 7.611 registros entre 01/07/2026 e 20/07/2026
+- [x] Confirmar zero registros normalizados fora do intervalo 01/07/2026–20/07/2026
+- [x] Atualizar a auditoria persistente com a correção de 30/06 para 01/07 informada pelo usuário
+- [x] Validar no dashboard que o filtro padrão exibe 7.611 Leads
+
+## Data ausente no CSV — fallback automático para ontem
+
+- [x] Calcular o dia anterior à importação no fuso `America/Sao_Paulo`
+- [x] Aplicar o fallback somente quando `Data Corrigida` estiver vazia ou composta apenas por espaços
+- [x] Manter datas válidas exatamente como recebidas no CSV
+- [x] Continuar rejeitando datas não vazias com formato ou valor inválido
+- [x] Preservar o valor original vazio em `correctedDateRaw` e `rawPayload` para auditoria
+- [x] Informar na prévia quantas linhas receberam o fallback automático
+- [x] Persistir no lote de importação a data de fallback e a quantidade de linhas corrigidas
+- [x] Garantir que a prévia e a confirmação da importação usem a mesma data de fallback
+- [x] Adicionar testes de virada de dia, mês e ano no fuso de São Paulo
+- [x] Adicionar testes que comprovem preservação de duplicatas e contagem integral com datas ausentes
+- [x] Validar a mensagem da prévia em português e inglês
+
+## Canal sem Leads no dia — alerta automático de atualização
+
+- [x] Identificar os canais esperados a partir do catálogo da base consolidada, inclusive quando não aparecem no período selecionado
+- [x] Completar a série diária de cada canal com zero nos dias sem registros, sem duplicar Leads
+- [x] Exibir o estado visual `Em atualização` quando um canal tiver 0 Leads no dia
+- [x] Remover automaticamente o alerta quando o canal tiver pelo menos 1 Lead no mesmo dia
+- [x] Exibir o texto equivalente `Updating` para a conta `mgmotors`
+- [x] Preservar o alerta específico já existente para os dados recentes da Webmotors
+- [x] Adicionar testes para canal com zero, canal preenchido e alternância automática do estado
+- [x] Validar o alerta no navegador desktop e, no mobile, por estrutura responsiva e testes devido ao isolamento da sessão de captura
+
+## Exceção do alerta diário — Campanha Urban
+
+- [x] Excluir `Campanha Urban` da detecção de canais com 0 Leads no dia
+- [x] Garantir que a Campanha Urban nunca exiba `Em atualização`/`Updating` apenas por contagem diária zerada
+- [x] Adicionar teste de regressão para a exceção da Campanha Urban
+
+## Ajuste do período padrão — Mês
+
+- [x] Alterar o início padrão do período `Mês` para `30/06/2026`
+- [x] Preservar a data final e os demais atalhos de período existentes
+- [x] Adicionar teste de regressão para o início padrão em `30/06/2026`
+- [x] Validar a identidade visual do filtro após o ajuste

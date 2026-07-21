@@ -1,4 +1,8 @@
 import snapshotFile from "./data/mg-motors-meta-ads.json" with { type: "json" };
+import {
+  getDashboardDataSnapshot,
+  upsertDashboardDataSnapshot,
+} from "./db";
 
 export const META_ADS_ACCOUNT_ID = "1418731006678061";
 export const META_ADS_ACCOUNT_NAME = "Ag. BBRO - MG Motor Brasil - AUT";
@@ -130,13 +134,17 @@ type MetaSnapshot = {
 type CacheEntry = {
   expiresAt: number;
   bundle: QueryBundle;
-  source: "windsor-live" | "validated-snapshot";
+  source: "windsor-live" | "validated-snapshot" | "persistent-snapshot";
   updatedAt: string;
   cacheHit: boolean;
 };
 
+type CachedMetaEntry = Omit<CacheEntry, "cacheHit">;
+type MetaCachePayload = { bundle: QueryBundle; updatedAt: string };
+
 const snapshot = snapshotFile as unknown as MetaSnapshot;
-const cache = new Map<string, Omit<CacheEntry, "cacheHit">>();
+const cache = new Map<string, CachedMetaEntry>();
+const inFlight = new Map<string, Promise<CacheEntry>>();
 let boundsCache:
   | {
       expiresAt: number;
@@ -384,36 +392,137 @@ function fallbackBundle(dateFrom: string, dateTo: string) {
   return snapshot.data;
 }
 
-async function loadBundle(dateFrom: string, dateTo: string): Promise<CacheEntry> {
-  const key = `${dateFrom}:${dateTo}`;
-  const cached = cache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return { ...cached, cacheHit: true };
+function isQueryBundle(value: unknown): value is QueryBundle {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  return (Object.keys(QUERY_FIELDS) as QueryName[]).every(name => Array.isArray(record[name]));
+}
 
+async function readPersistentMetaBundle(dateFrom: string, dateTo: string) {
   try {
-    const bundle = await fetchLiveBundle(dateFrom, dateTo);
-    const entry = {
-      bundle,
-      source: "windsor-live" as const,
-      updatedAt: new Date().toISOString(),
+    const stored = await getDashboardDataSnapshot<MetaCachePayload>({
+      source: "META_ADS",
+      periodFrom: dateFrom,
+      periodTo: dateTo,
+    });
+    if (!stored || stored.dataThroughDate < dateTo || !isQueryBundle(stored.payload.bundle)) {
+      return undefined;
+    }
+
+    const entry: CachedMetaEntry = {
+      bundle: stored.payload.bundle,
+      source: "persistent-snapshot",
+      updatedAt:
+        typeof stored.payload.updatedAt === "string"
+          ? stored.payload.updatedAt
+          : new Date(stored.refreshedAt).toISOString(),
       expiresAt: Date.now() + CACHE_TTL_MS,
     };
-    cache.set(key, entry);
-    return { ...entry, cacheHit: false };
+    return entry;
   } catch (error) {
-    const bundle = fallbackBundle(dateFrom, dateTo);
-    if (!bundle) throw error;
     console.warn(
-      "[Meta Ads] Usando snapshot validado:",
+      "[Meta Ads] Snapshot persistente indisponível:",
       error instanceof Error ? error.message : error,
     );
-    const entry = {
-      bundle,
-      source: "validated-snapshot" as const,
-      updatedAt: snapshot.capturedAt,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    };
-    cache.set(key, entry);
-    return { ...entry, cacheHit: false };
+    return undefined;
+  }
+}
+
+async function persistMetaBundle(
+  dateFrom: string,
+  dateTo: string,
+  bundle: QueryBundle,
+  updatedAt: string,
+) {
+  const dataThroughDate = bundle.daily.reduce((latest, row) => {
+    const date = stringOrEmpty(row.date);
+    return date > latest ? date : latest;
+  }, "");
+  if (!dataThroughDate) return;
+
+  try {
+    await upsertDashboardDataSnapshot({
+      source: "META_ADS",
+      periodFrom: dateFrom,
+      periodTo: dateTo,
+      dataThroughDate,
+      sourceName: "windsor-live",
+      payload: { bundle, updatedAt } satisfies MetaCachePayload,
+      refreshedAt: Date.parse(updatedAt),
+    });
+  } catch (error) {
+    console.warn(
+      "[Meta Ads] Não foi possível persistir o snapshot:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+async function loadBundle(
+  dateFrom: string,
+  dateTo: string,
+  options: { forceRefresh?: boolean } = {},
+): Promise<CacheEntry> {
+  const key = `${dateFrom}:${dateTo}`;
+  const cached = cache.get(key);
+  if (!options.forceRefresh && cached && cached.expiresAt > Date.now()) {
+    return { ...cached, cacheHit: true };
+  }
+
+  const requestKey = `${options.forceRefresh ? "force" : "default"}:${key}`;
+  const pending = inFlight.get(requestKey);
+  if (pending) return { ...(await pending), cacheHit: true };
+
+  const operation = (async (): Promise<CacheEntry> => {
+    if (!options.forceRefresh) {
+      const persistent = await readPersistentMetaBundle(dateFrom, dateTo);
+      if (persistent) {
+        cache.set(key, persistent);
+        return { ...persistent, cacheHit: true };
+      }
+    }
+
+    try {
+      const bundle = await fetchLiveBundle(dateFrom, dateTo);
+      const updatedAt = new Date().toISOString();
+      const entry: CachedMetaEntry = {
+        bundle,
+        source: "windsor-live",
+        updatedAt,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      };
+      cache.set(key, entry);
+      await persistMetaBundle(dateFrom, dateTo, bundle, updatedAt);
+      return { ...entry, cacheHit: false };
+    } catch (error) {
+      const persistent = await readPersistentMetaBundle(dateFrom, dateTo);
+      if (persistent) {
+        cache.set(key, persistent);
+        return { ...persistent, cacheHit: true };
+      }
+
+      const bundle = fallbackBundle(dateFrom, dateTo);
+      if (!bundle) throw error;
+      console.warn(
+        "[Meta Ads] Usando snapshot validado:",
+        error instanceof Error ? error.message : error,
+      );
+      const entry: CachedMetaEntry = {
+        bundle,
+        source: "validated-snapshot",
+        updatedAt: snapshot.capturedAt,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      };
+      cache.set(key, entry);
+      return { ...entry, cacheHit: false };
+    }
+  })();
+
+  inFlight.set(requestKey, operation);
+  try {
+    return await operation;
+  } finally {
+    inFlight.delete(requestKey);
   }
 }
 
@@ -641,8 +750,12 @@ export function buildMetaAdsData(
   };
 }
 
-export async function loadMetaAdsData(dateFrom: string, dateTo: string) {
-  const result = await loadBundle(dateFrom, dateTo);
+export async function loadMetaAdsData(
+  dateFrom: string,
+  dateTo: string,
+  options: { forceRefresh?: boolean } = {},
+) {
+  const result = await loadBundle(dateFrom, dateTo, options);
   return buildMetaAdsData(
     result.bundle,
     { source: result.source, updatedAt: result.updatedAt, cacheHit: result.cacheHit },

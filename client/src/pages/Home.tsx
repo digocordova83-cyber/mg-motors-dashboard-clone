@@ -17,7 +17,11 @@ import { MetaAdsDashboard } from "@/components/MetaAdsDashboard";
 import { MediaPlanDashboard } from "@/components/MediaPlanDashboard";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { isValidLeadDateRange, resolveLeadMonthRange } from "@/lib/leadDateRange";
+import {
+  isValidLeadDateRange,
+  LEAD_MONTH_DEFAULT_START,
+  resolveLeadMonthRange,
+} from "@/lib/leadDateRange";
 import {
   DASHBOARD_UPDATE_COPY,
   formatDashboardUpdatedAt,
@@ -1178,7 +1182,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
   const [googleDateFrom, setGoogleDateFrom] = useState(isoDateFromEnd(30));
   const [googleDateTo, setGoogleDateTo] = useState(DATA_END);
   const [leadsPreset, setLeadsPreset] = useState("month");
-  const [leadsDateFrom, setLeadsDateFrom] = useState(`${DATA_END.slice(0, 7)}-01`);
+  const [leadsDateFrom, setLeadsDateFrom] = useState(LEAD_MONTH_DEFAULT_START);
   const [leadsDateTo, setLeadsDateTo] = useState(DATA_END);
   const [leadsRangeInitialized, setLeadsRangeInitialized] = useState(false);
   const logout = trpc.dashboardAuth.logout.useMutation({

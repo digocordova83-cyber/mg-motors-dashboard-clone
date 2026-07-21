@@ -14,7 +14,7 @@ import { importLeadCsv } from "./leadsImportService";
 const CSV = [
   "Data,Modelo,Região/Estado,Cidade,Concessionaria,Nome,Email,Telefone,Canal,Data Corrigida,Concessionarias corrijida",
   "01/07/2026,MG4,SP,São Paulo,LOJA ORIGINAL,Cliente 1,cliente1@example.com,11999999999,Site,01/07/2026,LOJA TESTE",
-  "02/07/2026,MGS5,RJ,Rio de Janeiro,LOJA ORIGINAL 2,Cliente 2,cliente2@example.com,21999999999,Meta,02/07/2026,LOJA TESTE 2",
+  "02/07/2026,MGS5,RJ,Rio de Janeiro,LOJA ORIGINAL 2,Cliente 2,cliente2@example.com,21999999999,Meta,,LOJA TESTE 2",
   "01/07/2026,MG4,SP,São Paulo,LOJA ORIGINAL,Cliente 1,cliente1@example.com,11999999999,Site,01/07/2026,LOJA TESTE",
 ].join("\n");
 
@@ -60,6 +60,7 @@ describe("serviço de importação de Leads", () => {
       fileName: "leads-julho.csv",
       bytes: Buffer.from(CSV, "utf8"),
       actor: "auditor",
+      fallbackDate: "2026-07-20",
     });
 
     expect(result.idempotent).toBe(false);
@@ -67,8 +68,17 @@ describe("serviço de importação de Leads", () => {
     expect(result.rowsInserted).toBe(3);
     expect(result.rowsSkipped).toBe(0);
     expect(result.rowsInvalid).toBe(0);
+    expect(result.fallbackDateUsed).toBe("2026-07-20");
+    expect(result.fallbackDateCount).toBe(1);
     expect(storagePutMock).toHaveBeenCalledOnce();
-    expect(leadImportValues).toHaveBeenCalledWith(expect.objectContaining({ status: "PROCESSING", rowsTotal: 3, rowsSkipped: 0, importedBy: "auditor" }));
+    expect(leadImportValues).toHaveBeenCalledWith(expect.objectContaining({
+      status: "PROCESSING",
+      rowsTotal: 3,
+      rowsSkipped: 0,
+      fallbackDateUsed: "2026-07-20",
+      fallbackDateCount: 1,
+      importedBy: "auditor",
+    }));
     expect(leadValues).toHaveBeenCalledWith(expect.arrayContaining([
       expect.objectContaining({
         importId: 7,
@@ -76,12 +86,26 @@ describe("serviço de importação de Leads", () => {
         dealerName: "LOJA TESTE",
         rawPayload: expect.objectContaining({ dealer: "LOJA ORIGINAL", correctedDealer: "LOJA TESTE" }),
       }),
+      expect.objectContaining({
+        importId: 7,
+        correctedDate: "2026-07-20",
+        correctedDateRaw: "",
+        dealerName: "LOJA TESTE 2",
+        rawPayload: expect.objectContaining({ correctedDate: "" }),
+      }),
     ]));
     const insertedRecords = leadValues.mock.calls.flatMap(([records]) => records);
     expect(insertedRecords).toHaveLength(3);
     expect(new Set(insertedRecords.map(record => record.recordHash))).toHaveProperty("size", 3);
     expect(txDeleteWhere).toHaveBeenCalledOnce();
-    expect(txUpdateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "COMPLETED", rowsInserted: 3, rowsSkipped: 0, rowsInvalid: 0 }));
+    expect(txUpdateSet).toHaveBeenCalledWith(expect.objectContaining({
+      status: "COMPLETED",
+      rowsInserted: 3,
+      rowsSkipped: 0,
+      rowsInvalid: 0,
+      fallbackDateUsed: "2026-07-20",
+      fallbackDateCount: 1,
+    }));
     expect(transaction).toHaveBeenCalledOnce();
   });
 
@@ -119,6 +143,8 @@ describe("serviço de importação de Leads", () => {
       rowsInserted: 3,
       rowsSkipped: 0,
       rowsInvalid: 0,
+      fallbackDateUsed: "2026-07-20",
+      fallbackDateCount: 1,
       errorSummary: null,
       importedBy: "auditor",
       createdAt: 1_700_000_000_000,
@@ -148,6 +174,7 @@ describe("serviço de importação de Leads", () => {
       fileName: "leads-julho.csv",
       bytes: Buffer.from(CSV, "utf8"),
       actor: "auditor",
+      fallbackDate: "2026-07-20",
     });
 
     expect(result.idempotent).toBe(true);
@@ -155,6 +182,8 @@ describe("serviço de importação de Leads", () => {
     expect(result.status).toBe("COMPLETED");
     expect(result.rowsInserted).toBe(0);
     expect(result.rowsSkipped).toBe(3);
+    expect(result.fallbackDateUsed).toBe("2026-07-20");
+    expect(result.fallbackDateCount).toBe(1);
     expect(result.alreadyImported).toBe(true);
     expect(storagePutMock).not.toHaveBeenCalled();
   });

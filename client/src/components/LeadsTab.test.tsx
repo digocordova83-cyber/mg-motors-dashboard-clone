@@ -68,31 +68,31 @@ describe("interface de Leads", () => {
     expect(failure).toContain("Arquivo inválido");
   });
 
-  it("resume linhas válidas, repetições mantidas e inválidas antes da importação", () => {
-    const html = renderToStaticMarkup(
-      <CsvPreviewSummary
-        preview={{
-          fileName: "leads-julho.csv",
-          fileHash: "abc123",
-          fileSizeBytes: 4096,
-          rowsTotal: 100,
-          validRows: 98,
-          invalidRows: 2,
-          uniqueValidRows: 95,
-          duplicateRowsWithinFile: 3,
-          rowsAlreadyStored: 0,
-          rowsReadyToInsert: 98,
-          dateFrom: "2026-07-01",
-          dateTo: "2026-07-18",
-          channels: [],
-          models: [],
-          regions: [],
-          errors: [{ rowNumber: 14, message: "Canal obrigatório ausente." }],
-          alreadyImported: false,
-          existingImport: null,
-        }}
-      />,
-    );
+  it("resume linhas válidas, repetições, inválidas e a aplicação de D-1 antes da importação", () => {
+    const preview = {
+      fileName: "leads-julho.csv",
+      fileHash: "abc123",
+      fileSizeBytes: 4096,
+      rowsTotal: 100,
+      validRows: 98,
+      invalidRows: 2,
+      uniqueValidRows: 95,
+      duplicateRowsWithinFile: 3,
+      rowsAlreadyStored: 0,
+      rowsReadyToInsert: 98,
+      dateFrom: "2026-07-01",
+      dateTo: "2026-07-20",
+      fallbackDateUsed: "2026-07-20",
+      fallbackDateCount: 2,
+      channels: [],
+      models: [],
+      regions: [],
+      errors: [{ rowNumber: 14, message: "Canal obrigatório ausente." }],
+      alreadyImported: false,
+      existingImport: null,
+    };
+    const html = renderToStaticMarkup(<CsvPreviewSummary preview={preview} />);
+    const english = renderToStaticMarkup(<CsvPreviewSummary preview={preview} locale="en-US" />);
 
     expect(html).toContain("leads-julho.csv");
     expect(html).toContain("Linhas lidas");
@@ -105,5 +105,10 @@ describe("interface de Leads", () => {
     expect(html).toContain("Inválidas");
     expect(html).toContain("Linha 14");
     expect(html).toContain("Canal obrigatório ausente");
+    expect(html).toContain("2 linha(s) sem Data Corrigida");
+    expect(html).toContain("20/07/2026");
+    expect(html).toContain("valor original vazio continuará preservado");
+    expect(english).toContain("2 row(s) without Corrected Date");
+    expect(english).toContain("original blank value will remain preserved");
   });
 });

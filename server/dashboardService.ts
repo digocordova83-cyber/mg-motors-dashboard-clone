@@ -12,7 +12,11 @@ import {
   type CampaignHealth,
   type GoalConfig,
 } from "./dashboardAnalytics";
-import { getCampaignGoals } from "./db";
+import {
+  getCampaignGoals,
+  getDashboardDataSnapshot,
+  upsertDashboardDataSnapshot,
+} from "./db";
 
 export const MG_MOTORS_ACCOUNT_ID = "535-798-6801";
 export const MG_MOTORS_ACCOUNT_NAME = "MG Motors";
@@ -32,11 +36,15 @@ export type { CampaignHealth };
 type CacheEntry = {
   expiresAt: number;
   rows: GoogleAdsRow[];
-  source: "windsor-live" | "windsor-snapshot";
+  source: "windsor-live" | "windsor-snapshot" | "persistent-snapshot";
   updatedAt: string;
 };
 
+type GoogleAdsRowsResult = CacheEntry & { cacheHit: boolean };
+type GoogleAdsCachePayload = { rows: GoogleAdsRow[]; updatedAt: string };
+
 const cache = new Map<string, CacheEntry>();
+const inFlight = new Map<string, Promise<GoogleAdsRowsResult>>();
 
 function numberOrZero(value: unknown) {
   const parsed = typeof value === "number" ? value : Number(value ?? 0);
@@ -124,31 +132,126 @@ async function fetchWindsorRows(dateFrom: string, dateTo: string) {
   return rows;
 }
 
-export async function getGoogleAdsRows(dateFrom: string, dateTo: string) {
-  const cacheKey = `${dateFrom}:${dateTo}`;
-  const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return { ...cached, cacheHit: true };
-
+async function readPersistentGoogleAdsRows(dateFrom: string, dateTo: string) {
   try {
-    const rows = await fetchWindsorRows(dateFrom, dateTo);
+    const snapshot = await getDashboardDataSnapshot<GoogleAdsCachePayload>({
+      source: "GOOGLE_ADS",
+      periodFrom: dateFrom,
+      periodTo: dateTo,
+    });
+    if (!snapshot || snapshot.dataThroughDate < dateTo) return undefined;
+
+    const rows = normalizeRows(snapshot.payload.rows);
+    if (rows.length === 0) return undefined;
     const entry: CacheEntry = {
       rows,
-      source: "windsor-live",
-      updatedAt: new Date().toISOString(),
+      source: "persistent-snapshot",
+      updatedAt:
+        typeof snapshot.payload.updatedAt === "string"
+          ? snapshot.payload.updatedAt
+          : new Date(snapshot.refreshedAt).toISOString(),
       expiresAt: Date.now() + CACHE_TTL_MS,
     };
-    cache.set(cacheKey, entry);
-    return { ...entry, cacheHit: false };
+    return entry;
   } catch (error) {
-    console.warn("[Windsor] Usando snapshot validado:", error instanceof Error ? error.message : error);
-    const entry: CacheEntry = {
-      rows: filterByDate(normalizedSnapshot, dateFrom, dateTo),
-      source: "windsor-snapshot",
-      updatedAt: "2026-07-21T00:45:58.000Z",
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    };
-    cache.set(cacheKey, entry);
-    return { ...entry, cacheHit: false };
+    console.warn(
+      "[Google Ads] Snapshot persistente indisponível:",
+      error instanceof Error ? error.message : error,
+    );
+    return undefined;
+  }
+}
+
+async function persistGoogleAdsRows(
+  dateFrom: string,
+  dateTo: string,
+  rows: GoogleAdsRow[],
+  updatedAt: string,
+) {
+  const dataThroughDate = rows.reduce(
+    (latest, row) => (row.date > latest ? row.date : latest),
+    "",
+  );
+  if (!dataThroughDate) return;
+
+  try {
+    await upsertDashboardDataSnapshot({
+      source: "GOOGLE_ADS",
+      periodFrom: dateFrom,
+      periodTo: dateTo,
+      dataThroughDate,
+      sourceName: "windsor-live",
+      payload: { rows, updatedAt } satisfies GoogleAdsCachePayload,
+      refreshedAt: Date.parse(updatedAt),
+    });
+  } catch (error) {
+    console.warn(
+      "[Google Ads] Não foi possível persistir o snapshot:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+export async function getGoogleAdsRows(
+  dateFrom: string,
+  dateTo: string,
+  options: { forceRefresh?: boolean } = {},
+): Promise<GoogleAdsRowsResult> {
+  const cacheKey = `${dateFrom}:${dateTo}`;
+  const cached = cache.get(cacheKey);
+  if (!options.forceRefresh && cached && cached.expiresAt > Date.now()) {
+    return { ...cached, cacheHit: true };
+  }
+
+  const requestKey = `${options.forceRefresh ? "force" : "default"}:${cacheKey}`;
+  const pending = inFlight.get(requestKey);
+  if (pending) return { ...(await pending), cacheHit: true };
+
+  const operation = (async (): Promise<GoogleAdsRowsResult> => {
+    if (!options.forceRefresh) {
+      const persistent = await readPersistentGoogleAdsRows(dateFrom, dateTo);
+      if (persistent) {
+        cache.set(cacheKey, persistent);
+        return { ...persistent, cacheHit: true };
+      }
+    }
+
+    try {
+      const rows = await fetchWindsorRows(dateFrom, dateTo);
+      const updatedAt = new Date().toISOString();
+      const entry: CacheEntry = {
+        rows,
+        source: "windsor-live",
+        updatedAt,
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      };
+      cache.set(cacheKey, entry);
+      await persistGoogleAdsRows(dateFrom, dateTo, rows, updatedAt);
+      return { ...entry, cacheHit: false };
+    } catch (error) {
+      const persistent = await readPersistentGoogleAdsRows(dateFrom, dateTo);
+      if (persistent) {
+        cache.set(cacheKey, persistent);
+        return { ...persistent, cacheHit: true };
+      }
+
+      console.warn("[Windsor] Usando snapshot validado:", error instanceof Error ? error.message : error);
+      const entry: CacheEntry = {
+        rows: filterByDate(normalizedSnapshot, dateFrom, dateTo),
+        source: "windsor-snapshot",
+        updatedAt: "2026-07-21T00:45:58.000Z",
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      };
+      cache.set(cacheKey, entry);
+      return { ...entry, cacheHit: false };
+    }
+  })();
+
+  inFlight.set(requestKey, operation);
+  try {
+    return await operation;
+  } finally {
+    inFlight.delete(requestKey);
   }
 }
 
@@ -316,9 +419,13 @@ async function loadGoals(competencia: string): Promise<GoalConfig[]> {
   }
 }
 
-export async function loadDashboardData(dateFrom: string, dateTo: string) {
+export async function loadDashboardData(
+  dateFrom: string,
+  dateTo: string,
+  options: { forceRefresh?: boolean } = {},
+) {
   const historyDateFrom = getHistoricalStart(dateFrom, dateTo);
-  const result = await getGoogleAdsRows(historyDateFrom, dateTo);
+  const result = await getGoogleAdsRows(historyDateFrom, dateTo, options);
   const rows = filterByDate(result.rows, dateFrom, dateTo);
   const lastClosedDate = result.rows.map(row => row.date).sort().at(-1);
   const goals = await loadGoals(lastClosedDate?.slice(0, 7) ?? dateTo.slice(0, 7));

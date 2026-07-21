@@ -36,6 +36,20 @@
       "when": 1784634820152,
       "tag": "0004_stale_sage",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1784641961264,
+      "tag": "0005_salty_black_cat",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1784644784123,
+      "tag": "0006_fancy_norrin_radd",
+      "breakpoints": true
     }
   ]
 }
