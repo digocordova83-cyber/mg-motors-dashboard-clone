@@ -115,7 +115,7 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
         objective: "Objective",
         investment: "Investment",
         visits: "Visits",
-        source: "Source: workbook supplied on July 21, 2026, sheet Página1. Values preserve the rows and consolidated totals from the submitted plan.",
+        source: "Source: workbook supplied on July 21, 2026, sheet Página1. Investment and delivery assumptions are preserved; projected Leads and CPL were proportionally revised to a 10,000-Lead target.",
       }
     : {
         eyebrow: "Planejamento mensal oficial",
@@ -134,7 +134,7 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
         objective: "Objetivo",
         investment: "Investimento",
         visits: "Visitas",
-        source: "Fonte: planilha enviada em 21 de julho de 2026, aba Página1. Os valores preservam as linhas e os totais consolidados do plano recebido.",
+        source: "Fonte: planilha enviada em 21 de julho de 2026, aba Página1. Investimentos e premissas de entrega foram preservados; Leads projetados e CPL foram reprojectados proporcionalmente para a meta de 10.000 Leads.",
       };
 
   const kpis = [

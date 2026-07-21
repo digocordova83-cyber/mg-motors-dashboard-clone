@@ -506,3 +506,12 @@
 - [x] Aplicar o rótulo no ranking Top dealers e nas demais visualizações por concessionária
 - [x] Manter intactos os estados indisponíveis de outras dimensões e erros reais do sistema
 - [x] Atualizar testes e validar tipagem, suíte, build e interface mobile
+
+## Reprojeção do Plano de Mídia para 10.000 Leads
+
+- [x] Alterar o total de Leads projetados de 17.000 para 10.000
+- [x] Recalcular proporcionalmente os Leads projetados de Line-up e MG4 Urban
+- [x] Recalcular proporcionalmente cada inserção do Plano de mídia detalhado com números inteiros
+- [x] Garantir que produtos e inserções reconciliem exatamente com 10.000 Leads
+- [x] Atualizar CPLs derivados sem alterar investimentos, CPM, impressões, CTR, cliques ou visitas
+- [x] Atualizar testes e validar tipagem, suíte completa, build e interface
