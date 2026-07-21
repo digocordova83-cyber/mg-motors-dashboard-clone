@@ -15,6 +15,13 @@ import { OptimizationHistoryTab } from "@/components/OptimizationHistoryTab";
 import { LeadsTab } from "@/components/LeadsTab";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { isValidLeadDateRange, resolveLeadMonthRange } from "@/lib/leadDateRange";
+import {
+  buildDashboardSearch,
+  resolveDashboardRoute,
+  type DashboardModuleId,
+  type GoogleAdsTabId,
+} from "@/lib/dashboardNavigation";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
@@ -33,6 +40,7 @@ import {
   Info,
   Loader2,
   LogOut,
+  Megaphone,
   MousePointerClick,
   PencilLine,
   RefreshCcw,
@@ -44,7 +52,7 @@ import {
   TrendingUp,
   UsersRound,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -68,7 +76,6 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type DashboardData = RouterOutputs["dashboard"]["getData"];
 type DailyPoint = DashboardData["daily"][number];
 type Campaign = DashboardData["campaigns"][number];
-type TabId = "overview" | "leads" | "daily" | "investment" | "optimizations" | "history";
 type OptimizationTask = RouterOutputs["dashboard"]["optimizationWorkspace"]["tasks"][number];
 type TaskStatusFilter = "ALL" | OptimizationTask["status"];
 
@@ -77,25 +84,32 @@ const TAG_CORRECTION_DATE = "2026-07-15";
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const NUMBER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
-const tabs: Array<{ id: TabId; label: string; icon: typeof BarChart3 }> = [
-  { id: "overview", label: "Visão Geral", icon: BarChart3 },
+const dashboardModules: Array<{ id: DashboardModuleId; label: string; icon: typeof BarChart3 }> = [
+  { id: "google-ads", label: "Google Ads", icon: BarChart3 },
+  { id: "meta-ads", label: "Meta Ads", icon: Megaphone },
   { id: "leads", label: "Leads", icon: UsersRound },
+];
+
+const googleAdsTabs: Array<{ id: GoogleAdsTabId; label: string; icon: typeof BarChart3 }> = [
+  { id: "overview", label: "Visão Geral", icon: BarChart3 },
   { id: "daily", label: "Acompanhamento Diário", icon: Clock3 },
   { id: "investment", label: "Investimento", icon: CircleDollarSign },
   { id: "optimizations", label: "Otimizações", icon: Sparkles },
   { id: "history", label: "Histórico", icon: History },
 ];
 
-function getTabFromUrl(): TabId {
-  if (typeof window === "undefined") return "overview";
-  const candidate = new URLSearchParams(window.location.search).get("tab");
-  return tabs.some(tab => tab.id === candidate) ? (candidate as TabId) : "overview";
+function getRouteFromUrl() {
+  return resolveDashboardRoute(typeof window === "undefined" ? "" : window.location.search);
+}
+
+function isoDateFromDateEnd(dateEnd: string, days: number) {
+  const date = new Date(`${dateEnd}T12:00:00`);
+  date.setDate(date.getDate() - (days - 1));
+  return date.toISOString().slice(0, 10);
 }
 
 function isoDateFromEnd(days: number) {
-  const date = new Date(`${DATA_END}T12:00:00`);
-  date.setDate(date.getDate() - (days - 1));
-  return date.toISOString().slice(0, 10);
+  return isoDateFromDateEnd(DATA_END, days);
 }
 
 function formatDate(value: string) {
@@ -1139,10 +1153,16 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
 
 function DashboardScreen() {
   const utils = trpc.useUtils();
-  const [activeTab, setActiveTab] = useState<TabId>(getTabFromUrl);
-  const [activePreset, setActivePreset] = useState("30d");
-  const [dateFrom, setDateFrom] = useState(isoDateFromEnd(30));
-  const [dateTo, setDateTo] = useState(DATA_END);
+  const initialRoute = useMemo(getRouteFromUrl, []);
+  const [activeModule, setActiveModule] = useState<DashboardModuleId>(initialRoute.module);
+  const [activeGoogleTab, setActiveGoogleTab] = useState<GoogleAdsTabId>(initialRoute.googleTab);
+  const [googlePreset, setGooglePreset] = useState("30d");
+  const [googleDateFrom, setGoogleDateFrom] = useState(isoDateFromEnd(30));
+  const [googleDateTo, setGoogleDateTo] = useState(DATA_END);
+  const [leadsPreset, setLeadsPreset] = useState("month");
+  const [leadsDateFrom, setLeadsDateFrom] = useState(`${DATA_END.slice(0, 7)}-01`);
+  const [leadsDateTo, setLeadsDateTo] = useState(DATA_END);
+  const [leadsRangeInitialized, setLeadsRangeInitialized] = useState(false);
   const logout = trpc.dashboardAuth.logout.useMutation({
     onSuccess: async () => {
       await utils.dashboardAuth.session.invalidate();
@@ -1152,41 +1172,104 @@ function DashboardScreen() {
       utils.leads.importHistory.reset();
     },
   });
-  const queryInput = useMemo(() => ({ dateFrom, dateTo }), [dateFrom, dateTo]);
-  const dashboard = trpc.dashboard.getData.useQuery(queryInput, {
+  const googleQueryInput = useMemo(
+    () => ({ dateFrom: googleDateFrom, dateTo: googleDateTo }),
+    [googleDateFrom, googleDateTo],
+  );
+  const dashboard = trpc.dashboard.getData.useQuery(googleQueryInput, {
     retry: 1,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    enabled: activeTab !== "leads",
+    enabled: activeModule === "google-ads",
+  });
+  const leadsBounds = trpc.leads.bounds.useQuery(undefined, {
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: activeModule === "leads",
   });
 
-  function applyPreset(preset: string) {
-    setActivePreset(preset);
-    setDateTo(DATA_END);
-    if (preset === "month") setDateFrom("2026-07-01");
-    else setDateFrom(isoDateFromEnd(Number.parseInt(preset, 10)));
+  useEffect(() => {
+    if (leadsRangeInitialized || !leadsBounds.data?.dateFrom || !leadsBounds.data.dateTo) return;
+    const range = resolveLeadMonthRange(leadsBounds.data.dateFrom, leadsBounds.data.dateTo);
+    setLeadsDateFrom(range.dateFrom);
+    setLeadsDateTo(range.dateTo);
+    setLeadsPreset("month");
+    setLeadsRangeInitialized(true);
+  }, [leadsBounds.data, leadsRangeInitialized]);
+
+  function replaceDashboardUrl(module: DashboardModuleId, googleTab: GoogleAdsTabId) {
+    if (typeof window === "undefined") return;
+    const search = buildDashboardSearch(window.location.search, module, googleTab);
+    window.history.replaceState(null, "", `${window.location.pathname}${search}${window.location.hash}`);
   }
 
-  function updateDateFrom(value: string) {
-    setActivePreset("custom");
-    setDateFrom(value);
+  function selectModule(module: DashboardModuleId) {
+    setActiveModule(module);
+    replaceDashboardUrl(module, activeGoogleTab);
   }
 
-  function updateDateTo(value: string) {
-    setActivePreset("custom");
-    setDateTo(value);
+  function selectGoogleTab(tab: GoogleAdsTabId) {
+    setActiveGoogleTab(tab);
+    setActiveModule("google-ads");
+    replaceDashboardUrl("google-ads", tab);
+  }
+
+  function applyGooglePreset(preset: string) {
+    setGooglePreset(preset);
+    setGoogleDateTo(DATA_END);
+    if (preset === "month") setGoogleDateFrom(`${DATA_END.slice(0, 7)}-01`);
+    else setGoogleDateFrom(isoDateFromEnd(Number.parseInt(preset, 10)));
+  }
+
+  function applyLeadsPreset(preset: string) {
+    const dataEnd = leadsBounds.data?.dateTo ?? DATA_END;
+    const dataStart = leadsBounds.data?.dateFrom ?? `${dataEnd.slice(0, 7)}-01`;
+    setLeadsPreset(preset);
+    setLeadsDateTo(dataEnd);
+    if (preset === "month") {
+      const range = resolveLeadMonthRange(dataStart, dataEnd);
+      setLeadsDateFrom(range.dateFrom);
+      setLeadsDateTo(range.dateTo);
+      return;
+    }
+    const from = isoDateFromDateEnd(dataEnd, Number.parseInt(preset, 10));
+    setLeadsDateFrom(from < dataStart ? dataStart : from);
+  }
+
+  function updateGoogleDateFrom(value: string) {
+    if (!value || value > googleDateTo) return;
+    setGooglePreset("custom");
+    setGoogleDateFrom(value);
+  }
+
+  function updateGoogleDateTo(value: string) {
+    if (!value || value < googleDateFrom || value > DATA_END) return;
+    setGooglePreset("custom");
+    setGoogleDateTo(value);
+  }
+
+  function updateLeadsDateFrom(value: string) {
+    if (!isValidLeadDateRange(value, leadsDateTo, leadsBounds.data?.dateFrom ?? undefined, leadsBounds.data?.dateTo ?? DATA_END)) return;
+    setLeadsPreset("custom");
+    setLeadsDateFrom(value);
+  }
+
+  function updateLeadsDateTo(value: string) {
+    if (!isValidLeadDateRange(leadsDateFrom, value, leadsBounds.data?.dateFrom ?? undefined, leadsBounds.data?.dateTo ?? DATA_END)) return;
+    setLeadsPreset("custom");
+    setLeadsDateTo(value);
   }
 
   const data = dashboard.data;
-  const isLeads = activeTab === "leads";
-  const correctionVisible = dateFrom <= TAG_CORRECTION_DATE && dateTo >= TAG_CORRECTION_DATE;
-  const selectTab = (tab: TabId) => {
-    setActiveTab(tab);
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", tab);
-    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-  };
+  const isGoogleAds = activeModule === "google-ads";
+  const isLeads = activeModule === "leads";
+  const correctionVisible = googleDateFrom <= TAG_CORRECTION_DATE && googleDateTo >= TAG_CORRECTION_DATE;
+  const activeDateFrom = isLeads ? leadsDateFrom : googleDateFrom;
+  const activeDateTo = isLeads ? leadsDateTo : googleDateTo;
+  const activePreset = isLeads ? leadsPreset : googlePreset;
+  const leadMaxDate = leadsBounds.data?.dateTo ?? DATA_END;
+  const leadMinDate = leadsBounds.data?.dateFrom ?? undefined;
   const metricCards = data
     ? [
         { title: "Investimento Total", value: BRL.format(data.summary.investment), subtitle: "Google Ads • período", icon: <Coins className="h-4 w-4" />, accent: "#e2212d" },
@@ -1202,42 +1285,47 @@ function DashboardScreen() {
     <div className="min-h-screen bg-[#080c15] text-slate-100">
       <div className="sticky top-0 z-40 shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
         <header className="border-b border-[#1d2737] bg-[#0a0f1a]/95 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-[1680px] flex-col gap-4 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <MgLogo size="sm" />
-                <span className="hidden h-5 w-px bg-[#263044] sm:block" />
-                <p className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600 sm:block">Dashboard Operacional</p>
+          <div className="mx-auto flex max-w-[1680px] flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-6">
+            <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <MgLogo size="sm" />
+                  <span className="hidden h-5 w-px bg-[#263044] sm:block" />
+                  <p className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600 sm:block">Dashboard Operacional</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="border-[#283349] bg-[#111827] text-slate-400 hover:bg-[#182236] hover:text-white lg:hidden">
+                  <LogOut className="h-3.5 w-3.5" />
+                </Button>
               </div>
-              <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="border-[#283349] bg-[#111827] text-slate-400 hover:bg-[#182236] hover:text-white lg:hidden">
-                <LogOut className="h-3.5 w-3.5" />
-              </Button>
+
+              <nav className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-[#242f42] bg-[#0d1421] p-1" aria-label="Módulos do dashboard">
+                {dashboardModules.map(module => {
+                  const Icon = module.icon;
+                  const isActive = activeModule === module.id;
+                  return (
+                    <button
+                      key={module.id}
+                      type="button"
+                      onClick={() => selectModule(module.id)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-[11px] font-semibold transition-all active:scale-[0.97] ${isActive ? "bg-[#e2212d] text-white shadow-[0_8px_20px_rgba(226,33,45,0.18)]" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {module.label}
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
 
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-              <div className="flex flex-wrap gap-1 rounded-lg border border-[#242f42] bg-[#0d1421] p-1">
-                {["7d", "14d", "30d", "60d"].map(preset => (
-                  <button key={preset} type="button" onClick={() => applyPreset(preset)} className={`rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === preset ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{preset}</button>
-                ))}
-                <button type="button" onClick={() => applyPreset("month")} className={`rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>Mês</button>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-lg border border-[#242f42] bg-[#0d1421] px-3 py-1.5">
-                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-600" />
-                <input aria-label="Data inicial" type="date" max={dateTo} value={dateFrom} onChange={event => updateDateFrom(event.target.value)} className="w-[112px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" />
-                <span className="text-slate-700">—</span>
-                <input aria-label="Data final" type="date" min={dateFrom} max={DATA_END} value={dateTo} onChange={event => updateDateTo(event.target.value)} className="w-[112px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" />
-              </div>
-
-              <div className="hidden items-center gap-3 border-l border-[#263146] pl-4 lg:flex">
-                <div className="text-right"><p className="text-[11px] font-medium text-slate-300">Rodrigo</p><p className="text-[9px] text-emerald-500">Acesso ativo</p></div>
-                <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="h-8 border-[#283349] bg-[#111827] px-3 text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><LogOut className="mr-1.5 h-3.5 w-3.5" />Sair</Button>
-              </div>
+            <div className="hidden items-center gap-3 border-l border-[#263146] pl-4 lg:flex">
+              <div className="text-right"><p className="text-[11px] font-medium text-slate-300">Rodrigo</p><p className="text-[9px] text-emerald-500">Acesso ativo</p></div>
+              <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="h-8 border-[#283349] bg-[#111827] px-3 text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><LogOut className="mr-1.5 h-3.5 w-3.5" />Sair</Button>
             </div>
           </div>
         </header>
 
-        {!isLeads ? (
+        {isGoogleAds ? (
           <div className="border-b border-amber-500/20 bg-[#20170a]/95 backdrop-blur-xl">
             <div className="mx-auto flex max-w-[1680px] items-start gap-3 px-4 py-2.5 lg:px-6">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
@@ -1247,58 +1335,95 @@ function DashboardScreen() {
         ) : null}
       </div>
 
-      <main className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">{isLeads ? <UsersRound className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}{isLeads ? "Base Comercial" : "Google Ads"}</div>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{isLeads ? "Gestão e Auditoria de Leads" : "Performance de Mídia"}</h1>
-            <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(dateFrom)} a {formatLongDate(dateTo)}</p>
-          </div>
-          {!isLeads && data ? (
-            <div className="hidden text-right md:block">
-              <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? "Windsor.ai atualizado" : "Windsor.ai • snapshot validado"}</div>
-              <p className="mt-1 text-[9px] text-slate-700">{data.metadata.campaignCount} campanhas • {data.metadata.rowCount} registros {data.metadata.cacheHit ? "• cache" : ""}</p>
+      {activeModule === "meta-ads" ? <main className="mx-auto min-h-[calc(100vh-88px)] max-w-[1680px]" aria-label="Área Meta Ads vazia" /> : (
+        <main className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6">
+          <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">{isLeads ? <UsersRound className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}{isLeads ? "Base Comercial" : "Google Ads"}</div>
+              <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{isLeads ? "Gestão e Auditoria de Leads" : "Performance de Mídia"}</h1>
+              <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(activeDateFrom)} a {formatLongDate(activeDateTo)}</p>
             </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-[#242f42] bg-[#0d1421] p-1" aria-label={`Atalhos de período de ${isLeads ? "Leads" : "Google Ads"}`}>
+                {["7d", "14d", "30d", "60d"].map(preset => (
+                  <button key={preset} type="button" onClick={() => isLeads ? applyLeadsPreset(preset) : applyGooglePreset(preset)} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === preset ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{preset}</button>
+                ))}
+                <button type="button" onClick={() => isLeads ? applyLeadsPreset("month") : applyGooglePreset("month")} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>Mês</button>
+              </div>
+
+              <div className="flex items-center gap-2 rounded-lg border border-[#242f42] bg-[#0d1421] px-3 py-1.5">
+                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-600" />
+                <input
+                  aria-label={isLeads ? "Data inicial de Leads" : "Data inicial de Google Ads"}
+                  type="date"
+                  min={isLeads ? leadMinDate : undefined}
+                  max={activeDateTo}
+                  value={activeDateFrom}
+                  onChange={event => isLeads ? updateLeadsDateFrom(event.target.value) : updateGoogleDateFrom(event.target.value)}
+                  className="min-w-0 w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]"
+                />
+                <span className="text-slate-700">—</span>
+                <input
+                  aria-label={isLeads ? "Data final de Leads" : "Data final de Google Ads"}
+                  type="date"
+                  min={activeDateFrom}
+                  max={isLeads ? leadMaxDate : DATA_END}
+                  value={activeDateTo}
+                  onChange={event => isLeads ? updateLeadsDateTo(event.target.value) : updateGoogleDateTo(event.target.value)}
+                  className="min-w-0 w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]"
+                />
+              </div>
+
+              {isGoogleAds && data ? (
+                <div className="hidden text-right 2xl:block">
+                  <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? "Windsor.ai atualizado" : "Windsor.ai • snapshot validado"}</div>
+                  <p className="mt-1 text-[9px] text-slate-700">{data.metadata.campaignCount} campanhas • {data.metadata.rowCount} registros {data.metadata.cacheHit ? "• cache" : ""}</p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {isGoogleAds ? (
+            <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-[#1d2737]" aria-label="Áreas de Google Ads">
+              {googleAdsTabs.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button key={tab.id} type="button" onClick={() => selectGoogleTab(tab.id)} aria-current={activeGoogleTab === tab.id ? "page" : undefined} className={`relative flex shrink-0 items-center gap-2 px-4 py-3 text-[11px] font-medium transition-colors ${activeGoogleTab === tab.id ? "text-white" : "text-slate-600 hover:text-slate-300"}`}>
+                    <Icon className={`h-3.5 w-3.5 ${activeGoogleTab === tab.id ? "text-[#e2212d]" : ""}`} />{tab.label}
+                    {activeGoogleTab === tab.id ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#e2212d]" /> : null}
+                  </button>
+                );
+              })}
+            </nav>
           ) : null}
-        </div>
 
-        <nav className="mb-4 flex gap-1 overflow-x-auto border-b border-[#1d2737]" aria-label="Áreas do dashboard">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button key={tab.id} type="button" onClick={() => selectTab(tab.id)} className={`relative flex shrink-0 items-center gap-2 px-4 py-3 text-[11px] font-medium transition-colors ${activeTab === tab.id ? "text-white" : "text-slate-600 hover:text-slate-300"}`}>
-                <Icon className={`h-3.5 w-3.5 ${activeTab === tab.id ? "text-[#e2212d]" : ""}`} />{tab.label}
-                {activeTab === tab.id ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#e2212d]" /> : null}
-              </button>
-            );
-          })}
-        </nav>
-
-        {isLeads ? (
-          <LeadsTab dateFrom={dateFrom} dateTo={dateTo} />
-        ) : dashboard.isLoading ? (
-          <div className="grid min-h-[520px] place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
-            <div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-xs text-slate-500">Atualizando dados do Google Ads...</p></div>
-          </div>
-        ) : dashboard.error ? (
-          <div className="grid min-h-[420px] place-items-center rounded-xl border border-red-500/20 bg-red-500/[0.04] px-6 text-center">
-            <div><AlertTriangle className="mx-auto h-8 w-8 text-red-400" /><h2 className="mt-3 text-sm font-semibold text-white">Não foi possível carregar os dados</h2><p className="mt-1 max-w-md text-xs leading-5 text-slate-500">A conexão pode estar temporariamente indisponível. Tente novamente.</p><Button onClick={() => dashboard.refetch()} className="mt-5 bg-[#e2212d] hover:bg-[#c91622]"><RefreshCcw className="mr-2 h-4 w-4" />Tentar novamente</Button></div>
-          </div>
-        ) : data && data.daily.length ? (
-          <>
-            <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              {metricCards.map(card => <MetricCard key={card.title} {...card} />)}
+          {isLeads ? (
+            <LeadsTab dateFrom={leadsDateFrom} dateTo={leadsDateTo} />
+          ) : dashboard.isLoading ? (
+            <div className="grid min-h-[520px] place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
+              <div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-xs text-slate-500">Atualizando dados do Google Ads...</p></div>
             </div>
-            {activeTab === "overview" ? <OverviewTab data={data} correctionVisible={correctionVisible} /> : null}
-            {activeTab === "daily" ? <DailyTab data={data} correctionVisible={correctionVisible} /> : null}
-            {activeTab === "investment" ? <InvestmentTab data={data} correctionVisible={correctionVisible} /> : null}
-            {activeTab === "optimizations" ? <OptimizationsTab data={data} dateFrom={dateFrom} dateTo={dateTo} /> : null}
-            {activeTab === "history" ? <OptimizationHistoryTab dateFrom={dateFrom} dateTo={dateTo} /> : null}
-          </>
-        ) : (
-          <Panel title="Google Ads"><EmptyState title="Nenhum dado no período" description="Selecione outro intervalo de datas para continuar." /></Panel>
-        )}
-      </main>
+          ) : dashboard.error ? (
+            <div className="grid min-h-[420px] place-items-center rounded-xl border border-red-500/20 bg-red-500/[0.04] px-6 text-center">
+              <div><AlertTriangle className="mx-auto h-8 w-8 text-red-400" /><h2 className="mt-3 text-sm font-semibold text-white">Não foi possível carregar os dados</h2><p className="mt-1 max-w-md text-xs leading-5 text-slate-500">A conexão pode estar temporariamente indisponível. Tente novamente.</p><Button onClick={() => dashboard.refetch()} className="mt-5 bg-[#e2212d] hover:bg-[#c91622]"><RefreshCcw className="mr-2 h-4 w-4" />Tentar novamente</Button></div>
+            </div>
+          ) : data && data.daily.length ? (
+            <>
+              <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                {metricCards.map(card => <MetricCard key={card.title} {...card} />)}
+              </div>
+              {activeGoogleTab === "overview" ? <OverviewTab data={data} correctionVisible={correctionVisible} /> : null}
+              {activeGoogleTab === "daily" ? <DailyTab data={data} correctionVisible={correctionVisible} /> : null}
+              {activeGoogleTab === "investment" ? <InvestmentTab data={data} correctionVisible={correctionVisible} /> : null}
+              {activeGoogleTab === "optimizations" ? <OptimizationsTab data={data} dateFrom={googleDateFrom} dateTo={googleDateTo} /> : null}
+              {activeGoogleTab === "history" ? <OptimizationHistoryTab dateFrom={googleDateFrom} dateTo={googleDateTo} /> : null}
+            </>
+          ) : (
+            <Panel title="Google Ads"><EmptyState title="Nenhum dado no período" description="Selecione outro intervalo de datas para continuar." /></Panel>
+          )}
+        </main>
+      )}
     </div>
   );
 }

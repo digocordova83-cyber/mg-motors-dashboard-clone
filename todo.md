@@ -171,3 +171,19 @@
 - [x] Revisar todo.md e salvar checkpoint da versão que preserva duplicatas
 - [x] Comparar CSV e banco por `sourceRowNumber`, conteúdo normalizado e sequência para comprovar a preservação das 7.071 ocorrências
 - [x] Executar a reconciliação de ordem/quantidade e registrar o resultado antes do checkpoint
+
+## Reorganização do menu principal
+
+- [x] Criar menu principal com módulos independentes `Google Ads`, `Meta Ads` e `Leads`
+- [x] Manter Visão Geral, Acompanhamento Diário, Investimento, Otimizações e Histórico como subnavegação exclusiva de Google Ads
+- [x] Transformar Leads em módulo próprio sem subordinação visual ao menu de Google Ads
+- [x] Manter o módulo `Meta Ads` navegável com a área de conteúdo completamente vazia nesta etapa
+- [x] Preservar URLs compartilháveis e compatibilidade com os parâmetros atuais de abas do Google Ads e de Leads
+- [x] Garantir navegação acessível, indicação visual do módulo ativo e comportamento responsivo em mobile
+- [x] Adicionar testes TSX para roteamento entre Google Ads, Meta Ads e Leads
+- [x] Validar navegador, console, tipagem, suíte completa e build após a reorganização
+- [x] Revisar todo.md e salvar checkpoint da nova navegação modular
+- [x] Abrir o módulo Leads por padrão do primeiro dia do mês até a última data disponível nos dados
+- [x] Adicionar campos próprios de data inicial e data final no módulo Leads, usando `Data Corrigida` como referência
+- [x] Aplicar o intervalo manual às métricas, gráficos e auditoria por concessionária, mantendo o pacing mensal pela competência
+- [x] Validar e impedir intervalo de Leads com data inicial posterior à data final
