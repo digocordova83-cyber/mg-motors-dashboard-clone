@@ -129,124 +129,254 @@ describe("segmentações e rankings", () => {
   });
 });
 
-describe("recomendações", () => {
-  it("gera uma única ação por campanha e bloqueia aumento sem todas as evidências", () => {
+describe("recomendações profundas", () => {
+  const pacing = {
+    ...(buildPacing([row({ date: "2026-07-01", spend: 80 })], 3_100)!),
+    pacePercent: 80,
+  };
+
+  it("gera decisões variadas, específicas e uma única ação por campanha", () => {
     const campaigns = aggregateCampaigns(
       [
         row({
-          campaign_id: "1001",
+          campaign_id: "measurement",
           campaign: "MG4_PMax_SP",
-          spend: 300,
+          spend: 600,
+          conversions: 0,
+          clicks: 120,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+        }),
+        row({
+          campaign_id: "traffic",
+          campaign: "MGS5_Search_RJ",
+          spend: 1_800,
+          conversions: 20,
+          bidding_strategy_type: "MAXIMIZE_CLICKS",
+        }),
+        row({
+          campaign_id: "target-cpa",
+          campaign: "MG4_Search_SP",
+          spend: 3_200,
+          conversions: 20,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+          search_budget_lost_impression_share: 0.1,
+        }),
+        row({
+          campaign_id: "waste",
+          campaign: "MGS5_Search_RJ",
+          spend: 1_000,
+          conversions: 5,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+          search_budget_lost_impression_share: 0.1,
+        }),
+        row({
+          campaign_id: "value",
+          campaign: "MG4_PMax_SP",
+          spend: 1_200,
           conversions: 10,
+          bidding_strategy_type: "TARGET_ROAS",
+        }),
+        row({
+          campaign_id: "landing",
+          campaign: "MG4_PMax_SP",
+          spend: 4_000,
+          conversions: 20,
+          clicks: 1_000,
+          impressions: 10_000,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+        }),
+        row({
+          campaign_id: "creative",
+          campaign: "MGS5_PMax_RJ",
+          spend: 4_000,
+          conversions: 20,
+          clicks: 400,
+          impressions: 10_000,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+        }),
+        row({
+          campaign_id: "budget",
+          campaign: "MG4_PMax_SP",
+          spend: 1_600,
+          conversions: 20,
+          budget_amount: 120,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
           search_budget_lost_impression_share: 0.3,
         }),
         row({
-          campaign_id: "1002",
-          campaign: "MGS5_PMax_RJ",
-          spend: 300,
-          conversions: 1,
-          search_budget_lost_impression_share: 0.5,
-        }),
-        row({
-          campaign_id: "1003",
-          campaign: "MGS5_PMax_CUIABA",
-          spend: 100,
-          conversions: 4,
-          search_budget_lost_impression_share: 0.5,
+          campaign_id: "rank",
+          campaign: "MGS5_Search_RJ",
+          spend: 800,
+          conversions: 10,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+          search_impression_share: 0.2,
+          search_budget_lost_impression_share: 0.1,
+          optimization_score: 0.6,
         }),
       ],
       goals,
       100,
     );
-    const pacing = {
-      ...(buildPacing([row({ date: "2026-07-01", spend: 80 })], 3_100)!),
-      pacePercent: 80,
-    };
-    const result = buildRecommendations(campaigns, 100, pacing);
 
-    const sp = result.recommendations.find(item => item.campaignId === "1001");
-    const rj = result.recommendations.find(item => item.campaignId === "1002");
-    const cuiaba = result.recommendations.find(item => item.campaignId === "1003");
-    expect(sp?.actionType).toBe("INCREASE_BUDGET");
-    expect(rj?.actionType).toBe("REVIEW_BIDDING");
-    expect(rj?.budgetIncreaseEligible).toBe(false);
-    expect(cuiaba).toBeUndefined();
-    expect(new Set(result.recommendations.map(item => item.campaignId)).size).toBe(
-      result.recommendations.length,
-    );
+    const result = buildRecommendations(campaigns, 100, pacing);
+    const byCampaign = new Map(result.recommendations.map(item => [item.campaignId, item]));
+
+    expect(byCampaign.get("measurement")?.actionType).toBe("AUDIT_MEASUREMENT");
+    expect(byCampaign.get("traffic")?.actionType).toBe("SWITCH_BIDDING_STRATEGY");
+    expect(byCampaign.get("target-cpa")?.actionType).toBe("SET_TARGET_CPA");
+    expect(byCampaign.get("waste")?.actionType).toBe("REDUCE_WASTE");
+    expect(byCampaign.get("value")?.actionType).toBe("VALIDATE_VALUE_STRATEGY");
+    expect(byCampaign.get("landing")?.actionType).toBe("IMPROVE_CVR");
+    expect(byCampaign.get("creative")?.actionType).toBe("REFRESH_CREATIVE");
+    expect(byCampaign.get("budget")?.actionType).toBe("INCREASE_BUDGET");
+    expect(byCampaign.get("rank")?.actionType).toBe("IMPROVE_AD_RANK");
+    expect(new Set(result.recommendations.map(item => item.campaignId)).size).toBe(result.recommendations.length);
+
+    const targetCpa = byCampaign.get("target-cpa");
+    expect(targetCpa?.evidence).toMatchObject({
+      currentCpa: 160,
+      benchmarkCpa: 100,
+      recommendedTargetCpa: 136,
+      currentStrategy: "MAXIMIZE_CONVERSIONS",
+      recommendedStrategy: "TARGET_CPA",
+      parameterLabel: "CPA observado → CPA-alvo",
+      currentValue: 160,
+      recommendedValue: 136,
+      parameterFormat: "currency",
+    });
+    expect(targetCpa?.description).toContain("R$ 136,00");
+    expect(targetCpa?.steps.join(" ")).toContain("R$ 136,00");
+    expect(targetCpa?.risk).toContain("20%");
+
+    const traffic = byCampaign.get("traffic");
+    expect(traffic?.evidence).toMatchObject({
+      currentStrategy: "MAXIMIZE_CLICKS",
+      recommendedStrategy: "MAXIMIZE_CONVERSIONS",
+    });
+    expect(traffic?.budgetIncreaseEligible).toBe(false);
+
+    const waste = byCampaign.get("waste");
+    expect(waste?.evidence.recommendedTargetCpa).toBeNull();
+    expect(waste?.description).toContain("não definir CPA-alvo");
+
+    const landing = byCampaign.get("landing");
+    expect(landing?.evidence).toMatchObject({
+      currentStrategy: "MAXIMIZE_CONVERSIONS",
+      recommendedStrategy: "MAXIMIZE_CONVERSIONS",
+      parameterLabel: "Taxa de conversão pós-clique",
+      currentValue: 2,
+      recommendedValue: 3,
+      parameterFormat: "percent",
+    });
+    expect(landing?.description).toContain("2% para 3%");
+    expect(landing?.steps.join(" ")).toContain("100 novos cliques");
+
+    const creative = byCampaign.get("creative");
+    expect(creative?.evidence).toMatchObject({
+      currentStrategy: "MAXIMIZE_CONVERSIONS",
+      recommendedStrategy: "MAXIMIZE_CONVERSIONS",
+      parameterLabel: "CTR dos anúncios e recursos",
+      currentValue: 4,
+      recommendedValue: 6,
+      parameterFormat: "percent",
+    });
+    expect(creative?.description).toContain("4% para 6%");
+    expect(creative?.steps.join(" ")).toContain("1.000 novas impressões");
+
+    const budget = byCampaign.get("budget");
+    expect(budget?.evidence).toMatchObject({
+      currentDailyBudget: 120,
+      recommendedDailyBudget: 138,
+      budgetChangePercent: 15,
+    });
+    expect(budget?.budgetIncreaseEligible).toBe(true);
+    expect(budget?.description).toContain("R$ 120,00");
+    expect(budget?.description).toContain("R$ 138,00");
   });
 
-  it("explicita a elegibilidade de orçamento e cada bloqueio operacional", () => {
-    const [base] = aggregateCampaigns(
+  it("exige amostra para CPA-alvo e limita a redução a 15% por ciclo", () => {
+    const [campaign] = aggregateCampaigns(
       [
         row({
-          campaign_id: "budget-test",
-          campaign: "MG4_PMax_SP",
-          spend: 200,
-          conversions: 10,
-          search_budget_lost_impression_share: 0.3,
+          campaign_id: "sample",
+          campaign: "MG4_Search_SP",
+          spend: 2_240,
+          conversions: 14,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+          search_budget_lost_impression_share: 0.1,
         }),
       ],
       goals,
       100,
     );
-    const pacing = {
-      ...(buildPacing([row({ date: "2026-07-01", spend: 80 })], 3_100)!),
+
+    const insufficient = buildRecommendations([campaign], 100, pacing).recommendations[0];
+    const sufficient = buildRecommendations(
+      [{ ...campaign, spend: 2_400, conversions: 15, cpa: 160 }],
+      100,
+      pacing,
+    ).recommendations[0];
+
+    expect(insufficient.actionType).toBe("REDUCE_WASTE");
+    expect(insufficient.evidence.recommendedTargetCpa).toBeNull();
+    expect(sufficient.actionType).toBe("SET_TARGET_CPA");
+    expect(sufficient.evidence.recommendedTargetCpa).toBe(136);
+    expect(Number(sufficient.evidence.recommendedTargetCpa)).toBeGreaterThanOrEqual(160 * 0.85);
+  });
+
+  it("limita a soma de aumentos ao headroom diário da conta", () => {
+    const campaigns = aggregateCampaigns(
+      [
+        row({ campaign_id: "scale-sp", campaign: "MG4_PMax_SP", spend: 1_600, conversions: 20 }),
+        row({ campaign_id: "scale-rj", campaign: "MGS5_PMax_RJ", spend: 1_800, conversions: 20 }),
+      ],
+      goals,
+      100,
+    );
+    const limitedPacing = {
+      ...pacing,
+      averageDaily: 100,
+      idealDailyRemaining: 130,
       pacePercent: 80,
     };
 
-    const eligible = buildRecommendations([base], 100, pacing).recommendations[0];
-    expect(eligible).toMatchObject({
-      actionType: "INCREASE_BUDGET",
-      budgetIncreaseEligible: true,
-      budgetIncreaseBlockedReasons: [],
-    });
+    const result = buildRecommendations(campaigns, 100, limitedPacing);
+    const increases = result.recommendations.filter(item => item.actionType === "INCREASE_BUDGET");
+    const allocated = increases.reduce(
+      (total, item) => total + Number(item.evidence.recommendedDailyBudget) - Number(item.evidence.currentDailyBudget),
+      0,
+    );
 
-    const scenarios: Array<{
-      overrides: Partial<typeof base>;
-      pacePercent?: number;
-      reason: string;
-    }> = [
-      {
-        overrides: { googleStatus: "PAUSED" },
-        reason: "A campanha não está ativa no Google Ads.",
-      },
-      {
-        overrides: {},
-        pacePercent: 100,
-        reason: "A conta não está abaixo do ritmo ideal de investimento.",
-      },
-      {
-        overrides: { cpa: 130 },
-        reason: "O CPA não está dentro da faixa eficiente para escalar.",
-      },
-      {
-        overrides: { regionType: "unclassified", monthlyLeadGoal: null },
-        reason: "A região ou a meta regional não foi identificada com segurança.",
-      },
-      {
-        overrides: { searchBudgetLostImpressionShare: null },
-        reason: "A perda de impressões por orçamento está indisponível.",
-      },
-      {
-        overrides: { searchBudgetLostImpressionShare: 10 },
-        reason: "A perda de impressões por orçamento é inferior a 20%.",
-      },
-      {
-        overrides: { conversions: 2 },
-        reason: "A amostra de conversões é insuficiente.",
-      },
-    ];
+    expect(increases).toHaveLength(2);
+    expect(allocated).toBe(30);
+    expect(result.policy.totalDailyBudgetHeadroom).toBe(30);
+    expect(result.policy.allocatedDailyBudgetIncrease).toBe(30);
+    expect(result.policy.maximumDailyBudgetIncreasePercent).toBe(15);
+  });
 
-    for (const scenario of scenarios) {
-      const [recommendation] = buildRecommendations(
-        [{ ...base, ...scenario.overrides, status: "Atenção" as const }],
-        100,
-        { ...pacing, pacePercent: scenario.pacePercent ?? pacing.pacePercent },
-      ).recommendations;
-      expect(recommendation.budgetIncreaseEligible).toBe(false);
-      expect(recommendation.budgetIncreaseBlockedReasons).toContain(scenario.reason);
-      expect(recommendation.actionType).not.toBe("INCREASE_BUDGET");
-    }
+  it("inclui parâmetros na assinatura para não deduplicar metas diferentes", () => {
+    const [campaign] = aggregateCampaigns(
+      [
+        row({
+          campaign_id: "signature",
+          campaign: "MG4_Search_SP",
+          spend: 3_200,
+          conversions: 20,
+          bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
+          search_budget_lost_impression_share: 0.1,
+        }),
+      ],
+      goals,
+      100,
+    );
+
+    const first = buildRecommendations([campaign], 100, pacing).recommendations[0];
+    const second = buildRecommendations([campaign], 130, pacing).recommendations[0];
+
+    expect(first.actionType).toBe("SET_TARGET_CPA");
+    expect(second.actionType).toBe("SET_TARGET_CPA");
+    expect(first.evidence.recommendedTargetCpa).toBe(136);
+    expect(second.evidence.recommendedTargetCpa).toBe(137);
+    expect(first.sourceSignature).not.toBe(second.sourceSignature);
   });
 });

@@ -639,14 +639,13 @@ export async function startOptimizationTask(input: { taskId: number; actor: stri
 
 export async function completeOptimizationTask(input: {
   taskId: number;
-  notes: string;
+  notes?: string;
   actor: string;
   snapshot: TaskPerformanceSnapshotInput | null;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const notes = input.notes.trim();
-  if (notes.length < 3) throw new Error("Informe uma observação de conclusão com ao menos 3 caracteres");
+  const notes = input.notes?.trim() ?? "";
   const now = Date.now();
   return db.transaction(async tx => {
     const task = await getTaskForUpdate(tx, input.taskId);
@@ -672,7 +671,7 @@ export async function completeOptimizationTask(input: {
       cycleId: task.cycleId,
       eventType: "COMPLETED",
       actor: input.actor,
-      notes,
+      notes: notes || null,
       createdAt: now,
     });
     if (input.snapshot) {

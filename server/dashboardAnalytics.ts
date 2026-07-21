@@ -453,35 +453,78 @@ export function buildRegionPerformance(campaigns: AggregatedCampaign[], averageC
     .sort((left, right) => right.spend - left.spend);
 }
 
-function googleAdsSteps(actionType: string, campaign: AggregatedCampaign) {
-  const base = [
-    "Abra o Google Ads e selecione a conta 535-798-6801 — MG Motors.",
-    `Localize a campanha pelo ID ${campaign.campaignId} e confirme o nome ${campaign.campaign}.`,
-  ];
-  if (actionType === "INCREASE_BUDGET") {
-    return [
-      ...base,
-      "Acesse Campanhas > Orçamento e abra a edição do orçamento diário.",
-      "Aplique um aumento gradual de até 10%, sem ultrapassar a verba mensal restante indicada no pacing.",
-      "Salve, anote o valor anterior e monitore CPA, conversões e perda de impressões por orçamento por 3 dias fechados.",
-    ];
-  }
-  if (actionType === "REDUCE_WASTE") {
-    return [
-      ...base,
-      "Acesse Insights e relatórios > Termos de pesquisa, recursos e grupos de recursos, conforme o tipo da campanha.",
-      "Identifique termos, recursos ou segmentos com gasto e ausência de conversões; não altere itens sem volume suficiente.",
-      "Exclua ou restrinja somente os itens ineficientes confirmados e registre cada alteração na observação da tarefa.",
-      "Mantenha o orçamento atual até haver 3 dias fechados para reavaliar o CPA.",
-    ];
-  }
+type ActionType =
+  | "INCREASE_BUDGET"
+  | "SET_TARGET_CPA"
+  | "SWITCH_BIDDING_STRATEGY"
+  | "REDUCE_WASTE"
+  | "IMPROVE_CVR"
+  | "REFRESH_CREATIVE"
+  | "IMPROVE_AD_RANK"
+  | "AUDIT_MEASUREMENT"
+  | "VALIDATE_VALUE_STRATEGY"
+  | "REVIEW_BIDDING";
+
+type RecommendationPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export const MIN_STRATEGY_CHANGE_CONVERSIONS = 15;
+export const MAX_TARGET_CPA_REDUCTION_PERCENT = 15;
+export const MAX_DAILY_BUDGET_INCREASE_PERCENT = 15;
+
+const STRATEGY_LABELS: Record<string, string> = {
+  MAXIMIZE_CONVERSIONS: "Maximizar conversões",
+  TARGET_CPA: "CPA desejado",
+  MAXIMIZE_CONVERSION_VALUE: "Maximizar valor de conversão",
+  TARGET_ROAS: "ROAS desejado",
+  MAXIMIZE_CLICKS: "Maximizar cliques",
+  MANUAL_CPC: "CPC manual",
+  ENHANCED_CPC: "CPC otimizado",
+  UNAVAILABLE: "Estratégia indisponível",
+};
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
+function strategyLabel(strategy: string) {
+  return STRATEGY_LABELS[strategy] ?? strategy.toLowerCase().replaceAll("_", " ").replace(/(^|\s)\S/g, letter => letter.toUpperCase());
+}
+
+function formatBrl(value: number) {
+  return `R$ ${value.toFixed(2).replace(".", ",")}`;
+}
+
+function roundToStep(value: number, step = 1) {
+  return round(Math.round(value / step) * step, 2);
+}
+
+function isTrafficBidding(strategy: string) {
+  return ["MAXIMIZE_CLICKS", "MANUAL_CPC", "ENHANCED_CPC"].includes(strategy);
+}
+
+function isValueBidding(strategy: string) {
+  return ["MAXIMIZE_CONVERSION_VALUE", "TARGET_ROAS"].includes(strategy);
+}
+
+function budgetIncreaseBlockedReasons(
+  campaign: AggregatedCampaign,
+  averageCpa: number,
+  pacing: ReturnType<typeof buildPacing>,
+) {
+  const budgetLoss = campaign.searchBudgetLostImpressionShare;
+  const underPace = pacing != null && pacing.pacePercent < 95;
+  const efficient = averageCpa > 0 && campaign.cpa > 0 && campaign.cpa <= averageCpa * 1.15;
+  const hasRegionalEvidence = campaign.regionType === "regional" && campaign.monthlyLeadGoal != null;
   return [
-    ...base,
-    "Abra Configurações > Lances e confirme a estratégia atual antes de editar.",
-    "Revise sinais, segmentação, recursos e meta de conversão que possam explicar o CPA acima da média.",
-    "Faça uma única mudança por vez e registre o valor anterior, o novo valor e a justificativa.",
-    "Aguarde ao menos 3 dias fechados antes de concluir o efeito da alteração.",
-  ];
+    campaign.googleStatus !== "ENABLED" ? "A campanha não está ativa no Google Ads." : null,
+    !underPace ? "A conta não está abaixo do ritmo ideal de investimento." : null,
+    !efficient ? "O CPA não está dentro da faixa eficiente para escalar." : null,
+    !hasRegionalEvidence ? "A região ou a meta regional não foi identificada com segurança." : null,
+    budgetLoss == null ? "A perda de impressões por orçamento está indisponível." : null,
+    budgetLoss != null && budgetLoss < 20 ? "A perda de impressões por orçamento é inferior a 20%." : null,
+    campaign.conversions < MIN_RANKING_CONVERSIONS ? "A amostra de conversões é insuficiente." : null,
+    campaign.budget <= 0 ? "O orçamento diário atual está indisponível." : null,
+  ].filter((reason): reason is string => reason != null);
 }
 
 export function buildRecommendations(
@@ -489,55 +532,259 @@ export function buildRecommendations(
   averageCpa: number,
   pacing: ReturnType<typeof buildPacing>,
 ) {
+  const pacePercent = pacing?.pacePercent ?? null;
+  const accountDailyHeadroom = pacing == null
+    ? 0
+    : Math.max(pacing.idealDailyRemaining - pacing.averageDaily, 0);
+  let remainingDailyHeadroom = accountDailyHeadroom;
+  const scalableCampaigns = campaigns
+    .filter(campaign => {
+      const strategy = campaign.biddingStrategyType?.trim() || "UNAVAILABLE";
+      return (
+        campaign.conversions > 0 &&
+        !isTrafficBidding(strategy) &&
+        !isValueBidding(strategy) &&
+        budgetIncreaseBlockedReasons(campaign, averageCpa, pacing).length === 0
+      );
+    })
+    .sort((left, right) => left.cpa - right.cpa || right.conversions - left.conversions);
+  const budgetAllocations = new Map<string, { current: number; recommended: number; changePercent: number }>();
+
+  for (const campaign of scalableCampaigns) {
+    const paceGap = Math.max(95 - (pacePercent ?? 95), 0);
+    const requestedPercent = clamp(Math.floor(paceGap / 5) * 5 || 5, 5, MAX_DAILY_BUDGET_INCREASE_PERCENT);
+    const requestedIncrease = round(campaign.budget * (requestedPercent / 100), 2);
+    const minimumUsefulIncrease = round(Math.max(campaign.budget * 0.05, 1), 2);
+    const approvedIncrease = round(Math.min(requestedIncrease, remainingDailyHeadroom), 2);
+    if (approvedIncrease < minimumUsefulIncrease) continue;
+    const recommended = round(campaign.budget + approvedIncrease, 2);
+    budgetAllocations.set(campaign.campaignId, {
+      current: campaign.budget,
+      recommended,
+      changePercent: round((approvedIncrease / campaign.budget) * 100, 1),
+    });
+    remainingDailyHeadroom = round(Math.max(remainingDailyHeadroom - approvedIncrease, 0), 2);
+  }
+
   const recommendations = campaigns
     .map(campaign => {
-      const budgetLoss = campaign.searchBudgetLostImpressionShare;
-      const underPace = pacing != null && pacing.pacePercent < 95;
-      const efficient = averageCpa > 0 && campaign.cpa > 0 && campaign.cpa <= averageCpa * 1.15;
+      if (campaign.googleStatus !== "ENABLED" || campaign.spend <= 0) return null;
+
+      const currentStrategy = campaign.biddingStrategyType?.trim() || "UNAVAILABLE";
+      const currentStrategyLabel = strategyLabel(currentStrategy);
+      const benchmarkCpa = averageCpa > 0 ? averageCpa : campaign.cpa;
+      const highCpa = benchmarkCpa > 0 && campaign.cpa > benchmarkCpa * 1.15;
+      const severeCpa = benchmarkCpa > 0 && campaign.cpa > benchmarkCpa * 1.5;
+      const hasStrategySample = campaign.conversions >= MIN_STRATEGY_CHANGE_CONVERSIONS;
+      const hasLandingPageSignal = campaign.clicks >= 100 && campaign.conversionRate > 0 && campaign.conversionRate < 3;
+      const hasCreativeSignal = campaign.impressions >= 1_000 && campaign.ctr > 0 && campaign.ctr < 6;
+      const allocation = budgetAllocations.get(campaign.campaignId) ?? null;
+      const blockedReasons = budgetIncreaseBlockedReasons(campaign, averageCpa, pacing);
       const hasRegionalEvidence = campaign.regionType === "regional" && campaign.monthlyLeadGoal != null;
-      const canIncreaseBudget =
-        campaign.googleStatus === "ENABLED" &&
-        underPace &&
-        efficient &&
-        hasRegionalEvidence &&
-        budgetLoss != null &&
-        budgetLoss >= 20 &&
-        campaign.conversions >= MIN_RANKING_CONVERSIONS;
+      const safeTargetCpa = campaign.cpa > 0
+        ? roundToStep(Math.max(benchmarkCpa * 1.05, campaign.cpa * (1 - MAX_TARGET_CPA_REDUCTION_PERCENT / 100)))
+        : null;
 
-      let actionType: "INCREASE_BUDGET" | "REDUCE_WASTE" | "REVIEW_BIDDING" | null = null;
-      if (campaign.status === "Crítico") actionType = campaign.conversions <= 0 ? "REDUCE_WASTE" : "REVIEW_BIDDING";
-      else if (campaign.status === "Atenção") actionType = "REVIEW_BIDDING";
-      else if (canIncreaseBudget) actionType = "INCREASE_BUDGET";
+      let actionType: ActionType | null = null;
+      let description = "";
+      let rationale = "";
+      let recommendedStrategy = currentStrategy;
+      let recommendedTargetCpa: number | null = null;
+      let recommendedDailyBudget: number | null = null;
+      let parameterLabel = "";
+      let currentValue: number | string | null = null;
+      let recommendedValue: number | string | null = null;
+      let parameterFormat: "currency" | "percent" | "number" | "text" = "text";
+      let expectedImpact = "";
+      let risk = "";
+      let priority: RecommendationPriority = "MEDIUM";
+      let steps: string[] = [];
+
+      if (campaign.conversions <= 0) {
+        actionType = "AUDIT_MEASUREMENT";
+        parameterLabel = "Sinal de conversão primária";
+        currentValue = `${campaign.conversions} conversões em ${campaign.clicks} cliques`;
+        recommendedValue = "Evento primário validado, ativo e sem duplicidade";
+        description = `Auditar a mensuração antes de alterar ${currentStrategyLabel} ou o orçamento diário de ${formatBrl(campaign.budget)}.`;
+        rationale = `${formatBrl(campaign.spend)} investidos e ${campaign.clicks} cliques sem conversões; sem validar a tag, uma mudança de lance não tem base confiável.`;
+        expectedImpact = "Restabelecer um sinal de conversão confiável para que a estratégia automatizada possa aprender e para separar falha de mídia de falha de medição.";
+        risk = "Reduzir orçamento ou trocar a estratégia antes da auditoria pode mascarar uma falha de tracking e atrasar a recuperação.";
+        priority = campaign.spend >= Math.max(benchmarkCpa * 3, 1) ? "CRITICAL" : "HIGH";
+        steps = [
+          "No Google Ads, abrir Metas > Conversões > Resumo e conferir quais ações estão marcadas como primárias.",
+          "Validar a tag com Tag Assistant e comparar uma conversão de teste com o CRM, sem criar eventos duplicados.",
+          "Confirmar janela de conversão, modelo de atribuição e Conversões Otimizadas antes de editar lances.",
+          `Manter temporariamente ${currentStrategyLabel}; somente após o sinal validado decidir entre Maximizar conversões e CPA desejado.`,
+        ];
+      } else if (isValueBidding(currentStrategy)) {
+        actionType = "VALIDATE_VALUE_STRATEGY";
+        parameterLabel = "Critério de decisão";
+        currentValue = "CPA sem receita/valor no dataset";
+        recommendedValue = "ROAS e valor de conversão reconciliados";
+        description = `Validar os valores enviados antes de julgar ${currentStrategyLabel} somente pelo CPA observado de ${formatBrl(campaign.cpa)}.`;
+        rationale = "Estratégias orientadas a valor devem ser avaliadas por receita e ROAS; o dataset atual contém conversões e CPA, mas não expõe valor de conversão para uma troca segura.";
+        expectedImpact = "Evitar uma troca incorreta de estratégia e habilitar decisões por valor econômico real, não apenas por volume de Leads.";
+        risk = "Trocar para uma estratégia de volume sem reconciliar receita pode aumentar Leads e reduzir qualidade ou margem.";
+        priority = highCpa ? "HIGH" : "MEDIUM";
+        steps = [
+          "Abrir Metas > Conversões e verificar se cada ação envia valor dinâmico e moeda BRL.",
+          "Reconciliar valor de conversão e receita do Google Ads com o CRM no mesmo período da tarefa.",
+          "Validar se a campanha deve otimizar para Maximizar valor de conversão ou ROAS desejado conforme o volume disponível.",
+          "Definir o ROAS-alvo somente após a reconciliação; não converter o CPA médio em ROAS sem receita observada.",
+        ];
+      } else if (isTrafficBidding(currentStrategy) && hasStrategySample) {
+        actionType = "SWITCH_BIDDING_STRATEGY";
+        recommendedStrategy = "MAXIMIZE_CONVERSIONS";
+        recommendedTargetCpa = roundToStep(Math.max(benchmarkCpa * 1.1, campaign.cpa * 1.1));
+        parameterLabel = "Estratégia de lances";
+        currentValue = currentStrategyLabel;
+        recommendedValue = strategyLabel(recommendedStrategy);
+        description = `Migrar de ${currentStrategyLabel} para ${strategyLabel(recommendedStrategy)}; usar ${formatBrl(recommendedTargetCpa)} como limite de controle, sem CPA-alvo no primeiro ciclo de aprendizado.`;
+        rationale = `${campaign.conversions} conversões fornecem amostra para sair de uma estratégia orientada a tráfego; o CPA observado é ${formatBrl(campaign.cpa)} e a referência da conta é ${formatBrl(benchmarkCpa)}.`;
+        expectedImpact = "Direcionar a automação para conversões em vez de cliques, com leitura separada do período de aprendizado.";
+        risk = "A campanha pode oscilar durante o aprendizado; não combinar a troca com alterações de orçamento, segmentação ou criativo.";
+        priority = "HIGH";
+        steps = [
+          "Abrir Campanhas > selecionar a campanha > Configurações > Lances > Alterar estratégia de lances.",
+          `Selecionar ${strategyLabel(recommendedStrategy)} sem inserir CPA desejado no primeiro ciclo.`,
+          `Usar ${formatBrl(recommendedTargetCpa)} como limite de controle: interromper e revisar se o CPA superar esse valor após a fase de aprendizado.`,
+          "Monitorar por pelo menos 7 dias e não fazer outra alteração estrutural no mesmo intervalo.",
+        ];
+      } else if (highCpa && hasLandingPageSignal) {
+        actionType = "IMPROVE_CVR";
+        const targetConversionRate = round(Math.min(Math.max(campaign.conversionRate + 0.8, 3), 5), 1);
+        parameterLabel = "Taxa de conversão pós-clique";
+        currentValue = campaign.conversionRate;
+        recommendedValue = targetConversionRate;
+        parameterFormat = "percent";
+        description = `Elevar a taxa de conversão de ${campaign.conversionRate}% para ${targetConversionRate}% antes de restringir a entrega com CPA-alvo; manter ${currentStrategyLabel} e o orçamento diário de ${formatBrl(campaign.budget)}.`;
+        rationale = `${campaign.clicks} cliques e ${campaign.conversions} conversões produziram CPA de ${formatBrl(campaign.cpa)}. A taxa pós-clique de ${campaign.conversionRate}% aponta primeiro para página, oferta ou formulário, não apenas para a estratégia de lance.`;
+        expectedImpact = `Aumentar a eficiência pós-clique e reduzir o CPA sem cortar volume prematuramente; meta operacional inicial de ${targetConversionRate}% de conversão.`;
+        risk = "Alterar lance e página ao mesmo tempo elimina a leitura causal; manter estratégia, orçamento e segmentação estáveis durante o teste.";
+        priority = severeCpa ? "CRITICAL" : "HIGH";
+        steps = [
+          "No Google Ads, abrir Anúncios e recursos > Páginas de destino e identificar URL, dispositivo e campanha com pior taxa de conversão.",
+          "Comparar formulário e página com o anúncio: promessa, preço, disponibilidade, localização e chamada para ação devem ser consistentes.",
+          "Executar uma única variação de página ou formulário, sem alterar lances, orçamento, públicos ou criativos no mesmo ciclo.",
+          `Reavaliar após pelo menos 100 novos cliques; manter a mudança se a taxa atingir ${targetConversionRate}% sem piorar a qualidade dos Leads.`,
+        ];
+      } else if (highCpa && hasCreativeSignal) {
+        actionType = "REFRESH_CREATIVE";
+        const targetCtr = round(Math.min(Math.max(campaign.ctr + 1, 6), 8), 1);
+        parameterLabel = "CTR dos anúncios e recursos";
+        currentValue = campaign.ctr;
+        recommendedValue = targetCtr;
+        parameterFormat = "percent";
+        description = `Elevar o CTR de ${campaign.ctr}% para ${targetCtr}% com uma renovação controlada de criativos; manter ${currentStrategyLabel}, CPA-alvo e orçamento inalterados nesta etapa.`;
+        rationale = `${campaign.impressions} impressões e ${campaign.clicks} cliques resultaram em CTR de ${campaign.ctr}% e CPA de ${formatBrl(campaign.cpa)}. A baixa resposta ao anúncio deve ser tratada antes de apertar o CPA-alvo.`;
+        expectedImpact = `Atrair tráfego mais aderente e levar o CTR a pelo menos ${targetCtr}%, criando base melhor para uma futura decisão de lance.`;
+        risk = "Trocar todos os recursos simultaneamente pode perder aprendizados; preservar controles e substituir apenas itens fracos por rodada.";
+        priority = severeCpa ? "CRITICAL" : "HIGH";
+        steps = [
+          "Abrir Anúncios e recursos e filtrar recursos com avaliação Baixa ou combinações com pouca entrega.",
+          "Substituir primeiro títulos, descrições e imagens fracos por mensagens específicas do produto e da região da campanha.",
+          "Manter ao menos um criativo de controle e não alterar orçamento, lance ou página de destino no mesmo ciclo.",
+          `Reavaliar após 1.000 novas impressões; manter a rodada se o CTR alcançar ${targetCtr}% sem elevar o CPA.`,
+        ];
+      } else if (highCpa && hasStrategySample) {
+        actionType = "SET_TARGET_CPA";
+        recommendedStrategy = "TARGET_CPA";
+        recommendedTargetCpa = safeTargetCpa;
+        parameterLabel = "CPA observado → CPA-alvo";
+        currentValue = campaign.cpa;
+        recommendedValue = recommendedTargetCpa;
+        parameterFormat = "currency";
+        description = `Alterar a configuração para ${strategyLabel(recommendedStrategy)} com CPA-alvo inicial de ${formatBrl(recommendedTargetCpa ?? campaign.cpa)}; CPA observado atual: ${formatBrl(campaign.cpa)}.`;
+        rationale = `${campaign.conversions} conversões dão amostra para uma meta; o CPA está ${round(((campaign.cpa / benchmarkCpa) - 1) * 100, 1)}% acima da referência de ${formatBrl(benchmarkCpa)}. A redução proposta é limitada a ${MAX_TARGET_CPA_REDUCTION_PERCENT}% por ciclo.`;
+        expectedImpact = `Reduzir o CPA em direção a ${formatBrl(recommendedTargetCpa ?? benchmarkCpa)} sem aplicar um corte brusco que elimine volume.`;
+        risk = "Um CPA-alvo agressivo pode restringir entrega; reverter se as conversões caírem mais de 20% sem melhora proporcional de eficiência.";
+        priority = severeCpa ? "CRITICAL" : "HIGH";
+        steps = [
+          "Abrir Campanhas > selecionar a campanha > Configurações > Lances > Alterar estratégia de lances.",
+          `Selecionar ${strategyLabel(recommendedStrategy)} e informar exatamente ${formatBrl(recommendedTargetCpa ?? campaign.cpa)}.`,
+          "Não alterar orçamento, segmentação ou anúncios no mesmo dia, preservando a leitura causal.",
+          "Reavaliar após 7 dias ou 30 conversões; reverter se o volume cair mais de 20% sem redução proporcional do CPA.",
+        ];
+      } else if (highCpa) {
+        actionType = "REDUCE_WASTE";
+        const wasteReferenceCpa = safeTargetCpa ?? benchmarkCpa;
+        parameterLabel = "CPA de referência para liberar nova estratégia";
+        currentValue = campaign.cpa;
+        recommendedValue = wasteReferenceCpa;
+        parameterFormat = "currency";
+        description = `Reduzir tráfego improdutivo mantendo ${currentStrategyLabel}; não definir CPA-alvo enquanto houver somente ${campaign.conversions} conversões.`;
+        rationale = `CPA de ${formatBrl(campaign.cpa)} acima da referência de ${formatBrl(benchmarkCpa)}, mas abaixo da amostra mínima de ${MIN_STRATEGY_CHANGE_CONVERSIONS} conversões para uma troca segura de estratégia.`;
+        expectedImpact = "Aproximar o CPA da referência por limpeza de tráfego antes de restringir a automação com uma meta prematura.";
+        risk = "Negativas ou exclusões amplas podem remover demanda relevante; aplicar mudanças em blocos pequenos e registrar cada exclusão.";
+        priority = severeCpa ? "CRITICAL" : "HIGH";
+        steps = [
+          "Abrir Insights e relatórios > Termos de pesquisa e ordenar por custo sem conversão.",
+          "Adicionar como negativas somente consultas inequivocamente irrelevantes; revisar correspondência antes de salvar.",
+          "Em Performance Max, revisar insights de termos, grupos de recursos e posicionamentos inadequados.",
+          `Manter ${currentStrategyLabel} até atingir ${MIN_STRATEGY_CHANGE_CONVERSIONS} conversões; então reavaliar CPA desejado em torno de ${formatBrl(wasteReferenceCpa)}.`,
+        ];
+      } else if (allocation) {
+        actionType = "INCREASE_BUDGET";
+        recommendedDailyBudget = allocation.recommended;
+        parameterLabel = "Orçamento diário";
+        currentValue = allocation.current;
+        recommendedValue = allocation.recommended;
+        parameterFormat = "currency";
+        description = `Aumentar o orçamento diário de ${formatBrl(allocation.current)} para ${formatBrl(allocation.recommended)} (+${allocation.changePercent}%), mantendo ${currentStrategyLabel}.`;
+        rationale = `CPA eficiente de ${formatBrl(campaign.cpa)}, ${campaign.searchBudgetLostImpressionShare}% de perda por orçamento e pacing da conta em ${pacePercent}%. O aumento cabe no headroom diário calculado de ${formatBrl(accountDailyHeadroom)}.`;
+        expectedImpact = "Recuperar parte da demanda perdida por orçamento sem ultrapassar o ritmo necessário para consumir a verba mensal.";
+        risk = `Limite por ciclo: ${MAX_DAILY_BUDGET_INCREASE_PERCENT}%. Interromper novos aumentos se o CPA superar ${formatBrl(benchmarkCpa * 1.15)}.`;
+        priority = "MEDIUM";
+        steps = [
+          "Abrir Campanhas > selecionar a campanha > Configurações > Orçamento.",
+          `Substituir ${formatBrl(allocation.current)} por ${formatBrl(allocation.recommended)}; não arredondar para outro valor.`,
+          `Manter ${currentStrategyLabel} e não alterar o CPA-alvo no mesmo ciclo.`,
+          `Reavaliar em 72 horas; não ampliar novamente se o CPA superar ${formatBrl(benchmarkCpa * 1.15)} ou o pacing atingir 100%.`,
+        ];
+      } else {
+        const impressionShare = campaign.searchImpressionShare;
+        const optimizationScore = campaign.optimizationScore;
+        const lowImpressionShare = impressionShare != null && impressionShare < 40;
+        const lowOptimizationScore = optimizationScore != null && optimizationScore < 70;
+        if (!lowImpressionShare && !lowOptimizationScore) return null;
+        actionType = "IMPROVE_AD_RANK";
+        if (lowImpressionShare) {
+          const targetShare = round(Math.min((impressionShare ?? 0) + 10, 60), 1);
+          parameterLabel = "Parcela de impressões de pesquisa";
+          currentValue = impressionShare;
+          recommendedValue = targetShare;
+          parameterFormat = "percent";
+        } else {
+          parameterLabel = "Índice de otimização";
+          currentValue = optimizationScore;
+          recommendedValue = 80;
+          parameterFormat = "percent";
+        }
+        description = `Melhorar ranking e relevância sem alterar ${currentStrategyLabel}, orçamento ou CPA-alvo neste ciclo.`;
+        rationale = lowImpressionShare
+          ? `Parcela de impressões em ${impressionShare}%; há espaço de cobertura sem evidência suficiente para escalar orçamento.`
+          : `Índice de otimização em ${optimizationScore}%; priorizar recomendações de qualidade que não alterem automaticamente a verba.`;
+        expectedImpact = "Ganhar cobertura por relevância e qualidade antes de pagar mais pela mesma demanda.";
+        risk = "Aplicar recomendações automáticas sem revisão pode ampliar segmentação ou alterar lances; aceitar somente itens coerentes com a campanha.";
+        priority = "LOW";
+        steps = [
+          "Abrir a campanha e revisar a página Recomendações sem aplicar tudo automaticamente.",
+          "Atualizar recursos com baixa força, URLs e mensagens alinhadas ao grupo ou produto da campanha.",
+          "Revisar termos, públicos e páginas de destino antes de qualquer expansão de correspondência.",
+          "Medir a parcela de impressões e o CPA por 7 dias mantendo orçamento e estratégia inalterados.",
+        ];
+      }
+
       if (!actionType) return null;
-
-      const budgetIncreaseBlockedReasons = canIncreaseBudget
-        ? []
-        : [
-            campaign.googleStatus !== "ENABLED" ? "A campanha não está ativa no Google Ads." : null,
-            !underPace ? "A conta não está abaixo do ritmo ideal de investimento." : null,
-            !efficient ? "O CPA não está dentro da faixa eficiente para escalar." : null,
-            !hasRegionalEvidence ? "A região ou a meta regional não foi identificada com segurança." : null,
-            budgetLoss == null ? "A perda de impressões por orçamento está indisponível." : null,
-            budgetLoss != null && budgetLoss < 20 ? "A perda de impressões por orçamento é inferior a 20%." : null,
-            campaign.conversions < MIN_RANKING_CONVERSIONS ? "A amostra de conversões é insuficiente." : null,
-          ].filter((reason): reason is string => reason != null);
-
-      const priority = campaign.status === "Crítico" ? "CRITICAL" : actionType === "INCREASE_BUDGET" ? "MEDIUM" : "HIGH";
-      const description =
-        actionType === "INCREASE_BUDGET"
-          ? "Aumentar gradualmente o orçamento diário e monitorar eficiência."
-          : actionType === "REDUCE_WASTE"
-            ? "Reduzir desperdício antes de qualquer aumento de orçamento."
-            : "Revisar lances, sinais e segmentação mantendo o orçamento até o CPA melhorar.";
-      const rationale =
-        actionType === "INCREASE_BUDGET"
-          ? `CPA eficiente, ${budgetLoss}% de perda de impressões por orçamento, meta regional identificada e pacing abaixo do ideal.`
-          : campaign.conversions <= 0
-            ? "Há investimento real sem conversões no período; escalar orçamento aumentaria o risco de desperdício."
-            : `CPA de R$ ${campaign.cpa.toFixed(2)} está acima da referência de R$ ${averageCpa.toFixed(2)} do período.`;
+      const signatureTarget = [
+        recommendedStrategy,
+        recommendedTargetCpa?.toFixed(2) ?? "na",
+        recommendedDailyBudget?.toFixed(2) ?? "na",
+        String(recommendedValue ?? "na"),
+      ].join("|");
 
       return {
-        sourceSignature: `${campaign.campaignId}:${actionType}`,
+        sourceSignature: `${campaign.campaignId}:${actionType}:${signatureTarget}`.slice(0, 255),
         campaignId: campaign.campaignId,
         campaign: campaign.campaign,
         product: campaign.product,
@@ -550,30 +797,41 @@ export function buildRecommendations(
           status: campaign.status,
           spend: campaign.spend,
           conversions: campaign.conversions,
+          clicks: campaign.clicks,
           cpa: campaign.cpa,
-          averageCpa,
-          dailyBudget: campaign.budget,
-          searchBudgetLostImpressionShare: budgetLoss,
-          pacingPercent: pacing?.pacePercent ?? null,
+          currentCpa: campaign.cpa,
+          benchmarkCpa,
+          recommendedTargetCpa,
+          currentStrategy,
+          currentStrategyLabel,
+          recommendedStrategy,
+          recommendedStrategyLabel: strategyLabel(recommendedStrategy),
+          currentDailyBudget: campaign.budget,
+          recommendedDailyBudget,
+          budgetChangePercent: allocation?.changePercent ?? null,
+          parameterLabel,
+          currentValue,
+          recommendedValue,
+          parameterFormat,
+          optimizationScore: campaign.optimizationScore,
+          searchImpressionShare: campaign.searchImpressionShare,
+          searchBudgetLostImpressionShare: campaign.searchBudgetLostImpressionShare,
+          pacingPercent: pacePercent,
+          accountDailyBudgetHeadroom: accountDailyHeadroom,
           monthlyLeadGoal: hasRegionalEvidence ? campaign.monthlyLeadGoal : null,
+          strategySampleMinimum: MIN_STRATEGY_CHANGE_CONVERSIONS,
         },
-        expectedImpact:
-          actionType === "INCREASE_BUDGET"
-            ? "Capturar demanda perdida por orçamento preservando o CPA dentro da faixa eficiente."
-            : "Reduzir gasto ineficiente e aproximar o CPA da média da conta sem escalar verba prematuramente.",
-        risk:
-          actionType === "INCREASE_BUDGET"
-            ? "O CPA pode subir após a expansão; interromper novos aumentos se a eficiência piorar."
-            : "Alterações simultâneas podem impedir a leitura do efeito; executar uma mudança por vez.",
+        expectedImpact,
+        risk,
         priority,
-        steps: googleAdsSteps(actionType, campaign),
-        budgetIncreaseEligible: canIncreaseBudget,
-        budgetIncreaseBlockedReasons,
+        steps,
+        budgetIncreaseEligible: allocation != null,
+        budgetIncreaseBlockedReasons: blockedReasons,
       };
     })
     .filter((recommendation): recommendation is NonNullable<typeof recommendation> => recommendation != null)
     .sort((left, right) => {
-      const order: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+      const order: Record<RecommendationPriority, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
       return order[left.priority] - order[right.priority] || right.evidence.spend - left.evidence.spend;
     });
 
@@ -582,10 +840,15 @@ export function buildRecommendations(
     policy: {
       onePrimaryActionPerCampaign: true,
       minimumConversionsForScaling: MIN_RANKING_CONVERSIONS,
+      minimumConversionsForStrategyChange: MIN_STRATEGY_CHANGE_CONVERSIONS,
+      maximumTargetCpaReductionPercent: MAX_TARGET_CPA_REDUCTION_PERCENT,
+      maximumDailyBudgetIncreasePercent: MAX_DAILY_BUDGET_INCREASE_PERCENT,
       minimumBudgetLossForScaling: 20,
       requiresRegionalGoalForScaling: true,
+      totalDailyBudgetHeadroom: round(accountDailyHeadroom, 2),
+      allocatedDailyBudgetIncrease: round(accountDailyHeadroom - remainingDailyHeadroom, 2),
       message:
-        "Aumentos de orçamento só são sugeridos com CPA eficiente, pacing abaixo do ideal, meta regional inequívoca, amostra mínima e perda real de impressões por orçamento.",
+        "Cada campanha recebe no máximo uma ação primária. Mudanças de estratégia exigem amostra; CPA-alvo e orçamento têm limites por ciclo; aumentos somados não excedem o headroom diário da conta.",
     },
   };
 }

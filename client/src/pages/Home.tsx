@@ -96,6 +96,17 @@ const DATA_END = "2026-07-19";
 const TAG_CORRECTION_DATE = "2026-07-15";
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const NUMBER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
+
+type OptimizationEvidenceValue = number | string | boolean | null | undefined;
+
+function formatOptimizationValue(value: OptimizationEvidenceValue, format: OptimizationEvidenceValue) {
+  if (value == null || value === "") return "Não se aplica";
+  if (typeof value !== "number") return String(value);
+  if (format === "currency") return BRL.format(value);
+  if (format === "percent") return `${NUMBER.format(value)}%`;
+  return NUMBER.format(value);
+}
+
 type DashboardLocale = DashboardSession["locale"];
 
 function ui(locale: DashboardLocale, pt: string, en: string) {
@@ -975,7 +986,14 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
 
   const actionLabels: Record<string, string> = {
     INCREASE_BUDGET: "Aumentar orçamento",
+    SET_TARGET_CPA: "Definir CPA-alvo",
+    SWITCH_BIDDING_STRATEGY: "Trocar estratégia de lance",
     REDUCE_WASTE: "Reduzir desperdício",
+    IMPROVE_CVR: "Melhorar taxa de conversão",
+    REFRESH_CREATIVE: "Renovar criativos",
+    IMPROVE_AD_RANK: "Melhorar ranking e relevância",
+    AUDIT_MEASUREMENT: "Auditar mensuração",
+    VALIDATE_VALUE_STRATEGY: "Validar estratégia por valor",
     REVIEW_BIDDING: "Revisar lances",
   };
   const priorityLabels: Record<OptimizationTask["priority"], string> = {
@@ -1094,6 +1112,15 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
             {filteredTasks.map(task => {
               const notes = completionNotes[task.id] ?? "";
               const evidence = task.evidence as Record<string, number | string | boolean | null>;
+              const hasDecisionModel = Boolean(
+                evidence.parameterLabel || evidence.currentStrategy || evidence.recommendedTargetCpa || evidence.recommendedDailyBudget,
+              );
+              const currentStrategy = String(evidence.currentStrategyLabel ?? evidence.currentStrategy ?? "Indisponível");
+              const recommendedStrategy = String(evidence.recommendedStrategyLabel ?? evidence.recommendedStrategy ?? currentStrategy);
+              const currentCpa = typeof evidence.currentCpa === "number" ? evidence.currentCpa : Number(evidence.cpa ?? 0);
+              const targetCpa = typeof evidence.recommendedTargetCpa === "number" ? evidence.recommendedTargetCpa : null;
+              const currentBudget = typeof evidence.currentDailyBudget === "number" ? evidence.currentDailyBudget : Number(evidence.dailyBudget ?? 0);
+              const targetBudget = typeof evidence.recommendedDailyBudget === "number" ? evidence.recommendedDailyBudget : null;
               const sourceTask = task.sourceTaskId ? tasks.find(item => item.id === task.sourceTaskId) : null;
               const sourceCycle = sourceTask
                 ? workspace.data?.cycles.find(cycle => cycle.id === sourceTask.cycleId)
@@ -1122,15 +1149,35 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
                   <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-[#080e18] p-3 text-center">
                     <div><p className="text-[8px] uppercase text-slate-700">Investimento</p><p className="mt-1 text-[10px] text-slate-300">{BRL.format(Number(evidence.spend ?? 0))}</p></div>
                     <div><p className="text-[8px] uppercase text-slate-700">Conversões</p><p className="mt-1 text-[10px] text-slate-300">{NUMBER.format(Number(evidence.conversions ?? 0))}</p></div>
-                    <div><p className="text-[8px] uppercase text-slate-700">CPA</p><p className="mt-1 text-[10px] text-slate-300">{BRL.format(Number(evidence.cpa ?? 0))}</p></div>
+                    <div><p className="text-[8px] uppercase text-slate-700">CPA atual</p><p className="mt-1 text-[10px] text-slate-300">{BRL.format(currentCpa)}</p></div>
                   </div>
-                  <details className="mt-3 rounded-lg border border-[#1b2637] bg-[#0a111d]"><summary className="cursor-pointer px-3 py-2 text-[10px] text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-[#e2212d]/40">Ver impacto, risco e instruções do Google Ads</summary><div className="space-y-3 border-t border-[#1b2637] p-3 text-[10px] leading-5 text-slate-500"><p><strong className="text-emerald-300">Impacto:</strong> {task.expectedImpact}</p><p><strong className="text-amber-300">Risco:</strong> {task.risk}</p><ol className="list-decimal space-y-1 pl-4">{task.steps.map(step => <li key={step}>{step}</li>)}</ol></div></details>
+                  {hasDecisionModel ? (
+                    <div className="mt-3 space-y-2 rounded-lg border border-sky-500/15 bg-sky-500/[0.05] p-3">
+                      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-sky-300">Alteração recomendada</p>
+                      <p className="break-words text-[10px] font-semibold text-white [overflow-wrap:anywhere]">{String(evidence.parameterLabel ?? actionLabels[task.actionType] ?? task.actionType)}</p>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-md bg-[#080e18] p-2">
+                        <div className="min-w-0"><p className="text-[8px] uppercase text-slate-700">Atual</p><p className="mt-1 break-words text-[10px] text-slate-300 [overflow-wrap:anywhere]">{formatOptimizationValue(evidence.currentValue, evidence.parameterFormat)}</p></div>
+                        <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                        <div className="min-w-0 text-right"><p className="text-[8px] uppercase text-slate-700">Recomendado</p><p className="mt-1 break-words text-[10px] font-semibold text-sky-200 [overflow-wrap:anywhere]">{formatOptimizationValue(evidence.recommendedValue, evidence.parameterFormat)}</p></div>
+                      </div>
+                      <div className="space-y-2 text-[9px] leading-4 text-slate-500">
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <div className="rounded-md bg-[#080e18] p-2"><p className="text-[8px] uppercase text-slate-700">Estratégia atual</p><p className="mt-1 break-words font-semibold text-slate-300 [overflow-wrap:anywhere]">{currentStrategy}</p></div>
+                          <div className="rounded-md bg-[#080e18] p-2"><p className="text-[8px] uppercase text-slate-700">Estratégia recomendada</p><p className="mt-1 break-words font-semibold text-sky-200 [overflow-wrap:anywhere]">{recommendedStrategy}</p></div>
+                          <div className="rounded-md bg-[#080e18] p-2"><p className="text-[8px] uppercase text-slate-700">CPA atual</p><p className="mt-1 font-semibold text-slate-300">{BRL.format(currentCpa)}</p></div>
+                          <div className="rounded-md bg-[#080e18] p-2"><p className="text-[8px] uppercase text-slate-700">CPA-alvo sugerido</p><p className="mt-1 font-semibold text-sky-200">{targetCpa == null ? "Não alterar nesta etapa" : BRL.format(targetCpa)}</p></div>
+                        </div>
+                        <p><strong className="text-slate-300">Orçamento diário:</strong> {BRL.format(currentBudget)} <span className="text-sky-400">→</span> {targetBudget == null ? "sem alteração" : BRL.format(targetBudget)}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  <details className="mt-3 rounded-lg border border-[#1b2637] bg-[#0a111d]"><summary className="cursor-pointer px-3 py-2 text-[10px] text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-[#e2212d]/40">Ver evidências, impacto, risco e passo a passo</summary><div className="space-y-3 border-t border-[#1b2637] p-3 text-[10px] leading-5 text-slate-500"><p><strong className="text-emerald-300">Impacto esperado:</strong> {task.expectedImpact}</p><p><strong className="text-amber-300">Risco e critério de parada:</strong> {task.risk}</p><ol className="list-decimal space-y-1 pl-4">{task.steps.map(step => <li key={step}>{step}</li>)}</ol></div></details>
 
                   {task.status !== "COMPLETED" ? (
                     <div className="mt-4 space-y-3 border-t border-[#1b2637] pt-4">
-                      <textarea value={notes} onChange={event => setCompletionNotes(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Notas obrigatórias da execução: o que foi alterado, valor anterior e novo valor..." rows={3} className="w-full resize-y rounded-md border border-[#273247] bg-[#101827] px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-[#e2212d] focus:ring-2 focus:ring-[#e2212d]/20" />
-                      <Button type="button" size="sm" onClick={() => completeTask.mutate({ taskId: task.id, notes, dateFrom, dateTo })} disabled={notes.trim().length < 3 || completeTask.isPending} className="h-9 w-full bg-emerald-600 text-[10px] hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Concluir e registrar snapshot</Button>
-                      <p className="text-[9px] leading-4 text-slate-600">A autoria e a responsabilidade serão registradas automaticamente com o usuário autenticado.</p>
+                      <textarea value={notes} onChange={event => setCompletionNotes(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Comentário opcional: registre uma observação somente se houver contexto adicional..." rows={2} className="w-full resize-y rounded-md border border-[#273247] bg-[#101827] px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-[#e2212d] focus:ring-2 focus:ring-[#e2212d]/20" />
+                      <Button type="button" size="sm" onClick={() => completeTask.mutate({ taskId: task.id, notes, dateFrom, dateTo })} disabled={completeTask.isPending} className="h-9 w-full bg-emerald-600 text-[10px] hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Concluir e registrar snapshot</Button>
+                      <p className="text-[9px] leading-4 text-slate-600">Você pode concluir sem preencher este campo; usuário, horário e snapshot serão registrados automaticamente.</p>
                     </div>
                   ) : (
                     <div className="mt-4 space-y-2">

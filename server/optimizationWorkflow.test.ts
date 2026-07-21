@@ -86,19 +86,13 @@ describe.sequential("workflow integrado de otimização", () => {
           taskId,
           actor,
           notes: "  ",
-          snapshot: null,
+          snapshot: {
+            campaignId: recommendation.campaignId,
+            campaignName: recommendation.campaignName,
+            ...recommendation.snapshot,
+          },
         }),
-      ).rejects.toThrow("Informe uma observação de conclusão com ao menos 3 caracteres");
-      await completeOptimizationTask({
-        taskId,
-        actor,
-        notes: "Conclusão automatizada para validar o histórico transacional.",
-        snapshot: {
-          campaignId: recommendation.campaignId,
-          campaignName: recommendation.campaignName,
-          ...recommendation.snapshot,
-        },
-      });
+      ).resolves.toEqual({ success: true });
 
       workspace = await getOptimizationWorkspace();
       const completed = workspace.tasks.find(task => task.id === taskId);
@@ -110,8 +104,11 @@ describe.sequential("workflow integrado de otimização", () => {
       });
       expect(completed?.startedAt).toBeGreaterThan(0);
       expect(completed?.completedAt).toBeGreaterThan(0);
-      expect(completion).toMatchObject({ completedBy: actor });
-      expect(completion?.notes).toContain("histórico transacional");
+      expect(completion).toMatchObject({ completedBy: actor, notes: "" });
+      const completedEvent = workspace.events.find(
+        event => event.taskId === taskId && event.eventType === "COMPLETED",
+      );
+      expect(completedEvent).toMatchObject({ actor, notes: null });
       const taskSnapshots = workspace.snapshots.filter(snapshot => snapshot.taskId === taskId);
       expect(taskSnapshots.map(snapshot => snapshot.snapshotType)).toEqual(
         expect.arrayContaining(["TASK_CREATED", "TASK_COMPLETED"]),

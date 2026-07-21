@@ -283,7 +283,7 @@ export const appRouter = router({
         dashboardPeriodSchema.and(
           z.object({
             taskId: z.number().int().positive(),
-            notes: z.string().trim().min(3).max(4_000),
+            notes: z.string().trim().max(4_000).optional().default(""),
           }),
         ),
       )

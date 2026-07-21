@@ -466,17 +466,17 @@
 
 ## Aprofundamento da aba Otimizações
 
-- [ ] Auditar os tipos de ação gerados atualmente e identificar por que as tarefas se repetem
-- [ ] Mapear para cada campanha CPA atual, CPA médio de referência, CPA-alvo sugerido, estratégia de lance atual, orçamento, conversões e sinais de limitação
-- [ ] Criar recomendações variadas e mutuamente exclusivas para CPA-alvo, estratégia de lance, orçamento, segmentação, criativos e medição, somente quando houver evidência suficiente
-- [ ] Informar valores concretos de origem e destino em cada tarefa, incluindo qual CPA será alterado e para quanto
-- [ ] Exibir estratégia atual, estratégia recomendada, justificativa, evidências, impacto esperado, risco e passo a passo operacional
-- [ ] Evitar ações genéricas, repetidas, contraditórias ou que ultrapassem a verba disponível
-- [ ] Preservar IDs e nomes reais das campanhas e o vínculo com ciclos e histórico
-- [ ] Tornar o comentário de conclusão opcional no backend e na interface
-- [ ] Manter registro automático de usuário e horário ao concluir sem comentário
-- [ ] Atualizar testes do motor, deduplicação, transições e interface
-- [ ] Validar dados reais, responsividade, tipagem, suíte completa e build
+- [x] Auditar os tipos de ação gerados atualmente e identificar por que as tarefas se repetem
+- [x] Mapear para cada campanha CPA atual, CPA médio de referência, CPA-alvo sugerido, estratégia de lance atual, orçamento, conversões e sinais de limitação
+- [x] Criar recomendações variadas e mutuamente exclusivas para CPA-alvo, estratégia de lance, orçamento, segmentação, criativos e medição, somente quando houver evidência suficiente
+- [x] Informar valores concretos de origem e destino em cada tarefa, incluindo qual CPA será alterado e para quanto
+- [x] Exibir estratégia atual, estratégia recomendada, justificativa, evidências, impacto esperado, risco e passo a passo operacional
+- [x] Evitar ações genéricas, repetidas, contraditórias ou que ultrapassem a verba disponível
+- [x] Preservar IDs e nomes reais das campanhas e o vínculo com ciclos e histórico
+- [x] Tornar o comentário de conclusão opcional no backend e na interface
+- [x] Manter registro automático de usuário e horário ao concluir sem comentário
+- [x] Atualizar testes do motor, deduplicação, transições e interface
+- [x] Validar dados reais, responsividade por estrutura, tipagem, 102 testes, suíte completa e build
 
 ## Atualização do Plano de Mídia — nova planilha enviada
 
