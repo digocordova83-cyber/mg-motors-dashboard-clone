@@ -62,6 +62,40 @@ export const dashboardAccounts = mysqlTable(
   ],
 );
 
+export const dashboardSourceRefreshes = mysqlTable(
+  "dashboard_source_refreshes",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    source: mysqlEnum("source", ["GOOGLE_ADS", "META_ADS"]).notNull(),
+    refreshDate: date("refreshDate", { mode: "string" }).notNull(),
+    periodFrom: date("periodFrom", { mode: "string" }).notNull(),
+    periodTo: date("periodTo", { mode: "string" }).notNull(),
+    lastAttemptStatus: mysqlEnum("lastAttemptStatus", ["SUCCESS", "FAILED"]).notNull(),
+    attemptCount: int("attemptCount").default(1).notNull(),
+    lastAttemptAt: bigint("lastAttemptAt", { mode: "number" }).notNull(),
+    lastSuccessAt: bigint("lastSuccessAt", { mode: "number" }),
+    lastSuccessSource: varchar("lastSuccessSource", { length: 64 }),
+    lastSuccessMetadata: json("lastSuccessMetadata")
+      .$type<Record<string, number | string | boolean | null>>()
+      .notNull(),
+    lastError: text("lastError"),
+    taskUid: varchar("taskUid", { length: 65 }),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("dashboard_source_refreshes_source_date_unique").on(
+      table.source,
+      table.refreshDate,
+    ),
+    index("dashboard_source_refreshes_status_attempt_idx").on(
+      table.lastAttemptStatus,
+      table.lastAttemptAt,
+    ),
+    index("dashboard_source_refreshes_task_uid_idx").on(table.taskUid),
+  ],
+);
+
 export const campaignGoals = mysqlTable(
   "campaign_goals",
   {
@@ -335,6 +369,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type DashboardAccount = typeof dashboardAccounts.$inferSelect;
 export type InsertDashboardAccount = typeof dashboardAccounts.$inferInsert;
+export type DashboardSourceRefresh = typeof dashboardSourceRefreshes.$inferSelect;
+export type InsertDashboardSourceRefresh = typeof dashboardSourceRefreshes.$inferInsert;
 export type CampaignGoal = typeof campaignGoals.$inferSelect;
 export type InsertCampaignGoal = typeof campaignGoals.$inferInsert;
 export type OptimizationCycle = typeof optimizationCycles.$inferSelect;

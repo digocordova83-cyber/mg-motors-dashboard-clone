@@ -150,3 +150,145 @@ describe("metaAdsService", () => {
     expect(data.models.reduce((sum, item) => sum + item.leads, 0)).toBe(9);
   });
 });
+
+type MetaBundle = Parameters<typeof buildMetaAdsData>[0];
+type CreativeRow = Record<string, unknown>;
+
+function makeCreativeBundle(creatives: CreativeRow[]): MetaBundle {
+  return {
+    daily: [
+      {
+        account_name: "MG Motors",
+        account_currency: "BRL",
+        account_timezone: "America/Sao_Paulo",
+        date: "2026-07-20",
+        spend: 100,
+        actions_lead: 10,
+        impressions: 1_000,
+        clicks: 100,
+      },
+    ],
+    campaigns: [
+      {
+        campaign_id: "campaign-1",
+        campaign: "Campanha MG",
+        reach: 800,
+        spend: 100,
+        actions_lead: 10,
+      },
+    ],
+    adsets: [],
+    creatives,
+    demographics: [],
+    regions: [],
+  };
+}
+
+function buildCreativeResult(creatives: CreativeRow[]) {
+  return buildMetaAdsData(
+    makeCreativeBundle(creatives),
+    {
+      source: "windsor-live",
+      updatedAt: "2026-07-21T11:30:00.000Z",
+      cacheHit: false,
+    },
+    "2026-07-20",
+    "2026-07-20",
+  );
+}
+
+describe("associação de imagens aos criativos Meta Ads", () => {
+  it("rejeita o mesmo asset canônico reutilizado por creative_ids diferentes e preserva os IDs reais", () => {
+    const result = buildCreativeResult([
+      {
+        ad_id: "ad-cyberster",
+        creative_id: "creative-cyberster",
+        ad_name: "Cyberster Cold",
+        thumbnail_url: "https://scontent-a.example/v/t45.1600-4/generic.png?token=one",
+        spend: 40,
+        actions_lead: 4,
+      },
+      {
+        ad_id: "ad-mg4",
+        creative_id: "creative-mg4",
+        ad_name: "MG 4 Hot",
+        thumbnail_url: "https://scontent-b.example/v/t45.1600-4/generic.png?token=two",
+        spend: 30,
+        actions_lead: 3,
+      },
+    ]);
+
+    expect(result.creatives).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "ad-cyberster",
+          adId: "ad-cyberster",
+          creativeId: "creative-cyberster",
+          name: "Cyberster Cold",
+          imageUrl: null,
+          imageSource: null,
+        }),
+        expect.objectContaining({
+          id: "ad-mg4",
+          adId: "ad-mg4",
+          creativeId: "creative-mg4",
+          name: "MG 4 Hot",
+          imageUrl: null,
+          imageSource: null,
+        }),
+      ]),
+    );
+  });
+
+  it("prioriza uma mídia específica do anúncio sobre um thumbnail genérico não confiável", () => {
+    const result = buildCreativeResult([
+      {
+        ad_id: "ad-unique",
+        creative_id: "creative-unique",
+        ad_name: "MG5 Placement",
+        placement_ad_thumbnail_url: "https://media.example/placements/mg5-vertical.jpg?expires=1",
+        thumbnail_url: "https://scontent.example/v/t45.1600-4/generic.png?token=one",
+        spend: 50,
+        actions_lead: 5,
+      },
+      {
+        ad_id: "ad-other",
+        creative_id: "creative-other",
+        ad_name: "Cyberster Other",
+        thumbnail_url: "https://cdn.example/v/t45.1600-4/generic.png?token=two",
+        spend: 20,
+        actions_lead: 2,
+      },
+    ]);
+
+    expect(result.creatives.find(item => item.adId === "ad-unique")).toMatchObject({
+      imageUrl: "https://media.example/placements/mg5-vertical.jpg?expires=1",
+      imageSource: "placement_ad_thumbnail_url",
+    });
+  });
+
+  it("permite o mesmo asset quando ele pertence ao mesmo creative_id", () => {
+    const result = buildCreativeResult([
+      {
+        ad_id: "ad-a",
+        creative_id: "creative-shared",
+        ad_name: "MG4 Creative — A",
+        thumbnail_url: "https://scontent-a.example/assets/mg4.jpg?token=one",
+        spend: 20,
+        actions_lead: 2,
+      },
+      {
+        ad_id: "ad-b",
+        creative_id: "creative-shared",
+        ad_name: "MG4 Creative — B",
+        thumbnail_url: "https://scontent-b.example/assets/mg4.jpg?token=two",
+        spend: 10,
+        actions_lead: 1,
+      },
+    ]);
+
+    expect(result.creatives).toHaveLength(2);
+    expect(result.creatives.every(item => item.imageUrl?.includes("/assets/mg4.jpg"))).toBe(true);
+    expect(result.creatives.every(item => item.imageSource === "thumbnail_url")).toBe(true);
+  });
+});

@@ -1,8 +1,9 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   campaignGoals,
   dashboardAccounts,
+  dashboardSourceRefreshes,
   InsertDashboardAccount,
   InsertUser,
   optimizationCycles,
@@ -138,6 +139,99 @@ export async function updateDashboardAccountLastSignIn(id: number) {
     .update(dashboardAccounts)
     .set({ lastSignedInAt: now, updatedAt: now })
     .where(eq(dashboardAccounts.id, id));
+}
+
+export type DashboardRefreshSource = "GOOGLE_ADS" | "META_ADS";
+
+type DashboardRefreshMetadata = Record<string, number | string | boolean | null>;
+
+export async function recordDashboardSourceRefresh(input: {
+  source: DashboardRefreshSource;
+  refreshDate: string;
+  periodFrom: string;
+  periodTo: string;
+  status: "SUCCESS" | "FAILED";
+  attemptedAt: number;
+  taskUid?: string | null;
+  liveSource?: string | null;
+  metadata?: DashboardRefreshMetadata;
+  error?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const succeeded = input.status === "SUCCESS";
+  const successMetadata = succeeded ? (input.metadata ?? {}) : {};
+  const values = {
+    source: input.source,
+    refreshDate: input.refreshDate,
+    periodFrom: input.periodFrom,
+    periodTo: input.periodTo,
+    lastAttemptStatus: input.status,
+    attemptCount: 1,
+    lastAttemptAt: input.attemptedAt,
+    lastSuccessAt: succeeded ? input.attemptedAt : null,
+    lastSuccessSource: succeeded ? (input.liveSource ?? null) : null,
+    lastSuccessMetadata: successMetadata,
+    lastError: input.error ?? null,
+    taskUid: input.taskUid ?? null,
+    createdAt: input.attemptedAt,
+    updatedAt: input.attemptedAt,
+  } as const;
+
+  const updateSet: Record<string, unknown> = {
+    periodFrom: input.periodFrom,
+    periodTo: input.periodTo,
+    lastAttemptStatus: input.status,
+    attemptCount: sql`${dashboardSourceRefreshes.attemptCount} + 1`,
+    lastAttemptAt: input.attemptedAt,
+    lastError: input.error ?? null,
+    taskUid: input.taskUid ?? null,
+    updatedAt: input.attemptedAt,
+  };
+
+  if (succeeded) {
+    updateSet.lastSuccessAt = input.attemptedAt;
+    updateSet.lastSuccessSource = input.liveSource ?? null;
+    updateSet.lastSuccessMetadata = successMetadata;
+  }
+
+  await db.insert(dashboardSourceRefreshes).values(values).onDuplicateKeyUpdate({
+    set: updateSet,
+  });
+
+  const [record] = await db
+    .select()
+    .from(dashboardSourceRefreshes)
+    .where(
+      and(
+        eq(dashboardSourceRefreshes.source, input.source),
+        eq(dashboardSourceRefreshes.refreshDate, input.refreshDate),
+      ),
+    )
+    .limit(1);
+
+  return record;
+}
+
+export async function getDashboardSourceRefresh(
+  source: DashboardRefreshSource,
+  refreshDate: string,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const [record] = await db
+    .select()
+    .from(dashboardSourceRefreshes)
+    .where(
+      and(
+        eq(dashboardSourceRefreshes.source, source),
+        eq(dashboardSourceRefreshes.refreshDate, refreshDate),
+      ),
+    )
+    .limit(1);
+  return record;
 }
 
 export async function getCampaignGoals(accountId: string, competencia: string) {

@@ -59,3 +59,14 @@ O ciclo executável foi validado sem seção independente de recomendações, se
 ## Conta MG Motors — mobile autenticado (390 × 844)
 
 A sessão real da conta persistida `mg motors` foi aplicada em navegador Chromium headless com viewport móvel de 390 × 844, sem uso nem armazenamento de senha no utilitário de validação. O shell autenticado carregou em inglês com a identidade MG Motors e navegação limitada aos módulos permitidos, sem Optimizations, History ou controles de importação. A captura `/home/ubuntu/mg-mobile-validation/failure-state.png` comprovou o Google Ads responsivo em coluna única, com cartões legíveis, filtros horizontais e sem overflow lateral visível. O utilitário encerrou com código negativo somente porque aguardava o texto `Operations Dashboard`, omitido pelo cabeçalho compacto móvel; os dados autenticados e os KPIs reais foram carregados corretamente.
+
+## 21/07/2026 — Daniel e auditoria de criativos Meta Ads
+
+- O login `daniel` foi validado no preview com a conta persistida e abriu o shell autenticado em português.
+- Daniel recebeu acesso visual a Google Ads, Meta Ads, Leads e Plano de Mídia, incluindo as abas Google Ads Visão Geral, Acompanhamento Diário, Investimento, Otimizações e Histórico.
+- O catálogo oficial do conector Windsor.ai para Facebook confirmou os identificadores `ad_id`, `creative_id` e `effective_instagram_media__id`, além das mídias `image_url`, `promoted_post_full_picture`, `placement_ad_thumbnail_url`, `effective_instagram_media__media_url`, `effective_instagram_media__thumbnail_url` e `thumbnail_url`.
+- A interface React apenas renderiza `creative.imageUrl`; portanto, imagens repetidas são originadas na seleção/agregação do backend, não no cartão visual.
+
+## 21/07/2026 — conta mgmotors corrigida
+
+O login exato `mgmotors` foi validado com sucesso usando a credencial fornecida e armazenada somente como hash. A sessão identifica **MG Motors**, aplica `en-US` e apresenta o shell, filtros, métricas e mensagens em inglês. A navegação expõe Google Ads, Meta Ads, Leads e Media Plan; em Google Ads aparecem somente Overview, Daily Tracking e Investment. Optimizations e History permanecem ocultos, assim como o importador CSV de Leads.

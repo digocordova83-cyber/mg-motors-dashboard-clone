@@ -296,3 +296,33 @@
 - [x] Validar que aliases convergem ao nome canônico correto e nomes desconhecidos permanecem separados
 - [x] Validar que a consolidação não altera o total geral de Leads nem a grafia original armazenada
 - [x] Registrar no código a origem e a data da nova base de de/para para auditoria
+
+## Atualização diária D-1 e revisão de criativos Meta Ads
+
+- [x] Auditar o fluxo atual de consulta, cache e atualização de Google Ads e Meta Ads
+- [x] Confirmar os campos reais de ID, nome, imagem, thumbnail e mídia disponíveis para cada criativo Meta Ads
+- [ ] Configurar execução automática diária às 08:30 no fuso America/Sao_Paulo (GMT-3)
+- [x] Atualizar Google Ads e Meta Ads somente com dados completos de D-1
+- [x] Registrar sucesso, falha, fonte, período e horário de cada atualização sem apagar o último estado válido
+- [x] Garantir idempotência para reexecuções do mesmo D-1 e impedir duplicidade de métricas
+- [x] Corrigir a associação entre criativo, imagem e métricas usando identificadores reais da fonte
+- [x] Eliminar reutilização indevida da mesma imagem entre criativos diferentes
+- [x] Exibir placeholder neutro somente quando a fonte não disponibilizar imagem válida
+- [x] Manter o nome e o ID reais do criativo visíveis para auditoria
+- [x] Atualizar testes Vitest do agendamento, D-1, idempotência e resolução de imagens
+- [x] Validar no navegador os criativos Meta Ads em desktop e mobile
+- [x] Inspecionar logs, executar tipagem, suíte completa e build de produção
+- [x] Revisar todo.md e salvar checkpoint da correção
+
+## Acessos Daniel e mgmotors
+
+- [x] Auditar as contas persistidas sem expor hashes ou senhas
+- [x] Criar ou atualizar o usuário `daniel` com senha armazenada somente como hash seguro
+- [x] Conceder ao usuário Daniel acesso total a todos os módulos e operações do dashboard
+- [x] Corrigir o login persistido da conta `mgmotors` para aceitar exatamente o usuário informado
+- [x] Atualizar com segurança a senha da conta mgmotors sem armazenar texto puro
+- [x] Manter o locale `en-US` obrigatório para mgmotors em todos os módulos, estados e mensagens acessíveis
+- [x] Preservar para mgmotors as restrições de Otimizações, Histórico e importação CSV já definidas
+- [x] Cobrir Daniel e mgmotors com testes de autenticação, idioma e autorização
+- [x] Validar os dois logins no navegador e confirmar a matriz de módulos de cada conta
+- [x] Remover utilitários temporários e auditar o projeto contra credenciais em texto puro

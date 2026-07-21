@@ -287,15 +287,63 @@ function extractModel(...names: unknown[]) {
   return "Outros";
 }
 
-function pickImage(row: RawRow) {
-  const candidates = [
-    row.thumbnail_url,
-    row.promoted_post_full_picture,
-    row.image_url,
-    row.placement_ad_thumbnail_url,
-    row.effective_instagram_media__thumbnail_url,
-  ];
-  return candidates.map(stringOrEmpty).find(value => /^https?:\/\//i.test(value)) ?? null;
+const CREATIVE_IMAGE_FIELDS = [
+  "placement_ad_thumbnail_url",
+  "effective_instagram_media__thumbnail_url",
+  "image_url",
+  "promoted_post_full_picture",
+  "thumbnail_url",
+] as const;
+
+type CreativeImageField = (typeof CREATIVE_IMAGE_FIELDS)[number];
+
+function creativeImageCandidates(row: RawRow) {
+  return CREATIVE_IMAGE_FIELDS.map(field => ({
+    field,
+    url: stringOrEmpty(row[field]),
+  })).filter(candidate => /^https?:\/\//i.test(candidate.url));
+}
+
+function canonicalImageIdentity(value: string) {
+  try {
+    const url = new URL(value);
+    // Meta varia host e query string temporária para o mesmo arquivo. O caminho
+    // contém a identidade estável do asset e permite detectar thumbnails
+    // genéricos reutilizados entre creative_ids distintos.
+    return url.pathname;
+  } catch {
+    return null;
+  }
+}
+
+function buildCreativeImageUsage(rows: RawRow[]) {
+  const ownersByImage = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const owner = stringOrEmpty(row.creative_id) || stringOrEmpty(row.ad_id);
+    if (!owner) continue;
+    for (const candidate of creativeImageCandidates(row)) {
+      const identity = canonicalImageIdentity(candidate.url);
+      if (!identity) continue;
+      const owners = ownersByImage.get(identity) ?? new Set<string>();
+      owners.add(owner);
+      ownersByImage.set(identity, owners);
+    }
+  }
+  return ownersByImage;
+}
+
+function pickCreativeImage(
+  row: RawRow,
+  ownersByImage: Map<string, Set<string>>,
+): { url: string | null; source: CreativeImageField | null } {
+  for (const candidate of creativeImageCandidates(row)) {
+    const identity = canonicalImageIdentity(candidate.url);
+    if (!identity) continue;
+    const owners = ownersByImage.get(identity);
+    if (!owners || owners.size !== 1) continue;
+    return { url: candidate.url, source: candidate.field };
+  }
+  return { url: null, source: null };
 }
 
 async function fetchWindsorRows(fields: readonly string[], dateFrom: string, dateTo: string) {
@@ -464,13 +512,18 @@ export function buildMetaAdsData(
     })
     .sort((left, right) => right.leads - left.leads || right.spend - left.spend);
 
+  const creativeImageUsage = buildCreativeImageUsage(bundle.creatives);
   const creatives = bundle.creatives
     .map(row => {
       const spend = numberOrZero(row.spend);
       const leads = numberOrZero(row.actions_lead);
+      const adId = stringOrEmpty(row.ad_id);
+      const creativeId = stringOrEmpty(row.creative_id);
+      const image = pickCreativeImage(row, creativeImageUsage);
       return {
-        id: stringOrEmpty(row.ad_id || row.creative_id),
-        creativeId: stringOrEmpty(row.creative_id),
+        id: adId || creativeId,
+        adId,
+        creativeId,
         campaignId: stringOrEmpty(row.campaign_id),
         campaignName: stringOrEmpty(row.campaign),
         adsetId: stringOrEmpty(row.adset_id),
@@ -483,7 +536,8 @@ export function buildMetaAdsData(
         impressions: round(numberOrZero(row.impressions)),
         reach: round(numberOrZero(row.reach)),
         clicks: round(numberOrZero(row.clicks)),
-        imageUrl: pickImage(row),
+        imageUrl: image.url,
+        imageSource: image.source,
       };
     })
     .sort((left, right) => right.leads - left.leads || right.spend - left.spend);

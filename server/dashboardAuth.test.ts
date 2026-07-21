@@ -23,7 +23,7 @@ let testPasswordHash = "";
 
 const mgMotorsIdentity: DashboardIdentity = {
   accountId: 2,
-  username: "mg motors",
+  username: "mgmotors",
   displayName: "MG Motors",
   locale: "en-US",
   permissions: {
@@ -34,6 +34,22 @@ const mgMotorsIdentity: DashboardIdentity = {
     canAccessOptimizations: false,
     canAccessHistory: false,
     canImportLeads: false,
+  },
+};
+
+const danielIdentity: DashboardIdentity = {
+  accountId: 3,
+  username: "daniel",
+  displayName: "Daniel",
+  locale: "pt-BR",
+  permissions: {
+    canAccessGoogleAds: true,
+    canAccessMetaAds: true,
+    canAccessLeads: true,
+    canAccessMediaPlan: true,
+    canAccessOptimizations: true,
+    canAccessHistory: true,
+    canImportLeads: true,
   },
 };
 
@@ -76,14 +92,33 @@ describe("autenticação do dashboard", () => {
   it("autentica uma conta ativa e devolve idioma e permissões sem expor o hash", async () => {
     dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(mgMotorsIdentity));
 
-    await expect(authenticateDashboardCredentials("mg motors", testPassword)).resolves.toEqual(mgMotorsIdentity);
-    expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mg motors");
+    await expect(authenticateDashboardCredentials("mgmotors", testPassword)).resolves.toEqual(mgMotorsIdentity);
+    expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mgmotors");
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(2);
+  });
+
+  it("autentica Daniel com acesso integral a todos os módulos e operações", async () => {
+    dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(danielIdentity));
+
+    const identity = await authenticateDashboardCredentials("daniel", testPassword);
+
+    expect(identity).toEqual(danielIdentity);
+    expect(identity?.permissions).toEqual({
+      canAccessGoogleAds: true,
+      canAccessMetaAds: true,
+      canAccessLeads: true,
+      canAccessMediaPlan: true,
+      canAccessOptimizations: true,
+      canAccessHistory: true,
+      canImportLeads: true,
+    });
+    expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("daniel");
+    expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(3);
   });
 
   it("rejeita senha inválida, conta ausente e conta inativa", async () => {
     dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(accountFromIdentity(mgMotorsIdentity));
-    await expect(authenticateDashboardCredentials("mg motors", "senha-incorreta")).resolves.toBeNull();
+    await expect(authenticateDashboardCredentials("mgmotors", "senha-incorreta")).resolves.toBeNull();
 
     dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(null);
     await expect(authenticateDashboardCredentials("desconhecido", testPassword)).resolves.toBeNull();
