@@ -15,6 +15,13 @@
       "when": 1784594545862,
       "tag": "0001_eager_bucky",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1784600891253,
+      "tag": "0002_married_manta",
+      "breakpoints": true
     }
   ]
 }

@@ -111,3 +111,37 @@
 - [x] Corrigir overflow horizontal mobile do cabeçalho de ciclo em Otimizações e garantir quebra segura de nomes longos
 - [x] Remover truncamentos remanescentes para exibir sempre o nome completo da campanha junto do ID nas áreas operacionais
 - [x] Adicionar teste de interface que garanta nome completo e ID real visíveis sem depender de tooltip
+
+## Nova área — Leads
+
+- [x] Auditar os quatro prints de referência e documentar a hierarquia visual do módulo de Leads
+- [x] Auditar o CSV fornecido, seus cabeçalhos, tipos, datas, canais, modelos, regiões, concessionárias e possíveis duplicidades
+- [x] Definir a chave canônica de deduplicação e usar `Data Corrigida` como data de referência quando disponível
+- [x] Definir o contrato de dados e as regras de normalização sem inventar valores ausentes
+- [x] Criar tabela persistente de lotes de importação de CSV com hash, nome, status, contagens, usuário e timestamps
+- [x] Criar tabela persistente de registros de leads normalizados e vinculados ao lote de origem
+- [ ] Criar configuração persistente e editável da meta mensal de Leads, iniciando com 10.000 para julho/2026
+- [x] Gerar, revisar e aplicar migração não destrutiva das tabelas do módulo de Leads
+- [ ] Implementar parser CSV com validação de formato, encoding, datas e campos obrigatórios
+- [ ] Implementar importação autenticada, atômica, idempotente e auditável sem duplicar leads já carregados
+- [ ] Exibir pré-validação do arquivo com linhas válidas, inválidas, duplicadas e resumo por período antes da confirmação
+- [ ] Implementar histórico de atualizações com arquivo, hash, usuário, data e resultado do processamento
+- [ ] Implementar métricas de total de leads, média diária, canal principal e canais ativos
+- [ ] Implementar pacing mensal com meta, atual, percentual, média/dia, projeção, diferença e dias restantes
+- [ ] Implementar série diária empilhada por canal e tendência diária total sem dupla contagem
+- [ ] Implementar distribuição e resumo por canal com leads, média/dia e participação
+- [ ] Implementar análises por modelo, região e concessionária apenas quando os campos reais permitirem classificação segura
+- [ ] Criar página/aba navegável `Leads` integrada ao dashboard atual e acessível por `?tab=leads`
+- [ ] Reproduzir o layout de referência no padrão visual MG Motors, com filtros 7d, 14d, mês e intervalo personalizado
+- [ ] Adicionar ação Atualizar CSV com seleção, pré-validação, confirmação, progresso, sucesso e erro
+- [ ] Adicionar edição protegida da meta mensal diretamente no painel de pacing
+- [ ] Exibir estados de carregamento, erro, arquivo inválido, ausência de dados e análises indisponíveis
+- [ ] Garantir que valores ausentes apareçam como indisponíveis, sem fabricar canal, modelo, região ou concessionária
+- [ ] Escrever testes Vitest para parser, datas, deduplicação, importação, pacing e agregações de Leads
+- [ ] Escrever testes TSX para identidade dos filtros, estados vazios e resumo da pré-validação
+- [ ] Importar e validar o CSV fornecido sem persistir duplicidades
+- [ ] Validar tipagem, suíte completa e build de produção
+- [ ] Validar visualmente a aba Leads em desktop, tablet e mobile, sem overflow horizontal do documento
+- [ ] Revisar todo.md e salvar checkpoint da versão com o módulo de Leads
+- [x] Inserir a meta inicial de Leads de julho/2026 (`competencia` = `2026-07`, `goalCount` = 10000) no banco sem duplicação
+- [ ] Implementar helper/procedure autenticado para ler e editar a meta mensal de Leads com persistência auditável

@@ -1,6 +1,7 @@
 import {
   bigint,
   boolean,
+  date,
   decimal,
   index,
   int,
@@ -209,6 +210,101 @@ export const performanceSnapshots = mysqlTable(
   ],
 );
 
+export const leadImports = mysqlTable(
+  "lead_imports",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    fileName: varchar("fileName", { length: 255 }).notNull(),
+    fileHash: varchar("fileHash", { length: 64 }).notNull(),
+    fileSizeBytes: int("fileSizeBytes").notNull(),
+    fileKey: varchar("fileKey", { length: 512 }),
+    fileUrl: text("fileUrl"),
+    status: mysqlEnum("status", ["PROCESSING", "COMPLETED", "FAILED"])
+      .default("PROCESSING")
+      .notNull(),
+    rowsTotal: int("rowsTotal").default(0).notNull(),
+    rowsInserted: int("rowsInserted").default(0).notNull(),
+    rowsSkipped: int("rowsSkipped").default(0).notNull(),
+    rowsInvalid: int("rowsInvalid").default(0).notNull(),
+    errorSummary: json("errorSummary").$type<string[]>(),
+    importedBy: varchar("importedBy", { length: 120 }).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    completedAt: bigint("completedAt", { mode: "number" }),
+  },
+  table => [
+    uniqueIndex("lead_imports_file_hash_unique").on(table.fileHash),
+    index("lead_imports_status_created_idx").on(table.status, table.createdAt),
+  ],
+);
+
+export const leads = mysqlTable(
+  "leads",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    importId: int("importId")
+      .notNull()
+      .references(() => leadImports.id, { onDelete: "restrict" }),
+    sourceRowNumber: int("sourceRowNumber").notNull(),
+    recordHash: varchar("recordHash", { length: 64 }).notNull(),
+    correctedDate: date("correctedDate", { mode: "string" }).notNull(),
+    correctedDateRaw: varchar("correctedDateRaw", { length: 64 }).notNull(),
+    sourceDateRaw: text("sourceDateRaw").notNull(),
+    channel: varchar("channel", { length: 120 }).notNull(),
+    channelRaw: varchar("channelRaw", { length: 255 }).notNull(),
+    model: varchar("model", { length: 120 }).notNull(),
+    modelRaw: varchar("modelRaw", { length: 255 }).notNull(),
+    region: varchar("region", { length: 32 }).notNull(),
+    regionRaw: varchar("regionRaw", { length: 255 }).notNull(),
+    city: varchar("city", { length: 160 }).notNull(),
+    cityRaw: varchar("cityRaw", { length: 255 }).notNull(),
+    dealerName: varchar("dealerName", { length: 255 }).notNull(),
+    dealerRaw: varchar("dealerRaw", { length: 255 }).notNull(),
+    contactName: text("contactName").notNull(),
+    email: varchar("email", { length: 320 }).notNull(),
+    phone: varchar("phone", { length: 64 }).notNull(),
+    rawPayload: json("rawPayload")
+      .$type<{
+        sourceDate: string;
+        model: string;
+        region: string;
+        city: string;
+        dealer: string;
+        name: string;
+        email: string;
+        phone: string;
+        channel: string;
+        correctedDate: string;
+      }>()
+      .notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("leads_record_hash_unique").on(table.recordHash),
+    index("leads_import_date_idx").on(table.importId, table.correctedDate),
+    index("leads_date_channel_idx").on(table.correctedDate, table.channel),
+    index("leads_date_model_idx").on(table.correctedDate, table.model),
+    index("leads_date_region_idx").on(table.correctedDate, table.region),
+    index("leads_date_dealer_idx").on(table.correctedDate, table.dealerName),
+  ],
+);
+
+export const leadMonthlyGoals = mysqlTable(
+  "lead_monthly_goals",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    competencia: varchar("competencia", { length: 7 }).notNull(),
+    goalCount: int("goalCount").notNull(),
+    createdBy: varchar("createdBy", { length: 120 }).notNull(),
+    updatedBy: varchar("updatedBy", { length: 120 }).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("lead_monthly_goals_competencia_unique").on(table.competencia),
+    index("lead_monthly_goals_updated_idx").on(table.updatedAt),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type CampaignGoal = typeof campaignGoals.$inferSelect;
@@ -223,3 +319,9 @@ export type TaskEvent = typeof taskEvents.$inferSelect;
 export type InsertTaskEvent = typeof taskEvents.$inferInsert;
 export type PerformanceSnapshot = typeof performanceSnapshots.$inferSelect;
 export type InsertPerformanceSnapshot = typeof performanceSnapshots.$inferInsert;
+export type LeadImport = typeof leadImports.$inferSelect;
+export type InsertLeadImport = typeof leadImports.$inferInsert;
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;
+export type LeadMonthlyGoal = typeof leadMonthlyGoals.$inferSelect;
+export type InsertLeadMonthlyGoal = typeof leadMonthlyGoals.$inferInsert;
