@@ -224,7 +224,7 @@ export function CsvImportFeedback({
 }) {
   const phase = resolveCsvImportPhase({ isPreviewing, isImporting, hasPreview, success, error });
   if (phase === "IMPORTING") {
-    return <div role="status" className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-xs text-sky-200"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Importando Leads e reconciliando duplicidades...</div>;
+    return <div role="status" className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-xs text-sky-200"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Importando todas as linhas válidas do CSV...</div>;
   }
   if (phase === "PREVIEWING") {
     return <div role="status" className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-xs text-sky-200"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Pré-validando o arquivo CSV...</div>;
@@ -249,8 +249,8 @@ export function CsvPreviewSummary({ preview }: { preview: LeadPreview }) {
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Linhas lidas", preview.rowsTotal, "text-white"],
-          ["Válidas únicas", preview.uniqueValidRows, "text-emerald-300"],
-          ["Duplicadas", preview.duplicateRowsWithinFile + preview.rowsAlreadyStored, "text-amber-300"],
+          ["Linhas válidas", preview.validRows, "text-emerald-300"],
+          ["Repetidas (mantidas)", preview.duplicateRowsWithinFile, "text-amber-300"],
           ["Inválidas", preview.invalidRows, "text-red-300"],
         ].map(([label, value, tone]) => (
           <div key={String(label)} className="rounded-lg border border-[#202b3d] bg-[#101827] p-3">
@@ -259,7 +259,8 @@ export function CsvPreviewSummary({ preview }: { preview: LeadPreview }) {
           </div>
         ))}
       </div>
-      {preview.alreadyImported ? <div className="rounded-lg border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-[11px] leading-5 text-sky-200">Este arquivo já foi processado. A confirmação retornará o lote existente sem inserir Leads novamente.</div> : null}
+      <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-[11px] leading-5 text-amber-100">As linhas repetidas são mantidas e importadas como ocorrências do arquivo. O hash do arquivo impede apenas o reprocessamento integral do mesmo CSV.</div>
+      {preview.alreadyImported ? <div className="rounded-lg border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-[11px] leading-5 text-sky-200">Este arquivo já foi processado. A confirmação retornará o lote existente sem inserir as linhas novamente.</div> : null}
       {preview.errors.length ? <div className="max-h-32 overflow-y-auto rounded-lg border border-red-500/15 bg-red-500/[0.04] p-3 text-[10px] leading-5 text-red-300">{preview.errors.map(error => <p key={`${error.rowNumber}-${error.message}`}>Linha {error.rowNumber}: {error.message}</p>)}</div> : null}
     </div>
   );
@@ -524,7 +525,7 @@ export function LeadsTab({ dateFrom, dateTo }: LeadsTabProps) {
   const importMutation = trpc.leads.importCsv.useMutation({
     onSuccess: async result => {
       setPreviewOpen(false);
-      setUploadMessage(result.idempotent ? "Arquivo já processado: nenhum Lead foi duplicado." : `${INTEGER.format(result.rowsInserted)} Leads inseridos com sucesso.`);
+      setUploadMessage(result.idempotent ? "Arquivo já processado: nenhuma linha foi inserida novamente." : `${INTEGER.format(result.rowsInserted)} linhas de Leads inseridas com sucesso.`);
       setUpload(null);
       setPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -586,7 +587,7 @@ export function LeadsTab({ dateFrom, dateTo }: LeadsTabProps) {
       <div className="flex flex-col gap-3 rounded-xl border border-[#1e293b] bg-[#0d1421] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.14)] lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.13em] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Base de Leads ativa</div>
-          <p className="mt-1 text-xs text-slate-500">{bounds.data?.totalLeads ? `${INTEGER.format(bounds.data.totalLeads)} Leads únicos • ${formatDate(bounds.data.dateFrom)} a ${formatDate(bounds.data.dateTo)}` : "Aguardando consolidação da base"}</p>
+          <p className="mt-1 text-xs text-slate-500">{bounds.data?.totalLeads ? `${INTEGER.format(bounds.data.totalLeads)} Leads na base • ${formatDate(bounds.data.dateFrom)} a ${formatDate(bounds.data.dateTo)}` : "Aguardando consolidação da base"}</p>
           <p className="mt-1 text-[10px] text-slate-700"><LeadFilterIdentity dateFrom={dateFrom} dateTo={dateTo} /></p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -684,7 +685,7 @@ export function LeadsTab({ dateFrom, dateTo }: LeadsTabProps) {
         {history.isLoading ? <div className="grid min-h-32 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-[#e2212d]" /></div> : history.data?.length ? (
           <div className="max-w-full overflow-x-auto">
             <table className="w-full min-w-[820px] text-left">
-              <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-4 py-3">Arquivo</th><th className="px-3 py-3">Processado por</th><th className="px-3 py-3">Data</th><th className="px-3 py-3 text-right">Lidas</th><th className="px-3 py-3 text-right">Inseridas</th><th className="px-3 py-3 text-right">Ignoradas</th><th className="px-4 py-3">Status</th></tr></thead>
+              <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-4 py-3">Arquivo</th><th className="px-3 py-3">Processado por</th><th className="px-3 py-3">Data</th><th className="px-3 py-3 text-right">Lidas</th><th className="px-3 py-3 text-right">Inseridas</th><th className="px-3 py-3 text-right">Não inseridas</th><th className="px-4 py-3">Status</th></tr></thead>
               <tbody className="divide-y divide-[#172131]">
                 {history.data.map(item => <tr key={item.id} className="text-[10px] hover:bg-white/[0.02]"><td className="px-4 py-3"><p className="max-w-[260px] truncate font-medium text-slate-300" title={item.fileName}>{item.fileName}</p><p className="mt-0.5 font-mono text-[8px] text-slate-700">{item.fileHash.slice(0, 16)}…</p></td><td className="px-3 py-3 text-slate-400">{item.importedBy}</td><td className="px-3 py-3 text-slate-400">{formatDateTime(item.completedAt ?? item.createdAt)}</td><td className="px-3 py-3 text-right text-slate-400">{INTEGER.format(item.rowsTotal)}</td><td className="px-3 py-3 text-right text-emerald-300">{INTEGER.format(item.rowsInserted)}</td><td className="px-3 py-3 text-right text-amber-300">{INTEGER.format(item.rowsSkipped + item.rowsInvalid)}</td><td className="px-4 py-3"><span className={`rounded-full border px-2 py-1 text-[9px] font-medium ${item.status === "COMPLETED" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : item.status === "FAILED" ? "border-red-500/20 bg-red-500/10 text-red-300" : "border-sky-500/20 bg-sky-500/10 text-sky-300"}`}>{item.status === "COMPLETED" ? "Concluído" : item.status === "FAILED" ? "Falhou" : "Processando"}</span></td></tr>)}
               </tbody>

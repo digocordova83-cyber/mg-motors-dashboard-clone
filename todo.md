@@ -116,14 +116,14 @@
 
 - [x] Auditar os quatro prints de referência e documentar a hierarquia visual do módulo de Leads
 - [x] Auditar o CSV fornecido, seus cabeçalhos, tipos, datas, canais, modelos, regiões, concessionárias e possíveis duplicidades
-- [x] Definir a chave canônica de deduplicação e usar `Data Corrigida` como data de referência quando disponível
+- [x] Definir a identidade canônica por arquivo e linha, usando `Data Corrigida` como data de referência e preservando ocorrências repetidas
 - [x] Definir o contrato de dados e as regras de normalização sem inventar valores ausentes
 - [x] Criar tabela persistente de lotes de importação de CSV com hash, nome, status, contagens, usuário e timestamps
 - [x] Criar tabela persistente de registros de leads normalizados e vinculados ao lote de origem
 - [x] Criar configuração persistente e editável da meta mensal de Leads, iniciando com 10.000 para julho/2026
 - [x] Gerar, revisar e aplicar migração não destrutiva das tabelas do módulo de Leads
 - [x] Implementar parser CSV com validação de formato, encoding, datas e campos obrigatórios
-- [x] Implementar importação autenticada, atômica, idempotente e auditável sem duplicar leads já carregados
+- [x] Implementar importação autenticada, atômica e auditável, idempotente apenas para o reprocessamento do mesmo arquivo concluído
 - [x] Exibir pré-validação do arquivo com linhas válidas, inválidas, duplicadas e resumo por período antes da confirmação
 - [x] Implementar histórico de atualizações com arquivo, hash, usuário, data e resultado do processamento
 - [x] Implementar métricas de total de leads, média diária, canal principal e canais ativos
@@ -137,9 +137,9 @@
 - [x] Adicionar edição protegida da meta mensal diretamente no painel de pacing
 - [x] Exibir estados de carregamento, erro, arquivo inválido, ausência de dados e análises indisponíveis
 - [x] Garantir que valores ausentes apareçam como indisponíveis, sem fabricar canal, modelo, região ou concessionária
-- [x] Escrever testes Vitest para parser, datas, deduplicação, importação, pacing e agregações de Leads
+- [x] Escrever testes Vitest para parser, datas, preservação de repetições, idempotência por arquivo, pacing e agregações de Leads
 - [x] Escrever testes TSX para identidade dos filtros, estados vazios e resumo da pré-validação
-- [x] Importar e validar o CSV fornecido sem persistir duplicidades
+- [x] Importar e validar o CSV fornecido preservando todas as 7.071 ocorrências, inclusive 99 repetições internas
 - [x] Validar tipagem, suíte completa e build de produção
 - [x] Validar visualmente a aba Leads em desktop, tablet e mobile, sem overflow horizontal do documento
 - [x] Revisar todo.md e salvar checkpoint da versão com o módulo de Leads
@@ -157,3 +157,17 @@
 - [x] Adicionar teste Vitest do caminho transacional completo da importação, incluindo upload mockado, inserções, contagens e conclusão do lote
 - [x] Adicionar teste Vitest do bloqueio de importação quando o CSV contém linha inválida
 - [x] Validar no navegador a confirmação de um CSV já consolidado, comprovando sucesso idempotente e zero novos Leads persistidos
+
+## Ajuste — preservar duplicatas do CSV
+
+- [x] Alterar a identidade persistente da linha para incluir hash do arquivo e número da linha, preservando duplicatas internas e entre arquivos distintos
+- [x] Manter a idempotência somente no reprocessamento do mesmo arquivo por `fileHash`
+- [x] Tratar linhas repetidas na pré-validação como informativas e importáveis, sem removê-las do total válido
+- [x] Recarregar o lote original com todas as 7.071 linhas válidas e reconciliar exatamente a ordem/quantidade do CSV
+- [x] Atualizar contagens e textos da interface para não usar “Leads únicos” nem indicar que duplicatas foram removidas
+- [x] Ajustar métricas, pacing e auditoria por concessionária para a base integral de 7.071 linhas
+- [x] Atualizar testes do parser/importador para preservar as 99 repetições internas e continuar bloqueando reprocessamento do mesmo arquivo
+- [x] Validar banco, navegador, tipagem, suíte completa e build após a mudança
+- [x] Revisar todo.md e salvar checkpoint da versão que preserva duplicatas
+- [x] Comparar CSV e banco por `sourceRowNumber`, conteúdo normalizado e sequência para comprovar a preservação das 7.071 ocorrências
+- [x] Executar a reconciliação de ordem/quantidade e registrar o resultado antes do checkpoint

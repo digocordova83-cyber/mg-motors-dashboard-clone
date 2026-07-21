@@ -15,6 +15,7 @@ const CSV = [
   "Data,Modelo,Região/Estado,Cidade,Concessionaria,Nome,Email,Telefone,Canal,Data Corrigida",
   "01/07/2026,MG4,SP,São Paulo,LOJA TESTE,Cliente 1,cliente1@example.com,11999999999,Site,01/07/2026",
   "02/07/2026,MGS5,RJ,Rio de Janeiro,LOJA TESTE 2,Cliente 2,cliente2@example.com,21999999999,Meta,02/07/2026",
+  "01/07/2026,MG4,SP,São Paulo,LOJA TESTE,Cliente 1,cliente1@example.com,11999999999,Site,01/07/2026",
 ].join("\n");
 
 describe("serviço de importação de Leads", () => {
@@ -33,7 +34,7 @@ describe("serviço de importação de Leads", () => {
     const txUpdateSet = vi.fn().mockReturnValue({ where: txUpdateWhere });
     const txUpdate = vi.fn().mockReturnValue({ set: txUpdateSet });
     const txSelect = vi.fn().mockReturnValue({
-      from: () => ({ where: async () => [{ id: 101 }, { id: 102 }] }),
+      from: () => ({ where: async () => [{ id: 101 }, { id: 102 }, { id: 103 }] }),
     });
     const transaction = vi.fn(async callback => callback({
       insert: txInsert,
@@ -60,13 +61,16 @@ describe("serviço de importação de Leads", () => {
 
     expect(result.idempotent).toBe(false);
     expect(result.importId).toBe(7);
-    expect(result.rowsInserted).toBe(2);
+    expect(result.rowsInserted).toBe(3);
     expect(result.rowsSkipped).toBe(0);
     expect(result.rowsInvalid).toBe(0);
     expect(storagePutMock).toHaveBeenCalledOnce();
-    expect(leadImportValues).toHaveBeenCalledWith(expect.objectContaining({ status: "PROCESSING", rowsTotal: 2, importedBy: "auditor" }));
+    expect(leadImportValues).toHaveBeenCalledWith(expect.objectContaining({ status: "PROCESSING", rowsTotal: 3, rowsSkipped: 0, importedBy: "auditor" }));
     expect(leadValues).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ importId: 7, correctedDate: "2026-07-01" })]));
-    expect(txUpdateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "COMPLETED", rowsInserted: 2, rowsSkipped: 0, rowsInvalid: 0 }));
+    const insertedRecords = leadValues.mock.calls.flatMap(([records]) => records);
+    expect(insertedRecords).toHaveLength(3);
+    expect(new Set(insertedRecords.map(record => record.recordHash))).toHaveProperty("size", 3);
+    expect(txUpdateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "COMPLETED", rowsInserted: 3, rowsSkipped: 0, rowsInvalid: 0 }));
     expect(transaction).toHaveBeenCalledOnce();
   });
 
@@ -100,8 +104,8 @@ describe("serviço de importação de Leads", () => {
       fileKey: "lead-imports/hash/leads-julho.csv",
       fileUrl: "https://storage.example/leads-julho.csv",
       status: "COMPLETED" as const,
-      rowsTotal: 2,
-      rowsInserted: 2,
+      rowsTotal: 3,
+      rowsInserted: 3,
       rowsSkipped: 0,
       rowsInvalid: 0,
       errorSummary: null,
@@ -118,7 +122,13 @@ describe("serviço de importação de Leads", () => {
         }),
       })
       .mockReturnValueOnce({
-        from: () => ({ where: async () => [] }),
+        from: () => ({
+          where: async () => [
+            { recordHash: "linha-2" },
+            { recordHash: "linha-3" },
+            { recordHash: "linha-4" },
+          ],
+        }),
       });
 
     getDbMock.mockResolvedValue({ select: selectMock });
@@ -133,7 +143,7 @@ describe("serviço de importação de Leads", () => {
     expect(result.importId).toBe(42);
     expect(result.status).toBe("COMPLETED");
     expect(result.rowsInserted).toBe(0);
-    expect(result.rowsSkipped).toBe(2);
+    expect(result.rowsSkipped).toBe(3);
     expect(result.alreadyImported).toBe(true);
     expect(storagePutMock).not.toHaveBeenCalled();
   });

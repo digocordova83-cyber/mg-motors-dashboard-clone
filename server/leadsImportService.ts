@@ -123,14 +123,15 @@ function buildPreview(
     uniqueValidRows: parsed.uniqueValidRows,
     duplicateRowsWithinFile: parsed.duplicateRowsWithinFile,
     rowsAlreadyStored,
-    rowsReadyToInsert: Math.max(0, parsed.uniqueValidRows - rowsAlreadyStored),
+    rowsReadyToInsert: Math.max(0, parsed.validRows - rowsAlreadyStored),
     dateFrom: parsed.dateFrom,
     dateTo: parsed.dateTo,
     channels: parsed.channels,
     models: parsed.models,
     regions: parsed.regions,
     errors: parsed.errors,
-    alreadyImported: existingImport?.status === "COMPLETED",
+    alreadyImported:
+      existingImport?.status === "COMPLETED" && rowsAlreadyStored === parsed.validRows,
     existingImport,
   };
 }
@@ -207,7 +208,7 @@ async function createOrResetImport(input: {
     status: "PROCESSING",
     rowsTotal: input.parsed.rowsTotal,
     rowsInserted: 0,
-    rowsSkipped: input.parsed.duplicateRowsWithinFile,
+    rowsSkipped: 0,
     rowsInvalid: input.parsed.invalidRows,
     importedBy: input.actor,
     createdAt: now,
@@ -235,7 +236,10 @@ export async function importLeadCsv(input: {
   const rowsAlreadyStored = await countExistingRecords(parsed.records.map(record => record.recordHash));
   const preview = buildPreview(parsed, fileName, rowsAlreadyStored, existingImport);
 
-  if (existingImport?.status === "COMPLETED") {
+  if (
+    existingImport?.status === "COMPLETED" &&
+    rowsAlreadyStored === parsed.validRows
+  ) {
     return {
       ...preview,
       importId: existingImport.id,
@@ -267,6 +271,10 @@ export async function importLeadCsv(input: {
     const now = Date.now();
 
     const result = await db.transaction(async tx => {
+      if (existingImport) {
+        await tx.delete(leads).where(eq(leads.importId, importId));
+      }
+
       for (const recordsChunk of chunk(parsed.records, INSERT_CHUNK_SIZE)) {
         await tx
           .insert(leads)

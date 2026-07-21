@@ -26,6 +26,7 @@ export type LeadRawRow = Record<LeadCsvHeader, string>;
 export type NormalizedLeadRecord = {
   sourceRowNumber: number;
   recordHash: string;
+  contentHash: string;
   correctedDate: string;
   correctedDateRaw: string;
   sourceDateRaw: string;
@@ -275,7 +276,11 @@ function parseRows(text: string): LeadRawRow[] {
   }
 }
 
-function normalizeRow(row: LeadRawRow, sourceRowNumber: number): NormalizedLeadRecord | LeadCsvRowError {
+function normalizeRow(
+  row: LeadRawRow,
+  sourceRowNumber: number,
+  fileHash: string,
+): NormalizedLeadRecord | LeadCsvRowError {
   const missingFields = REQUIRED_LEAD_ROW_FIELDS.filter(field => !normalizeWhitespace(row[field] ?? ""));
   if (missingFields.length) {
     return {
@@ -312,7 +317,7 @@ function normalizeRow(row: LeadRawRow, sourceRowNumber: number): NormalizedLeadR
   const phone = normalizePhone(phoneRaw);
   const channel = normalizeLeadChannel(channelRaw);
 
-  const recordHash = sha256(
+  const contentHash = sha256(
     [
       toComparable(sourceDateRaw),
       toComparable(model),
@@ -326,10 +331,12 @@ function normalizeRow(row: LeadRawRow, sourceRowNumber: number): NormalizedLeadR
       correctedDate,
     ].join("\u001f"),
   );
+  const recordHash = sha256([fileHash, String(sourceRowNumber), contentHash].join("\u001f"));
 
   return {
     sourceRowNumber,
     recordHash,
+    contentHash,
     correctedDate,
     correctedDateRaw,
     sourceDateRaw,
@@ -367,6 +374,7 @@ export function parseLeadCsv(bytes: Buffer): ParsedLeadCsv {
     throw new LeadCsvValidationError("O arquivo CSV excede o limite de 10 MB.");
   }
 
+  const fileHash = sha256(bytes);
   const text = decodeUtf8(bytes);
   const rawRows = parseRows(text);
   if (!rawRows.length) throw new LeadCsvValidationError("O CSV não contém registros de Leads.");
@@ -374,23 +382,25 @@ export function parseLeadCsv(bytes: Buffer): ParsedLeadCsv {
     throw new LeadCsvValidationError(`O CSV excede o limite de ${MAX_LEAD_CSV_ROWS.toLocaleString("pt-BR")} registros.`);
   }
 
-  const uniqueRecords = new Map<string, NormalizedLeadRecord>();
+  const records: NormalizedLeadRecord[] = [];
+  const seenContentHashes = new Set<string>();
   const errors: LeadCsvRowError[] = [];
   let invalidRows = 0;
   let validRows = 0;
+  let duplicateRowsWithinFile = 0;
 
   rawRows.forEach((row, index) => {
-    const normalized = normalizeRow(row, index + 2);
+    const normalized = normalizeRow(row, index + 2, fileHash);
     if ("message" in normalized) {
       invalidRows += 1;
       if (errors.length < 50) errors.push(normalized);
       return;
     }
     validRows += 1;
-    if (!uniqueRecords.has(normalized.recordHash)) uniqueRecords.set(normalized.recordHash, normalized);
+    if (seenContentHashes.has(normalized.contentHash)) duplicateRowsWithinFile += 1;
+    else seenContentHashes.add(normalized.contentHash);
+    records.push(normalized);
   });
-
-  const records = Array.from(uniqueRecords.values());
   const channelCounts = new Map<string, number>();
   const modelCounts = new Map<string, number>();
   const regionCounts = new Map<string, number>();
@@ -402,13 +412,13 @@ export function parseLeadCsv(bytes: Buffer): ParsedLeadCsv {
   const dates = records.map(record => record.correctedDate).sort();
 
   return {
-    fileHash: sha256(bytes),
+    fileHash,
     fileSizeBytes: bytes.length,
     rowsTotal: rawRows.length,
     validRows,
     invalidRows,
-    uniqueValidRows: records.length,
-    duplicateRowsWithinFile: validRows - records.length,
+    uniqueValidRows: seenContentHashes.size,
+    duplicateRowsWithinFile,
     dateFrom: dates.at(0) ?? null,
     dateTo: dates.at(-1) ?? null,
     channels: breakdown(channelCounts),

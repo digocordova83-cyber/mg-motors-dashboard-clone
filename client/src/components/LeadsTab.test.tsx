@@ -58,17 +58,17 @@ describe("interface de Leads", () => {
   it("expõe progresso e resultados do fluxo CSV sem depender de persistência", () => {
     const previewing = renderToStaticMarkup(<CsvImportFeedback isPreviewing isImporting={false} success={null} error={null} />);
     const importing = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting success={null} error={null} />);
-    const success = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success="Arquivo processado com sucesso: 0 novo(s), 3 ignorado(s)." error={null} />);
+    const success = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success="Arquivo já processado: nenhuma linha foi inserida novamente." error={null} />);
     const failure = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success={null} error="Arquivo inválido." />);
 
     expect(previewing).toContain("Pré-validando o arquivo CSV");
-    expect(importing).toContain("Importando Leads e reconciliando duplicidades");
-    expect(success).toContain("Arquivo processado com sucesso");
-    expect(success).toContain("3 ignorado(s)");
+    expect(importing).toContain("Importando todas as linhas válidas do CSV");
+    expect(success).toContain("Arquivo já processado");
+    expect(success).toContain("nenhuma linha foi inserida novamente");
     expect(failure).toContain("Arquivo inválido");
   });
 
-  it("resume linhas válidas, duplicadas e inválidas antes da importação", () => {
+  it("resume linhas válidas, repetições mantidas e inválidas antes da importação", () => {
     const html = renderToStaticMarkup(
       <CsvPreviewSummary
         preview={{
@@ -80,8 +80,8 @@ describe("interface de Leads", () => {
           invalidRows: 2,
           uniqueValidRows: 95,
           duplicateRowsWithinFile: 3,
-          rowsAlreadyStored: 1,
-          rowsReadyToInsert: 94,
+          rowsAlreadyStored: 0,
+          rowsReadyToInsert: 98,
           dateFrom: "2026-07-01",
           dateTo: "2026-07-18",
           channels: [],
@@ -97,10 +97,11 @@ describe("interface de Leads", () => {
     expect(html).toContain("leads-julho.csv");
     expect(html).toContain("Linhas lidas");
     expect(html).toContain("100");
-    expect(html).toContain("Válidas únicas");
-    expect(html).toContain("95");
-    expect(html).toContain("Duplicadas");
-    expect(html).toContain("4");
+    expect(html).toContain("Linhas válidas");
+    expect(html).toContain("98");
+    expect(html).toContain("Repetidas (mantidas)");
+    expect(html).toContain("3");
+    expect(html).toContain("As linhas repetidas são mantidas");
     expect(html).toContain("Inválidas");
     expect(html).toContain("Linha 14");
     expect(html).toContain("Canal obrigatório ausente");

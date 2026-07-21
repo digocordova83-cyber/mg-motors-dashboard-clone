@@ -40,7 +40,7 @@ O arquivo original contém **7.071 registros de dados** e dez colunas exatamente
 | Cidade | 77,74% de cobertura | Exibir somente quando informada; não inferir pela concessionária |
 | Concessionária | 100% preenchida, mas com placeholders operacionais | Classificar `whatsapp_`, `e-mail_` e `CONCESSIONÁRIA NÃO PREENCHIDA` como Indisponível sem apagar o valor bruto |
 | Contato | Nome/e-mail/telefone têm cerca de 85% de cobertura | Armazenar normalizado, proteger a exibição e nunca usar contato isolado para contar ou deduplicar leads |
-| Duplicatas exatas normalizadas | 99 linhas além da primeira, em 78 grupos | Deduplicar pelo hash de todos os campos normalizados |
+| Repetições exatas normalizadas | 99 linhas além da primeira, em 78 grupos | Preservar todas as ocorrências como linhas válidas; usar a contagem apenas como informação de auditoria |
 | Repetição por contato/dia | Frequente | Preservar, pois pode representar nova conversão, novo canal ou novo roteamento; não deduplicar agressivamente |
 
 Os canais brutos são **Site** (3.452), **Meta** (1.441), **Weebmotors** (878), **Campanha Urban** (847), **Mercado Livre** (325) e **Uol** (128). A interface normalizará `Weebmotors` para **Webmotors** e `Uol` para **UOL**, mantendo o texto bruto no registro importado.
@@ -49,6 +49,6 @@ Os modelos reais são **MG4** (5.100), **MG4 URBAN** (849), **MGS5** (658) e **C
 
 ## Contrato preliminar de idempotência
 
-Cada arquivo terá um hash próprio para impedir reprocessamento acidental do mesmo conteúdo. Cada registro terá um `recordHash` calculado sobre os dez campos normalizados. A restrição única de `recordHash` impedirá duplicatas exatas entre o mesmo lote e cargas futuras, ao mesmo tempo que preservará registros semelhantes com timestamp, canal, modelo, região, cidade, concessionária ou contato diferentes.
+Cada arquivo terá um hash próprio para impedir o reprocessamento acidental do mesmo conteúdo. Cada ocorrência terá um `recordHash` calculado com o hash do arquivo, o número da linha de origem e o conteúdo normalizado. Assim, linhas idênticas dentro do CSV e ocorrências repetidas em arquivos diferentes permanecem armazenadas, enquanto o reenvio do mesmo arquivo continua idempotente por `fileHash`.
 
 A coluna `Data` contém formatos heterogêneos: 4.299 timestamps ISO, 878 datas em formato brasileiro, 1.441 datas abreviadas com ano de dois dígitos, 128 textos localizados em português e 325 timestamps textuais com fuso do Chile. Como `Data Corrigida` possui 100% de validade e nenhuma divergência de dia entre os valores diretamente comparáveis, ela será a referência oficial. O importador preservará `Data` integralmente em `sourceDateRaw` e só preencherá `sourceTimestamp` quando um parser determinístico reconhecer o formato sem ambiguidade.

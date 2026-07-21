@@ -49,7 +49,7 @@ describe("parseLeadCsv", () => {
     expect(result.records[0].rawPayload.dealer).toBe("whatsapp_");
   });
 
-  it("remove somente duplicatas integralmente equivalentes e preserva novo roteamento", () => {
+  it("preserva linhas integralmente repetidas e mantém a repetição apenas como informação", () => {
     const base = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer A,Pessoa,teste@example.com,11999990000,Site,19/07/2026";
     const rerouted = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer B,Pessoa,teste@example.com,11999990000,Site,19/07/2026";
     const result = parseLeadCsv(csv(base, base, rerouted));
@@ -57,7 +57,25 @@ describe("parseLeadCsv", () => {
     expect(result.validRows).toBe(3);
     expect(result.uniqueValidRows).toBe(2);
     expect(result.duplicateRowsWithinFile).toBe(1);
-    expect(result.records.map(record => record.dealerName)).toEqual(["Dealer A", "Dealer B"]);
+    expect(result.records.map(record => record.dealerName)).toEqual(["Dealer A", "Dealer A", "Dealer B"]);
+    expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 3);
+    expect(result.records[0].contentHash).toBe(result.records[1].contentHash);
+  });
+
+  it("preserva 99 repetições como 100 ocorrências importáveis e auditáveis", () => {
+    const repeated = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer A,Pessoa,teste@example.com,11999990000,Site,19/07/2026";
+    const result = parseLeadCsv(csv(...Array.from({ length: 100 }, () => repeated)));
+
+    expect(result.rowsTotal).toBe(100);
+    expect(result.validRows).toBe(100);
+    expect(result.invalidRows).toBe(0);
+    expect(result.uniqueValidRows).toBe(1);
+    expect(result.duplicateRowsWithinFile).toBe(99);
+    expect(result.records).toHaveLength(100);
+    expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 100);
+    expect(new Set(result.records.map(record => record.contentHash))).toHaveProperty("size", 1);
+    expect(result.records.at(0)?.sourceRowNumber).toBe(2);
+    expect(result.records.at(-1)?.sourceRowNumber).toBe(101);
   });
 
   it("contabiliza linhas sem Modelo ou Canal como inválidas", () => {
