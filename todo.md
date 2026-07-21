@@ -301,7 +301,7 @@
 
 - [x] Auditar o fluxo atual de consulta, cache e atualização de Google Ads e Meta Ads
 - [x] Confirmar os campos reais de ID, nome, imagem, thumbnail e mídia disponíveis para cada criativo Meta Ads
-- [ ] Configurar execução automática diária às 08:30 no fuso America/Sao_Paulo (GMT-3)
+- [x] Configurar execução automática diária às 08:30 no fuso America/Sao_Paulo (GMT-3)
 - [x] Atualizar Google Ads e Meta Ads somente com dados completos de D-1
 - [x] Registrar sucesso, falha, fonte, período e horário de cada atualização sem apagar o último estado válido
 - [x] Garantir idempotência para reexecuções do mesmo D-1 e impedir duplicidade de métricas
