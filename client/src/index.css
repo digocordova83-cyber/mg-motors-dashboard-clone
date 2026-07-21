@@ -175,3 +175,100 @@
     }
   }
 }
+
+/* MG Motors operational dashboard */
+:root,
+.dark {
+  --background: oklch(0.14 0.018 259);
+  --foreground: oklch(0.94 0.012 255);
+  --card: oklch(0.18 0.023 258);
+  --card-foreground: oklch(0.94 0.012 255);
+  --popover: oklch(0.17 0.024 258);
+  --popover-foreground: oklch(0.94 0.012 255);
+  --primary: oklch(0.59 0.238 25);
+  --primary-foreground: oklch(0.99 0.002 255);
+  --secondary: oklch(0.22 0.025 258);
+  --secondary-foreground: oklch(0.82 0.018 255);
+  --muted: oklch(0.22 0.025 258);
+  --muted-foreground: oklch(0.58 0.028 255);
+  --accent: oklch(0.24 0.03 258);
+  --accent-foreground: oklch(0.94 0.012 255);
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.99 0.002 255);
+  --border: oklch(0.31 0.03 258 / 0.7);
+  --input: oklch(0.31 0.03 258 / 0.8);
+  --ring: oklch(0.59 0.238 25);
+  --radius: 0.65rem;
+}
+
+html {
+  background: #070b14;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #070b14;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+::selection {
+  background: rgb(226 33 45 / 0.35);
+  color: white;
+}
+
+* {
+  scrollbar-color: #263247 #0a101b;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #0a101b;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid #0a101b;
+  border-radius: 999px;
+  background: #263247;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #35435a;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.48;
+  filter: invert(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

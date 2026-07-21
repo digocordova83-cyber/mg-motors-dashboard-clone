@@ -1,0 +1,31 @@
+# Project TODO
+
+- [x] Reproduzir fielmente a tela de login escura da MG Motors com usuário e senha
+- [x] Proteger o dashboard com sessão autenticada e credenciais rodrigo/rodrigo
+- [x] Implementar logout e impedir acesso direto ao dashboard sem sessão válida
+- [x] Reproduzir o cabeçalho com marca MG Motors, filtros 7d, 14d, 30d, 60d, Mês e intervalo customizado
+- [x] Remover completamente qualquer aba ou referência a Leads
+- [x] Remover completamente qualquer aba ou referência a Metas
+- [x] Exibir banner fixo sobre a Correção de Tag Google de 15/07/2026
+- [x] Integrar o servidor aos dados reais de Google Ads da conta MG Motors obtidos via Windsor.ai
+- [x] Utilizar obrigatoriamente campaign, date, spend, conversions, clicks, impressions, ctr e cpc
+- [x] Implementar cache server-side por conta e intervalo de datas para evitar chamadas repetidas
+- [x] Calcular Investimento Total, Conversões, CPA Médio, CTR, Taxa de Conversão e CPC Médio sem duplicação
+- [x] Implementar sub-aba Visão Geral com Investimento Diário, Conversões Diárias e CPA Diário
+- [x] Marcar Correção de Tag em 15/07/2026 em todos os gráficos temporais da Visão Geral
+- [x] Implementar painel de Insights Automáticos com limiar crítico de 2x o CPA médio
+- [x] Implementar sub-aba Acompanhamento Diário com spend, conversões, CPA, CTR e CPC por dia
+- [x] Marcar Correção de Tag em 15/07/2026 no Acompanhamento Diário
+- [x] Implementar sub-aba Investimento com gráfico e tabela por campanha e período
+- [x] Marcar Correção de Tag em 15/07/2026 nas séries temporais de Investimento
+- [x] Implementar sub-aba Otimizações com campanhas ativas e colunas exigidas
+- [x] Implementar busca por campanha e filtros Todas, Crítico, Atenção e Saudável
+- [x] Derivar Produto e Tipo de Otimização de forma determinística a partir da campanha
+- [x] Calcular status de campanha dinamicamente a partir do CPA médio do período
+- [x] Reproduzir cores, tipografia, espaçamento, cards, gráficos, tabelas e estados da referência
+- [x] Implementar estados de carregamento, erro e ausência de dados
+- [x] Garantir responsividade em desktop e mobile sem perder a estrutura visual
+- [x] Escrever testes Vitest para autenticação, cache, agregações e classificação de CPA
+- [x] Executar verificação TypeScript, testes e build de produção
+- [x] Verificar visualmente login, Visão Geral, Acompanhamento Diário, Investimento e Otimizações
+- [x] Revisar todo.md e salvar o checkpoint final do projeto
