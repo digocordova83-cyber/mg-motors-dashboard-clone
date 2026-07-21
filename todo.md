@@ -120,17 +120,17 @@
 - [x] Definir o contrato de dados e as regras de normalização sem inventar valores ausentes
 - [x] Criar tabela persistente de lotes de importação de CSV com hash, nome, status, contagens, usuário e timestamps
 - [x] Criar tabela persistente de registros de leads normalizados e vinculados ao lote de origem
-- [ ] Criar configuração persistente e editável da meta mensal de Leads, iniciando com 10.000 para julho/2026
+- [x] Criar configuração persistente e editável da meta mensal de Leads, iniciando com 10.000 para julho/2026
 - [x] Gerar, revisar e aplicar migração não destrutiva das tabelas do módulo de Leads
 - [x] Implementar parser CSV com validação de formato, encoding, datas e campos obrigatórios
-- [ ] Implementar importação autenticada, atômica, idempotente e auditável sem duplicar leads já carregados
+- [x] Implementar importação autenticada, atômica, idempotente e auditável sem duplicar leads já carregados
 - [ ] Exibir pré-validação do arquivo com linhas válidas, inválidas, duplicadas e resumo por período antes da confirmação
-- [ ] Implementar histórico de atualizações com arquivo, hash, usuário, data e resultado do processamento
-- [ ] Implementar métricas de total de leads, média diária, canal principal e canais ativos
-- [ ] Implementar pacing mensal com meta, atual, percentual, média/dia, projeção, diferença e dias restantes
-- [ ] Implementar série diária empilhada por canal e tendência diária total sem dupla contagem
-- [ ] Implementar distribuição e resumo por canal com leads, média/dia e participação
-- [ ] Implementar análises por modelo, região e concessionária apenas quando os campos reais permitirem classificação segura
+- [x] Implementar histórico de atualizações com arquivo, hash, usuário, data e resultado do processamento
+- [x] Implementar métricas de total de leads, média diária, canal principal e canais ativos
+- [x] Implementar pacing mensal com meta, atual, percentual, média/dia, projeção, diferença e dias restantes
+- [x] Implementar série diária empilhada por canal e tendência diária total sem dupla contagem
+- [x] Implementar distribuição e resumo por canal com leads, média/dia e participação
+- [x] Implementar análises por modelo, região e concessionária apenas quando os campos reais permitirem classificação segura
 - [ ] Criar página/aba navegável `Leads` integrada ao dashboard atual e acessível por `?tab=leads`
 - [ ] Reproduzir o layout de referência no padrão visual MG Motors, com filtros 7d, 14d, mês e intervalo personalizado
 - [ ] Adicionar ação Atualizar CSV com seleção, pré-validação, confirmação, progresso, sucesso e erro
@@ -144,6 +144,10 @@
 - [ ] Validar visualmente a aba Leads em desktop, tablet e mobile, sem overflow horizontal do documento
 - [ ] Revisar todo.md e salvar checkpoint da versão com o módulo de Leads
 - [x] Inserir a meta inicial de Leads de julho/2026 (`competencia` = `2026-07`, `goalCount` = 10000) no banco sem duplicação
-- [ ] Implementar helper/procedure autenticado para ler e editar a meta mensal de Leads com persistência auditável
+- [x] Implementar helper/procedure autenticado para ler e editar a meta mensal de Leads com persistência auditável
 - [x] Definir explicitamente `Data Corrigida`, `Modelo` e `Canal` como campos obrigatórios por linha no parser de Leads
 - [x] Adicionar teste Vitest para linhas sem campos obrigatórios e sua contagem como inválidas
+- [x] Calcular auditoria por concessionária com volume, participação, média diária, dias com e sem recebimento e primeira/última data no período
+- [ ] Criar visão navegável por concessionária com busca, ordenação, sinalização de ausência e evolução diária de recebimento
+- [x] Separar explicitamente concessionárias indisponíveis/placeholders dos nomes válidos na auditoria
+- [x] Adicionar testes de reconciliação da auditoria por concessionária com o total filtrado de Leads

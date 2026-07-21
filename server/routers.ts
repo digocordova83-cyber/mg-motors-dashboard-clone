@@ -21,6 +21,19 @@ import {
   upsertMonthlyBudgetGoal,
 } from "./db";
 import { buildOptimizationHistory } from "./optimizationHistory";
+import { LeadCsvValidationError } from "./leadsCsv";
+import {
+  decodeLeadCsvBase64,
+  getLeadImportHistory,
+  importLeadCsv,
+  previewLeadCsv,
+} from "./leadsImportService";
+import {
+  getLeadAnalytics,
+  getLeadDataBounds,
+  getLeadMonthlyGoal,
+  upsertLeadMonthlyGoal,
+} from "./leadsService";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -37,6 +50,22 @@ const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
 const dashboardPeriodSchema = z
   .object({ dateFrom: dateSchema, dateTo: dateSchema })
   .refine(input => input.dateFrom <= input.dateTo, "A data inicial deve anteceder a data final");
+
+const leadCsvUploadSchema = z.object({
+  fileName: z.string().trim().min(1).max(255),
+  base64: z.string().min(4).max(14_100_000, "O arquivo CSV excede o limite de 10 MB"),
+});
+
+async function mapLeadCsvError<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof LeadCsvValidationError) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+    }
+    throw error;
+  }
+}
 
 function buildTaskSnapshot(
   data: Awaited<ReturnType<typeof loadDashboardData>>,
@@ -111,6 +140,45 @@ export const appRouter = router({
       clearDashboardSession(ctx.res, ctx.req);
       return { success: true } as const;
     }),
+  }),
+  leads: router({
+    bounds: dashboardProcedure.query(() => getLeadDataBounds()),
+    analytics: dashboardProcedure
+      .input(dashboardPeriodSchema)
+      .query(({ input }) => getLeadAnalytics(input)),
+    monthlyGoal: dashboardProcedure
+      .input(z.object({ competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida") }))
+      .query(({ input }) => getLeadMonthlyGoal(input.competence)),
+    updateMonthlyGoal: dashboardProcedure
+      .input(
+        z.object({
+          competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida"),
+          goalCount: z.number().int().positive().max(100_000_000),
+        }),
+      )
+      .mutation(({ ctx, input }) =>
+        upsertLeadMonthlyGoal({ ...input, actor: ctx.dashboardSession.username }),
+      ),
+    importHistory: dashboardProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }).optional())
+      .query(({ input }) => getLeadImportHistory(input?.limit ?? 20)),
+    previewCsv: dashboardProcedure.input(leadCsvUploadSchema).mutation(({ input }) =>
+      mapLeadCsvError(() =>
+        previewLeadCsv({
+          fileName: input.fileName,
+          bytes: decodeLeadCsvBase64(input.base64),
+        }),
+      ),
+    ),
+    importCsv: dashboardProcedure.input(leadCsvUploadSchema).mutation(({ ctx, input }) =>
+      mapLeadCsvError(() =>
+        importLeadCsv({
+          fileName: input.fileName,
+          bytes: decodeLeadCsvBase64(input.base64),
+          actor: ctx.dashboardSession.username,
+        }),
+      ),
+    ),
   }),
   dashboard: router({
     getData: dashboardProcedure
