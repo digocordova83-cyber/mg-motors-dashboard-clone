@@ -22,8 +22,13 @@ import {
 } from "recharts";
 import { MEDIA_PLANS, getMediaPlan, type MediaPlanFunnel } from "@/data/mediaPlans";
 
-function formatCurrency(value: number, locale: "pt-BR" | "en-US") {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
+function formatCurrency(value: number, locale: "pt-BR" | "en-US", fractionDigits = 0) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
 }
 
 function formatNumber(value: number, locale: "pt-BR" | "en-US") {
@@ -66,7 +71,7 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
     const grouped = new Map<string, { channel: string; investment: number; leads: number }>();
     plan.rows.forEach((row) => {
       const current = grouped.get(row.channel) ?? { channel: row.channel, investment: 0, leads: 0 };
-      current.investment += row.netInvestment;
+      current.investment += row.investment;
       current.leads += row.leads ?? 0;
       grouped.set(row.channel, current);
     });
@@ -80,7 +85,7 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
       const rows = plan.rows.filter((row) => row.funnel === funnel);
       return {
         funnel,
-        investment: rows.reduce((sum, row) => sum + row.netInvestment, 0),
+        investment: rows.reduce((sum, row) => sum + row.investment, 0),
         impressions: rows.reduce((sum, row) => sum + row.impressions, 0),
         visits: rows.reduce((sum, row) => sum + row.visits, 0),
         leads: rows.reduce((sum, row) => sum + (row.leads ?? 0), 0),
@@ -92,57 +97,50 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
     return <main className="mx-auto min-h-[calc(100vh-88px)] max-w-[1680px] px-4 py-8 lg:px-6"><MediaPlanEmptyState locale={locale} /></main>;
   }
 
-  const grossInvestment = plan.rows.reduce((sum, row) => sum + row.grossInvestment, 0);
-  const commission = plan.rows.reduce((sum, row) => sum + row.commission, 0);
-
   const copy = isEnglish
     ? {
         eyebrow: "Official monthly planning",
         description: "Approved channel allocation, delivery assumptions and projected results.",
         month: "Plan month",
-        gross: "Gross budget",
-        net: "Net media investment",
+        totalInvestment: "Planned media investment",
         leads: "Projected leads",
         cpl: "Projected CPL",
         impressions: "Projected impressions",
         allocation: "Investment allocation by channel",
-        allocationDesc: "Net media investment consolidated across products.",
+        allocationDesc: "Planned investment consolidated across products.",
         product: "Plan by product",
         funnel: "Allocation by funnel stage",
         details: "Detailed media plan",
         channel: "Channel",
         objective: "Objective",
-        investment: "Net investment",
+        investment: "Investment",
         visits: "Visits",
-        source: "Source: approved July workbook, sheet Página1. Values are displayed exactly as consolidated in the supplied plan.",
-        commission: "Agency commission",
+        source: "Source: workbook supplied on July 21, 2026, sheet Página1. Values preserve the rows and consolidated totals from the submitted plan.",
       }
     : {
         eyebrow: "Planejamento mensal oficial",
         description: "Alocação aprovada por canal, premissas de entrega e resultados projetados.",
         month: "Competência do plano",
-        gross: "Orçamento bruto",
-        net: "Investimento líquido de mídia",
+        totalInvestment: "Investimento planejado de mídia",
         leads: "Leads projetados",
         cpl: "CPL projetado",
         impressions: "Impressões projetadas",
         allocation: "Alocação de investimento por canal",
-        allocationDesc: "Investimento líquido de mídia consolidado entre os produtos.",
+        allocationDesc: "Investimento planejado consolidado entre os produtos.",
         product: "Plano por produto",
         funnel: "Alocação por etapa do funil",
         details: "Plano de mídia detalhado",
         channel: "Canal",
         objective: "Objetivo",
-        investment: "Investimento líquido",
+        investment: "Investimento",
         visits: "Visitas",
-        source: "Fonte: planilha aprovada de julho, aba Página1. Os valores são exibidos conforme consolidados no plano fornecido.",
-        commission: "Comissão de agência",
+        source: "Fonte: planilha enviada em 21 de julho de 2026, aba Página1. Os valores preservam as linhas e os totais consolidados do plano recebido.",
       };
 
   const kpis = [
-    { label: copy.net, value: formatCurrency(plan.total.netInvestment, locale), icon: WalletCards },
+    { label: copy.totalInvestment, value: formatCurrency(plan.total.investment, locale), icon: WalletCards },
     { label: copy.leads, value: formatNumber(plan.total.leads, locale), icon: UsersRound },
-    { label: copy.cpl, value: formatCurrency(plan.total.cpl, locale), icon: Target },
+    { label: copy.cpl, value: formatCurrency(plan.total.cpl, locale, 2), icon: Target },
     { label: copy.impressions, value: formatNumber(plan.total.impressions, locale), icon: Eye },
   ];
 
@@ -171,7 +169,7 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
             </div>
           ))}
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500"><span>{copy.gross}: <strong className="text-slate-300">{formatCurrency(grossInvestment, locale)}</strong></span><span>{copy.commission}: <strong className="text-slate-300">{formatCurrency(commission, locale)}</strong></span></div>
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500"><span>{isEnglish ? "Line-up budget" : "Verba Line-up"}: <strong className="text-slate-300">{formatCurrency(plan.totals[0]?.investment ?? 0, locale)}</strong></span><span>{isEnglish ? "Dedicated MG4 Urban budget" : "Verba dedicada MG4 Urban"}: <strong className="text-slate-300">{formatCurrency(plan.totals[1]?.investment ?? 0, locale)}</strong></span></div>
       </section>
 
       <section className="mt-5 grid gap-5 xl:grid-cols-[1.45fr_0.8fr]">
@@ -196,8 +194,8 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
             <div className="mt-4 space-y-3">
               {plan.totals.map((total) => (
                 <article key={total.label} className="rounded-xl border border-white/[0.06] bg-[#070d16] p-4">
-                  <div className="flex items-center justify-between gap-3"><strong className="text-sm text-white">{total.label}</strong><span className="text-xs font-semibold text-[#f0525c]">{formatPercent(total.netInvestment / plan.total.netInvestment, locale)}</span></div>
-                  <div className="mt-3 grid grid-cols-3 gap-3 text-xs"><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.investment}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.netInvestment, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.leads}</span><strong className="mt-1 block text-slate-300">{formatNumber(total.leads, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">CPL</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.cpl, locale)}</strong></div></div>
+                  <div className="flex items-center justify-between gap-3"><strong className="text-sm text-white">{total.label}</strong><span className="text-xs font-semibold text-[#f0525c]">{formatPercent(total.investment / plan.total.investment, locale)}</span></div>
+                  <div className="mt-3 grid grid-cols-3 gap-3 text-xs"><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.investment}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.investment, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.leads}</span><strong className="mt-1 block text-slate-300">{formatNumber(total.leads, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">CPL</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.cpl, locale, 2)}</strong></div></div>
                 </article>
               ))}
             </div>
@@ -209,7 +207,7 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
               {funnelData.map((item) => (
                 <div key={item.funnel}>
                   <div className="flex items-center justify-between text-xs"><span className="font-medium text-slate-300">{funnelLabel(item.funnel, locale)}</span><span className="text-slate-500">{formatCurrency(item.investment, locale)}</span></div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]"><div className="h-full rounded-full bg-gradient-to-r from-[#9f1520] to-[#ef3340]" style={{ width: `${Math.max(3, (item.investment / plan.total.netInvestment) * 100)}%` }} /></div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]"><div className="h-full rounded-full bg-gradient-to-r from-[#9f1520] to-[#ef3340]" style={{ width: `${Math.max(3, (item.investment / plan.total.investment) * 100)}%` }} /></div>
                 </div>
               ))}
             </div>
@@ -224,7 +222,7 @@ export function MediaPlanDashboard({ locale = "pt-BR", onUpdatedAt }: { locale?:
             <thead className="bg-[#070d16] text-[9px] uppercase tracking-[0.13em] text-slate-600"><tr><th className="px-4 py-3">{copy.channel}</th><th className="px-4 py-3">{isEnglish ? "Product" : "Produto"}</th><th className="px-4 py-3">{copy.objective}</th><th className="px-4 py-3 text-right">{copy.investment}</th><th className="px-4 py-3 text-right">CPM</th><th className="px-4 py-3 text-right">{copy.impressions}</th><th className="px-4 py-3 text-right">CTR</th><th className="px-4 py-3 text-right">{isEnglish ? "Clicks" : "Cliques"}</th><th className="px-4 py-3 text-right">{copy.visits}</th><th className="px-4 py-3 text-right">{copy.leads}</th><th className="px-4 py-3 text-right">CPL</th></tr></thead>
             <tbody className="divide-y divide-white/[0.05] text-xs">
               {plan.rows.map((row) => (
-                <tr key={row.id} className="transition-colors hover:bg-white/[0.02]"><td className="px-4 py-3"><div className="font-medium text-slate-200">{row.channel}</div><div className="mt-1 text-[9px] uppercase tracking-wider text-slate-600">{funnelLabel(row.funnel, locale)}</div></td><td className="px-4 py-3 text-slate-400">{row.product}</td><td className="px-4 py-3 text-slate-400">{isEnglish ? row.objectiveEn : row.objectivePt}</td><td className="px-4 py-3 text-right font-medium text-slate-200">{formatCurrency(row.netInvestment, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatCurrency(row.cpm, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatNumber(row.impressions, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatPercent(row.ctr, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatNumber(row.clicks, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatNumber(row.visits, locale)}</td><td className="px-4 py-3 text-right text-slate-300">{row.leads == null ? "—" : formatNumber(row.leads, locale)}</td><td className="px-4 py-3 text-right text-slate-300">{row.cpl == null ? "—" : formatCurrency(row.cpl, locale)}</td></tr>
+                <tr key={row.id} className="transition-colors hover:bg-white/[0.02]"><td className="px-4 py-3"><div className="font-medium text-slate-200">{row.channel}</div><div className="mt-1 text-[9px] uppercase tracking-wider text-slate-600">{funnelLabel(row.funnel, locale)}</div></td><td className="px-4 py-3 text-slate-400">{row.product}</td><td className="px-4 py-3 text-slate-400">{isEnglish ? row.objectiveEn : row.objectivePt}</td><td className="px-4 py-3 text-right font-medium text-slate-200">{formatCurrency(row.investment, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatCurrency(row.cpm, locale, 2)}</td><td className="px-4 py-3 text-right text-slate-400">{formatNumber(row.impressions, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatPercent(row.ctr, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatNumber(row.clicks, locale)}</td><td className="px-4 py-3 text-right text-slate-400">{formatNumber(row.visits, locale)}</td><td className="px-4 py-3 text-right text-slate-300">{row.leads == null ? "—" : formatNumber(row.leads, locale)}</td><td className="px-4 py-3 text-right text-slate-300">{row.cpl == null ? "—" : formatCurrency(row.cpl, locale, 2)}</td></tr>
               ))}
             </tbody>
           </table>

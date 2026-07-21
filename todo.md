@@ -463,3 +463,30 @@
 - [x] Impedir autenticação com o login antigo `mgmotors`
 - [x] Atualizar testes de autenticação e autorização sem registrar a senha em texto puro no projeto
 - [x] Validar login novo, senha inválida, tipagem, suíte e build
+
+## Aprofundamento da aba Otimizações
+
+- [ ] Auditar os tipos de ação gerados atualmente e identificar por que as tarefas se repetem
+- [ ] Mapear para cada campanha CPA atual, CPA médio de referência, CPA-alvo sugerido, estratégia de lance atual, orçamento, conversões e sinais de limitação
+- [ ] Criar recomendações variadas e mutuamente exclusivas para CPA-alvo, estratégia de lance, orçamento, segmentação, criativos e medição, somente quando houver evidência suficiente
+- [ ] Informar valores concretos de origem e destino em cada tarefa, incluindo qual CPA será alterado e para quanto
+- [ ] Exibir estratégia atual, estratégia recomendada, justificativa, evidências, impacto esperado, risco e passo a passo operacional
+- [ ] Evitar ações genéricas, repetidas, contraditórias ou que ultrapassem a verba disponível
+- [ ] Preservar IDs e nomes reais das campanhas e o vínculo com ciclos e histórico
+- [ ] Tornar o comentário de conclusão opcional no backend e na interface
+- [ ] Manter registro automático de usuário e horário ao concluir sem comentário
+- [ ] Atualizar testes do motor, deduplicação, transições e interface
+- [ ] Validar dados reais, responsividade, tipagem, suíte completa e build
+
+## Atualização do Plano de Mídia — nova planilha enviada
+
+- [x] Auditar todas as abas, células preenchidas, fórmulas, mesclagens, formatos e competências do novo arquivo
+- [x] Identificar orçamento, canais, produtos, projeções, metas e percentuais presentes, confirmando a ausência de região no arquivo sem inferir valores
+- [x] Comparar a nova estrutura com o modelo atual do dashboard e documentar correspondências e diferenças
+- [x] Substituir os dados do plano atual pelos valores consolidados da nova planilha
+- [x] Confirmar que o arquivo não contém fórmulas e preservar exatamente linhas, subtotais e total geral estáticos, inclusive diferenças mínimas de arredondamento
+- [x] Manter a navegação mensal e a versão integral em português e inglês
+- [x] Preservar e validar os estados vazios bilíngues para competências sem plano
+- [x] Atualizar testes de cálculos, navegação, rótulos e reconciliação
+- [x] Validar a interface autenticada em desktop e a estrutura responsiva mobile com tabela em rolagem horizontal, sem overflow destrutivo
+- [x] Executar tipagem, suíte completa e build antes do checkpoint
