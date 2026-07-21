@@ -21,9 +21,9 @@ import {
 const testPassword = "senha-de-teste-segura";
 let testPasswordHash = "";
 
-const mgMotorsIdentity: DashboardIdentity = {
+const mgMotorIdentity: DashboardIdentity = {
   accountId: 2,
-  username: "mgmotors",
+  username: "mgmotor",
   displayName: "MG Motors",
   locale: "en-US",
   permissions: {
@@ -90,10 +90,10 @@ describe("autenticação do dashboard", () => {
   });
 
   it("autentica uma conta ativa e devolve idioma e permissões sem expor o hash", async () => {
-    dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(mgMotorsIdentity));
+    dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(mgMotorIdentity));
 
-    await expect(authenticateDashboardCredentials("mgmotors", testPassword)).resolves.toEqual(mgMotorsIdentity);
-    expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mgmotors");
+    await expect(authenticateDashboardCredentials("mgmotor", testPassword)).resolves.toEqual(mgMotorIdentity);
+    expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mgmotor");
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(2);
   });
 
@@ -117,26 +117,29 @@ describe("autenticação do dashboard", () => {
   });
 
   it("rejeita senha inválida, conta ausente e conta inativa", async () => {
-    dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(accountFromIdentity(mgMotorsIdentity));
-    await expect(authenticateDashboardCredentials("mgmotors", "senha-incorreta")).resolves.toBeNull();
+    dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(accountFromIdentity(mgMotorIdentity));
+    await expect(authenticateDashboardCredentials("mgmotor", "senha-incorreta")).resolves.toBeNull();
+
+    dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(null);
+    await expect(authenticateDashboardCredentials("mgmotors", testPassword)).resolves.toBeNull();
 
     dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(null);
     await expect(authenticateDashboardCredentials("desconhecido", testPassword)).resolves.toBeNull();
 
     dbMocks.getDashboardAccountByUsername.mockResolvedValueOnce(
-      accountFromIdentity(mgMotorsIdentity, { isActive: false }),
+      accountFromIdentity(mgMotorIdentity, { isActive: false }),
     );
     await expect(authenticateDashboardCredentials("mg motors", testPassword)).resolves.toBeNull();
     expect(dbMocks.updateDashboardAccountLastSignIn).not.toHaveBeenCalled();
   });
 
   it("lê uma sessão assinada com identidade, idioma e matriz de permissões", async () => {
-    const token = await createDashboardSession(mgMotorsIdentity);
+    const token = await createDashboardSession(mgMotorIdentity);
     const req = {
       headers: { cookie: `${DASHBOARD_SESSION_COOKIE}=${token}` },
     } as Request;
 
-    await expect(readDashboardSession(req)).resolves.toMatchObject(mgMotorsIdentity);
+    await expect(readDashboardSession(req)).resolves.toMatchObject(mgMotorIdentity);
   });
 
   it("rejeita cookie ausente ou adulterado", async () => {

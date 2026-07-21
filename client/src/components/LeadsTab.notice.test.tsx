@@ -22,7 +22,7 @@ describe("ChannelUpdatingNotice", () => {
     expect(markup).not.toContain("Campanha Urban");
   });
 
-  it("mantém a mensagem equivalente em inglês para a conta mgmotors", () => {
+  it("mantém a mensagem equivalente em inglês para a conta mgmotor", () => {
     const markup = renderToStaticMarkup(
       <ChannelUpdatingNotice locale="en-US" date="2026-07-20" channels={["Meta"]} />,
     );

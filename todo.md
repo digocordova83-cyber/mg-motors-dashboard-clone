@@ -454,3 +454,12 @@
 - [x] Preservar o alerta automático geral para canais com 0 Leads no dia
 - [x] Atualizar os testes para comprovar que o aviso específico não é mais renderizado
 - [x] Executar tipagem, testes relacionados e build
+
+## Alteração de acesso — mgmotors para mgmotor
+
+- [x] Renomear o login persistido de `mgmotors` para `mgmotor`
+- [x] Substituir a senha por um novo hash scrypt correspondente à credencial solicitada
+- [x] Preservar locale `en-US`, módulos permitidos e restrições atuais da conta
+- [x] Impedir autenticação com o login antigo `mgmotors`
+- [x] Atualizar testes de autenticação e autorização sem registrar a senha em texto puro no projeto
+- [x] Validar login novo, senha inválida, tipagem, suíte e build
