@@ -490,3 +490,11 @@
 - [x] Atualizar testes de cálculos, navegação, rótulos e reconciliação
 - [x] Validar a interface autenticada em desktop e a estrutura responsiva mobile com tabela em rolagem horizontal, sem overflow destrutivo
 - [x] Executar tipagem, suíte completa e build antes do checkpoint
+
+## Totais visíveis no gráfico de Leads por dia e canal
+
+- [x] Exibir o total diário reconciliado acima de cada barra empilhada
+- [x] Manter o detalhamento por canal no tooltip sem duplicar contagens
+- [x] Reservar espaço vertical para os rótulos sem cortar os maiores valores
+- [x] Evitar sobreposição e overflow dos totais em desktop e mobile
+- [x] Atualizar testes do gráfico e validar tipagem, suíte e build

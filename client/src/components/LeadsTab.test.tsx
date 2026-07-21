@@ -7,11 +7,20 @@ import {
   LeadEmptyState,
   LeadFilterIdentity,
   LeadsError,
+  formatDailyBarTotal,
   LeadsLoading,
   resolveCsvImportPhase,
 } from "./LeadsTab";
 
 describe("interface de Leads", () => {
+  it("formata o total reconciliado exibido acima de cada barra diária", () => {
+    expect(formatDailyBarTotal(265, "pt-BR")).toBe("265");
+    expect(formatDailyBarTotal(1234, "pt-BR")).toBe("1.234");
+    expect(formatDailyBarTotal(1234, "en-US")).toBe("1,234");
+    expect(formatDailyBarTotal(0, "pt-BR")).toBe("0");
+    expect(formatDailyBarTotal("indisponível", "pt-BR")).toBe("");
+  });
+
   it("identifica o período filtrado pelo campo Data Corrigida", () => {
     const html = renderToStaticMarkup(
       <LeadFilterIdentity dateFrom="2026-07-01" dateTo="2026-07-19" />,

@@ -33,6 +33,7 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  LabelList,
   Line,
   ResponsiveContainer,
   Tooltip,
@@ -71,6 +72,11 @@ function formatNumber(value: number, locale: Locale, maximumFractionDigits = 2) 
 
 function formatInteger(value: number, locale: Locale) {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
+}
+
+export function formatDailyBarTotal(value: unknown, locale: Locale = "pt-BR") {
+  const total = Number(value);
+  return Number.isFinite(total) ? formatInteger(total, locale) : "";
 }
 const CHANNEL_COLORS = ["#e2212d", "#38bdf8", "#a78bfa", "#f59e0b", "#10b981", "#f472b6", "#94a3b8"];
 const MAX_CSV_SIZE_BYTES = 10 * 1024 * 1024;
@@ -723,18 +729,34 @@ export function LeadsTab({
       <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
         <LeadPanel title={ui(locale, "Leads por dia e canal", "Leads by day and channel")} subtitle={ui(locale, "Barras empilhadas reconciliadas com o total diário; linha mostra a média móvel de 7 dias.", "Stacked bars reconcile to daily totals; the line shows the 7-day moving average.")}>
           {data.daily.length ? (
-            <div className="h-[330px] px-2 pb-3 pt-5">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stackedDaily} margin={{ top: 8, right: 18, left: 0, bottom: 0 }}>
+            <div className="overflow-x-auto">
+              <div className="h-[350px] min-w-[760px] px-2 pb-3 pt-7">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stackedDaily} margin={{ top: 24, right: 18, left: 0, bottom: 0 }}>
                   <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="date" tickFormatter={value => formatShortDate(String(value), locale)} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
                   <YAxis allowDecimals={false} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={42} />
                   <Tooltip contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} labelFormatter={value => formatDate(String(value), locale)} formatter={(value, name) => [formatInteger(Number(value), locale), String(name)]} />
                   <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8", paddingTop: 10 }} />
-                  {data.channelOrder.map((channel, index) => <Bar key={channel} dataKey={channel} name={channel} stackId="channels" fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} radius={index === data.channelOrder.length - 1 ? [3, 3, 0, 0] : 0} />)}
+                  {data.channelOrder.map((channel, index) => (
+                    <Bar key={channel} dataKey={channel} name={channel} stackId="channels" fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} radius={index === data.channelOrder.length - 1 ? [3, 3, 0, 0] : 0}>
+                      {index === data.channelOrder.length - 1 ? (
+                        <LabelList
+                          dataKey="total"
+                          position="top"
+                          offset={8}
+                          fill="#cbd5e1"
+                          fontSize={9}
+                          fontWeight={700}
+                          formatter={(value: unknown) => formatDailyBarTotal(value, locale)}
+                        />
+                      ) : null}
+                    </Bar>
+                  ))}
                   <Line type="monotone" dataKey="media7d" name={ui(locale, "Média móvel 7d", "7-day moving average")} stroke="#f8fafc" strokeWidth={2} dot={false} />
-                </BarChart>
-              </ResponsiveContainer>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : <div className="grid min-h-[260px] place-items-center text-xs text-slate-600">{ui(locale, "Nenhum Lead no período.", "No Leads in this period.")}</div>}
         </LeadPanel>
