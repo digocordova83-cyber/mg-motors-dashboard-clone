@@ -122,7 +122,7 @@
 - [x] Criar tabela persistente de registros de leads normalizados e vinculados ao lote de origem
 - [ ] Criar configuração persistente e editável da meta mensal de Leads, iniciando com 10.000 para julho/2026
 - [x] Gerar, revisar e aplicar migração não destrutiva das tabelas do módulo de Leads
-- [ ] Implementar parser CSV com validação de formato, encoding, datas e campos obrigatórios
+- [x] Implementar parser CSV com validação de formato, encoding, datas e campos obrigatórios
 - [ ] Implementar importação autenticada, atômica, idempotente e auditável sem duplicar leads já carregados
 - [ ] Exibir pré-validação do arquivo com linhas válidas, inválidas, duplicadas e resumo por período antes da confirmação
 - [ ] Implementar histórico de atualizações com arquivo, hash, usuário, data e resultado do processamento
@@ -139,9 +139,11 @@
 - [ ] Garantir que valores ausentes apareçam como indisponíveis, sem fabricar canal, modelo, região ou concessionária
 - [ ] Escrever testes Vitest para parser, datas, deduplicação, importação, pacing e agregações de Leads
 - [ ] Escrever testes TSX para identidade dos filtros, estados vazios e resumo da pré-validação
-- [ ] Importar e validar o CSV fornecido sem persistir duplicidades
+- [x] Importar e validar o CSV fornecido sem persistir duplicidades
 - [ ] Validar tipagem, suíte completa e build de produção
 - [ ] Validar visualmente a aba Leads em desktop, tablet e mobile, sem overflow horizontal do documento
 - [ ] Revisar todo.md e salvar checkpoint da versão com o módulo de Leads
 - [x] Inserir a meta inicial de Leads de julho/2026 (`competencia` = `2026-07`, `goalCount` = 10000) no banco sem duplicação
 - [ ] Implementar helper/procedure autenticado para ler e editar a meta mensal de Leads com persistência auditável
+- [x] Definir explicitamente `Data Corrigida`, `Modelo` e `Canal` como campos obrigatórios por linha no parser de Leads
+- [x] Adicionar teste Vitest para linhas sem campos obrigatórios e sua contagem como inválidas
