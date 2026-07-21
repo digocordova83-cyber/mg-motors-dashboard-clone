@@ -28,6 +28,7 @@ describe("parseLeadCsv", () => {
           '"(11) 99999-0000"',
           "Weebmotors",
           "19/07/2026",
+          "MG SUL - MATRIZ",
         ].join(","),
       ),
     );
@@ -41,17 +42,18 @@ describe("parseLeadCsv", () => {
       region: "SP",
       regionRaw: "São Paulo",
       city: "São Paulo, Capital",
-      dealerName: "Indisponível",
-      dealerRaw: "whatsapp_",
+      dealerName: "MG SUL - MATRIZ",
+      dealerRaw: "MG SUL - MATRIZ",
       email: "teste@example.com",
       phone: "11999990000",
     });
     expect(result.records[0].rawPayload.dealer).toBe("whatsapp_");
+    expect(result.records[0].rawPayload.correctedDealer).toBe("MG SUL - MATRIZ");
   });
 
   it("preserva linhas integralmente repetidas e mantém a repetição apenas como informação", () => {
-    const base = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer A,Pessoa,teste@example.com,11999990000,Site,19/07/2026";
-    const rerouted = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer B,Pessoa,teste@example.com,11999990000,Site,19/07/2026";
+    const base = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer A";
+    const rerouted = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer B";
     const result = parseLeadCsv(csv(base, base, rerouted));
 
     expect(result.validRows).toBe(3);
@@ -63,7 +65,7 @@ describe("parseLeadCsv", () => {
   });
 
   it("preserva 99 repetições como 100 ocorrências importáveis e auditáveis", () => {
-    const repeated = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer A,Pessoa,teste@example.com,11999990000,Site,19/07/2026";
+    const repeated = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer A";
     const result = parseLeadCsv(csv(...Array.from({ length: 100 }, () => repeated)));
 
     expect(result.rowsTotal).toBe(100);
@@ -79,9 +81,9 @@ describe("parseLeadCsv", () => {
   });
 
   it("contabiliza linhas sem Modelo ou Canal como inválidas", () => {
-    const missingModel = "2026-07-19T12:30:00,,SP,São Paulo,Dealer A,,,,Site,19/07/2026";
-    const missingChannel = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer A,,,,,19/07/2026";
-    const valid = "2026-07-20T12:30:00,MGS5,RJ,Rio de Janeiro,Dealer B,,,,Meta,20/07/2026";
+    const missingModel = "2026-07-19T12:30:00,,SP,São Paulo,Dealer Original,,,,Site,19/07/2026,Dealer A";
+    const missingChannel = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,,,,,19/07/2026,Dealer A";
+    const valid = "2026-07-20T12:30:00,MGS5,RJ,Rio de Janeiro,Dealer Original,,,,Meta,20/07/2026,Dealer B";
     const result = parseLeadCsv(csv(missingModel, missingChannel, valid));
 
     expect(result.rowsTotal).toBe(3);
@@ -94,8 +96,8 @@ describe("parseLeadCsv", () => {
   });
 
   it("marca Data Corrigida inválida por linha e mantém as linhas válidas para pré-validação", () => {
-    const invalid = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer A,,,,Site,31/02/2026";
-    const valid = "2026-07-20T12:30:00,MG4,Rio de Janeiro,Rio de Janeiro,Dealer B,,,,Meta,20/07/2026";
+    const invalid = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,,,,Site,31/02/2026,Dealer A";
+    const valid = "2026-07-20T12:30:00,MG4,Rio de Janeiro,Rio de Janeiro,Dealer Original,,,,Meta,20/07/2026,Dealer B";
     const result = parseLeadCsv(csv(invalid, valid));
 
     expect(result.rowsTotal).toBe(2);
@@ -127,7 +129,7 @@ describe("datas e envelope do upload", () => {
   });
 
   it("decodifica base64 estrito e sanitiza o nome do arquivo", () => {
-    const source = csv("2026-07-19,MG4,SP,São Paulo,Dealer A,,,,Site,19/07/2026");
+    const source = csv("2026-07-19,MG4,SP,São Paulo,Dealer Original,,,,Site,19/07/2026,Dealer A");
     expect(decodeLeadCsvBase64(source.toString("base64"))).toEqual(source);
     expect(sanitizeLeadCsvFileName("C:\\dados\\Leads Julho 2026.csv")).toBe("Leads-Julho-2026.csv");
     expect(() => decodeLeadCsvBase64("isso-nao-e-base64")).toThrowError(/corrompido/);

@@ -1,0 +1,344 @@
+{
+  "generatedAt": "2026-07-21T12:47:33.313Z",
+  "period": {
+    "dateFrom": "2026-07-01",
+    "dateTo": "2026-07-20"
+  },
+  "note": "URLs completas, chaves e payloads foram deliberadamente omitidos.",
+  "measurements": [
+    {
+      "label": "google_cold",
+      "ok": true,
+      "durationMs": 16980,
+      "externalRequests": 1,
+      "externalDurationMaxMs": 10178,
+      "externalDurationSumMs": 10178,
+      "requests": [
+        {
+          "source": "google_ads",
+          "fieldCount": 17,
+          "durationMs": 10178,
+          "status": 200,
+          "ok": true
+        }
+      ],
+      "source": "windsor-live",
+      "cacheHit": false,
+      "rowCount": 1360,
+      "campaignCount": 68,
+      "dataThroughDate": "2026-07-20"
+    },
+    {
+      "label": "google_warm",
+      "ok": true,
+      "durationMs": 19,
+      "externalRequests": 0,
+      "externalDurationMaxMs": 0,
+      "externalDurationSumMs": 0,
+      "requests": [],
+      "source": "windsor-live",
+      "cacheHit": true,
+      "rowCount": 1360,
+      "campaignCount": 68,
+      "dataThroughDate": "2026-07-20"
+    },
+    {
+      "label": "google_three_concurrent_cold",
+      "ok": true,
+      "durationMs": 6726,
+      "externalRequests": 3,
+      "externalDurationMaxMs": 2013,
+      "externalDurationSumMs": 4697,
+      "requests": [
+        {
+          "source": "google_ads",
+          "fieldCount": 17,
+          "durationMs": 672,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "google_ads",
+          "fieldCount": 17,
+          "durationMs": 2012,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "google_ads",
+          "fieldCount": 17,
+          "durationMs": 2013,
+          "status": 200,
+          "ok": true
+        }
+      ],
+      "source": "windsor-live",
+      "cacheHit": false,
+      "rowCount": 1360,
+      "campaignCount": 68,
+      "dataThroughDate": "2026-07-20"
+    },
+    {
+      "label": "meta_bounds_cold",
+      "ok": true,
+      "durationMs": 1120,
+      "externalRequests": 1,
+      "externalDurationMaxMs": 1110,
+      "externalDurationSumMs": 1110,
+      "requests": [
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 1110,
+          "status": 200,
+          "ok": true
+        }
+      ],
+      "earliestDate": "2026-07-14",
+      "latestDate": "2026-07-20",
+      "timezone": "America/Sao_Paulo"
+    },
+    {
+      "label": "meta_bounds_warm",
+      "ok": true,
+      "durationMs": 0,
+      "externalRequests": 0,
+      "externalDurationMaxMs": 0,
+      "externalDurationSumMs": 0,
+      "requests": [],
+      "earliestDate": "2026-07-14",
+      "latestDate": "2026-07-20",
+      "timezone": "America/Sao_Paulo"
+    },
+    {
+      "label": "meta_data_cold_after_bounds",
+      "ok": true,
+      "durationMs": 30009,
+      "externalRequests": 6,
+      "externalDurationMaxMs": 30000,
+      "externalDurationSumMs": 60359,
+      "requests": [
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 897,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 12,
+          "durationMs": 5654,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 6976,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 17,
+          "durationMs": 8352,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 11,
+          "durationMs": 8480,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 22,
+          "durationMs": 30000,
+          "status": null,
+          "ok": false
+        }
+      ],
+      "source": "validated-snapshot",
+      "cacheHit": false,
+      "rowCounts": {
+        "daily": 7,
+        "campaigns": 1,
+        "adsets": 6,
+        "creatives": 34,
+        "demographics": 17,
+        "regions": 18
+      },
+      "dataThroughDate": "2026-07-20"
+    },
+    {
+      "label": "meta_data_warm",
+      "ok": true,
+      "durationMs": 2,
+      "externalRequests": 0,
+      "externalDurationMaxMs": 0,
+      "externalDurationSumMs": 0,
+      "requests": [],
+      "source": "validated-snapshot",
+      "cacheHit": true,
+      "rowCounts": {
+        "daily": 7,
+        "campaigns": 1,
+        "adsets": 6,
+        "creatives": 34,
+        "demographics": 17,
+        "regions": 18
+      },
+      "dataThroughDate": "2026-07-20"
+    },
+    {
+      "label": "meta_three_concurrent_cold",
+      "ok": true,
+      "durationMs": 11339,
+      "externalRequests": 18,
+      "externalDurationMaxMs": 10817,
+      "externalDurationSumMs": 60706,
+      "requests": [
+        {
+          "source": "meta_ads",
+          "fieldCount": 17,
+          "durationMs": 1463,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 1479,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 1828,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 1858,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 11,
+          "durationMs": 1892,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 11,
+          "durationMs": 1901,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 17,
+          "durationMs": 1920,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 12,
+          "durationMs": 2090,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 2113,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 2096,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 11,
+          "durationMs": 2092,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 17,
+          "durationMs": 2096,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 15,
+          "durationMs": 2104,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 12,
+          "durationMs": 2103,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 12,
+          "durationMs": 2111,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 22,
+          "durationMs": 10199,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 22,
+          "durationMs": 10544,
+          "status": 200,
+          "ok": true
+        },
+        {
+          "source": "meta_ads",
+          "fieldCount": 22,
+          "durationMs": 10817,
+          "status": 200,
+          "ok": true
+        }
+      ],
+      "source": "windsor-live",
+      "cacheHit": false,
+      "rowCounts": {
+        "daily": 7,
+        "campaigns": 1,
+        "adsets": 6,
+        "creatives": 34,
+        "demographics": 17,
+        "regions": 18
+      },
+      "dataThroughDate": "2026-07-20"
+    }
+  ]
+}

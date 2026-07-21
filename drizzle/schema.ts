@@ -329,6 +329,7 @@ export const leads = mysqlTable(
         region: string;
         city: string;
         dealer: string;
+        correctedDealer: string;
         name: string;
         email: string;
         phone: string;

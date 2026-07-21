@@ -326,3 +326,64 @@
 - [x] Cobrir Daniel e mgmotors com testes de autenticação, idioma e autorização
 - [x] Validar os dois logins no navegador e confirmar a matriz de módulos de cada conta
 - [x] Remover utilitários temporários e auditar o projeto contra credenciais em texto puro
+
+## Performance — atualizações mais rápidas
+
+- [ ] Medir separadamente latência fria e quente de Google Ads, Meta Ads, processamento, banco e renderização
+- [ ] Identificar chamadas duplicadas, consultas excessivas e etapas que bloqueiam o primeiro conteúdo útil
+- [ ] Definir metas de desempenho mensuráveis sem reduzir campos nem precisão dos dados D-1
+- [ ] Persistir ou reaproveitar o último snapshot válido para responder rapidamente após cold start
+- [ ] Consolidar solicitações simultâneas da mesma fonte e período em uma única atualização
+- [ ] Evitar reconsultar a fonte externa quando o D-1 já estiver completo e auditado
+- [ ] Exibir dados válidos já disponíveis enquanto a interface informa claramente o estado da atualização
+- [ ] Preservar data da fonte, data de atualização, idempotência e reconciliação das métricas
+- [ ] Adicionar testes Vitest para cache persistente, concorrência, invalidação e fallback em falha
+- [ ] Comparar benchmarks antes e depois em cenários frio, quente e concorrente
+- [ ] Inspecionar logs, executar tipagem, suíte completa, build e validação visual
+- [ ] Revisar todo.md e salvar checkpoint da versão otimizada
+
+## Atualização da base de leads — CSV até 20/07/2026
+
+- [x] Auditar delimitador, encoding, cabeçalhos e total de linhas do CSV recebido
+- [x] Confirmar o uso de `Data Corrigida` como data de referência e a cobertura máxima em 20/07/2026
+- [x] Preservar o campo de concessionária exatamente como recebido no CSV
+- [x] Identificar linhas inválidas, vazias, duplicadas e registros posteriores a 20/07/2026
+- [x] Registrar contagens e cobertura da base antes da importação
+- [x] Validar a chave idempotente e o comportamento de atualização do importador existente
+- [x] Executar uma prévia da importação sem gravar dados e revisar aceitos, rejeitados e duplicados
+- [x] Substituir a base ativa pelo arquivo consolidado completo, preservando todas as duplicatas presentes no CSV
+- [x] Verificar contagens, datas, fontes, veículos, regiões e concessionárias após a importação
+- [x] Confirmar no dashboard que os dados de leads chegam até 20/07/2026
+- [x] Executar testes, tipagem e build relacionados à importação e analytics de leads
+- [x] Revisar todo.md e salvar checkpoint da base atualizada
+
+## Ajustes do novo CSV — concessionária e Webmotors
+
+- [x] Aceitar a coluna K `Concessionarias corrijida` no formato consolidado recebido
+- [x] Usar a coluna K como `dealerName` oficial nas métricas e distribuições do dashboard
+- [x] Preservar a coluna `Concessionaria` original no payload bruto para auditoria
+- [x] Manter exatamente o texto recebido na coluna K, normalizando apenas valores vazios ou placeholders já definidos
+- [x] Atualizar testes do parser e persistência e validar preview e agregação por concessionária com a coluna K
+- [x] Adicionar alerta visível na área de Leads: dados da Webmotors ainda não foram recebidos
+- [x] Garantir que o alerta não remova nem reclassifique os 878 registros históricos da Webmotors
+- [x] Validar o alerta em desktop e mobile e confirmar legibilidade nos dois idiomas aplicáveis
+
+## Integridade linha a linha do CSV consolidado
+
+- [x] Persistir exatamente as 7.611 linhas do arquivo recebido na base ativa
+- [x] Preservar todas as ocorrências duplicadas como registros independentes
+- [x] Atualizar o requisito: as 224 linhas sem `Data Corrigida` foram confirmadas pelo usuário como pertencentes a 20/07/2026
+- [x] Manter `correctedDate` obrigatória após preencher as 224 datas confirmadas
+- [x] Não deixar linhas sem data após a correção confirmada, evitando divergência entre total e gráficos
+- [x] Confirmar zero registros sem data no CSV canônico
+- [x] Garantir que a substituição transacional confirme 7.611 inserções antes de remover a base consolidada anterior
+- [x] Adicionar testes para duplicatas, datas corrigidas, contagem exata e rollback de integridade
+
+## Correção confirmada das 224 datas
+
+- [x] Preencher `Data Corrigida` com 20/07/2026 somente nas 224 linhas confirmadas pelo usuário
+- [x] Preservar o valor original vazio de `Data Corrigida` em evidência de auditoria
+- [x] Gerar um CSV canônico com exatamente 7.611 linhas, sem deduplicação
+- [x] Confirmar que o dia 20/07/2026 totaliza 540 linhas após a correção
+- [x] Confirmar que o intervalo final permanece de 30/06/2026 a 20/07/2026
+- [x] Atualizar a auditoria persistente com a regra de correção informada pelo usuário

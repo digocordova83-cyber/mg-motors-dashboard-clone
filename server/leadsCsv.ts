@@ -12,6 +12,7 @@ export const LEAD_CSV_HEADERS = [
   "Telefone",
   "Canal",
   "Data Corrigida",
+  "Concessionarias corrijida",
 ] as const;
 
 export const UNAVAILABLE_LEAD_VALUE = "Indisponível";
@@ -20,7 +21,12 @@ export const MAX_LEAD_CSV_ROWS = 100_000;
 
 export type LeadCsvHeader = (typeof LEAD_CSV_HEADERS)[number];
 
-export const REQUIRED_LEAD_ROW_FIELDS = ["Data Corrigida", "Modelo", "Canal"] as const satisfies readonly LeadCsvHeader[];
+export const REQUIRED_LEAD_ROW_FIELDS = [
+  "Data Corrigida",
+  "Modelo",
+  "Canal",
+  "Concessionarias corrijida",
+] as const satisfies readonly LeadCsvHeader[];
 export type LeadRawRow = Record<LeadCsvHeader, string>;
 
 export type NormalizedLeadRecord = {
@@ -49,6 +55,7 @@ export type NormalizedLeadRecord = {
     region: string;
     city: string;
     dealer: string;
+    correctedDealer: string;
     name: string;
     email: string;
     phone: string;
@@ -302,7 +309,9 @@ function normalizeRow(
   const modelRaw = row.Modelo ?? "";
   const regionRaw = row["Região/Estado"] ?? "";
   const cityRaw = row.Cidade ?? "";
-  const dealerRaw = row.Concessionaria ?? "";
+  const originalDealerRaw = row.Concessionaria ?? "";
+  const correctedDealerRaw = row["Concessionarias corrijida"] ?? "";
+  const dealerRaw = correctedDealerRaw;
   const contactNameRaw = row.Nome ?? "";
   const emailRaw = row.Email ?? "";
   const phoneRaw = row.Telefone ?? "";
@@ -358,7 +367,8 @@ function normalizeRow(
       model: modelRaw,
       region: regionRaw,
       city: cityRaw,
-      dealer: dealerRaw,
+      dealer: originalDealerRaw,
+      correctedDealer: correctedDealerRaw,
       name: contactNameRaw,
       email: emailRaw,
       phone: phoneRaw,

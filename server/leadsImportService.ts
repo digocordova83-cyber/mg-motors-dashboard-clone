@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { leadImports, leads, type LeadImport } from "../drizzle/schema";
 import { getDb } from "./db";
 import {
@@ -257,6 +257,11 @@ export async function importLeadCsv(input: {
       `O arquivo possui ${parsed.invalidRows.toLocaleString("pt-BR")} linha(s) inválida(s). Corrija o CSV antes de confirmar a importação.`,
     );
   }
+  if (parsed.validRows === 0) {
+    throw new LeadCsvValidationError(
+      "O arquivo não contém nenhuma linha válida para substituir a base consolidada.",
+    );
+  }
 
   const importId = await createOrResetImport({ parsed, fileName, actor, existingImport });
 
@@ -311,7 +316,17 @@ export async function importLeadCsv(input: {
         .from(leads)
         .where(eq(leads.importId, importId));
       const rowsInserted = insertedRows.length;
+      if (rowsInserted !== parsed.validRows) {
+        throw new Error(
+          `Falha de integridade: eram esperadas ${parsed.validRows} inserções válidas, mas somente ${rowsInserted} foram confirmadas.`,
+        );
+      }
       const rowsSkipped = parsed.validRows - rowsInserted;
+
+      // O CSV recebido é uma base consolidada completa. A base anterior só é
+      // removida após a confirmação integral do novo lote, dentro da mesma
+      // transação, para que qualquer falha preserve todos os dados anteriores.
+      await tx.delete(leads).where(ne(leads.importId, importId));
 
       await tx
         .update(leadImports)
