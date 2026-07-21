@@ -99,15 +99,17 @@ function formatMetric(value: number, type: "currency" | "number" | "percent") {
   return NUMBER.format(value);
 }
 
+const MG_LOGO_URL = "/manus-storage/logo-mg-horizontal_fb43b204.svg";
+
 function MgLogo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const sizeClass = size === "lg" ? "h-20 w-20 text-xl" : size === "sm" ? "h-9 w-9 text-[11px]" : "h-12 w-12 text-sm";
+  const sizeClass = size === "lg" ? "h-16 w-auto max-w-[230px] sm:h-[72px]" : size === "sm" ? "h-8 w-auto max-w-[145px]" : "h-11 w-auto max-w-[180px]";
   return (
-    <div
-      className={`${sizeClass} grid shrink-0 place-items-center rounded-full border-2 border-[#e2212d] bg-[#0c111e] font-black tracking-[-0.08em] text-white shadow-[0_0_28px_rgba(226,33,45,0.2)]`}
-      aria-label="MG Motors"
-    >
-      MG
-    </div>
+    <img
+      src={MG_LOGO_URL}
+      alt="MG Motors"
+      className={`${sizeClass} shrink-0 object-contain drop-shadow-[0_0_22px_rgba(226,33,45,0.16)]`}
+      draggable={false}
+    />
   );
 }
 
@@ -133,8 +135,7 @@ function LoginScreen() {
       <section className="relative w-full max-w-[420px]">
         <div className="mb-7 flex flex-col items-center text-center">
           <MgLogo size="lg" />
-          <h1 className="mt-5 text-2xl font-semibold tracking-tight">MG Motors</h1>
-          <p className="mt-1 text-sm text-slate-500">Dashboard Operacional de Mídia</p>
+          <p className="mt-4 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">Dashboard Operacional de Mídia</p>
         </div>
 
         <form
@@ -658,10 +659,8 @@ function DashboardScreen() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <MgLogo size="sm" />
-                <div>
-                  <p className="text-sm font-semibold tracking-tight text-white">MG Motors</p>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-slate-600">Dashboard Operacional</p>
-                </div>
+                <span className="hidden h-5 w-px bg-[#263044] sm:block" />
+                <p className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600 sm:block">Dashboard Operacional</p>
               </div>
               <Button variant="outline" size="sm" onClick={() => logout.mutate()} disabled={logout.isPending} className="border-[#283349] bg-[#111827] text-slate-400 hover:bg-[#182236] hover:text-white lg:hidden">
                 <LogOut className="h-3.5 w-3.5" />

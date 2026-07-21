@@ -77,3 +77,11 @@ Após vincular a linha de correção ao eixo monetário, **Acompanhamento Diári
 ## Mobile — Otimizações e tablet
 
 A área **Otimizações** foi validada em 390 px: filtros quebram em linhas sem colisão, a busca ocupa a largura disponível e a tabela permanece contida com rolagem horizontal; status e nomes continuam legíveis. A **Visão Geral** foi validada em 768 px: cards formam duas colunas, gráficos ocupam toda a largura, insights formam grade de duas colunas e a tabela mantém contenção. Não foram observados cortes, sobreposições ou expansão horizontal da página nos breakpoints auditados.
+
+## Atualização de marca — logo oficial MG
+
+O arquivo oficial `logo-mg-horizontal.svg` foi publicado como ativo permanente e aplicado à tela de login. A validação em **1280 × 900** e **390 × 844** confirmou fundo transparente, contraste adequado no tema escuro, proporção preservada e leitura nítida da marca sem cortes ou distorções.
+
+O cabeçalho autenticado também foi validado com o logo oficial. Em desktop, a marca horizontal fica alinhada ao rótulo “Dashboard Operacional” sem competir com os filtros; em **390 × 844**, o logo mantém leitura e proporção, enquanto o rótulo auxiliar é ocultado para liberar espaço ao botão de saída. Não houve colisão com os filtros ou expansão horizontal.
+
+A validação adicional em **tablet (768 × 1024)** foi concluída tanto na tela de login quanto no dashboard autenticado. O logo permanece nítido, proporcional e alinhado; no cabeçalho, o divisor e o rótulo “Dashboard Operacional” aparecem sem colisão com o botão de saída ou com os filtros. A cobertura responsiva da atualização de marca inclui agora desktop, tablet e mobile.

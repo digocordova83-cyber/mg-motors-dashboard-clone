@@ -29,3 +29,10 @@
 - [x] Executar verificação TypeScript, testes e build de produção
 - [x] Verificar visualmente login, Visão Geral, Acompanhamento Diário, Investimento e Otimizações
 - [x] Revisar todo.md e salvar o checkpoint final do projeto
+- [x] Incorporar o arquivo oficial logo-mg-horizontal.svg como ativo externo permanente do projeto
+- [x] Substituir a marca temporária da tela de login pelo logo oficial MG
+- [x] Substituir a marca temporária do cabeçalho pelo logo oficial MG
+- [x] Ajustar tamanho, contraste, proporção e responsividade do logo em desktop, tablet e mobile
+- [x] Validar visualmente login e dashboard autenticado com o logo oficial
+- [x] Executar tipagem, testes e build após a atualização de marca
+- [x] Revisar todo.md e salvar um novo checkpoint com o logo oficial
