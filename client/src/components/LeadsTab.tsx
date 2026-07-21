@@ -88,6 +88,14 @@ function formatCategoryLabel(value: string | null | undefined, locale: Locale) {
   return value;
 }
 
+export function formatDealerLabel(value: string | null | undefined) {
+  const normalized = value?.trim().toLocaleLowerCase("pt-BR");
+  if (!normalized || normalized === "indisponível" || normalized === "unavailable") {
+    return "Leads em qualificação";
+  }
+  return value!.trim();
+}
+
 function formatDate(value: string | null, locale: Locale = "pt-BR") {
   if (!value) return ui(locale, "Indisponível", "Unavailable");
   return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric" }).format(
@@ -406,7 +414,7 @@ export function DealerAudit({ analytics, locale = "pt-BR" }: { analytics: LeadAn
       <div className="grid gap-3 md:grid-cols-3">
         <LeadMetricCard title={ui(locale, "Concessionárias válidas", "Valid dealers")} value={formatInteger(summary.validDealers, locale)} subtitle={ui(locale, "Nomes identificados no período", "Names identified in this period")} icon={<Building2 className="h-4 w-4" />} accent="#38bdf8" />
         <LeadMetricCard title={ui(locale, "Leads atribuídos", "Assigned Leads")} value={formatInteger(summary.assignedLeads, locale)} subtitle={`${formatNumber(summary.assignedSharePercent, locale)}% ${ui(locale, "do total filtrado", "of filtered total")}`} icon={<CheckCircle2 className="h-4 w-4" />} accent="#10b981" />
-        <LeadMetricCard title={ui(locale, "Sem concessionária", "Without dealer")} value={formatInteger(summary.unavailableLeads, locale)} subtitle={ui(locale, "Separados da auditoria nominal", "Separated from named audit")} icon={<AlertTriangle className="h-4 w-4" />} accent="#f59e0b" />
+        <LeadMetricCard title="Leads em qualificação" value={formatInteger(summary.unavailableLeads, locale)} subtitle={ui(locale, "Aguardando associação a uma concessionária", "Awaiting dealer assignment")} icon={<AlertTriangle className="h-4 w-4" />} accent="#f59e0b" />
       </div>
 
       <LeadPanel
@@ -431,7 +439,7 @@ export function DealerAudit({ analytics, locale = "pt-BR" }: { analytics: LeadAn
 
         {analytics.dealerAudit.unavailable ? (
           <div className="border-b border-amber-500/15 bg-amber-500/[0.04] px-4 py-3 text-[10px] leading-5 text-amber-200/80">
-            <strong className="text-amber-300">{ui(locale, "Registros não atribuídos:", "Unassigned records:")}</strong> {formatInteger(analytics.dealerAudit.unavailable.leads, locale)} Leads ({formatNumber(analytics.dealerAudit.unavailable.sharePercent, locale)}%) {ui(locale, "permanecem como “Indisponível” e não foram associados a nenhuma concessionária.", "remain ‘Unavailable’ and were not associated with any dealer.")}
+            <strong className="text-amber-300">Leads em qualificação:</strong> {formatInteger(analytics.dealerAudit.unavailable.leads, locale)} Leads ({formatNumber(analytics.dealerAudit.unavailable.sharePercent, locale)}%) {ui(locale, "aguardam associação a uma concessionária.", "are awaiting dealer assignment.")}
           </div>
         ) : null}
 
@@ -485,7 +493,7 @@ function DealerRow({ dealer, locale }: { dealer: DealerAuditItem; locale: Locale
   );
 }
 
-function BreakdownList({ title, subtitle, items, accent, locale }: { title: string; subtitle: string; items: LeadAnalytics["models"]; accent: string; locale: Locale }) {
+function BreakdownList({ title, subtitle, items, accent, locale, formatItemLabel = formatCategoryLabel }: { title: string; subtitle: string; items: LeadAnalytics["models"]; accent: string; locale: Locale; formatItemLabel?: (value: string | null | undefined, locale: Locale) => string }) {
   const max = Math.max(...items.map(item => item.leads), 1);
   return (
     <LeadPanel title={title} subtitle={subtitle}>
@@ -493,7 +501,7 @@ function BreakdownList({ title, subtitle, items, accent, locale }: { title: stri
         {items.slice(0, 8).map(item => (
           <div key={item.value}>
             <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px]">
-              <span className="min-w-0 truncate font-medium text-slate-300" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</span>
+              <span className="min-w-0 truncate font-medium text-slate-300" title={formatItemLabel(item.value, locale)}>{formatItemLabel(item.value, locale)}</span>
               <span className="shrink-0 text-slate-500">{formatInteger(item.leads, locale)} • {formatNumber(item.sharePercent, locale)}%</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-[#172131]"><span className="block h-full rounded-full" style={{ width: `${(item.leads / max) * 100}%`, backgroundColor: accent }} /></div>
@@ -778,7 +786,7 @@ export function LeadsTab({
       <div className="grid gap-4 lg:grid-cols-3">
         <BreakdownList title={ui(locale, "Leads por modelo", "Leads by model")} subtitle={ui(locale, "Classificação preservada do CSV.", "Classification preserved from CSV.")} items={data.models} accent="#e2212d" locale={locale} />
         <BreakdownList title={ui(locale, "Leads por região", "Leads by region")} subtitle={ui(locale, "Ausências permanecem como Indisponível.", "Missing values remain Unavailable.")} items={data.regions} accent="#38bdf8" locale={locale} />
-        <BreakdownList title={ui(locale, "Top concessionárias", "Top dealers")} subtitle={ui(locale, "Prévia por volume; auditoria completa abaixo.", "Volume preview; full audit below.")} items={data.dealers} accent="#10b981" locale={locale} />
+        <BreakdownList title={ui(locale, "Top concessionárias", "Top dealers")} subtitle={ui(locale, "Prévia por volume; auditoria completa abaixo.", "Volume preview; full audit below.")} items={data.dealers} accent="#10b981" locale={locale} formatItemLabel={formatDealerLabel} />
       </div>
 
       <DealerAudit analytics={data} locale={locale} />

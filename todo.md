@@ -498,3 +498,11 @@
 - [x] Reservar espaço vertical para os rótulos sem cortar os maiores valores
 - [x] Evitar sobreposição e overflow dos totais em desktop e mobile
 - [x] Atualizar testes do gráfico e validar tipagem, suíte e build
+
+## Rótulo de Leads em qualificação
+
+- [x] Substituir `Unavailable` por `Leads em qualificação` somente nas exibições de concessionária
+- [x] Preservar a contagem, o percentual, os dados brutos e a reconciliação dos totais
+- [x] Aplicar o rótulo no ranking Top dealers e nas demais visualizações por concessionária
+- [x] Manter intactos os estados indisponíveis de outras dimensões e erros reais do sistema
+- [x] Atualizar testes e validar tipagem, suíte, build e interface mobile

@@ -8,11 +8,19 @@ import {
   LeadFilterIdentity,
   LeadsError,
   formatDailyBarTotal,
+  formatDealerLabel,
   LeadsLoading,
   resolveCsvImportPhase,
 } from "./LeadsTab";
 
 describe("interface de Leads", () => {
+  it("exibe Leads em qualificação somente para concessionárias sem identificação", () => {
+    expect(formatDealerLabel("Indisponível")).toBe("Leads em qualificação");
+    expect(formatDealerLabel("Unavailable")).toBe("Leads em qualificação");
+    expect(formatDealerLabel("  ")).toBe("Leads em qualificação");
+    expect(formatDealerLabel("BARIGUI - CURITIBA")).toBe("BARIGUI - CURITIBA");
+  });
+
   it("formata o total reconciliado exibido acima de cada barra diária", () => {
     expect(formatDailyBarTotal(265, "pt-BR")).toBe("265");
     expect(formatDailyBarTotal(1234, "pt-BR")).toBe("1.234");
