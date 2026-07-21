@@ -336,6 +336,7 @@ export const leads = mysqlTable(
       .references(() => leadImports.id, { onDelete: "restrict" }),
     sourceRowNumber: int("sourceRowNumber").notNull(),
     recordHash: varchar("recordHash", { length: 64 }).notNull(),
+    contentHash: varchar("contentHash", { length: 64 }).notNull(),
     correctedDate: date("correctedDate", { mode: "string" }).notNull(),
     correctedDateRaw: varchar("correctedDateRaw", { length: 64 }).notNull(),
     sourceDateRaw: text("sourceDateRaw").notNull(),
@@ -371,6 +372,7 @@ export const leads = mysqlTable(
   },
   table => [
     uniqueIndex("leads_record_hash_unique").on(table.recordHash),
+    uniqueIndex("leads_content_hash_unique").on(table.contentHash),
     index("leads_import_date_idx").on(table.importId, table.correctedDate),
     index("leads_date_channel_idx").on(table.correctedDate, table.channel),
     index("leads_date_model_idx").on(table.correctedDate, table.model),

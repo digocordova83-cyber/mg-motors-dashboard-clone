@@ -319,7 +319,6 @@ function parseRows(text: string): LeadRawRow[] {
 function normalizeRow(
   row: LeadRawRow,
   sourceRowNumber: number,
-  fileHash: string,
   fallbackDate: string,
 ): NormalizedLeadRecord | LeadCsvRowError {
   const missingFields = REQUIRED_LEAD_ROW_FIELDS.filter(field => !normalizeWhitespace(row[field] ?? ""));
@@ -377,7 +376,7 @@ function normalizeRow(
       correctedDate,
     ].join("\u001f"),
   );
-  const recordHash = sha256([fileHash, String(sourceRowNumber), contentHash].join("\u001f"));
+  const recordHash = contentHash;
 
   return {
     sourceRowNumber,
@@ -442,7 +441,7 @@ export function parseLeadCsv(
   let duplicateRowsWithinFile = 0;
 
   rawRows.forEach((row, index) => {
-    const normalized = normalizeRow(row, index + 2, fileHash, normalizedFallbackDate);
+    const normalized = normalizeRow(row, index + 2, normalizedFallbackDate);
     if ("message" in normalized) {
       invalidRows += 1;
       if (errors.length < 50) errors.push(normalized);
@@ -450,8 +449,11 @@ export function parseLeadCsv(
     }
     validRows += 1;
     if (!normalizeWhitespace(normalized.correctedDateRaw)) fallbackDateCount += 1;
-    if (seenContentHashes.has(normalized.contentHash)) duplicateRowsWithinFile += 1;
-    else seenContentHashes.add(normalized.contentHash);
+    if (seenContentHashes.has(normalized.contentHash)) {
+      duplicateRowsWithinFile += 1;
+      return;
+    }
+    seenContentHashes.add(normalized.contentHash);
     records.push(normalized);
   });
   const channelCounts = new Map<string, number>();

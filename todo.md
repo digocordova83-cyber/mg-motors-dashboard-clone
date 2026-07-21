@@ -515,3 +515,35 @@
 - [x] Garantir que produtos e inserções reconciliem exatamente com 10.000 Leads
 - [x] Atualizar CPLs derivados sem alterar investimentos, CPM, impressões, CTR, cliques ou visitas
 - [x] Atualizar testes e validar tipagem, suíte completa, build e interface
+
+## Limpeza de duplicidades da base de Leads
+
+- [x] Auditar a definição existente de duplicidade e os campos persistidos de Leads
+- [x] Calcular o total atual, os grupos duplicados e a quantidade exata candidata à remoção
+- [x] Preservar deterministicamente uma ocorrência por duplicidade exata
+- [x] Executar a exclusão em migração controlada e registrar o total removido
+- [x] Reconciliar o total posterior, confirmar ausência de duplicidades exatas e preservar registros apenas semelhantes
+- [x] Validar testes, tipagem, build e a contagem exibida no módulo de Leads
+- [x] Documentar a regra aplicada e informar ao usuário o resultado final
+
+## Popup de Leads por canal na auditoria de concessionárias
+
+- [x] Tornar cada concessionária da auditoria acionável por clique e teclado
+- [x] Calcular a distribuição de Leads por canal respeitando filtros, normalização e período ativos
+- [x] Exibir no popup quantidade, participação percentual e total da concessionária selecionada
+- [x] Reconciliar a soma dos canais com o total exibido para a concessionária
+- [x] Tratar concessionárias válidas e o grupo Leads em qualificação sem inventar classificações
+- [x] Implementar popup acessível, responsivo e com estados vazio/indisponível
+- [x] Atualizar testes unitários e de interface para abertura, fechamento e reconciliação
+- [x] Validar tipagem, suíte completa, build e interface em desktop/mobile
+
+## Deduplicação automática em novos uploads de Leads
+
+- [x] Definir uma identidade de conteúdo estável e independente de arquivo, importação e número da linha
+- [x] Preservar a primeira ocorrência exata e descartar repetições posteriores no mesmo CSV
+- [x] Descartar em novos uploads ocorrências exatas já presentes na base
+- [x] Registrar duplicados descartados no resumo auditável de cada importação
+- [x] Manter `rowsTotal = inseridos + descartados + inválidos` em toda importação
+- [x] Atualizar schema e migração sem perder a rastreabilidade da linha preservada
+- [x] Cobrir duplicidades internas e entre arquivos com testes determinísticos
+- [x] Validar que Leads apenas semelhantes continuam sendo importados

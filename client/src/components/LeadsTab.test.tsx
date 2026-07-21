@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   CsvImportFeedback,
   CsvPreviewSummary,
+  DealerAudit,
   LeadEmptyState,
   LeadFilterIdentity,
   LeadsError,
@@ -19,6 +20,58 @@ describe("interface de Leads", () => {
     expect(formatDealerLabel("Unavailable")).toBe("Leads em qualificação");
     expect(formatDealerLabel("  ")).toBe("Leads em qualificação");
     expect(formatDealerLabel("BARIGUI - CURITIBA")).toBe("BARIGUI - CURITIBA");
+  });
+
+  it("expõe ações acessíveis para abrir os Leads por canal de cada concessionária", () => {
+    const dealer = {
+      dealerName: "Dealer A",
+      leads: 3,
+      dailyAverage: 1,
+      sharePercent: 75,
+      channels: [
+        { value: "Site", leads: 2, dailyAverage: 0.67, sharePercent: 66.67 },
+        { value: "Meta", leads: 1, dailyAverage: 0.33, sharePercent: 33.33 },
+      ],
+      activeDays: 2,
+      inactiveDays: 1,
+      firstReceiptDate: "2026-07-01",
+      lastReceiptDate: "2026-07-03",
+      latestDayLeads: 1,
+      daysSinceLastReceipt: 0,
+      isUnavailable: false,
+      receiptStatus: "RECEIVING",
+    };
+    const unavailable = {
+      ...dealer,
+      dealerName: "Indisponível",
+      leads: 1,
+      sharePercent: 25,
+      channels: [{ value: "Meta", leads: 1, dailyAverage: 0.33, sharePercent: 100 }],
+      isUnavailable: true,
+      receiptStatus: "UNAVAILABLE",
+    };
+    const analytics = {
+      dealerAudit: {
+        summary: {
+          validDealers: 1,
+          assignedLeads: 3,
+          unavailableLeads: 1,
+          assignedSharePercent: 75,
+          dealersReceivingOnLatestDay: 1,
+          latestDay: "2026-07-03",
+        },
+        dealers: [dealer],
+        unavailable,
+        daily: [],
+      },
+    } as never;
+
+    const html = renderToStaticMarkup(<DealerAudit analytics={analytics} />);
+
+    expect(html).toContain("Ver Leads por canal de Dealer A");
+    expect(html).toContain("Ver Leads em qualificação por canal");
+    expect(html).toContain("Dealer A");
+    expect(html).toContain("Ver canais");
   });
 
   it("formata o total reconciliado exibido acima de cada barra diária", () => {
@@ -79,7 +132,7 @@ describe("interface de Leads", () => {
     const failure = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success={null} error="Arquivo inválido." />);
 
     expect(previewing).toContain("Pré-validando o arquivo CSV");
-    expect(importing).toContain("Importando todas as linhas válidas do CSV");
+    expect(importing).toContain("Importando Leads únicos e descartando duplicidades exatas");
     expect(success).toContain("Arquivo já processado");
     expect(success).toContain("nenhuma linha foi inserida novamente");
     expect(failure).toContain("Arquivo inválido");
@@ -96,7 +149,7 @@ describe("interface de Leads", () => {
       uniqueValidRows: 95,
       duplicateRowsWithinFile: 3,
       rowsAlreadyStored: 0,
-      rowsReadyToInsert: 98,
+      rowsReadyToInsert: 95,
       dateFrom: "2026-07-01",
       dateTo: "2026-07-20",
       fallbackDateUsed: "2026-07-20",
@@ -116,9 +169,10 @@ describe("interface de Leads", () => {
     expect(html).toContain("100");
     expect(html).toContain("Linhas válidas");
     expect(html).toContain("98");
-    expect(html).toContain("Repetidas (mantidas)");
+    expect(html).toContain("Duplicadas (descartadas)");
     expect(html).toContain("3");
-    expect(html).toContain("As linhas repetidas são mantidas");
+    expect(html).toContain("Duplicidades exatas serão descartadas automaticamente");
+    expect(html).toContain("primeira ocorrência válida");
     expect(html).toContain("Inválidas");
     expect(html).toContain("Linha 14");
     expect(html).toContain("Canal obrigatório ausente");

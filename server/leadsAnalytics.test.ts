@@ -132,6 +132,10 @@ describe("buildLeadAnalytics", () => {
         latestDayLeads: 1,
         daysSinceLastReceipt: 0,
         receiptStatus: "RECEIVING",
+        channels: [
+          { value: "Site", leads: 2, dailyAverage: 0.67, sharePercent: 66.67 },
+          { value: "Meta", leads: 1, dailyAverage: 0.33, sharePercent: 33.33 },
+        ],
       }),
       expect.objectContaining({
         dealerName: "Dealer B",
@@ -142,6 +146,9 @@ describe("buildLeadAnalytics", () => {
         latestDayLeads: 0,
         daysSinceLastReceipt: 1,
         receiptStatus: "NO_RECEIPT",
+        channels: [
+          { value: "Site", leads: 1, dailyAverage: 0.33, sharePercent: 100 },
+        ],
       }),
     ]);
     expect(result.dealerAudit.unavailable).toEqual(
@@ -150,6 +157,9 @@ describe("buildLeadAnalytics", () => {
         leads: 1,
         isUnavailable: true,
         receiptStatus: "UNAVAILABLE",
+        channels: [
+          { value: "Meta", leads: 1, dailyAverage: 0.33, sharePercent: 100 },
+        ],
       }),
     );
 
@@ -160,6 +170,9 @@ describe("buildLeadAnalytics", () => {
     expect(result.dealerAudit.daily.reduce((sum, point) => sum + point.leads, 0)).toBe(
       result.summary.totalLeads,
     );
+    for (const dealer of [...result.dealerAudit.dealers, result.dealerAudit.unavailable!]) {
+      expect(dealer.channels.reduce((sum, channel) => sum + channel.leads, 0)).toBe(dealer.leads);
+    }
   });
 
   it("calcula pacing mensal pelo último dia com dados do próprio mês", () => {

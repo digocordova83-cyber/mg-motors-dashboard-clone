@@ -52,7 +52,7 @@ describe("parseLeadCsv", () => {
     expect(result.records[0].rawPayload.correctedDealer).toBe("MG SUL - MATRIZ");
   });
 
-  it("preserva linhas integralmente repetidas e mantém a repetição apenas como informação", () => {
+  it("preserva a primeira ocorrência exata e descarta as repetições seguintes", () => {
     const base = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer A";
     const rerouted = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer B";
     const result = parseLeadCsv(csv(base, base, rerouted));
@@ -60,12 +60,13 @@ describe("parseLeadCsv", () => {
     expect(result.validRows).toBe(3);
     expect(result.uniqueValidRows).toBe(2);
     expect(result.duplicateRowsWithinFile).toBe(1);
-    expect(result.records.map(record => record.dealerName)).toEqual(["Dealer A", "Dealer A", "Dealer B"]);
-    expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 3);
-    expect(result.records[0].contentHash).toBe(result.records[1].contentHash);
+    expect(result.records.map(record => record.dealerName)).toEqual(["Dealer A", "Dealer B"]);
+    expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 2);
+    expect(result.records.every(record => record.recordHash === record.contentHash)).toBe(true);
+    expect(result.records[0].sourceRowNumber).toBe(2);
   });
 
-  it("preserva 99 repetições como 100 ocorrências importáveis e auditáveis", () => {
+  it("descarta 99 repetições e mantém uma ocorrência importável e auditável", () => {
     const repeated = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer A";
     const result = parseLeadCsv(csv(...Array.from({ length: 100 }, () => repeated)));
 
@@ -74,11 +75,10 @@ describe("parseLeadCsv", () => {
     expect(result.invalidRows).toBe(0);
     expect(result.uniqueValidRows).toBe(1);
     expect(result.duplicateRowsWithinFile).toBe(99);
-    expect(result.records).toHaveLength(100);
-    expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 100);
+    expect(result.records).toHaveLength(1);
+    expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 1);
     expect(new Set(result.records.map(record => record.contentHash))).toHaveProperty("size", 1);
-    expect(result.records.at(0)?.sourceRowNumber).toBe(2);
-    expect(result.records.at(-1)?.sourceRowNumber).toBe(101);
+    expect(result.records[0].sourceRowNumber).toBe(2);
   });
 
   it("contabiliza linhas sem Modelo ou Canal como inválidas", () => {
@@ -110,12 +110,13 @@ describe("parseLeadCsv", () => {
       dateFrom: "2026-07-19",
       dateTo: "2026-07-20",
     });
-    expect(result.records.slice(0, 2).map(record => record.correctedDate)).toEqual([
-      "2026-07-20",
-      "2026-07-20",
-    ]);
-    expect(result.records.slice(0, 2).map(record => record.correctedDateRaw)).toEqual(["", ""]);
-    expect(result.records.slice(0, 2).map(record => record.rawPayload.correctedDate)).toEqual(["", ""]);
+    expect(result.records).toHaveLength(2);
+    expect(result.records[0]).toMatchObject({
+      correctedDate: "2026-07-20",
+      correctedDateRaw: "",
+      sourceRowNumber: 2,
+    });
+    expect(result.records[0].rawPayload.correctedDate).toBe("");
     expect(result.duplicateRowsWithinFile).toBe(1);
   });
 

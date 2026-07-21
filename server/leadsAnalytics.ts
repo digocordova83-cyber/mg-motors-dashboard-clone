@@ -30,6 +30,7 @@ export type LeadDealerAuditItem = {
   leads: number;
   dailyAverage: number;
   sharePercent: number;
+  channels: LeadBreakdownItem[];
   activeDays: number;
   inactiveDays: number;
   firstReceiptDate: string | null;
@@ -246,14 +247,23 @@ function buildDealerAudit(
   calendarDays: number,
 ): LeadDealerAudit {
   const byDealer = new Map<string, Map<string, number>>();
+  const channelsByDealer = new Map<string, Map<string, number>>();
   for (const row of rows) {
     const dealerName = row.dealerName.trim() || LEADS_UNAVAILABLE;
+    const channel = normalizeChannel(row.channel);
     let byDate = byDealer.get(dealerName);
     if (!byDate) {
       byDate = new Map<string, number>();
       byDealer.set(dealerName, byDate);
     }
     byDate.set(row.correctedDate, (byDate.get(row.correctedDate) ?? 0) + 1);
+
+    let byChannel = channelsByDealer.get(dealerName);
+    if (!byChannel) {
+      byChannel = new Map<string, number>();
+      channelsByDealer.set(dealerName, byChannel);
+    }
+    byChannel.set(channel, (byChannel.get(channel) ?? 0) + 1);
   }
 
   const total = rows.length;
@@ -264,11 +274,20 @@ function buildDealerAudit(
       const lastReceiptDate = receiptDates.at(-1) ?? null;
       const isUnavailable = dealerName === LEADS_UNAVAILABLE;
       const latestDayLeads = byDate.get(dateTo) ?? 0;
+      const channels = sortCounts(channelsByDealer.get(dealerName) ?? new Map()).map(
+        ([value, channelLeads]): LeadBreakdownItem => ({
+          value,
+          leads: channelLeads,
+          dailyAverage: round(channelLeads / calendarDays),
+          sharePercent: leads ? round((channelLeads / leads) * 100) : 0,
+        }),
+      );
       return {
         dealerName,
         leads,
         dailyAverage: round(leads / calendarDays),
         sharePercent: total ? round((leads / total) * 100) : 0,
+        channels,
         activeDays: receiptDates.length,
         inactiveDays: Math.max(0, calendarDays - receiptDates.length),
         firstReceiptDate: receiptDates.at(0) ?? null,

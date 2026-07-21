@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { leadImports, leads, type LeadImport } from "../drizzle/schema";
 import { getDb } from "./db";
 import {
@@ -96,16 +96,16 @@ async function findImportByHash(fileHash: string): Promise<LeadImport | null> {
   return record ?? null;
 }
 
-async function countExistingRecords(recordHashes: string[]): Promise<number> {
+async function countExistingRecords(contentHashes: string[]): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   let total = 0;
-  for (const hashChunk of chunk(recordHashes, QUERY_CHUNK_SIZE)) {
+  for (const hashChunk of chunk(contentHashes, QUERY_CHUNK_SIZE)) {
     if (!hashChunk.length) continue;
     const rows = await db
-      .select({ recordHash: leads.recordHash })
+      .select({ contentHash: leads.contentHash })
       .from(leads)
-      .where(inArray(leads.recordHash, hashChunk));
+      .where(inArray(leads.contentHash, hashChunk));
     total += rows.length;
   }
   return total;
@@ -129,7 +129,7 @@ function buildPreview(
     uniqueValidRows: parsed.uniqueValidRows,
     duplicateRowsWithinFile: parsed.duplicateRowsWithinFile,
     rowsAlreadyStored,
-    rowsReadyToInsert: Math.max(0, parsed.validRows - rowsAlreadyStored),
+    rowsReadyToInsert: Math.max(0, parsed.uniqueValidRows - rowsAlreadyStored),
     dateFrom: parsed.dateFrom,
     dateTo: parsed.dateTo,
     channels: parsed.channels,
@@ -137,7 +137,7 @@ function buildPreview(
     regions: parsed.regions,
     errors: parsed.errors,
     alreadyImported:
-      existingImport?.status === "COMPLETED" && rowsAlreadyStored === parsed.validRows,
+      existingImport?.status === "COMPLETED" && rowsAlreadyStored === parsed.uniqueValidRows,
     existingImport,
   };
 }
@@ -152,9 +152,9 @@ export async function previewLeadCsv(input: {
   const fallbackDate =
     existingImport?.fallbackDateUsed ?? input.fallbackDate ?? getYesterdayInSaoPaulo();
   const parsed = parseLeadCsv(input.bytes, fallbackDate);
-  const rowsAlreadyStored = await countExistingRecords(
-    parsed.records.map(record => record.recordHash),
-  );
+  const rowsAlreadyStored = existingImport
+    ? await countExistingRecords(parsed.records.map(record => record.contentHash))
+    : 0;
   return buildPreview(parsed, fileName, rowsAlreadyStored, existingImport);
 }
 
@@ -249,12 +249,14 @@ export async function importLeadCsv(input: {
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
 
-  const rowsAlreadyStored = await countExistingRecords(parsed.records.map(record => record.recordHash));
+  const rowsAlreadyStored = existingImport
+    ? await countExistingRecords(parsed.records.map(record => record.contentHash))
+    : 0;
   const preview = buildPreview(parsed, fileName, rowsAlreadyStored, existingImport);
 
   if (
     existingImport?.status === "COMPLETED" &&
-    rowsAlreadyStored === parsed.validRows
+    rowsAlreadyStored === parsed.uniqueValidRows
   ) {
     return {
       ...preview,
@@ -292,9 +294,9 @@ export async function importLeadCsv(input: {
     const now = Date.now();
 
     const result = await db.transaction(async tx => {
-      if (existingImport) {
-        await tx.delete(leads).where(eq(leads.importId, importId));
-      }
+      // Cada upload confirmado substitui a base consolidada. A exclusão ocorre
+      // dentro da mesma transação: qualquer falha restaura integralmente a base anterior.
+      await tx.delete(leads);
 
       for (const recordsChunk of chunk(parsed.records, INSERT_CHUNK_SIZE)) {
         await tx
@@ -305,6 +307,7 @@ export async function importLeadCsv(input: {
               importId,
               sourceRowNumber: record.sourceRowNumber,
               recordHash: record.recordHash,
+              contentHash: record.contentHash,
               correctedDate: record.correctedDate,
               correctedDateRaw: record.correctedDateRaw,
               sourceDateRaw: record.sourceDateRaw,
@@ -332,17 +335,12 @@ export async function importLeadCsv(input: {
         .from(leads)
         .where(eq(leads.importId, importId));
       const rowsInserted = insertedRows.length;
-      if (rowsInserted !== parsed.validRows) {
+      if (rowsInserted !== parsed.uniqueValidRows) {
         throw new Error(
-          `Falha de integridade: eram esperadas ${parsed.validRows} inserções válidas, mas somente ${rowsInserted} foram confirmadas.`,
+          `Falha de integridade: eram esperadas ${parsed.uniqueValidRows} identidades únicas, mas somente ${rowsInserted} foram confirmadas.`,
         );
       }
       const rowsSkipped = parsed.validRows - rowsInserted;
-
-      // O CSV recebido é uma base consolidada completa. A base anterior só é
-      // removida após a confirmação integral do novo lote, dentro da mesma
-      // transação, para que qualquer falha preserve todos os dados anteriores.
-      await tx.delete(leads).where(ne(leads.importId, importId));
 
       await tx
         .update(leadImports)

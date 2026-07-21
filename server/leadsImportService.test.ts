@@ -36,7 +36,7 @@ describe("serviço de importação de Leads", () => {
     const txDeleteWhere = vi.fn().mockResolvedValue(undefined);
     const txDelete = vi.fn().mockReturnValue({ where: txDeleteWhere });
     const txSelect = vi.fn().mockReturnValue({
-      from: () => ({ where: async () => [{ id: 101 }, { id: 102 }, { id: 103 }] }),
+      from: () => ({ where: async () => [{ id: 101 }, { id: 102 }] }),
     });
     const transaction = vi.fn(async callback => callback({
       insert: txInsert,
@@ -47,7 +47,6 @@ describe("serviço de importação de Leads", () => {
     const select = vi
       .fn()
       .mockReturnValueOnce({ from: () => ({ where: () => ({ limit: async () => [] }) }) })
-      .mockReturnValueOnce({ from: () => ({ where: async () => [] }) })
       .mockReturnValueOnce({ from: () => ({ where: () => ({ limit: async () => [{ id: 7 }] }) }) });
 
     getDbMock.mockResolvedValue({ select, insert: leadImportInsert, transaction });
@@ -65,8 +64,8 @@ describe("serviço de importação de Leads", () => {
 
     expect(result.idempotent).toBe(false);
     expect(result.importId).toBe(7);
-    expect(result.rowsInserted).toBe(3);
-    expect(result.rowsSkipped).toBe(0);
+    expect(result.rowsInserted).toBe(2);
+    expect(result.rowsSkipped).toBe(1);
     expect(result.rowsInvalid).toBe(0);
     expect(result.fallbackDateUsed).toBe("2026-07-20");
     expect(result.fallbackDateCount).toBe(1);
@@ -95,13 +94,16 @@ describe("serviço de importação de Leads", () => {
       }),
     ]));
     const insertedRecords = leadValues.mock.calls.flatMap(([records]) => records);
-    expect(insertedRecords).toHaveLength(3);
-    expect(new Set(insertedRecords.map(record => record.recordHash))).toHaveProperty("size", 3);
-    expect(txDeleteWhere).toHaveBeenCalledOnce();
+    expect(insertedRecords).toHaveLength(2);
+    expect(new Set(insertedRecords.map(record => record.recordHash))).toHaveProperty("size", 2);
+    expect(new Set(insertedRecords.map(record => record.contentHash))).toHaveProperty("size", 2);
+    expect(insertedRecords.every(record => record.recordHash === record.contentHash)).toBe(true);
+    expect(txDelete).toHaveBeenCalledOnce();
+    expect(txDeleteWhere).not.toHaveBeenCalled();
     expect(txUpdateSet).toHaveBeenCalledWith(expect.objectContaining({
       status: "COMPLETED",
-      rowsInserted: 3,
-      rowsSkipped: 0,
+      rowsInserted: 2,
+      rowsSkipped: 1,
       rowsInvalid: 0,
       fallbackDateUsed: "2026-07-20",
       fallbackDateCount: 1,
@@ -140,8 +142,8 @@ describe("serviço de importação de Leads", () => {
       fileUrl: "https://storage.example/leads-julho.csv",
       status: "COMPLETED" as const,
       rowsTotal: 3,
-      rowsInserted: 3,
-      rowsSkipped: 0,
+      rowsInserted: 2,
+      rowsSkipped: 1,
       rowsInvalid: 0,
       fallbackDateUsed: "2026-07-20",
       fallbackDateCount: 1,
@@ -161,9 +163,8 @@ describe("serviço de importação de Leads", () => {
       .mockReturnValueOnce({
         from: () => ({
           where: async () => [
-            { recordHash: "linha-2" },
-            { recordHash: "linha-3" },
-            { recordHash: "linha-4" },
+            { contentHash: "lead-unico-1" },
+            { contentHash: "lead-unico-2" },
           ],
         }),
       });
@@ -188,7 +189,7 @@ describe("serviço de importação de Leads", () => {
     expect(storagePutMock).not.toHaveBeenCalled();
   });
 
-  it("preserva a base anterior quando a contagem inserida diverge do CSV", async () => {
+  it("preserva a base anterior quando a contagem inserida diverge das identidades únicas", async () => {
     const leadImportValues = vi.fn().mockResolvedValue(undefined);
     const leadImportInsert = vi.fn().mockReturnValue({ values: leadImportValues });
     const leadValues = vi.fn().mockResolvedValue(undefined);
@@ -196,7 +197,7 @@ describe("serviço de importação de Leads", () => {
     const txDeleteWhere = vi.fn().mockResolvedValue(undefined);
     const txDelete = vi.fn().mockReturnValue({ where: txDeleteWhere });
     const txSelect = vi.fn().mockReturnValue({
-      from: () => ({ where: async () => [{ id: 101 }, { id: 102 }] }),
+      from: () => ({ where: async () => [{ id: 101 }] }),
     });
     const transaction = vi.fn(async callback => callback({
       insert: txInsert,
@@ -207,7 +208,6 @@ describe("serviço de importação de Leads", () => {
     const select = vi
       .fn()
       .mockReturnValueOnce({ from: () => ({ where: () => ({ limit: async () => [] }) }) })
-      .mockReturnValueOnce({ from: () => ({ where: async () => [] }) })
       .mockReturnValueOnce({ from: () => ({ where: () => ({ limit: async () => [{ id: 9 }] }) }) });
     const failedWhere = vi.fn().mockResolvedValue(undefined);
     const failedSet = vi.fn().mockReturnValue({ where: failedWhere });
@@ -225,6 +225,7 @@ describe("serviço de importação de Leads", () => {
       actor: "auditor",
     })).rejects.toThrow(/Falha de integridade/);
 
+    expect(txDelete).toHaveBeenCalledOnce();
     expect(txDeleteWhere).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledOnce();
   });

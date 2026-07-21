@@ -260,7 +260,7 @@ export function CsvImportFeedback({
 }) {
   const phase = resolveCsvImportPhase({ isPreviewing, isImporting, hasPreview, success, error });
   if (phase === "IMPORTING") {
-    return <div role="status" className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-xs text-sky-200"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Importando todas as linhas válidas do CSV...</div>;
+    return <div role="status" className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-xs text-sky-200"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Importando Leads únicos e descartando duplicidades exatas...</div>;
   }
   if (phase === "PREVIEWING") {
     return <div role="status" className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-xs text-sky-200"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Pré-validando o arquivo CSV...</div>;
@@ -292,7 +292,7 @@ export function CsvPreviewSummary({
         {[
           ["Linhas lidas", preview.rowsTotal, "text-white"],
           ["Linhas válidas", preview.validRows, "text-emerald-300"],
-          ["Repetidas (mantidas)", preview.duplicateRowsWithinFile, "text-amber-300"],
+          ["Duplicadas (descartadas)", preview.duplicateRowsWithinFile, "text-amber-300"],
           ["Inválidas", preview.invalidRows, "text-red-300"],
         ].map(([label, value, tone]) => (
           <div key={String(label)} className="rounded-lg border border-[#202b3d] bg-[#101827] p-3">
@@ -301,7 +301,7 @@ export function CsvPreviewSummary({
           </div>
         ))}
       </div>
-      <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-[11px] leading-5 text-amber-100">As linhas repetidas são mantidas e importadas como ocorrências do arquivo. O hash do arquivo impede apenas o reprocessamento integral do mesmo CSV.</div>
+      <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-[11px] leading-5 text-amber-100">Duplicidades exatas serão descartadas automaticamente. A primeira ocorrência válida de cada Lead será preservada, e a quantidade ignorada ficará registrada no histórico da importação.</div>
       {preview.fallbackDateCount > 0 ? (
         <div data-testid="lead-date-fallback-notice" className="rounded-lg border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-[11px] leading-5 text-sky-100">
           {ui(
@@ -398,6 +398,7 @@ function GoalDialog({
 export function DealerAudit({ analytics, locale = "pt-BR" }: { analytics: LeadAnalytics; locale?: Locale }) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<DealerSort>("leads");
+  const [selectedDealer, setSelectedDealer] = useState<DealerAuditItem | null>(null);
   const visibleDealers = useMemo(() => {
     const query = search.trim().toLocaleLowerCase(locale);
     const rows = analytics.dealerAudit.dealers.filter(item => !query || item.dealerName.toLocaleLowerCase(locale).includes(query));
@@ -438,9 +439,15 @@ export function DealerAudit({ analytics, locale = "pt-BR" }: { analytics: LeadAn
         </div>
 
         {analytics.dealerAudit.unavailable ? (
-          <div className="border-b border-amber-500/15 bg-amber-500/[0.04] px-4 py-3 text-[10px] leading-5 text-amber-200/80">
-            <strong className="text-amber-300">Leads em qualificação:</strong> {formatInteger(analytics.dealerAudit.unavailable.leads, locale)} Leads ({formatNumber(analytics.dealerAudit.unavailable.sharePercent, locale)}%) {ui(locale, "aguardam associação a uma concessionária.", "are awaiting dealer assignment.")}
-          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedDealer(analytics.dealerAudit.unavailable)}
+            className="flex w-full items-center justify-between gap-4 border-b border-amber-500/15 bg-amber-500/[0.04] px-4 py-3 text-left text-[10px] leading-5 text-amber-200/80 transition-colors hover:bg-amber-500/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400/60"
+            aria-label={ui(locale, "Ver Leads em qualificação por canal", "View qualifying Leads by channel")}
+          >
+            <span><strong className="text-amber-300">Leads em qualificação:</strong> {formatInteger(analytics.dealerAudit.unavailable.leads, locale)} Leads ({formatNumber(analytics.dealerAudit.unavailable.sharePercent, locale)}%) {ui(locale, "aguardam associação a uma concessionária.", "are awaiting dealer assignment.")}</span>
+            <span className="inline-flex shrink-0 items-center gap-1.5 font-semibold text-amber-300"><BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />{ui(locale, "Ver canais", "View channels")}</span>
+          </button>
         ) : null}
 
         <div className="max-w-full overflow-x-auto">
@@ -460,22 +467,40 @@ export function DealerAudit({ analytics, locale = "pt-BR" }: { analytics: LeadAn
             </thead>
             <tbody className="divide-y divide-[#172131]">
               {visibleDealers.map(dealer => (
-                <DealerRow key={dealer.dealerName} dealer={dealer} locale={locale} />
+                <DealerRow key={dealer.dealerName} dealer={dealer} locale={locale} onSelect={setSelectedDealer} />
               ))}
             </tbody>
           </table>
           {!visibleDealers.length ? <LeadEmptyState title={ui(locale, "Nenhuma concessionária encontrada", "No dealer found")} description={ui(locale, "Ajuste a busca para voltar à lista auditável.", "Adjust the search to return to the auditable list.")} /> : null}
         </div>
       </LeadPanel>
+      <DealerChannelDialog
+        dealer={selectedDealer}
+        open={selectedDealer !== null}
+        onOpenChange={open => {
+          if (!open) setSelectedDealer(null);
+        }}
+        locale={locale}
+      />
     </div>
   );
 }
 
-function DealerRow({ dealer, locale }: { dealer: DealerAuditItem; locale: Locale }) {
+function DealerRow({ dealer, locale, onSelect }: { dealer: DealerAuditItem; locale: Locale; onSelect: (dealer: DealerAuditItem) => void }) {
   const receiving = dealer.receiptStatus === "RECEIVING";
   return (
     <tr className="text-[10px] transition-colors hover:bg-white/[0.025]">
-      <td className="px-4 py-3"><span className="font-medium text-slate-200">{dealer.dealerName}</span></td>
+      <td className="px-4 py-2">
+        <button
+          type="button"
+          onClick={() => onSelect(dealer)}
+          className="group inline-flex max-w-full items-center gap-2 rounded-md px-2 py-1.5 text-left font-medium text-slate-200 transition-colors hover:bg-sky-400/10 hover:text-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70"
+          aria-label={ui(locale, `Ver Leads por canal de ${dealer.dealerName}`, `View Leads by channel for ${dealer.dealerName}`)}
+        >
+          <span className="truncate">{dealer.dealerName}</span>
+          <BarChart3 className="h-3.5 w-3.5 shrink-0 text-slate-600 transition-colors group-hover:text-sky-300" aria-hidden="true" />
+        </button>
+      </td>
       <td className="px-3 py-3 text-right font-semibold text-white">{formatInteger(dealer.leads, locale)}</td>
       <td className="px-3 py-3 text-right text-slate-400">{formatNumber(dealer.sharePercent, locale)}%</td>
       <td className="px-3 py-3 text-right text-slate-400">{formatNumber(dealer.dailyAverage, locale)}</td>
@@ -490,6 +515,82 @@ function DealerRow({ dealer, locale }: { dealer: DealerAuditItem; locale: Locale
         </span>
       </td>
     </tr>
+  );
+}
+
+function DealerChannelDialog({
+  dealer,
+  open,
+  onOpenChange,
+  locale,
+}: {
+  dealer: DealerAuditItem | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  locale: Locale;
+}) {
+  const channels = dealer?.channels ?? [];
+  const channelTotal = channels.reduce((sum, channel) => sum + channel.leads, 0);
+  const maxChannelLeads = Math.max(...channels.map(channel => channel.leads), 1);
+  const reconciled = dealer ? channelTotal === dealer.leads : true;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[88vh] max-w-xl overflow-hidden border-[#263247] bg-[#0d1522] p-0 text-white shadow-2xl">
+        <DialogHeader className="border-b border-[#1b2535] px-5 pb-4 pt-5 text-left">
+          <div className="mb-2 inline-flex w-fit items-center gap-2 rounded-full border border-sky-400/15 bg-sky-400/[0.07] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-sky-300">
+            <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
+            {ui(locale, "Distribuição por canal", "Channel distribution")}
+          </div>
+          <DialogTitle className="break-words pr-8 text-lg text-white">{dealer ? formatDealerLabel(dealer.dealerName) : ui(locale, "Concessionária", "Dealer")}</DialogTitle>
+          <DialogDescription className="text-[11px] leading-5 text-slate-500">
+            {ui(locale, "Quantidade e participação dos Leads por canal no período filtrado.", "Lead volume and share by channel for the filtered period.")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-3 border-b border-[#1b2535] bg-[#0a111d]/60 p-4">
+          <div className="rounded-lg border border-[#202b3d] bg-[#101827] p-3">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">{ui(locale, "Total da concessionária", "Dealer total")}</p>
+            <p className="mt-1 text-xl font-semibold text-white">{formatInteger(dealer?.leads ?? 0, locale)}</p>
+          </div>
+          <div className="rounded-lg border border-[#202b3d] bg-[#101827] p-3">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">{ui(locale, "Canais com Leads", "Channels with Leads")}</p>
+            <p className="mt-1 text-xl font-semibold text-sky-300">{formatInteger(channels.length, locale)}</p>
+          </div>
+        </div>
+
+        <div className="max-h-[48vh] overflow-y-auto p-4">
+          {channels.length ? (
+            <div className="space-y-3" role="list" aria-label={ui(locale, "Leads por canal", "Leads by channel")}>
+              {channels.map((channel, index) => (
+                <div key={channel.value} role="listitem" className="rounded-lg border border-[#1d2839] bg-[#101827] p-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-200" title={formatCategoryLabel(channel.value, locale)}>{formatCategoryLabel(channel.value, locale)}</p>
+                      <p className="mt-1 text-[9px] text-slate-600">{formatNumber(channel.sharePercent, locale)}% {ui(locale, "dos Leads desta concessionária", "of this dealer's Leads")}</p>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold text-white">{formatInteger(channel.leads, locale)}</p>
+                  </div>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#172131]">
+                    <span
+                      className="block h-full rounded-full"
+                      style={{ width: `${(channel.leads / maxChannelLeads) * 100}%`, backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <LeadEmptyState title={ui(locale, "Sem canais no período", "No channels in this period")} description={ui(locale, "Não há Leads classificados por canal para esta concessionária.", "There are no Leads classified by channel for this dealer.")} />
+          )}
+        </div>
+
+        <div className={`flex items-center justify-between gap-4 border-t px-5 py-3 text-[10px] ${reconciled ? "border-emerald-500/15 bg-emerald-500/[0.04] text-emerald-300" : "border-red-500/20 bg-red-500/[0.05] text-red-300"}`}>
+          <span>{ui(locale, "Total reconciliado", "Reconciled total")}</span>
+          <strong>{formatInteger(channelTotal, locale)} {ui(locale, "de", "of")} {formatInteger(dealer?.leads ?? 0, locale)} Leads</strong>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
