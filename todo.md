@@ -656,12 +656,12 @@
 
 ## Reconciliação Meta Ads × base de Leads
 
-- [ ] Confirmar o mesmo período D-1 nos dois totais comparados
-- [ ] Consultar o total Meta Ads pela conexão nativa e o total equivalente na base
-- [ ] Isolar os 20 Leads de diferença por data, campanha, canal e regra de atribuição
-- [ ] Verificar obrigatoriamente a inclusão do canal/campanha `Site`
-- [ ] Documentar a causa exata sem alterar números antes da comprovação
-- [ ] Corrigir o painel somente se a reconciliação demonstrar erro de regra ou filtro
+- [x] Confirmar o mesmo período D-1 nos dois totais comparados
+- [x] Consultar o total Meta Ads pela conexão nativa e o total equivalente na base
+- [x] Isolar os 20 Leads de diferença por data, campanha, canal e regra de atribuição
+- [x] Verificar obrigatoriamente a inclusão do canal/campanha `Site`
+- [x] Documentar a causa exata sem alterar números antes da comprovação
+- [x] Corrigir o painel somente se a reconciliação demonstrar erro de regra ou filtro
 
 ## Redistribuição da meta para 10.000 Leads na planilha de mídia
 
