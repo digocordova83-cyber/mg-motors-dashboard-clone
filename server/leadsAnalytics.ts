@@ -1,4 +1,4 @@
-import { canonicalizeDealerName } from "./dealerNormalization";
+import { canonicalizeDealerForAnalytics } from "./dealerNormalization";
 
 export const LEADS_UNAVAILABLE = "Indisponível";
 export const LEAD_CHANNEL_UPDATE_EXCLUSIONS = ["Campanha Urban"] as const;
@@ -410,7 +410,7 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
     .filter(row => row.correctedDate >= input.dateFrom && row.correctedDate <= input.dateTo)
     .map(row => ({
       ...row,
-      dealerName: canonicalizeDealerName(row.dealerName),
+      dealerName: canonicalizeDealerForAnalytics(row.dealerName),
     }));
   const channels = buildBreakdown(rows, row => row.channel, calendarDays);
   const dealers = buildBreakdown(rows, row => row.dealerName, calendarDays);

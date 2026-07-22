@@ -88,9 +88,30 @@ function formatCategoryLabel(value: string | null | undefined, locale: Locale) {
   return value;
 }
 
+const DEALER_QUALIFICATION_LABELS = new Set([
+  "indisponível",
+  "indisponivel",
+  "unavailable",
+  "outro",
+  "outros",
+  "other",
+  "others",
+  "n/a",
+  "na",
+  "não informado",
+  "nao informado",
+  "sem concessionária",
+  "sem concessionaria",
+  "sem dealer",
+  "nenhum",
+  "none",
+  "a definir",
+  "a confirmar",
+]);
+
 export function formatDealerLabel(value: string | null | undefined) {
   const normalized = value?.trim().toLocaleLowerCase("pt-BR");
-  if (!normalized || normalized === "indisponível" || normalized === "unavailable") {
+  if (!normalized || DEALER_QUALIFICATION_LABELS.has(normalized)) {
     return "Leads em qualificação";
   }
   return value!.trim();

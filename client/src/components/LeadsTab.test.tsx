@@ -15,10 +15,10 @@ import {
 } from "./LeadsTab";
 
 describe("interface de Leads", () => {
-  it("exibe Leads em qualificação somente para concessionárias sem identificação", () => {
-    expect(formatDealerLabel("Indisponível")).toBe("Leads em qualificação");
-    expect(formatDealerLabel("Unavailable")).toBe("Leads em qualificação");
-    expect(formatDealerLabel("  ")).toBe("Leads em qualificação");
+  it("exibe Leads em qualificação para concessionárias sem identificação e placeholders", () => {
+    for (const value of ["Indisponível", "Unavailable", "Outros", "Outro", "N/A", "Não informado", "Sem concessionária", "  "]) {
+      expect(formatDealerLabel(value)).toBe("Leads em qualificação");
+    }
     expect(formatDealerLabel("BARIGUI - CURITIBA")).toBe("BARIGUI - CURITIBA");
   });
 

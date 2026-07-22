@@ -627,3 +627,12 @@
 - [x] Prioridade urgente: unificar todos os valores exibidos em Leads usando o mesmo corte D-1
 - [x] Validar que resumo, gráficos, tabelas, auditoria, pacing e alerta de canais retornam o mesmo universo de Leads
 - [x] Preparar checkpoint validado para publicação imediata antes da reunião do cliente
+
+## Agrupamento integral de Leads sem concessionária
+
+- [x] Auditar todos os valores atuais que não representam uma concessionária válida
+- [x] Reclassificar `Outros`, vazios, indisponíveis e placeholders como `Leads em qualificação`
+- [x] Preservar o valor original da planilha para auditoria sem exibi-lo como concessionária válida
+- [x] Reconciliar ranking, resumo, auditoria, popup por canal e total geral após o agrupamento
+- [x] Atualizar testes e validar tipagem, suíte completa, build e interface
+- [x] Salvar checkpoint da versão com o agrupamento corrigido

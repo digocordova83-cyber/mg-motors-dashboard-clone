@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  canonicalizeDealerForAnalytics,
   canonicalizeDealerName,
   getDealerMappingStats,
+  isDealerQualificationPlaceholder,
   isExplicitDealerAlias,
   normalizeDealerLookupKey,
 } from "./dealerNormalization";
@@ -19,6 +21,16 @@ describe("dealer normalization", () => {
 
   it("preserva grafias desconhecidas sem agrupamento por aproximação", () => {
     expect(canonicalizeDealerName("Nova Concessionária Experimental")).toBe("Nova Concessionária Experimental");
+    expect(canonicalizeDealerForAnalytics("Nova Concessionária Experimental")).toBe("Nova Concessionária Experimental");
+  });
+
+  it("agrupa Outros, vazios e placeholders como Leads em qualificação sem alterar nomes válidos", () => {
+    for (const value of ["Outros", "Outro", "Unavailable", "Indisponível", "N/A", "Não informado", "Sem concessionária", "  "]) {
+      expect(isDealerQualificationPlaceholder(value)).toBe(true);
+      expect(canonicalizeDealerForAnalytics(value)).toBe("Indisponível");
+    }
+    expect(isDealerQualificationPlaceholder("BARIGUI - CURITIBA")).toBe(false);
+    expect(canonicalizeDealerForAnalytics("BARIGUI - CURITIBA")).toBe("BARIGUI - CURITIBA");
   });
 
   it("expõe a procedência e a cobertura validada da nova planilha de origem", () => {
@@ -34,11 +46,13 @@ describe("dealer normalization", () => {
     expect(stats.sourceModifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  it("consolida aliases antes da auditoria sem alterar o total geral ou os dados de origem", () => {
+  it("consolida placeholders e aliases antes da auditoria sem alterar o total geral ou os dados de origem", () => {
     const rows: LeadAnalyticsRow[] = [
       { correctedDate: "2026-07-01", channel: "Google", model: "MG4", region: "Sul", dealerName: "Barigui Curitiba" },
       { correctedDate: "2026-07-01", channel: "Meta", model: "MG4", region: "Sul", dealerName: "BARIGUI CURITIBA" },
       { correctedDate: "2026-07-02", channel: "Google", model: "MGS5", region: "Sul", dealerName: "Barigui Curitiba - 3964357" },
+      { correctedDate: "2026-07-02", channel: "Meta", model: "MGS5", region: "Sul", dealerName: "Outros" },
+      { correctedDate: "2026-07-02", channel: "Site", model: "MGS5", region: "Sul", dealerName: "Unavailable" },
     ];
 
     const analytics = buildLeadAnalytics({
@@ -50,16 +64,25 @@ describe("dealer normalization", () => {
       goal: null,
     });
 
-    expect(analytics.summary.totalLeads).toBe(3);
+    expect(analytics.summary.totalLeads).toBe(5);
     expect(analytics.dealers).toEqual([
-      { value: "BARIGUI - CURITIBA", leads: 3, dailyAverage: 1.5, sharePercent: 100 },
+      { value: "BARIGUI - CURITIBA", leads: 3, dailyAverage: 1.5, sharePercent: 60 },
+      { value: "Indisponível", leads: 2, dailyAverage: 1, sharePercent: 40 },
     ]);
     expect(analytics.dealerAudit.dealers).toHaveLength(1);
     expect(analytics.dealerAudit.dealers[0]).toMatchObject({ dealerName: "BARIGUI - CURITIBA", leads: 3 });
+    expect(analytics.dealerAudit.unavailable).toMatchObject({
+      dealerName: "Indisponível",
+      leads: 2,
+      isUnavailable: true,
+    });
+    expect(analytics.dealerAudit.summary).toMatchObject({ assignedLeads: 3, unavailableLeads: 2 });
     expect(rows.map(row => row.dealerName)).toEqual([
       "Barigui Curitiba",
       "BARIGUI CURITIBA",
       "Barigui Curitiba - 3964357",
+      "Outros",
+      "Unavailable",
     ]);
   });
 });

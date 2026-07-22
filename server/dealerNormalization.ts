@@ -35,10 +35,41 @@ for (const mapping of mappingSource.mappings) {
   canonicalByAlias.set(mapping.sourceKey, mapping.canonical);
 }
 
+const DEALER_QUALIFICATION_KEYS = new Set([
+  "INDISPONIVEL",
+  "UNAVAILABLE",
+  "OUTRO",
+  "OUTROS",
+  "OTHER",
+  "OTHERS",
+  "N A",
+  "NA",
+  "NOT AVAILABLE",
+  "NAO INFORMADO",
+  "NAO SE APLICA",
+  "SEM CONCESSIONARIA",
+  "SEM DEALER",
+  "DEALER INDISPONIVEL",
+  "NENHUM",
+  "NONE",
+  "A DEFINIR",
+  "A CONFIRMAR",
+]);
+
+export function isDealerQualificationPlaceholder(value: string): boolean {
+  const key = normalizeDealerLookupKey(value);
+  return key.length === 0 || DEALER_QUALIFICATION_KEYS.has(key);
+}
+
 export function canonicalizeDealerName(value: string): string {
   const original = value.trim();
   if (!original) return original;
   return canonicalByAlias.get(normalizeDealerLookupKey(original)) ?? original;
+}
+
+export function canonicalizeDealerForAnalytics(value: string): string {
+  if (isDealerQualificationPlaceholder(value)) return "Indisponível";
+  return canonicalizeDealerName(value);
 }
 
 export function isExplicitDealerAlias(value: string): boolean {
