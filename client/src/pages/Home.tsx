@@ -1437,7 +1437,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
             <div>
               <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">{isLeads ? <UsersRound className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}{isLeads ? ui(locale, "Base Comercial", "Sales Database") : "Google Ads"}</div>
               <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{isLeads ? ui(locale, "Gestão e Auditoria de Leads", "Lead Management and Audit") : ui(locale, "Performance de Mídia", "Media Performance")}</h1>
-              <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(activeDateFrom, locale)} {ui(locale, "a", "to")} {formatLongDate(activeDateTo, locale)}</p>
+              <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(activeDateFrom, locale)} {ui(locale, "a", "to")} {formatLongDate(activeDateTo, locale)} • {ui(locale, "Corte D-1", "D-1 cutoff")}: {formatLongDate(DATA_END, locale)}</p>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -1473,7 +1473,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
 
               {isGoogleAds && data ? (
                 <div className="hidden text-right 2xl:block">
-                  <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? ui(locale, "Windsor.ai atualizado", "Windsor.ai updated") : ui(locale, "Windsor.ai • snapshot validado", "Windsor.ai • validated snapshot")}</div>
+                  <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? ui(locale, "Windsor.ai atualizado", "Windsor.ai updated") : ui(locale, "Windsor.ai • snapshot validado", "Windsor.ai • validated snapshot")} • D-1 {formatLongDate(data.metadata.lastClosedDate ?? DATA_END, locale)}</div>
                   <p className="mt-1 text-[9px] text-slate-700">{formatNumber(data.metadata.campaignCount, locale)} {ui(locale, "campanhas", "campaigns")} • {formatNumber(data.metadata.rowCount, locale)} {ui(locale, "registros", "records")} {data.metadata.cacheHit ? "• cache" : ""}</p>
                 </div>
               ) : null}

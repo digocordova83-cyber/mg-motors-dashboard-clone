@@ -601,26 +601,28 @@
 
 ## Reconciliação Total de Leads 8.099 × Atual/Meta 8.081
 
-- [ ] Consultar os volumes acumulados até 22/07 e até 23/07/2026
-- [ ] Confirmar quantos Leads pertencem exclusivamente ao dia 23/07/2026
-- [ ] Validar que o card Total de Leads inclui 23 dias do período
-- [ ] Validar que o pacing considera somente dias fechados até 22/07/2026
-- [ ] Reconciliar matematicamente a diferença de 18 Leads
-- [ ] Informar a causa sem modificar dados ou regras do dashboard
+- [x] Consultar os volumes acumulados até 22/07 e até 23/07/2026
+- [x] Confirmar quantos Leads pertencem exclusivamente ao dia 23/07/2026
+- [x] Validar que o card Total de Leads inclui 23 dias do período
+- [x] Validar que o pacing considera somente dias fechados até 22/07/2026
+- [x] Reconciliar matematicamente a diferença de 18 Leads
+- [x] Informar a causa sem modificar dados ou regras do dashboard
+
+> Reconciliação verificada em 22/07/2026: 8.080 Leads até 21/07, 8.081 até 22/07, 8.081 até 23/07, 1 Lead exclusivo em 22/07 e 0 em 23/07. A diferença histórica de 18 vinha da inclusão de 30/06 no card, enquanto o pacing era mensal desde 01/07.
 
 ## Regra global D-1 em todo o dashboard
 
-- [ ] Auditar todos os usos de data atual, data máxima, filtros padrão e períodos enviados ao backend
-- [ ] Centralizar o cálculo de ontem no fuso `America/Sao_Paulo`
-- [ ] Permitir armazenamento e importação de dados do dia atual sem exibi-los no mesmo dia
-- [ ] Limitar Total de Leads, médias, canais, modelos, regiões, concessionárias e série diária até D-1
-- [ ] Limitar pacing, metas e projeções a dias fechados até D-1
-- [ ] Fazer o aviso de canais sem Leads verificar sempre D-1, mesmo quando todos estejam zerados
-- [ ] Aplicar o mesmo limite a Google Ads, Meta Ads e demais módulos temporais
-- [ ] Impedir que filtros padrão ou personalizados ultrapassem D-1 nas consultas do dashboard
-- [ ] Atualizar textos de período e estado de atualização para mostrar explicitamente a data de D-1
-- [ ] Cobrir cenários com dados no dia atual, com dados ontem e sem dados ontem
-- [ ] Validar tipagem, suíte completa, build e interface desktop/mobile
+- [x] Auditar todos os usos de data atual, data máxima, filtros padrão e períodos enviados ao backend
+- [x] Centralizar o cálculo de ontem no fuso `America/Sao_Paulo`
+- [x] Permitir armazenamento e importação de dados do dia atual sem exibi-los no mesmo dia
+- [x] Limitar Total de Leads, médias, canais, modelos, regiões, concessionárias e série diária até D-1
+- [x] Limitar pacing, metas e projeções a dias fechados até D-1
+- [x] Fazer o aviso de canais sem Leads verificar sempre D-1, mesmo quando todos estejam zerados
+- [x] Aplicar o mesmo limite a Google Ads, Meta Ads e demais módulos temporais
+- [x] Impedir que filtros padrão ou personalizados ultrapassem D-1 nas consultas do dashboard
+- [x] Atualizar textos de período e estado de atualização para mostrar explicitamente a data de D-1
+- [x] Cobrir cenários com dados no dia atual, com dados ontem e sem dados ontem
+- [x] Validar tipagem, suíte completa, build e interface desktop/mobile
 
 - [x] Prioridade urgente: unificar todos os valores exibidos em Leads usando o mesmo corte D-1
 - [x] Validar que resumo, gráficos, tabelas, auditoria, pacing e alerta de canais retornam o mesmo universo de Leads

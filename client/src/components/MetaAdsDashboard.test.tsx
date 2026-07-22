@@ -19,6 +19,8 @@ describe("interface Meta Ads", () => {
       audiencesTitle: "Principais públicos",
       creativesTitle: "Criativos com melhor desempenho",
       audienceAnalysisTitle: "Análise do público alcançado",
+      cutoff: "Corte D-1",
+      through: "Dados disponíveis até",
     });
     expect(META_ADS_COPY["en-US"]).toMatchObject({
       title: "Social Media Performance",
@@ -26,6 +28,8 @@ describe("interface Meta Ads", () => {
       audiencesTitle: "Top audiences",
       creativesTitle: "Top-performing creatives",
       audienceAnalysisTitle: "Reached audience analysis",
+      cutoff: "D-1 cutoff",
+      through: "Data available through",
     });
   });
 

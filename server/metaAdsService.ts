@@ -772,11 +772,10 @@ function capBoundsAtCutoff(
   value: ReturnType<typeof buildBounds>,
   cutoffDate: string,
 ): ReturnType<typeof buildBounds> {
-  const latestDate = value.latestDate > cutoffDate ? cutoffDate : value.latestDate;
   return {
     ...value,
-    earliestDate: value.earliestDate > latestDate ? latestDate : value.earliestDate,
-    latestDate,
+    earliestDate: value.earliestDate > cutoffDate ? cutoffDate : value.earliestDate,
+    latestDate: cutoffDate,
   };
 }
 

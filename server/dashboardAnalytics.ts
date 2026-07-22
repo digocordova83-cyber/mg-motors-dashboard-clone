@@ -142,9 +142,12 @@ const COMPARISON_METRICS = [
   { key: "cpc", label: "CPC Médio", format: "currency", preference: "lower" },
 ] as const;
 
-export function buildDailyComparison(rows: AnalyticsRow[]) {
+export function buildDailyComparison(
+  rows: AnalyticsRow[],
+  referenceDateOverride?: string,
+) {
   const availableDates = Array.from(new Set(rows.map(row => row.date))).sort();
-  const referenceDate = availableDates.at(-1) ?? null;
+  const referenceDate = referenceDateOverride ?? availableDates.at(-1) ?? null;
   if (!referenceDate) {
     return { referenceDate: null, previousDate: null, weekAgoDate: null, cards: [], table: [], campaigns: [] };
   }
@@ -301,9 +304,13 @@ export function aggregateCampaigns(rows: AnalyticsRow[], goals: GoalConfig[], av
     .sort((left, right) => right.spend - left.spend);
 }
 
-export function buildPacing(rows: AnalyticsRow[], monthlyBudgetGoal: number | null) {
+export function buildPacing(
+  rows: AnalyticsRow[],
+  monthlyBudgetGoal: number | null,
+  lastClosedDateOverride?: string,
+) {
   const availableDates = Array.from(new Set(rows.map(row => row.date))).sort();
-  const lastClosedDate = availableDates.at(-1) ?? null;
+  const lastClosedDate = lastClosedDateOverride ?? availableDates.at(-1) ?? null;
   if (!lastClosedDate || monthlyBudgetGoal == null || monthlyBudgetGoal <= 0) return null;
 
   const monthPrefix = lastClosedDate.slice(0, 7);

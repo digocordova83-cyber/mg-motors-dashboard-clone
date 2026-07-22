@@ -355,8 +355,8 @@ export function buildDashboardData(
     }));
 
   const mediaGoal = goals.find(goal => goal.goalType === "MEDIA_BUDGET" && goal.scopeKey === "ACCOUNT");
-  const pacing = buildPacing(historyRows, mediaGoal?.monthlyBudgetGoal ?? null);
-  const dailyComparison = buildDailyComparison(historyRows);
+  const pacing = buildPacing(historyRows, mediaGoal?.monthlyBudgetGoal ?? null, dateTo);
+  const dailyComparison = buildDailyComparison(historyRows, dateTo);
   const rankings = buildRankings(campaignAnalytics);
   const productPerformance = buildProductPerformance(campaignAnalytics);
   const regionPerformance = buildRegionPerformance(campaignAnalytics, summary.cpa);

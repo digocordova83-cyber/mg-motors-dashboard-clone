@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useMemo, useState, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
+import { getDashboardCutoffDate } from "@shared/dashboardDates";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
@@ -47,8 +48,8 @@ type MetaAdsDashboardProps = {
   onUpdatedAt?: (value: string) => void;
 };
 
-const FALLBACK_FROM = "2026-07-01";
-const FALLBACK_TO = "2026-07-20";
+const FALLBACK_TO = getDashboardCutoffDate();
+const FALLBACK_FROM = `${FALLBACK_TO.slice(0, 7)}-01`;
 const MODEL_COLORS: Record<string, string> = {
   MG4: "#e2212d",
   MG5: "#38bdf8",
@@ -97,7 +98,8 @@ export const META_ADS_COPY = {
     noItems: "Nenhum item disponível para o período.",
     sourceLive: "Windsor.ai atualizado",
     sourceSnapshot: "Snapshot validado",
-    through: "Dados até",
+    through: "Dados disponíveis até",
+    cutoff: "Corte D-1",
     updated: "Última atualização",
     refresh: "Atualizar",
     loading: "Carregando dados reais do Meta Ads...",
@@ -160,7 +162,8 @@ export const META_ADS_COPY = {
     noItems: "No items available for this period.",
     sourceLive: "Windsor.ai updated",
     sourceSnapshot: "Validated snapshot",
-    through: "Data through",
+    through: "Data available through",
+    cutoff: "D-1 cutoff",
     updated: "Last updated",
     refresh: "Refresh",
     loading: "Loading live Meta Ads data...",
@@ -345,14 +348,18 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
   const [dateTo, setDateTo] = useState(FALLBACK_TO);
   const [preset, setPreset] = useState("month");
   const [initialized, setInitialized] = useState(false);
+  const latestSelectableDate =
+    bounds.data?.latestDate && bounds.data.latestDate < FALLBACK_TO
+      ? bounds.data.latestDate
+      : FALLBACK_TO;
 
   useEffect(() => {
     if (initialized || !bounds.data) return;
-    const latest = bounds.data.latestDate;
+    const latest = latestSelectableDate;
     setDateFrom(`${latest.slice(0, 7)}-01` < bounds.data.earliestDate ? bounds.data.earliestDate : `${latest.slice(0, 7)}-01`);
     setDateTo(latest);
     setInitialized(true);
-  }, [bounds.data, initialized]);
+  }, [bounds.data, initialized, latestSelectableDate]);
 
   const queryInput = useMemo(() => ({ dateFrom, dateTo }), [dateFrom, dateTo]);
   const query = trpc.metaAds.data.useQuery(queryInput, {
@@ -370,7 +377,7 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
   const currencySubtitle = data ? `${formatNumber(data.summary.impressions, locale)} ${t.impressions.toLowerCase()}` : "Meta Ads";
 
   function applyPreset(value: string) {
-    const latest = bounds.data?.latestDate ?? FALLBACK_TO;
+    const latest = latestSelectableDate;
     const earliest = bounds.data?.earliestDate ?? FALLBACK_FROM;
     setPreset(value);
     setDateTo(latest);
@@ -390,7 +397,7 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
   }
 
   function updateTo(value: string) {
-    if (!value || value < dateFrom || (bounds.data && value > bounds.data.latestDate)) return;
+    if (!value || value < dateFrom || value > latestSelectableDate) return;
     setPreset("custom");
     setDateTo(value);
   }
@@ -403,7 +410,7 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
     return <MetaAdsError locale={locale} onRetry={() => query.refetch()} />;
   }
 
-  if (!data?.daily.length) return <main className="mx-auto max-w-[1680px] px-4 py-8"><Panel title={t.title}><MetaAdsEmptyState title={t.emptyTitle} description={t.emptyDescription} /></Panel></main>;
+  if (!data?.daily.length) return <main className="mx-auto max-w-[1680px] px-4 py-8"><Panel title={t.title} subtitle={`${t.period}: ${formatLongDate(dateFrom, locale)} — ${formatLongDate(dateTo, locale)} • ${t.cutoff}: ${formatLongDate(FALLBACK_TO, locale)}`}><MetaAdsEmptyState title={t.emptyTitle} description={t.emptyDescription} /></Panel></main>;
 
   const metricCards = [
     { title: t.investment, value: formatCurrency(data.summary.spend, locale), subtitle: `${data.account.name} • ${t.period.toLowerCase()}`, icon: <CircleDollarSign className="h-4 w-4" />, accent: "#e2212d" },
@@ -428,7 +435,7 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
         <div>
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]"><Megaphone className="h-3.5 w-3.5" />{t.eyebrow}</div>
           <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{t.title}</h1>
-          <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(dateFrom, locale)} — {formatLongDate(dateTo, locale)}</p>
+          <p className="mt-1 text-[11px] text-slate-600">MG Motors • {formatLongDate(dateFrom, locale)} — {formatLongDate(dateTo, locale)} • {t.cutoff}: {formatLongDate(FALLBACK_TO, locale)}</p>
         </div>
         <div className="flex flex-col gap-2 xl:items-end">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -436,10 +443,10 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
               {["7", "14", "30", "60"].map(value => <button key={value} type="button" onClick={() => applyPreset(value)} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${preset === value ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{value}d</button>)}
               <button type="button" onClick={() => applyPreset("month")} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${preset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{t.month}</button>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-[#242f42] bg-[#0d1421] px-3 py-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-600" /><input aria-label={`${t.period} start`} type="date" min={bounds.data?.earliestDate} max={dateTo} value={dateFrom} onChange={event => updateFrom(event.target.value)} className="w-[116px] min-w-0 bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /><span className="text-slate-700">—</span><input aria-label={`${t.period} end`} type="date" min={dateFrom} max={bounds.data?.latestDate} value={dateTo} onChange={event => updateTo(event.target.value)} className="w-[116px] min-w-0 bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /></div>
+            <div className="flex items-center gap-2 rounded-lg border border-[#242f42] bg-[#0d1421] px-3 py-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-600" /><input aria-label={`${t.period} start`} type="date" min={bounds.data?.earliestDate} max={dateTo} value={dateFrom} onChange={event => updateFrom(event.target.value)} className="w-[116px] min-w-0 bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /><span className="text-slate-700">—</span><input aria-label={`${t.period} end`} type="date" min={dateFrom} max={latestSelectableDate} value={dateTo} onChange={event => updateTo(event.target.value)} className="w-[116px] min-w-0 bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /></div>
             <Button variant="outline" size="sm" onClick={() => query.refetch()} disabled={query.isFetching} className="h-8 border-[#283349] bg-[#111827] text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><RefreshCcw className={`mr-1.5 h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`} />{t.refresh}</Button>
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-slate-600"><span className="flex items-center gap-1.5 text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? t.sourceLive : t.sourceSnapshot}</span><span>{t.through}: {formatLongDate(data.metadata.dataThroughDate, locale)}</span><span>{t.updated}: {new Date(data.metadata.updatedAt).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" })}</span></div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-slate-600"><span className="flex items-center gap-1.5 text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? t.sourceLive : t.sourceSnapshot}</span><span>{t.cutoff}: {formatLongDate(dateTo, locale)}</span><span>{t.through}: {formatLongDate(data.metadata.dataThroughDate, locale)}</span><span>{t.updated}: {new Date(data.metadata.updatedAt).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" })}</span></div>
         </div>
       </div>
 

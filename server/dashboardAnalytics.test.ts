@@ -87,6 +87,23 @@ describe("pacing mensal", () => {
     expect(pacing?.series).toHaveLength(31);
     expect(pacing?.series[3].real).toBeNull();
   });
+
+  it("mantém o fechamento em D-1 quando ontem não tem linha", () => {
+    const pacing = buildPacing(
+      [
+        row({ date: "2026-07-01", spend: 100 }),
+        row({ date: "2026-07-02", spend: 100 }),
+      ],
+      3_100,
+      "2026-07-03",
+    );
+
+    expect(pacing?.lastClosedDate).toBe("2026-07-03");
+    expect(pacing?.closedDays).toBe(3);
+    expect(pacing?.invested).toBe(200);
+    expect(pacing?.series[2].real).toBe(200);
+    expect(pacing?.series[3].real).toBeNull();
+  });
 });
 
 describe("comparativos diários", () => {
@@ -103,6 +120,22 @@ describe("comparativos diários", () => {
     expect(comparison.cards.find(metric => metric.key === "cpa")?.weekAgo).toBeNull();
     expect(comparison.cards.find(metric => metric.key === "ctr")?.average7d).toBeNull();
     expect(comparison.campaigns[0].campaignId).toBe("1001");
+  });
+
+  it("expõe D-1 sem amostra como indisponível em vez de recuar a data", () => {
+    const comparison = buildDailyComparison(
+      [
+        row({ date: "2026-07-01", spend: 80, conversions: 2 }),
+        row({ date: "2026-07-02", spend: 100, conversions: 2 }),
+      ],
+      "2026-07-03",
+    );
+
+    expect(comparison.referenceDate).toBe("2026-07-03");
+    expect(comparison.previousDate).toBe("2026-07-02");
+    expect(comparison.table.find(metric => metric.key === "investment")?.d1).toBeNull();
+    expect(comparison.table.find(metric => metric.key === "investment")?.d2).toBe(100);
+    expect(comparison.campaigns[0].d1).toBeNull();
   });
 });
 

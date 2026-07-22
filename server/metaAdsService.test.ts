@@ -116,9 +116,10 @@ describe("metaAdsService", () => {
       },
       { source: "windsor-live", updatedAt: "2026-07-21T10:00:00.000Z", cacheHit: false },
       "2026-07-01",
-      "2026-07-02",
+      "2026-07-03",
     );
 
+    expect(data.period).toEqual({ dateFrom: "2026-07-01", dateTo: "2026-07-03" });
     expect(data.summary).toMatchObject({
       spend: 300,
       leads: 30,
