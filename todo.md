@@ -681,3 +681,16 @@
 - [x] Atualizar testes para reconciliar `Total de Leads = Leads nas concessionárias + Leads em qualificação`
 - [x] Validar tipagem, suíte completa, build e interface em desktop e mobile
 - [x] Salvar checkpoint da alteração solicitada pelo cliente
+
+## Card superior independente de Leads em qualificação
+
+- [x] Reutilizar `dealerAudit.summary.unavailableLeads` como fonte canônica do novo indicador
+- [x] Inserir o card `Leads em qualificação` imediatamente após `Total de Leads nas concessionárias`
+- [x] Exibir no novo card quantidade e participação percentual sobre o total filtrado
+- [x] Simplificar o subtítulo do card de concessionárias para evitar duplicação da quantidade em qualificação
+- [x] Ajustar a grade superior para seis indicadores responsivos em desktop e mobile
+- [x] Atualizar testes para os três totais e a reconciliação exata entre eles
+- [x] Validar tipagem, suíte completa, build e interface responsiva
+- [x] Salvar checkpoint do novo card solicitado
+- [x] Exibir o novo card e seus textos integralmente em inglês quando o locale do usuário mgmotor for `en-US`
+- [x] Adicionar teste específico para título, descrição e formatação numérica em inglês
