@@ -772,7 +772,7 @@ export function LeadsTab({
       <div className="flex flex-col gap-3 rounded-xl border border-[#1e293b] bg-[#0d1421] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.14)] lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.13em] text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{ui(locale, "Base de Leads ativa", "Active Leads database")}</div>
-          <p className="mt-1 text-xs text-slate-500">{bounds.data?.totalLeads ? ui(locale, `${formatInteger(bounds.data.totalLeads, locale)} Leads na base • ${formatDate(bounds.data.dateFrom, locale)} a ${formatDate(bounds.data.dateTo, locale)}`, `${formatInteger(bounds.data.totalLeads, locale)} Leads in database • ${formatDate(bounds.data.dateFrom, locale)} to ${formatDate(bounds.data.dateTo, locale)}`) : ui(locale, "Aguardando consolidação da base", "Waiting for database consolidation")}</p>
+          <p className="mt-1 text-xs text-slate-500">{ui(locale, `${formatInteger(data.summary.totalLeads, locale)} Leads no período consolidado em D-1 • ${formatDate(dateFrom, locale)} a ${formatDate(dateTo, locale)}`, `${formatInteger(data.summary.totalLeads, locale)} Leads in the D-1 consolidated period • ${formatDate(dateFrom, locale)} to ${formatDate(dateTo, locale)}`)}</p>
           <p className="mt-1 text-[10px] text-slate-700"><LeadFilterIdentity dateFrom={dateFrom} dateTo={dateTo} locale={locale} /></p>
         </div>
         {canImportLeads ? (

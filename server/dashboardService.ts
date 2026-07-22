@@ -1,3 +1,4 @@
+import { resolveDashboardPeriod } from "@shared/dashboardDates";
 import snapshotRows from "./data/mg-motors-google-ads.json" with { type: "json" };
 import {
   addDays,
@@ -424,17 +425,18 @@ export async function loadDashboardData(
   dateTo: string,
   options: { forceRefresh?: boolean } = {},
 ) {
-  const historyDateFrom = getHistoricalStart(dateFrom, dateTo);
-  const result = await getGoogleAdsRows(historyDateFrom, dateTo, options);
-  const rows = filterByDate(result.rows, dateFrom, dateTo);
+  const period = resolveDashboardPeriod(dateFrom, dateTo);
+  const historyDateFrom = getHistoricalStart(period.dateFrom, period.dateTo);
+  const result = await getGoogleAdsRows(historyDateFrom, period.dateTo, options);
+  const rows = filterByDate(result.rows, period.dateFrom, period.dateTo);
   const lastClosedDate = result.rows.map(row => row.date).sort().at(-1);
-  const goals = await loadGoals(lastClosedDate?.slice(0, 7) ?? dateTo.slice(0, 7));
+  const goals = await loadGoals(lastClosedDate?.slice(0, 7) ?? period.dateTo.slice(0, 7));
 
   return buildDashboardData(
     rows,
     { source: result.source, updatedAt: result.updatedAt, cacheHit: result.cacheHit },
-    dateFrom,
-    dateTo,
+    period.dateFrom,
+    period.dateTo,
     goals,
     result.rows,
   );

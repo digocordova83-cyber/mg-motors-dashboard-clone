@@ -49,9 +49,9 @@ describe("navegação modular do dashboard", () => {
 });
 
 describe("período próprio de Leads", () => {
-  it("abre o período Mês em 30/06/2026 conforme o início operacional configurado", () => {
+  it("abre o período Mês no dia 01 da competência até D-1", () => {
     expect(resolveLeadMonthRange("2026-01-01", "2026-07-19")).toEqual({
-      dateFrom: "2026-06-30",
+      dateFrom: "2026-07-01",
       dateTo: "2026-07-19",
     });
   });

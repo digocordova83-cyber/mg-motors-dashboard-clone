@@ -1,3 +1,7 @@
+import {
+  getDashboardCutoffDate,
+  resolveDashboardPeriod,
+} from "@shared/dashboardDates";
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { leadImports, leadMonthlyGoals, leads, type LeadMonthlyGoal } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -38,16 +42,19 @@ export async function getLeadDataBounds(): Promise<{
 }> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
+  const cutoffDate = getDashboardCutoffDate();
   const [row] = await db
     .select({
       dateFrom: sql<string | null>`min(${leads.correctedDate})`,
       dateTo: sql<string | null>`max(${leads.correctedDate})`,
       totalLeads: sql<number>`count(*)`,
     })
-    .from(leads);
+    .from(leads)
+    .where(lte(leads.correctedDate, cutoffDate));
+  const dateFrom = row?.dateFrom ?? null;
   return {
-    dateFrom: row?.dateFrom ?? null,
-    dateTo: row?.dateTo ?? null,
+    dateFrom,
+    dateTo: dateFrom ? cutoffDate : null,
     totalLeads: Number(row?.totalLeads ?? 0),
   };
 }
@@ -118,12 +125,13 @@ async function getLeadRows(dateFrom: string, dateTo: string): Promise<LeadAnalyt
     .orderBy(asc(leads.correctedDate), asc(leads.id));
 }
 
-async function getExpectedLeadChannels(): Promise<string[]> {
+async function getExpectedLeadChannels(dateTo: string): Promise<string[]> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const rows = await db
     .selectDistinct({ channel: leads.channel })
     .from(leads)
+    .where(lte(leads.correctedDate, dateTo))
     .orderBy(asc(leads.channel));
   return rows.map(row => row.channel.trim()).filter(Boolean);
 }
@@ -144,27 +152,33 @@ export async function getLeadAnalytics(input: {
   dateFrom: string;
   dateTo: string;
 }): Promise<LeadAnalytics & { dateFrom: string; dateTo: string; metadata: { updatedAt: string | null } }> {
-  assertDateRange(input.dateFrom, input.dateTo);
-  const competence = input.dateTo.slice(0, 7);
-  const monthStart = startOfUtcMonth(input.dateTo);
-  const monthEnd = endOfUtcMonth(input.dateTo);
-  const [rows, pacingRows, goal, updatedAt, expectedChannels] = await Promise.all([
-    getLeadRows(input.dateFrom, input.dateTo),
-    getLeadRows(monthStart, monthEnd),
+  const period = resolveDashboardPeriod(input.dateFrom, input.dateTo);
+  assertDateRange(period.dateFrom, period.dateTo);
+  const competence = period.dateTo.slice(0, 7);
+  const monthStart = startOfUtcMonth(period.dateTo);
+  const monthEnd = endOfUtcMonth(period.dateTo);
+  const pacingAsOfDate = monthEnd < period.cutoffDate ? monthEnd : period.cutoffDate;
+  const [rows, pacingRows, channelUpdateRows, goal, updatedAt, expectedChannels] = await Promise.all([
+    getLeadRows(period.dateFrom, period.dateTo),
+    getLeadRows(monthStart, pacingAsOfDate),
+    getLeadRows(period.cutoffDate, period.cutoffDate),
     getLeadMonthlyGoal(competence),
     getLatestLeadImportAt(),
-    getExpectedLeadChannels(),
+    getExpectedLeadChannels(period.cutoffDate),
   ]);
 
   return {
-    dateFrom: input.dateFrom,
-    dateTo: input.dateTo,
+    dateFrom: period.dateFrom,
+    dateTo: period.dateTo,
     metadata: { updatedAt },
     ...buildLeadAnalytics({
       rows,
       pacingRows,
-      dateFrom: input.dateFrom,
-      dateTo: input.dateTo,
+      pacingAsOfDate,
+      channelUpdateRows,
+      channelUpdateDate: period.cutoffDate,
+      dateFrom: period.dateFrom,
+      dateTo: period.dateTo,
       competence,
       goal: goal?.goalCount ?? null,
       expectedChannels,

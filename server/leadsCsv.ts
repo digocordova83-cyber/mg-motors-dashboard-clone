@@ -1,4 +1,8 @@
 import { createHash } from "node:crypto";
+import {
+  DASHBOARD_TIME_ZONE,
+  getDashboardCutoffDate,
+} from "@shared/dashboardDates";
 import { parse } from "csv-parse/sync";
 
 export const LEAD_CSV_HEADERS = [
@@ -254,25 +258,10 @@ export function parseCorrectedLeadDate(value: string): string | null {
   return null;
 }
 
-export const LEADS_TIMEZONE = "America/Sao_Paulo";
-
-function formatDateInTimeZone(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function addIsoDays(date: string, days: number): string {
-  const value = new Date(`${date}T12:00:00.000Z`);
-  value.setUTCDate(value.getUTCDate() + days);
-  return value.toISOString().slice(0, 10);
-}
+export const LEADS_TIMEZONE = DASHBOARD_TIME_ZONE;
 
 export function getYesterdayInSaoPaulo(now: Date = new Date()): string {
-  return addIsoDays(formatDateInTimeZone(now, LEADS_TIMEZONE), -1);
+  return getDashboardCutoffDate(now);
 }
 
 function assertFallbackDate(value: string): string {

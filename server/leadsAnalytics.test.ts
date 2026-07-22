@@ -175,6 +175,37 @@ describe("buildLeadAnalytics", () => {
     }
   });
 
+  it("mantém total, gráficos, auditoria, pacing e alerta em D-1 mesmo sem Leads ontem", () => {
+    const rows = [
+      row("2026-07-01", "Site", "Dealer A"),
+      row("2026-07-19", "Meta", "Dealer B"),
+      row("2026-07-21", "Site", "Dealer A"),
+    ];
+    const result = buildLeadAnalytics({
+      rows,
+      pacingRows: rows,
+      pacingAsOfDate: "2026-07-20",
+      channelUpdateRows: [],
+      channelUpdateDate: "2026-07-20",
+      dateFrom: "2026-07-01",
+      dateTo: "2026-07-20",
+      competence: "2026-07",
+      goal: 100,
+      expectedChannels: ["Site", "Meta", "Campanha Urban"],
+    });
+
+    expect(result.summary.totalLeads).toBe(2);
+    expect(result.daily.reduce((sum, point) => sum + point.total, 0)).toBe(2);
+    expect(result.daily.at(-1)).toMatchObject({ date: "2026-07-20", total: 0 });
+    expect(result.dealerAudit.dealers.reduce((sum, dealer) => sum + dealer.leads, 0)).toBe(2);
+    expect(result.dealerAudit.daily.every(point => point.date <= "2026-07-20")).toBe(true);
+    expect(result.pacing).toMatchObject({ current: 2, asOfDate: "2026-07-20", closedDays: 20 });
+    expect(result.channelUpdate).toEqual({
+      date: "2026-07-20",
+      updatingChannels: ["Meta", "Site"],
+    });
+  });
+
   it("calcula pacing mensal pelo último dia com dados do próprio mês", () => {
     const pacingRows = Array.from({ length: 19 }, (_, day) =>
       Array.from({ length: 10 }, () => ({ correctedDate: `2026-07-${String(day + 1).padStart(2, "0")}` })),

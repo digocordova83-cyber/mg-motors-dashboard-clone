@@ -1,4 +1,8 @@
 import { COOKIE_NAME } from "@shared/const";
+import {
+  getDashboardCutoffDate,
+  isIsoCalendarDate,
+} from "@shared/dashboardDates";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
@@ -62,10 +66,29 @@ const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations
 const historyProcedure = createPermissionProcedure("canAccessHistory");
 const importLeadsProcedure = createPermissionProcedure("canImportLeads");
 
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
+const dateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")
+  .refine(isIsoCalendarDate, "Data inválida");
 const dashboardPeriodSchema = z
   .object({ dateFrom: dateSchema, dateTo: dateSchema })
-  .refine(input => input.dateFrom <= input.dateTo, "A data inicial deve anteceder a data final");
+  .superRefine((input, context) => {
+    if (input.dateFrom > input.dateTo) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A data inicial deve anteceder a data final",
+        path: ["dateTo"],
+      });
+    }
+    const cutoffDate = getDashboardCutoffDate();
+    if (input.dateTo > cutoffDate) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `A data final não pode ultrapassar D-1 (${cutoffDate})`,
+        path: ["dateTo"],
+      });
+    }
+  });
 
 const leadCsvUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),

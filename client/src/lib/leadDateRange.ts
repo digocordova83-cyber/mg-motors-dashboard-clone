@@ -1,17 +1,16 @@
+import { getDashboardCutoffDate } from "@shared/dashboardDates";
+
 export type LeadDateRange = {
   dateFrom: string;
   dateTo: string;
 };
 
-export const LEAD_MONTH_DEFAULT_START = "2026-06-30";
+export const LEAD_MONTH_DEFAULT_START = `${getDashboardCutoffDate().slice(0, 7)}-01`;
 
 export function resolveLeadMonthRange(dataFrom: string, dataTo: string): LeadDateRange {
   const monthStart = `${dataTo.slice(0, 7)}-01`;
-  const configuredStart = LEAD_MONTH_DEFAULT_START <= dataTo
-    ? LEAD_MONTH_DEFAULT_START
-    : monthStart;
   return {
-    dateFrom: configuredStart < dataFrom ? dataFrom : configuredStart,
+    dateFrom: monthStart < dataFrom ? dataFrom : monthStart,
     dateTo: dataTo,
   };
 }

@@ -33,6 +33,7 @@ import {
   type DashboardModuleId,
   type GoogleAdsTabId,
 } from "@/lib/dashboardNavigation";
+import { getDashboardCutoffDate } from "@shared/dashboardDates";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
@@ -92,7 +93,7 @@ type Campaign = DashboardData["campaigns"][number];
 type OptimizationTask = RouterOutputs["dashboard"]["optimizationWorkspace"]["tasks"][number];
 type TaskStatusFilter = "ALL" | OptimizationTask["status"];
 
-const DATA_END = "2026-07-19";
+const DATA_END = getDashboardCutoffDate();
 const TAG_CORRECTION_DATE = "2026-07-15";
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const NUMBER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });

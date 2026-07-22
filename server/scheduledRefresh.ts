@@ -1,4 +1,9 @@
 import type { Request, Response } from "express";
+import {
+  addIsoDays,
+  DASHBOARD_TIME_ZONE,
+  formatIsoDateInTimeZone,
+} from "@shared/dashboardDates";
 import { loadDashboardData } from "./dashboardService";
 import { loadMetaAdsData } from "./metaAdsService";
 import {
@@ -7,7 +12,7 @@ import {
 } from "./db";
 import { sdk } from "./_core/sdk";
 
-export const DAILY_REFRESH_TIMEZONE = "America/Sao_Paulo";
+export const DAILY_REFRESH_TIMEZONE = DASHBOARD_TIME_ZONE;
 export const GOOGLE_ADS_DEFAULT_WINDOW_DAYS = 30;
 export const META_ADS_DEFAULT_WINDOW_DAYS = 7;
 
@@ -51,26 +56,11 @@ const defaultDependencies: RefreshDependencies = {
   now: () => new Date(),
 };
 
-function formatDateInTimeZone(date: Date, timeZone: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function addIsoDays(date: string, days: number) {
-  const value = new Date(`${date}T12:00:00Z`);
-  value.setUTCDate(value.getUTCDate() + days);
-  return value.toISOString().slice(0, 10);
-}
-
 export function getPreviousCompleteDate(
   now: Date,
   timeZone = DAILY_REFRESH_TIMEZONE,
 ) {
-  return addIsoDays(formatDateInTimeZone(now, timeZone), -1);
+  return addIsoDays(formatIsoDateInTimeZone(now, timeZone), -1);
 }
 
 function serializeError(error: unknown) {

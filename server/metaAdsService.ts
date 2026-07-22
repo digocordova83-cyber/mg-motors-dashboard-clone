@@ -1,3 +1,9 @@
+import {
+  addIsoDays,
+  DASHBOARD_TIME_ZONE,
+  getDashboardCutoffDate,
+  resolveDashboardPeriod,
+} from "@shared/dashboardDates";
 import snapshotFile from "./data/mg-motors-meta-ads.json" with { type: "json" };
 import {
   getDashboardDataSnapshot,
@@ -6,7 +12,7 @@ import {
 
 export const META_ADS_ACCOUNT_ID = "1418731006678061";
 export const META_ADS_ACCOUNT_NAME = "Ag. BBRO - MG Motor Brasil - AUT";
-export const META_ADS_TIMEZONE = "America/Sao_Paulo";
+export const META_ADS_TIMEZONE = DASHBOARD_TIME_ZONE;
 
 const WINDSOR_API_URL = "https://connectors.windsor.ai/facebook";
 const CACHE_TTL_MS = 15 * 60 * 1000;
@@ -180,21 +186,6 @@ function safeDivide(numerator: number, denominator: number) {
 
 function nullableCpl(spend: number, leads: number) {
   return leads > 0 ? round(spend / leads) : null;
-}
-
-function localIsoDate(timeZone = META_ADS_TIMEZONE) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-function addUtcDays(date: string, days: number) {
-  const value = new Date(`${date}T12:00:00Z`);
-  value.setUTCDate(value.getUTCDate() + days);
-  return value.toISOString().slice(0, 10);
 }
 
 function parseTargeting(value: unknown): Record<string, unknown> | null {
@@ -755,12 +746,13 @@ export async function loadMetaAdsData(
   dateTo: string,
   options: { forceRefresh?: boolean } = {},
 ) {
-  const result = await loadBundle(dateFrom, dateTo, options);
+  const period = resolveDashboardPeriod(dateFrom, dateTo);
+  const result = await loadBundle(period.dateFrom, period.dateTo, options);
   return buildMetaAdsData(
     result.bundle,
     { source: result.source, updatedAt: result.updatedAt, cacheHit: result.cacheHit },
-    dateFrom,
-    dateTo,
+    period.dateFrom,
+    period.dateTo,
   );
 }
 
@@ -776,13 +768,25 @@ function buildBounds(rows: RawRow[]) {
   };
 }
 
+function capBoundsAtCutoff(
+  value: ReturnType<typeof buildBounds>,
+  cutoffDate: string,
+): ReturnType<typeof buildBounds> {
+  const latestDate = value.latestDate > cutoffDate ? cutoffDate : value.latestDate;
+  return {
+    ...value,
+    earliestDate: value.earliestDate > latestDate ? latestDate : value.earliestDate,
+    latestDate,
+  };
+}
+
 export async function getMetaAdsBounds() {
   if (boundsCache && boundsCache.expiresAt > Date.now()) return boundsCache.value;
-  const yesterday = addUtcDays(localIsoDate(), -1);
-  const start = addUtcDays(yesterday, -92);
+  const cutoffDate = getDashboardCutoffDate();
+  const start = addIsoDays(cutoffDate, -92);
   try {
-    const rows = await fetchWindsorRows(QUERY_FIELDS.daily, start, yesterday);
-    const value = buildBounds(rows);
+    const rows = await fetchWindsorRows(QUERY_FIELDS.daily, start, cutoffDate);
+    const value = capBoundsAtCutoff(buildBounds(rows), cutoffDate);
     boundsCache = { value, expiresAt: Date.now() + CACHE_TTL_MS };
     return value;
   } catch (error) {
@@ -790,7 +794,7 @@ export async function getMetaAdsBounds() {
       "[Meta Ads] Limites ao vivo indisponíveis; usando snapshot:",
       error instanceof Error ? error.message : error,
     );
-    const value = buildBounds(snapshot.data.daily);
+    const value = capBoundsAtCutoff(buildBounds(snapshot.data.daily), cutoffDate);
     boundsCache = { value, expiresAt: Date.now() + CACHE_TTL_MS };
     return value;
   }

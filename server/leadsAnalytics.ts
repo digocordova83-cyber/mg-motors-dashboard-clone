@@ -107,6 +107,9 @@ export type LeadAnalytics = {
 export type BuildLeadAnalyticsInput = {
   rows: LeadAnalyticsRow[];
   pacingRows: Array<Pick<LeadAnalyticsRow, "correctedDate">>;
+  pacingAsOfDate?: string;
+  channelUpdateRows?: LeadAnalyticsRow[];
+  channelUpdateDate?: string;
   dateFrom: string;
   dateTo: string;
   competence: string;
@@ -339,17 +342,26 @@ function buildPacing(
   pacingRows: Array<Pick<LeadAnalyticsRow, "correctedDate">>,
   competence: string,
   goal: number | null,
+  pacingAsOfDate?: string,
 ): LeadPacing {
   if (!/^\d{4}-\d{2}$/.test(competence)) throw new Error("Competência mensal inválida.");
   const monthStart = `${competence}-01`;
   const monthEnd = endOfUtcMonth(monthStart);
   const daysInMonth = Number(monthEnd.slice(-2));
+  if (pacingAsOfDate && (pacingAsOfDate < monthStart || pacingAsOfDate > monthEnd)) {
+    throw new Error("A data de corte do pacing precisa pertencer à competência informada.");
+  }
   const validDates = pacingRows
     .map(row => row.correctedDate)
-    .filter(date => date >= monthStart && date <= monthEnd)
+    .filter(
+      date =>
+        date >= monthStart &&
+        date <= monthEnd &&
+        (!pacingAsOfDate || date <= pacingAsOfDate),
+    )
     .sort();
   const current = validDates.length;
-  const asOfDate = validDates.at(-1) ?? null;
+  const asOfDate = pacingAsOfDate ?? validDates.at(-1) ?? null;
   const closedDays = asOfDate ? Number(asOfDate.slice(-2)) : 0;
   const daysRemaining = Math.max(0, daysInMonth - closedDays);
   const averagePerDay = closedDays ? round(current / closedDays) : 0;
@@ -416,9 +428,17 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
       .sort((a, b) => a.localeCompare(b, "pt-BR")),
   ];
   const daily = buildDaily(rows, input.dateFrom, input.dateTo, channelOrder);
-  const latestDay = daily.at(-1);
+  const channelUpdateDate = input.channelUpdateDate ?? input.dateTo;
+  const channelUpdateRows = (input.channelUpdateRows ?? rows).filter(
+    row => row.correctedDate === channelUpdateDate,
+  );
+  const channelUpdateCounts = new Map<string, number>();
+  for (const row of channelUpdateRows) {
+    const channel = normalizeChannel(row.channel);
+    channelUpdateCounts.set(channel, (channelUpdateCounts.get(channel) ?? 0) + 1);
+  }
   const updatingChannels = channelOrder.filter(
-    channel => canShowChannelUpdate(channel) && (latestDay?.values[channel] ?? 0) === 0,
+    channel => canShowChannelUpdate(channel) && (channelUpdateCounts.get(channel) ?? 0) === 0,
   );
   const primary = channels.find(item => item.value !== LEADS_UNAVAILABLE) ?? null;
   const activeChannels = channels.filter(item => item.value !== LEADS_UNAVAILABLE && item.leads > 0).length;
@@ -432,7 +452,12 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
       activeChannels,
       calendarDays,
     },
-    pacing: buildPacing(input.pacingRows, input.competence, input.goal),
+    pacing: buildPacing(
+      input.pacingRows,
+      input.competence,
+      input.goal,
+      input.pacingAsOfDate,
+    ),
     channels,
     models: buildBreakdown(rows, row => row.model, calendarDays),
     regions: buildBreakdown(rows, row => row.region, calendarDays),
@@ -441,7 +466,7 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
     daily,
     channelOrder,
     channelUpdate: {
-      date: input.dateTo,
+      date: channelUpdateDate,
       updatingChannels,
     },
   };

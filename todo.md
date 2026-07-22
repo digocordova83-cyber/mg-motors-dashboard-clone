@@ -588,3 +588,40 @@
 - [x] Reconciliar totais e confirmar a data máxima de 21/07/2026 em cada plataforma
 - [x] Validar tipagem, suíte completa, build e carregamento dos snapshots persistidos
 - [x] Documentar eventuais atrasos, lacunas ou limitações devolvidas pelos conectores
+
+## Auditoria da distribuição por canal até 20/07/2026
+
+- [x] Consultar a base entre 01/07 e 20/07/2026 e agrupar Leads pela mesma normalização do dashboard
+- [x] Confirmar o total geral e os volumes de Site, Meta, Webmotors, Campanha Urban, Mercado Livre e UOL
+- [x] Recalcular médias diárias sobre 20 dias corridos
+- [x] Recalcular participações percentuais sobre o total de 7.545 Leads
+- [x] Verificar soma dos canais, soma dos percentuais e ausência de canais omitidos
+- [x] Comparar os resultados com os valores exibidos na captura do dashboard
+- [x] Documentar o parecer sem modificar a base ou a interface
+
+## Reconciliação Total de Leads 8.099 × Atual/Meta 8.081
+
+- [ ] Consultar os volumes acumulados até 22/07 e até 23/07/2026
+- [ ] Confirmar quantos Leads pertencem exclusivamente ao dia 23/07/2026
+- [ ] Validar que o card Total de Leads inclui 23 dias do período
+- [ ] Validar que o pacing considera somente dias fechados até 22/07/2026
+- [ ] Reconciliar matematicamente a diferença de 18 Leads
+- [ ] Informar a causa sem modificar dados ou regras do dashboard
+
+## Regra global D-1 em todo o dashboard
+
+- [ ] Auditar todos os usos de data atual, data máxima, filtros padrão e períodos enviados ao backend
+- [ ] Centralizar o cálculo de ontem no fuso `America/Sao_Paulo`
+- [ ] Permitir armazenamento e importação de dados do dia atual sem exibi-los no mesmo dia
+- [ ] Limitar Total de Leads, médias, canais, modelos, regiões, concessionárias e série diária até D-1
+- [ ] Limitar pacing, metas e projeções a dias fechados até D-1
+- [ ] Fazer o aviso de canais sem Leads verificar sempre D-1, mesmo quando todos estejam zerados
+- [ ] Aplicar o mesmo limite a Google Ads, Meta Ads e demais módulos temporais
+- [ ] Impedir que filtros padrão ou personalizados ultrapassem D-1 nas consultas do dashboard
+- [ ] Atualizar textos de período e estado de atualização para mostrar explicitamente a data de D-1
+- [ ] Cobrir cenários com dados no dia atual, com dados ontem e sem dados ontem
+- [ ] Validar tipagem, suíte completa, build e interface desktop/mobile
+
+- [x] Prioridade urgente: unificar todos os valores exibidos em Leads usando o mesmo corte D-1
+- [x] Validar que resumo, gráficos, tabelas, auditoria, pacing e alerta de canais retornam o mesmo universo de Leads
+- [x] Preparar checkpoint validado para publicação imediata antes da reunião do cliente
