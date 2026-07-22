@@ -671,3 +671,13 @@
 - [x] Atualizar Total e todas as abas dependentes sem alterar o layout original
 - [x] Validar fórmulas, somas, percentuais, estilos, células mescladas e integridade do XLSX
 - [x] Entregar a planilha redistribuída ao usuário
+
+## Indicador superior de Leads nas concessionárias
+
+- [x] Confirmar no backend a regra canônica que separa Leads atribuídos a concessionárias de `Leads em qualificação`
+- [x] Expor no resumo analítico o total dinâmico de Leads efetivamente atribuídos a concessionárias
+- [x] Incluir no topo da aba Leads o card `Total de Leads nas concessionárias` com o mesmo período e filtros ativos
+- [x] Ajustar a grade responsiva dos indicadores sem comprometer os cards existentes
+- [x] Atualizar testes para reconciliar `Total de Leads = Leads nas concessionárias + Leads em qualificação`
+- [x] Validar tipagem, suíte completa, build e interface em desktop e mobile
+- [x] Salvar checkpoint da alteração solicitada pelo cliente

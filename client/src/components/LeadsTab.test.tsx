@@ -7,6 +7,7 @@ import {
   DealerAudit,
   LeadEmptyState,
   LeadFilterIdentity,
+  LeadSummaryCards,
   LeadsError,
   formatDailyBarTotal,
   formatDealerLabel,
@@ -72,6 +73,35 @@ describe("interface de Leads", () => {
     expect(html).toContain("Ver Leads em qualificação por canal");
     expect(html).toContain("Dealer A");
     expect(html).toContain("Ver canais");
+  });
+
+  it("exibe no topo o total de Leads nas concessionárias reconciliado com os Leads em qualificação", () => {
+    const summary = {
+      totalLeads: 8080,
+      dailyAverage: 384.76,
+      primaryChannel: "Site",
+      primaryChannelLeads: 3866,
+      activeChannels: 7,
+      calendarDays: 21,
+    };
+    const dealerSummary = {
+      validDealers: 38,
+      assignedLeads: 7041,
+      unavailableLeads: 1039,
+      assignedSharePercent: 87.14,
+      dealersReceivingOnLatestDay: 35,
+      latestDay: "2026-07-21",
+    };
+
+    const html = renderToStaticMarkup(
+      <LeadSummaryCards summary={summary} dealerSummary={dealerSummary} />,
+    );
+
+    expect(dealerSummary.assignedLeads + dealerSummary.unavailableLeads).toBe(summary.totalLeads);
+    expect(html).toContain("Total de Leads nas concessionárias");
+    expect(html).toContain("7.041");
+    expect(html).toContain("1.039 em qualificação");
+    expect(html).toContain("87,14% do total");
   });
 
   it("formata o total reconciliado exibido acima de cada barra diária", () => {

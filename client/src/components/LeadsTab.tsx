@@ -204,6 +204,26 @@ function LeadMetricCard({
   );
 }
 
+export function LeadSummaryCards({
+  summary,
+  dealerSummary,
+  locale = "pt-BR",
+}: {
+  summary: LeadAnalytics["summary"];
+  dealerSummary: LeadAnalytics["dealerAudit"]["summary"];
+  locale?: Locale;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <LeadMetricCard title={ui(locale, "Total de Leads", "Total Leads")} value={formatInteger(summary.totalLeads, locale)} subtitle={ui(locale, `${summary.calendarDays} dia(s) no período`, `${summary.calendarDays} day(s) in period`)} icon={<UsersRound className="h-4 w-4" />} accent="#e2212d" />
+      <LeadMetricCard title={ui(locale, "Total de Leads nas concessionárias", "Total Leads in dealerships")} value={formatInteger(dealerSummary.assignedLeads, locale)} subtitle={ui(locale, `${formatInteger(dealerSummary.unavailableLeads, locale)} em qualificação • ${formatNumber(dealerSummary.assignedSharePercent, locale)}% do total`, `${formatInteger(dealerSummary.unavailableLeads, locale)} in qualification • ${formatNumber(dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<Building2 className="h-4 w-4" />} accent="#10b981" />
+      <LeadMetricCard title={ui(locale, "Média diária", "Daily average")} value={formatNumber(summary.dailyAverage, locale)} subtitle={ui(locale, "Dias corridos, inclusive zeros", "Calendar days, including zeroes")} icon={<Gauge className="h-4 w-4" />} accent="#38bdf8" />
+      <LeadMetricCard title={ui(locale, "Canal principal", "Top channel")} value={formatCategoryLabel(summary.primaryChannel, locale)} subtitle={`${formatInteger(summary.primaryChannelLeads, locale)} Leads`} icon={<TrendingUp className="h-4 w-4" />} accent="#f59e0b" />
+      <LeadMetricCard title={ui(locale, "Canais ativos", "Active channels")} value={formatInteger(summary.activeChannels, locale)} subtitle={ui(locale, "Canais identificados no período", "Channels identified in this period")} icon={<BarChart3 className="h-4 w-4" />} accent="#a78bfa" />
+    </div>
+  );
+}
+
 export function LeadsLoading({ locale = "pt-BR" }: { locale?: Locale } = {}) {
   return (
     <div className="grid min-h-[520px] place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
@@ -822,12 +842,7 @@ export function LeadsTab({
         channels={data.channelUpdate.updatingChannels}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <LeadMetricCard title={ui(locale, "Total de Leads", "Total Leads")} value={formatInteger(data.summary.totalLeads, locale)} subtitle={ui(locale, `${data.summary.calendarDays} dia(s) no período`, `${data.summary.calendarDays} day(s) in period`)} icon={<UsersRound className="h-4 w-4" />} accent="#e2212d" />
-        <LeadMetricCard title={ui(locale, "Média diária", "Daily average")} value={formatNumber(data.summary.dailyAverage, locale)} subtitle={ui(locale, "Dias corridos, inclusive zeros", "Calendar days, including zeroes")} icon={<Gauge className="h-4 w-4" />} accent="#38bdf8" />
-        <LeadMetricCard title={ui(locale, "Canal principal", "Top channel")} value={formatCategoryLabel(data.summary.primaryChannel, locale)} subtitle={`${formatInteger(data.summary.primaryChannelLeads, locale)} Leads`} icon={<TrendingUp className="h-4 w-4" />} accent="#10b981" />
-        <LeadMetricCard title={ui(locale, "Canais ativos", "Active channels")} value={formatInteger(data.summary.activeChannels, locale)} subtitle={ui(locale, "Canais identificados no período", "Channels identified in this period")} icon={<BarChart3 className="h-4 w-4" />} accent="#a78bfa" />
-      </div>
+      <LeadSummaryCards summary={data.summary} dealerSummary={data.dealerAudit.summary} locale={locale} />
 
       <LeadPanel
         title={ui(locale, `Pacing de Leads — ${data.pacing.competence}`, `Leads pacing — ${data.pacing.competence}`)}
