@@ -19,6 +19,14 @@ export const UNAVAILABLE_LEAD_VALUE = "Indisponível";
 export const MAX_LEAD_CSV_BYTES = 10 * 1024 * 1024;
 export const MAX_LEAD_CSV_ROWS = 100_000;
 
+export const MERCADO_LIVRE_JULY_DATE_CORRECTION = {
+  channel: "Mercado Livre",
+  sourceDateRaw: "Tue Jun 01 2026 00:00:00 GMT-0400 (Chile Standard Time)",
+  correctedDateRaw: "01/06/2026",
+  from: "2026-06-01",
+  to: "2026-07-01",
+} as const;
+
 export type LeadCsvHeader = (typeof LEAD_CSV_HEADERS)[number];
 
 export const REQUIRED_LEAD_ROW_FIELDS = [
@@ -179,6 +187,21 @@ export function normalizeLeadChannel(value: string): string {
   return CHANNEL_BY_KEY.get(key) ?? normalized;
 }
 
+export function correctKnownLeadDateAnomaly(input: {
+  correctedDate: string;
+  correctedDateRaw: string;
+  sourceDateRaw: string;
+  channel: string;
+}): string {
+  const correction = MERCADO_LIVRE_JULY_DATE_CORRECTION;
+  const isExactKnownOccurrence =
+    input.correctedDate === correction.from &&
+    normalizeWhitespace(input.correctedDateRaw) === correction.correctedDateRaw &&
+    normalizeWhitespace(input.sourceDateRaw) === correction.sourceDateRaw &&
+    input.channel === correction.channel;
+  return isExactKnownOccurrence ? correction.to : input.correctedDate;
+}
+
 const DEALER_PLACEHOLDER_KEYS = new Set([
   "WHATSAPP",
   "E MAIL",
@@ -331,10 +354,10 @@ function normalizeRow(
 
   const correctedDateRaw = row["Data Corrigida"] ?? "";
   const correctedDateMissing = !normalizeWhitespace(correctedDateRaw);
-  const correctedDate = correctedDateMissing
+  const parsedCorrectedDate = correctedDateMissing
     ? fallbackDate
     : parseCorrectedLeadDate(correctedDateRaw);
-  if (!correctedDate) {
+  if (!parsedCorrectedDate) {
     return {
       rowNumber: sourceRowNumber,
       message: "Data Corrigida inválida; use DD/MM/AAAA ou AAAA-MM-DD.",
@@ -361,6 +384,12 @@ function normalizeRow(
   const email = normalizeEmail(emailRaw);
   const phone = normalizePhone(phoneRaw);
   const channel = normalizeLeadChannel(channelRaw);
+  const correctedDate = correctKnownLeadDateAnomaly({
+    correctedDate: parsedCorrectedDate,
+    correctedDateRaw,
+    sourceDateRaw,
+    channel,
+  });
 
   const contentHash = sha256(
     [

@@ -52,6 +52,61 @@ describe("parseLeadCsv", () => {
     expect(result.records[0].rawPayload.correctedDealer).toBe("MG SUL - MATRIZ");
   });
 
+  it("corrige para 01/07 somente a assinatura exata dos 18 Leads do Mercado Livre", () => {
+    const exactKnownOccurrence = [
+      "Tue Jun 01 2026 00:00:00 GMT-0400 (Chile Standard Time)",
+      "MG4",
+      "SP",
+      "São Paulo",
+      "Dealer Original",
+      "Pessoa A",
+      "a@example.com",
+      "11999990001",
+      "Mercado Livre",
+      "01/06/2026",
+      "Dealer A",
+    ].join(",");
+    const differentChannel = [
+      "Tue Jun 01 2026 00:00:00 GMT-0400 (Chile Standard Time)",
+      "MG4",
+      "SP",
+      "São Paulo",
+      "Dealer Original",
+      "Pessoa B",
+      "b@example.com",
+      "11999990002",
+      "Site",
+      "01/06/2026",
+      "Dealer A",
+    ].join(",");
+    const differentSourceDate = [
+      "Wed Jun 02 2026 00:00:00 GMT-0400 (Chile Standard Time)",
+      "MG4",
+      "SP",
+      "São Paulo",
+      "Dealer Original",
+      "Pessoa C",
+      "c@example.com",
+      "11999990003",
+      "Mercado Livre",
+      "01/06/2026",
+      "Dealer A",
+    ].join(",");
+
+    const result = parseLeadCsv(csv(exactKnownOccurrence, differentChannel, differentSourceDate));
+
+    expect(result.records.map(record => record.correctedDate)).toEqual([
+      "2026-07-01",
+      "2026-06-01",
+      "2026-06-01",
+    ]);
+    expect(result.records[0].correctedDateRaw).toBe("01/06/2026");
+    expect(result.records[0].rawPayload.correctedDate).toBe("01/06/2026");
+    expect(result.dateFrom).toBe("2026-06-01");
+    expect(result.dateTo).toBe("2026-07-01");
+    expect(new Set(result.records.map(record => record.contentHash))).toHaveProperty("size", 3);
+  });
+
   it("preserva a primeira ocorrência exata e descarta as repetições seguintes", () => {
     const base = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer A";
     const rerouted = "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa,teste@example.com,11999990000,Site,19/07/2026,Dealer B";

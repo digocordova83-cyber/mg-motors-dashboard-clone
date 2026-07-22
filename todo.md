@@ -547,3 +547,33 @@
 - [x] Atualizar schema e migração sem perder a rastreabilidade da linha preservada
 - [x] Cobrir duplicidades internas e entre arquivos com testes determinísticos
 - [x] Validar que Leads apenas semelhantes continuam sendo importados
+
+## Exportação XLSX da base deduplicada
+
+- [x] Extrair todos os Leads consolidados e únicos diretamente do banco
+- [x] Preservar as colunas de origem e os campos normalizados relevantes
+- [x] Criar aba `Leads únicos` com filtros, cabeçalho fixo, formatos e larguras legíveis
+- [x] Criar aba `Resumo` com totais antes/depois, registros removidos e regra de deduplicação
+- [x] Validar 7.545 linhas de dados, unicidade canônica e consistência das datas
+- [x] Entregar o arquivo XLSX final ao usuário
+
+## Reconciliação dashboard 7.527 × base 7.545
+
+- [x] Auditar os filtros padrão, o período e a consulta que alimentam o total do dashboard
+- [x] Identificar exatamente os 18 Leads presentes na base e ausentes do total exibido
+- [x] Determinar se a exclusão é intencional ou uma inconsistência da regra
+- [x] Confirmar a base completa e o filtro mensal como escopos distintos e corretos
+- [x] Reconciliar total geral, série diária, dimensões e auditoria por concessionária
+- [x] Validar os totais exibidos e exportados com suas respectivas datas
+- [x] Informar ao usuário a causa e os totais finais verificados
+
+## Correção permanente dos 18 Leads do Mercado Livre
+
+- [x] Auditar os campos de origem que distinguem exatamente as 18 ocorrências de 01/06/2026
+- [x] Definir regra específica para corrigir essas ocorrências para 01/07/2026 sem afetar outros meses
+- [x] Aplicar a correção no parser de todo novo upload antes da deduplicação canônica
+- [x] Atualizar o hash canônico após a data corrigida e preservar a unicidade da base
+- [x] Corrigir os 18 registros existentes e reconciliar julho em 7.545 Leads
+- [x] Confirmar que junho deixa de conter essas ocorrências e que o total geral permanece 7.545
+- [x] Cobrir o parser e revalidar as regressões de importação e análise por período
+- [x] Validar tipagem, 106 testes, build e total reconciliado do dashboard
