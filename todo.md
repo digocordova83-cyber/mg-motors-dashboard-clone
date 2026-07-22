@@ -577,3 +577,14 @@
 - [x] Confirmar que junho deixa de conter essas ocorrências e que o total geral permanece 7.545
 - [x] Cobrir o parser e revalidar as regressões de importação e análise por período
 - [x] Validar tipagem, 106 testes, build e total reconciliado do dashboard
+
+## Atualização Google Ads e Meta Ads até 21/07/2026
+
+- [x] Auditar conectores habilitados, contas vinculadas e datas máximas atuais por fonte
+- [x] Atualizar Google Ads com dados fechados até 21/07/2026
+- [x] Atualizar Meta Ads com dados fechados até 21/07/2026
+- [x] Confirmar investimento, conversões/resultados, cliques, impressões e disponibilidade real de ROAS por canal
+- [x] Invalidar ou renovar caches sem duplicar dias, campanhas, anúncios ou métricas
+- [x] Reconciliar totais e confirmar a data máxima de 21/07/2026 em cada plataforma
+- [x] Validar tipagem, suíte completa, build e carregamento dos snapshots persistidos
+- [x] Documentar eventuais atrasos, lacunas ou limitações devolvidas pelos conectores
