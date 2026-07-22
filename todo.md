@@ -636,3 +636,38 @@
 - [x] Reconciliar ranking, resumo, auditoria, popup por canal e total geral após o agrupamento
 - [x] Atualizar testes e validar tipagem, suíte completa, build e interface
 - [x] Salvar checkpoint da versão com o agrupamento corrigido
+
+## Nova exportação da base deduplicada
+
+- [x] Confirmar a mesma identidade canônica e a estrutura XLSX usadas na exportação anterior
+- [x] Extrair todos os Leads atuais e únicos diretamente do banco
+- [x] Gerar nova aba `Leads únicos` e resumo auditável sem duplicatas
+- [x] Validar quantidade, unicidade canônica, intervalo de datas e reconciliação do arquivo
+- [x] Entregar o XLSX atualizado ao usuário
+
+## Abertura imediata do calendário nos campos de data
+
+- [x] Localizar todos os campos de data usados em Leads, Google Ads e Meta Ads
+- [x] Fazer o clique em qualquer ponto do campo abrir o calendário nativo
+- [x] Preservar digitação, teclado, acessibilidade, limites mínimos e corte D-1
+- [x] Atualizar testes e validar a interação real no navegador
+- [x] Validar tipagem, suíte completa e build
+- [x] Salvar checkpoint da alteração de calendário
+
+## Reconciliação Meta Ads × base de Leads
+
+- [ ] Confirmar o mesmo período D-1 nos dois totais comparados
+- [ ] Consultar o total Meta Ads pela conexão nativa e o total equivalente na base
+- [ ] Isolar os 20 Leads de diferença por data, campanha, canal e regra de atribuição
+- [ ] Verificar obrigatoriamente a inclusão do canal/campanha `Site`
+- [ ] Documentar a causa exata sem alterar números antes da comprovação
+- [ ] Corrigir o painel somente se a reconciliação demonstrar erro de regra ou filtro
+
+## Redistribuição da meta para 10.000 Leads na planilha de mídia
+
+- [x] Auditar todas as abas, fórmulas, totais e células de distribuição do XLSX fornecido
+- [x] Confirmar no dashboard as proporções vigentes de distribuição da meta de Leads
+- [x] Calcular alocação inteira com soma exata de 10.000 Leads e menor erro proporcional
+- [x] Atualizar Total e todas as abas dependentes sem alterar o layout original
+- [x] Validar fórmulas, somas, percentuais, estilos, células mescladas e integridade do XLSX
+- [x] Entregar a planilha redistribuída ao usuário

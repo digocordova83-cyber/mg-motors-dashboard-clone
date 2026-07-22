@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import React, { useEffect, useMemo, useState, type ReactNode } from "react";
+import React, { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
+import { openNativeDatePicker } from "@/lib/nativeDatePicker";
 import { getDashboardCutoffDate } from "@shared/dashboardDates";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
@@ -348,6 +349,8 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
   const [dateTo, setDateTo] = useState(FALLBACK_TO);
   const [preset, setPreset] = useState("month");
   const [initialized, setInitialized] = useState(false);
+  const dateFromInputRef = useRef<HTMLInputElement>(null);
+  const dateToInputRef = useRef<HTMLInputElement>(null);
   const latestSelectableDate =
     bounds.data?.latestDate && bounds.data.latestDate < FALLBACK_TO
       ? bounds.data.latestDate
@@ -443,7 +446,16 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
               {["7", "14", "30", "60"].map(value => <button key={value} type="button" onClick={() => applyPreset(value)} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${preset === value ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{value}d</button>)}
               <button type="button" onClick={() => applyPreset("month")} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${preset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{t.month}</button>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-[#242f42] bg-[#0d1421] px-3 py-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-600" /><input aria-label={`${t.period} start`} type="date" min={bounds.data?.earliestDate} max={dateTo} value={dateFrom} onChange={event => updateFrom(event.target.value)} className="w-[116px] min-w-0 bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /><span className="text-slate-700">—</span><input aria-label={`${t.period} end`} type="date" min={dateFrom} max={latestSelectableDate} value={dateTo} onChange={event => updateTo(event.target.value)} className="w-[116px] min-w-0 bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /></div>
+            <div className="flex items-stretch rounded-lg border border-[#242f42] bg-[#0d1421]">
+              <div className="flex cursor-pointer items-center gap-2 rounded-l-lg px-3 py-1.5 transition-colors hover:bg-white/[0.03]" onClick={() => openNativeDatePicker(dateFromInputRef.current)}>
+                <CalendarDays className="pointer-events-none h-3.5 w-3.5 shrink-0 text-slate-600" />
+                <input ref={dateFromInputRef} aria-label={`${t.period} start`} type="date" min={bounds.data?.earliestDate} max={dateTo} value={dateFrom} onChange={event => updateFrom(event.target.value)} className="w-[116px] min-w-0 cursor-pointer bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" />
+              </div>
+              <span className="flex items-center text-slate-700">—</span>
+              <div className="flex cursor-pointer items-center rounded-r-lg px-3 py-1.5 transition-colors hover:bg-white/[0.03]" onClick={() => openNativeDatePicker(dateToInputRef.current)}>
+                <input ref={dateToInputRef} aria-label={`${t.period} end`} type="date" min={dateFrom} max={latestSelectableDate} value={dateTo} onChange={event => updateTo(event.target.value)} className="w-[116px] min-w-0 cursor-pointer bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" />
+              </div>
+            </div>
             <Button variant="outline" size="sm" onClick={() => query.refetch()} disabled={query.isFetching} className="h-8 border-[#283349] bg-[#111827] text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><RefreshCcw className={`mr-1.5 h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`} />{t.refresh}</Button>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-slate-600"><span className="flex items-center gap-1.5 text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{data.metadata.source === "windsor-live" ? t.sourceLive : t.sourceSnapshot}</span><span>{t.cutoff}: {formatLongDate(dateTo, locale)}</span><span>{t.through}: {formatLongDate(data.metadata.dataThroughDate, locale)}</span><span>{t.updated}: {new Date(data.metadata.updatedAt).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" })}</span></div>

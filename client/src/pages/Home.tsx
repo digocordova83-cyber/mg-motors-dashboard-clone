@@ -17,6 +17,7 @@ import { MetaAdsDashboard } from "@/components/MetaAdsDashboard";
 import { MediaPlanDashboard } from "@/components/MediaPlanDashboard";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { openNativeDatePicker } from "@/lib/nativeDatePicker";
 import {
   isValidLeadDateRange,
   LEAD_MONTH_DEFAULT_START,
@@ -65,7 +66,7 @@ import {
   TrendingUp,
   UsersRound,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -1233,6 +1234,8 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
   const [leadsDateFrom, setLeadsDateFrom] = useState(LEAD_MONTH_DEFAULT_START);
   const [leadsDateTo, setLeadsDateTo] = useState(DATA_END);
   const [leadsRangeInitialized, setLeadsRangeInitialized] = useState(false);
+  const dateFromInputRef = useRef<HTMLInputElement>(null);
+  const dateToInputRef = useRef<HTMLInputElement>(null);
   const logout = trpc.dashboardAuth.logout.useMutation({
     onSuccess: async () => {
       await utils.dashboardAuth.session.invalidate();
@@ -1448,27 +1451,39 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
                 <button type="button" onClick={() => isLeads ? applyLeadsPreset("month") : applyGooglePreset("month")} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${activePreset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{ui(locale, "Mês", "Month")}</button>
               </div>
 
-              <div className="flex items-center gap-2 rounded-lg border border-[#242f42] bg-[#0d1421] px-3 py-1.5">
-                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-600" />
-                <input
-                  aria-label={isLeads ? ui(locale, "Data inicial de Leads", "Leads start date") : ui(locale, "Data inicial de Google Ads", "Google Ads start date")}
-                  type="date"
-                  min={isLeads ? leadMinDate : undefined}
-                  max={activeDateTo}
-                  value={activeDateFrom}
-                  onChange={event => isLeads ? updateLeadsDateFrom(event.target.value) : updateGoogleDateFrom(event.target.value)}
-                  className="min-w-0 w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]"
-                />
-                <span className="text-slate-700">—</span>
-                <input
-                  aria-label={isLeads ? ui(locale, "Data final de Leads", "Leads end date") : ui(locale, "Data final de Google Ads", "Google Ads end date")}
-                  type="date"
-                  min={activeDateFrom}
-                  max={isLeads ? leadMaxDate : DATA_END}
-                  value={activeDateTo}
-                  onChange={event => isLeads ? updateLeadsDateTo(event.target.value) : updateGoogleDateTo(event.target.value)}
-                  className="min-w-0 w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]"
-                />
+              <div className="flex items-stretch rounded-lg border border-[#242f42] bg-[#0d1421]">
+                <div
+                  className="flex cursor-pointer items-center gap-2 rounded-l-lg px-3 py-1.5 transition-colors hover:bg-white/[0.03]"
+                  onClick={() => openNativeDatePicker(dateFromInputRef.current)}
+                >
+                  <CalendarDays className="pointer-events-none h-3.5 w-3.5 shrink-0 text-slate-600" />
+                  <input
+                    ref={dateFromInputRef}
+                    aria-label={isLeads ? ui(locale, "Data inicial de Leads", "Leads start date") : ui(locale, "Data inicial de Google Ads", "Google Ads start date")}
+                    type="date"
+                    min={isLeads ? leadMinDate : undefined}
+                    max={activeDateTo}
+                    value={activeDateFrom}
+                    onChange={event => isLeads ? updateLeadsDateFrom(event.target.value) : updateGoogleDateFrom(event.target.value)}
+                    className="min-w-0 w-[116px] cursor-pointer bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]"
+                  />
+                </div>
+                <span className="flex items-center text-slate-700">—</span>
+                <div
+                  className="flex cursor-pointer items-center rounded-r-lg px-3 py-1.5 transition-colors hover:bg-white/[0.03]"
+                  onClick={() => openNativeDatePicker(dateToInputRef.current)}
+                >
+                  <input
+                    ref={dateToInputRef}
+                    aria-label={isLeads ? ui(locale, "Data final de Leads", "Leads end date") : ui(locale, "Data final de Google Ads", "Google Ads end date")}
+                    type="date"
+                    min={activeDateFrom}
+                    max={isLeads ? leadMaxDate : DATA_END}
+                    value={activeDateTo}
+                    onChange={event => isLeads ? updateLeadsDateTo(event.target.value) : updateGoogleDateTo(event.target.value)}
+                    className="min-w-0 w-[116px] cursor-pointer bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]"
+                  />
+                </div>
               </div>
 
               {isGoogleAds && data ? (
