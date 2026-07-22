@@ -9,7 +9,7 @@ import { getDashboardAccountByUsername, updateDashboardAccountLastSignIn } from 
 export const DASHBOARD_SESSION_COOKIE = "mg_motors_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
 const SESSION_SCOPE = "mg-motors-dashboard";
-const SESSION_VERSION = 2;
+const SESSION_VERSION = 3;
 const SCRYPT_KEY_LENGTH = 64;
 const SCRYPT_PARAMS = { N: 16_384, r: 8, p: 1 } as const;
 const SCRYPT_MAX_MEMORY = 64 * 1024 * 1024;
@@ -24,6 +24,7 @@ export type DashboardPermissions = {
   canAccessOptimizations: boolean;
   canAccessHistory: boolean;
   canImportLeads: boolean;
+  canAccessAccessHistory: boolean;
 };
 
 export type DashboardIdentity = {
@@ -122,6 +123,7 @@ function mapDashboardIdentity(account: DashboardAccount): DashboardIdentity {
       canAccessOptimizations: account.canAccessOptimizations,
       canAccessHistory: account.canAccessHistory,
       canImportLeads: account.canImportLeads,
+      canAccessAccessHistory: account.canAccessAccessHistory,
     },
   };
 }
@@ -172,6 +174,7 @@ function parsePermissions(value: unknown): DashboardPermissions | null {
     "canAccessOptimizations",
     "canAccessHistory",
     "canImportLeads",
+    "canAccessAccessHistory",
   ] as const;
 
   if (keys.some(key => typeof candidate[key] !== "boolean")) return null;

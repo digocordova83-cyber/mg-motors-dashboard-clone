@@ -52,6 +52,7 @@ export const dashboardAccounts = mysqlTable(
     canAccessOptimizations: boolean("canAccessOptimizations").default(false).notNull(),
     canAccessHistory: boolean("canAccessHistory").default(false).notNull(),
     canImportLeads: boolean("canImportLeads").default(false).notNull(),
+    canAccessAccessHistory: boolean("canAccessAccessHistory").default(false).notNull(),
     createdAt: bigint("createdAt", { mode: "number" }).notNull(),
     updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
     lastSignedInAt: bigint("lastSignedInAt", { mode: "number" }),
@@ -59,6 +60,24 @@ export const dashboardAccounts = mysqlTable(
   table => [
     uniqueIndex("dashboard_accounts_username_unique").on(table.username),
     index("dashboard_accounts_active_idx").on(table.isActive, table.username),
+  ],
+);
+
+export const dashboardAccessEvents = mysqlTable(
+  "dashboard_access_events",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    accountId: int("accountId").references(() => dashboardAccounts.id, { onDelete: "set null" }),
+    username: varchar("username", { length: 64 }).notNull(),
+    eventType: mysqlEnum("eventType", ["LOGIN_SUCCESS", "LOGIN_FAILURE", "LOGOUT"]).notNull(),
+    ipAddress: varchar("ipAddress", { length: 64 }),
+    userAgent: varchar("userAgent", { length: 512 }),
+    occurredAt: bigint("occurredAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    index("dashboard_access_events_occurred_idx").on(table.occurredAt),
+    index("dashboard_access_events_username_occurred_idx").on(table.username, table.occurredAt),
+    index("dashboard_access_events_type_occurred_idx").on(table.eventType, table.occurredAt),
   ],
 );
 
@@ -402,6 +421,8 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type DashboardAccount = typeof dashboardAccounts.$inferSelect;
 export type InsertDashboardAccount = typeof dashboardAccounts.$inferInsert;
+export type DashboardAccessEvent = typeof dashboardAccessEvents.$inferSelect;
+export type InsertDashboardAccessEvent = typeof dashboardAccessEvents.$inferInsert;
 export type DashboardSourceRefresh = typeof dashboardSourceRefreshes.$inferSelect;
 export type InsertDashboardSourceRefresh = typeof dashboardSourceRefreshes.$inferInsert;
 export type CampaignGoal = typeof campaignGoals.$inferSelect;

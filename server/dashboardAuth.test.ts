@@ -34,6 +34,24 @@ const mgMotorIdentity: DashboardIdentity = {
     canAccessOptimizations: false,
     canAccessHistory: false,
     canImportLeads: false,
+    canAccessAccessHistory: false,
+  },
+};
+
+const mgSalesIdentity: DashboardIdentity = {
+  accountId: 4,
+  username: "mgsales",
+  displayName: "MG Sales",
+  locale: "en-US",
+  permissions: {
+    canAccessGoogleAds: true,
+    canAccessMetaAds: true,
+    canAccessLeads: true,
+    canAccessMediaPlan: true,
+    canAccessOptimizations: false,
+    canAccessHistory: false,
+    canImportLeads: false,
+    canAccessAccessHistory: false,
   },
 };
 
@@ -50,6 +68,7 @@ const danielIdentity: DashboardIdentity = {
     canAccessOptimizations: true,
     canAccessHistory: true,
     canImportLeads: true,
+    canAccessAccessHistory: false,
   },
 };
 
@@ -97,7 +116,20 @@ describe("autenticação do dashboard", () => {
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(2);
   });
 
-  it("autentica Daniel com acesso integral a todos os módulos e operações", async () => {
+  it("autentica mgsales em inglês com exatamente as mesmas restrições de mgmotor", async () => {
+    dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(mgSalesIdentity));
+
+    const identity = await authenticateDashboardCredentials("mgsales", testPassword);
+
+    expect(identity).toEqual(mgSalesIdentity);
+    expect(identity?.locale).toBe("en-US");
+    expect(identity?.permissions).toEqual(mgMotorIdentity.permissions);
+    expect(identity?.permissions.canAccessAccessHistory).toBe(false);
+    expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mgsales");
+    expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(4);
+  });
+
+  it("autentica Daniel com acesso aos módulos operacionais sem conceder a auditoria exclusiva de rodrigo", async () => {
     dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(danielIdentity));
 
     const identity = await authenticateDashboardCredentials("daniel", testPassword);
@@ -111,6 +143,7 @@ describe("autenticação do dashboard", () => {
       canAccessOptimizations: true,
       canAccessHistory: true,
       canImportLeads: true,
+      canAccessAccessHistory: false,
     });
     expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("daniel");
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(3);

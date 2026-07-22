@@ -1,10 +1,12 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, like, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   campaignGoals,
+  dashboardAccessEvents,
   dashboardAccounts,
   dashboardDataSnapshots,
   dashboardSourceRefreshes,
+  InsertDashboardAccessEvent,
   InsertDashboardAccount,
   InsertUser,
   optimizationCycles,
@@ -140,6 +142,75 @@ export async function updateDashboardAccountLastSignIn(id: number) {
     .update(dashboardAccounts)
     .set({ lastSignedInAt: now, updatedAt: now })
     .where(eq(dashboardAccounts.id, id));
+}
+
+export type DashboardAccessEventType = "LOGIN_SUCCESS" | "LOGIN_FAILURE" | "LOGOUT";
+
+export async function recordDashboardAccessEvent(
+  input: Omit<InsertDashboardAccessEvent, "id" | "occurredAt"> & { occurredAt?: number },
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  await db.insert(dashboardAccessEvents).values({
+    ...input,
+    username: input.username.trim().toLocaleLowerCase("en-US").slice(0, 64) || "unknown",
+    ipAddress: input.ipAddress?.slice(0, 64) ?? null,
+    userAgent: input.userAgent?.slice(0, 512) ?? null,
+    occurredAt: input.occurredAt ?? Date.now(),
+  });
+}
+
+export async function listDashboardAccessEvents(input: {
+  page: number;
+  pageSize: number;
+  username?: string;
+  eventType?: DashboardAccessEventType;
+  occurredFrom?: number;
+  occurredTo?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+
+  const conditions = [];
+  const normalizedUsername = input.username?.trim().toLocaleLowerCase("en-US");
+  if (normalizedUsername) conditions.push(like(dashboardAccessEvents.username, `%${normalizedUsername}%`));
+  if (input.eventType) conditions.push(eq(dashboardAccessEvents.eventType, input.eventType));
+  if (input.occurredFrom != null) conditions.push(gte(dashboardAccessEvents.occurredAt, input.occurredFrom));
+  if (input.occurredTo != null) conditions.push(lte(dashboardAccessEvents.occurredAt, input.occurredTo));
+  const where = conditions.length ? and(...conditions) : undefined;
+  const offset = (input.page - 1) * input.pageSize;
+
+  const [items, totalRows] = await Promise.all([
+    db
+      .select({
+        id: dashboardAccessEvents.id,
+        accountId: dashboardAccessEvents.accountId,
+        username: dashboardAccessEvents.username,
+        eventType: dashboardAccessEvents.eventType,
+        ipAddress: dashboardAccessEvents.ipAddress,
+        userAgent: dashboardAccessEvents.userAgent,
+        occurredAt: dashboardAccessEvents.occurredAt,
+      })
+      .from(dashboardAccessEvents)
+      .where(where)
+      .orderBy(desc(dashboardAccessEvents.occurredAt), desc(dashboardAccessEvents.id))
+      .limit(input.pageSize)
+      .offset(offset),
+    db
+      .select({ total: sql<number>`count(*)` })
+      .from(dashboardAccessEvents)
+      .where(where),
+  ]);
+
+  const total = Number(totalRows[0]?.total ?? 0);
+  return {
+    items,
+    total,
+    page: input.page,
+    pageSize: input.pageSize,
+    totalPages: Math.max(1, Math.ceil(total / input.pageSize)),
+  };
 }
 
 export type DashboardRefreshSource = "GOOGLE_ADS" | "META_ADS";

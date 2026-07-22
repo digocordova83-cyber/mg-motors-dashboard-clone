@@ -21,6 +21,18 @@ describe("navegação modular do dashboard", () => {
     });
   });
 
+  it("resolve o histórico administrativo como módulo próprio sem subaba", () => {
+    expect(resolveDashboardRoute("?module=access-history&tab=history")).toEqual({
+      module: "access-history",
+      googleTab: "history",
+    });
+
+    expect(params(buildDashboardSearch("?tab=history&campaign=123", "access-history", "history"))).toEqual({
+      campaign: "123",
+      module: "access-history",
+    });
+  });
+
   it("mantém as subabas exclusivas dentro de Google Ads", () => {
     expect(resolveDashboardRoute("?module=google-ads&tab=history")).toEqual({
       module: "google-ads",

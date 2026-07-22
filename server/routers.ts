@@ -12,10 +12,12 @@ import {
   readDashboardSession,
   setDashboardSession,
 } from "./dashboardAuth";
+import { recordDashboardAccessSafely } from "./dashboardAccessAudit";
 import { loadDashboardData, MG_MOTORS_ACCOUNT_ID } from "./dashboardService";
 import {
   completeOptimizationTask,
   getOptimizationWorkspace,
+  listDashboardAccessEvents,
   OptimizationRecommendationInput,
   reopenOptimizationTask,
   rolloverOptimizationCycle,
@@ -65,6 +67,7 @@ const leadsProcedure = createPermissionProcedure("canAccessLeads");
 const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations");
 const historyProcedure = createPermissionProcedure("canAccessHistory");
 const importLeadsProcedure = createPermissionProcedure("canImportLeads");
+const accessHistoryProcedure = createPermissionProcedure("canAccessAccessHistory");
 
 const dateSchema = z
   .string()
@@ -175,17 +178,52 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        const identity = await authenticateDashboardCredentials(input.username, input.password);
+        const username = input.username.trim().toLocaleLowerCase("en-US");
+        const identity = await authenticateDashboardCredentials(username, input.password);
         if (!identity) {
+          await recordDashboardAccessSafely({
+            req: ctx.req,
+            username,
+            eventType: "LOGIN_FAILURE",
+          });
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário ou senha inválidos" });
         }
         await setDashboardSession(ctx.res, ctx.req, identity);
+        await recordDashboardAccessSafely({
+          req: ctx.req,
+          username: identity.username,
+          accountId: identity.accountId,
+          eventType: "LOGIN_SUCCESS",
+        });
         return { success: true as const, ...identity };
       }),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      const session = await readDashboardSession(ctx.req);
       clearDashboardSession(ctx.res, ctx.req);
+      if (session) {
+        await recordDashboardAccessSafely({
+          req: ctx.req,
+          username: session.username,
+          accountId: session.accountId,
+          eventType: "LOGOUT",
+        });
+      }
       return { success: true } as const;
     }),
+  }),
+  accessHistory: router({
+    list: accessHistoryProcedure
+      .input(
+        z.object({
+          page: z.number().int().min(1).max(100_000).default(1),
+          pageSize: z.number().int().min(10).max(100).default(50),
+          username: z.string().trim().max(64).optional(),
+          eventType: z.enum(["LOGIN_SUCCESS", "LOGIN_FAILURE", "LOGOUT"]).optional(),
+          occurredFrom: z.number().int().nonnegative().optional(),
+          occurredTo: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .query(({ input }) => listDashboardAccessEvents(input)),
   }),
   leads: router({
     bounds: leadsProcedure.query(() => getLeadDataBounds()),

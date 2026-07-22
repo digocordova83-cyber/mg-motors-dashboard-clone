@@ -57,6 +57,13 @@
       "when": 1784669711502,
       "tag": "0007_typical_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1784748411951,
+      "tag": "0008_ordinary_longshot",
+      "breakpoints": true
     }
   ]
 }

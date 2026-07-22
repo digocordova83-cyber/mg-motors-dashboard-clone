@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CampaignIdentity } from "@/components/CampaignIdentity";
 import { OptimizationHistoryTab } from "@/components/OptimizationHistoryTab";
+import { AccessHistoryTab } from "@/components/AccessHistoryTab";
 import { LeadsTab } from "@/components/LeadsTab";
 import { MetaAdsDashboard } from "@/components/MetaAdsDashboard";
 import { MediaPlanDashboard } from "@/components/MediaPlanDashboard";
@@ -161,6 +162,7 @@ const dashboardModules: Array<{
   { id: "meta-ads", labels: { "pt-BR": "Meta Ads", "en-US": "Meta Ads" }, permission: "canAccessMetaAds", icon: Megaphone },
   { id: "leads", labels: { "pt-BR": "Leads", "en-US": "Leads" }, permission: "canAccessLeads", icon: UsersRound },
   { id: "media-plan", labels: { "pt-BR": "Plano de Mídia", "en-US": "Media Plan" }, permission: "canAccessMediaPlan", icon: FileSpreadsheet },
+  { id: "access-history", labels: { "pt-BR": "Histórico de acessos", "en-US": "Access History" }, permission: "canAccessAccessHistory", icon: ShieldCheck },
 ];
 
 const googleAdsTabs: Array<{
@@ -1243,6 +1245,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
       utils.leads.analytics.reset();
       utils.leads.bounds.reset();
       utils.leads.importHistory.reset();
+      utils.accessHistory.list.reset();
     },
   });
   const googleQueryInput = useMemo(
@@ -1434,7 +1437,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
         ) : null}
       </div>
 
-      {activeModule === "meta-ads" ? <MetaAdsDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : activeModule === "media-plan" ? <MediaPlanDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : (
+      {activeModule === "access-history" ? <AccessHistoryTab locale={locale} /> : activeModule === "meta-ads" ? <MetaAdsDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : activeModule === "media-plan" ? <MediaPlanDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : (
         <main className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6">
           <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>

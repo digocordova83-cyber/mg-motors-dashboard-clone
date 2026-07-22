@@ -694,3 +694,22 @@
 - [x] Salvar checkpoint do novo card solicitado
 - [x] Exibir o novo card e seus textos integralmente em inglês quando o locale do usuário mgmotor for `en-US`
 - [x] Adicionar teste específico para título, descrição e formatação numérica em inglês
+
+## Usuário mgsales e histórico administrativo de acessos
+
+- [x] Auditar o fluxo atual de autenticação local, permissões do mgmotor e navegação exclusiva de administradores
+- [x] Criar tabela persistente de eventos de acesso com usuário, resultado, data/hora UTC, IP e user agent, sem armazenar credenciais
+- [x] Registrar login bem-sucedido, login recusado e logout sem impedir a autenticação caso a auditoria falhe
+- [x] Criar procedimento paginado e protegido para consulta do histórico somente por administradores autorizados
+- [x] Criar ou atualizar o usuário `mgsales` com senha armazenada exclusivamente como hash seguro
+- [x] Replicar para `mgsales` o locale `en-US`, módulos permitidos e restrições do usuário `mgmotor`
+- [x] Impedir que `mgsales` acesse Otimizações, Histórico e importação de CSV, como ocorre com `mgmotor`
+- [x] Adicionar ao usuário administrador `rodrigo` a aba `Histórico de acessos`
+- [x] Exibir na nova aba usuário, resultado, data/hora local, IP, navegador/dispositivo e filtros úteis
+- [x] Ocultar a aba e bloquear a API para mgmotor, mgsales e demais usuários não administradores
+- [x] Adicionar testes de autenticação, autorização, persistência, paginação, idioma e ausência de senha nos logs
+- [x] Gerar e aplicar migração não destrutiva da tabela de auditoria
+- [x] Validar tipagem, suíte completa, build e interface responsiva
+- [x] Revisar todo.md e salvar checkpoint da versão com mgsales e auditoria de acessos
+- [x] Aplicar a senha curta autorizada somente à conta `mgsales`, mantendo intacta a validação global de mínimo de 8 caracteres
+- [x] Comprovar que a credencial de `mgsales` foi persistida apenas como hash scrypt e que autentica corretamente
