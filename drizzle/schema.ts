@@ -417,6 +417,106 @@ export const leadMonthlyGoals = mysqlTable(
   ],
 );
 
+export const weeklySalesImports = mysqlTable(
+  "weekly_sales_imports",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    fileName: varchar("fileName", { length: 255 }).notNull(),
+    fileHash: varchar("fileHash", { length: 64 }).notNull(),
+    fileSizeBytes: int("fileSizeBytes").notNull(),
+    fileKey: varchar("fileKey", { length: 512 }),
+    fileUrl: text("fileUrl"),
+    competence: varchar("competence", { length: 7 }).notNull(),
+    referenceWeek: int("referenceWeek").default(4).notNull(),
+    status: mysqlEnum("status", ["PROCESSING", "COMPLETED", "FAILED"])
+      .default("PROCESSING")
+      .notNull(),
+    rowsTotal: int("rowsTotal").default(0).notNull(),
+    dealerRows: int("dealerRows").default(0).notNull(),
+    regionRows: int("regionRows").default(0).notNull(),
+    totalRows: int("totalRows").default(0).notNull(),
+    rowsInserted: int("rowsInserted").default(0).notNull(),
+    rowsInvalid: int("rowsInvalid").default(0).notNull(),
+    matchedDealerRows: int("matchedDealerRows").default(0).notNull(),
+    unmatchedDealerRows: int("unmatchedDealerRows").default(0).notNull(),
+    dealersWithoutWeek4Sales: int("dealersWithoutWeek4Sales").default(0).notNull(),
+    week4DealerSalesTotal: int("week4DealerSalesTotal"),
+    week4RegionSalesTotal: int("week4RegionSalesTotal"),
+    week4ReportedSalesTotal: int("week4ReportedSalesTotal"),
+    reconciliationPassed: boolean("reconciliationPassed").default(false).notNull(),
+    errorSummary: json("errorSummary").$type<string[]>(),
+    importedBy: varchar("importedBy", { length: 120 }).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    completedAt: bigint("completedAt", { mode: "number" }),
+  },
+  table => [
+    uniqueIndex("weekly_sales_imports_file_competence_unique").on(
+      table.fileHash,
+      table.competence,
+    ),
+    index("weekly_sales_imports_competence_status_idx").on(
+      table.competence,
+      table.status,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const weeklySalesRecords = mysqlTable(
+  "weekly_sales_records",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    importId: int("importId")
+      .notNull()
+      .references(() => weeklySalesImports.id, { onDelete: "cascade" }),
+    competence: varchar("competence", { length: 7 }).notNull(),
+    sourceRowNumber: int("sourceRowNumber").notNull(),
+    rowType: mysqlEnum("rowType", ["DEALER", "REGION", "TOTAL"]).notNull(),
+    sourceName: varchar("sourceName", { length: 255 }).notNull(),
+    sourceKey: varchar("sourceKey", { length: 255 }).notNull(),
+    canonicalDealer: varchar("canonicalDealer", { length: 255 }),
+    canonicalDealerKey: varchar("canonicalDealerKey", { length: 255 }),
+    matchStatus: mysqlEnum("matchStatus", ["MATCHED", "UNMATCHED", "AGGREGATE"]).notNull(),
+    recordHash: varchar("recordHash", { length: 64 }).notNull(),
+    week1Target: decimal("week1Target", { precision: 12, scale: 2 }),
+    week1Retail: int("week1Retail"),
+    week1Achievement: decimal("week1Achievement", { precision: 12, scale: 2 }),
+    week2Target: decimal("week2Target", { precision: 12, scale: 2 }),
+    week2Retail: int("week2Retail"),
+    week2Achievement: decimal("week2Achievement", { precision: 12, scale: 2 }),
+    week3Target: decimal("week3Target", { precision: 12, scale: 2 }),
+    week3Retail: int("week3Retail"),
+    week3Achievement: decimal("week3Achievement", { precision: 12, scale: 2 }),
+    week4Target: decimal("week4Target", { precision: 12, scale: 2 }),
+    week4Retail: int("week4Retail"),
+    week4Achievement: decimal("week4Achievement", { precision: 12, scale: 2 }),
+    week5Target: decimal("week5Target", { precision: 12, scale: 2 }),
+    week5Retail: int("week5Retail"),
+    week5Achievement: decimal("week5Achievement", { precision: 12, scale: 2 }),
+    rawPayload: json("rawPayload")
+      .$type<{
+        tokens: string[];
+        weeks: Record<
+          string,
+          { target: number | null; retail: number | null; achievementPercent: number | null }
+        >;
+      }>()
+      .notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("weekly_sales_records_import_row_unique").on(
+      table.importId,
+      table.sourceRowNumber,
+    ),
+    index("weekly_sales_records_competence_dealer_idx").on(
+      table.competence,
+      table.canonicalDealer,
+    ),
+    index("weekly_sales_records_import_type_idx").on(table.importId, table.rowType),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type DashboardAccount = typeof dashboardAccounts.$inferSelect;
@@ -443,3 +543,7 @@ export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
 export type LeadMonthlyGoal = typeof leadMonthlyGoals.$inferSelect;
 export type InsertLeadMonthlyGoal = typeof leadMonthlyGoals.$inferInsert;
+export type WeeklySalesImport = typeof weeklySalesImports.$inferSelect;
+export type InsertWeeklySalesImport = typeof weeklySalesImports.$inferInsert;
+export type WeeklySalesRecord = typeof weeklySalesRecords.$inferSelect;
+export type InsertWeeklySalesRecord = typeof weeklySalesRecords.$inferInsert;

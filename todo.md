@@ -713,3 +713,32 @@
 - [x] Revisar todo.md e salvar checkpoint da versão com mgsales e auditoria de acessos
 - [x] Aplicar a senha curta autorizada somente à conta `mgsales`, mantendo intacta a validação global de mínimo de 8 caracteres
 - [x] Comprovar que a credencial de `mgsales` foi persistida apenas como hash scrypt e que autentica corretamente
+
+## Vendas semanais e conversão por concessionária
+
+- [x] Auditar delimitador, encoding, cabeçalhos, semanas, totais e nomes de concessionárias do CSV de vendas recebido
+- [x] Confirmar a interpretação da coluna Semana 4 como referência mensal de vendas, sem somar novamente Semanas 1–3
+- [x] Preservar o nome original da concessionária e aplicar somente o de/para explícito já usado no dashboard
+- [x] Identificar concessionárias sem correspondência, aliases conflitantes, linhas de total e valores inválidos antes da importação
+- [x] Definir competência, identidade de arquivo/linha e contrato auditável da base semanal de vendas
+- [x] Definir `taxa de conversão = vendas da Semana 4 / Leads do mesmo dealer e competência`
+- [x] Definir `Leads por venda = Leads / vendas da Semana 4`, exibindo indisponível quando não houver vendas
+- [x] Definir `Leads estimados para uma venda = arredondamento para cima de Leads por venda`, sem apresentar a estimativa como garantia
+- [x] Criar tabelas persistentes de lotes e registros semanais de vendas com hash, usuário, contagens e timestamps UTC
+- [x] Implementar importação CSV pré-validada, transacional e idempotente para atualização da base de vendas
+- [x] Restringir a atualização da base de vendas a usuários com permissão administrativa de importação
+- [x] Integrar as vendas da Semana 4 às métricas de cada concessionária sem duplicar Leads ou vendas
+- [x] Expor no backend vendas mensais, conversão, Leads por venda e Leads estimados para uma venda
+- [x] Incluir no ranking/auditoria por concessionária colunas de vendas, conversão e eficiência de Leads
+- [x] Incluir no detalhe de cada concessionária o histórico Semanas 1–4 e a referência mensal da Semana 4
+- [x] Criar ação administrativa `Atualizar vendas` com prévia, confirmação, sucesso, erro e histórico do arquivo
+- [x] Traduzir integralmente os novos indicadores e estados para `en-US` em mgmotor e mgsales
+- [x] Tratar dealers sem vendas, sem Leads ou sem correspondência com estados explícitos e sem divisão por zero
+- [x] Adicionar testes de parser, de/para, idempotência, fórmulas, autorização, reconciliação e interface bilíngue
+- [x] Gerar e aplicar migração não destrutiva das tabelas de vendas semanais
+- [x] Importar o CSV recebido e reconciliar linhas, concessionárias, Semana 4, Leads e totais exibidos
+- [x] Validar tipagem, suíte completa, build e interface desktop/mobile
+- [x] Revisar todo.md e salvar checkpoint da integração de vendas por concessionária
+- [x] Implementar exclusivamente a opção escolhida de upload manual semanal, sem agendamento ou dependência externa
+- [x] Incorporar ao de/para de vendas os seis aliases confirmados: Baltic, Indiana, JRCA, Toriba, Potenza e Tecar Brasília
+- [x] Gerar ao final a lista das concessionárias do CSV de vendas sem correspondência na base atual de Leads do dashboard

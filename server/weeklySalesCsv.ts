@@ -1,0 +1,403 @@
+import { createHash } from "node:crypto";
+
+import weeklySalesAliasesSource from "./data/weekly-sales-dealer-aliases.json";
+import {
+  canonicalizeDealerName,
+  isExplicitDealerAlias,
+  normalizeDealerLookupKey,
+} from "./dealerNormalization";
+
+export type WeeklySalesWeek = 1 | 2 | 3 | 4 | 5;
+
+export type WeeklySalesWeekMetrics = {
+  target: number | null;
+  retail: number | null;
+  achievementPercent: number | null;
+};
+
+export type WeeklySalesRow = {
+  sourceRowNumber: number;
+  rowType: "DEALER" | "REGION" | "TOTAL";
+  sourceName: string;
+  sourceKey: string;
+  canonicalDealer: string | null;
+  canonicalDealerKey: string | null;
+  explicitMapping: boolean;
+  recordHash: string;
+  tokens: string[];
+  weeks: Record<string, WeeklySalesWeekMetrics>;
+};
+
+export type WeeklySalesCsvPreview = {
+  fileHash: string;
+  rows: WeeklySalesRow[];
+  errors: string[];
+  warnings: string[];
+  summary: {
+    rowsTotal: number;
+    dealerRows: number;
+    regionRows: number;
+    totalRows: number;
+    dealersWithoutWeek4Sales: number;
+    week4DealerSalesTotal: number;
+    week4RegionSalesTotal: number;
+    week4ReportedSalesTotal: number | null;
+    reconciliationPassed: boolean;
+  };
+};
+
+type AliasRow = {
+  source: string;
+  sourceKey: string;
+  canonical: string;
+};
+
+type ParsedCandidate = {
+  weeks: Record<string, WeeklySalesWeekMetrics>;
+  score: number;
+};
+
+const weeklySalesAliasMap = new Map(
+  (weeklySalesAliasesSource.mappings as AliasRow[]).map(mapping => [
+    mapping.sourceKey,
+    mapping.canonical,
+  ]),
+);
+
+const EXPECTED_HEADER = [
+  "REGION",
+  "W1 TGT",
+  "W1 RETAIL",
+  "%W1",
+  "W2 TGT",
+  "W2 RETAIL",
+  "%W2",
+  "W3 TGT",
+  "W3 RETAIL",
+  "%W3",
+  "W4 TGT",
+  "W4 RETAIL",
+  "%W4",
+  "W5 TGT",
+  "W5 RETAIL",
+  "%W5",
+];
+
+function decodeCsv(buffer: Buffer): string {
+  const utf8 = buffer.toString("utf8");
+  const decoded = utf8.includes("\uFFFD")
+    ? new TextDecoder("windows-1252").decode(buffer)
+    : utf8;
+  return decoded.replace(/^\uFEFF/, "");
+}
+
+function splitLooseCsvLine(line: string): string[] {
+  const tokens: string[] = [];
+  let current = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+    if (character === "," && !quoted) {
+      tokens.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += character;
+  }
+
+  tokens.push(current.trim());
+  return tokens;
+}
+
+function parseIntegerToken(token: string): number | null | undefined {
+  const value = token.trim();
+  if (!value) return null;
+  if (!/^-?\d+$/.test(value)) return undefined;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : undefined;
+}
+
+function parseDecimalTokens(tokens: string[]): number | null | undefined {
+  if (tokens.length === 1) {
+    const value = tokens[0].trim();
+    if (!value) return null;
+    if (!/^-?\d+(?:[.,]\d+)?$/.test(value)) return undefined;
+    const parsed = Number(value.replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  if (tokens.length === 2) {
+    const whole = tokens[0].trim();
+    const fraction = tokens[1].trim();
+    if (!/^-?\d+$/.test(whole) || !/^\d{1,2}$/.test(fraction)) return undefined;
+    const parsed = Number(`${whole}.${fraction}`);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
+function parseAchievementTokens(tokens: string[]): number | null | undefined {
+  if (tokens.length === 1) {
+    const value = tokens[0].trim();
+    if (!value) return null;
+    if (!/^-?\d+(?:[.,]\d+)?%$/.test(value)) return undefined;
+    const parsed = Number(value.slice(0, -1).replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  if (tokens.length === 2) {
+    const whole = tokens[0].trim();
+    const fractionWithPercent = tokens[1].trim();
+    if (!/^-?\d+$/.test(whole) || !/^\d{1,2}%$/.test(fractionWithPercent)) {
+      return undefined;
+    }
+    const parsed = Number(`${whole}.${fractionWithPercent.slice(0, -1)}`);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
+function scoreWeek(metrics: WeeklySalesWeekMetrics): number {
+  const { target, retail, achievementPercent } = metrics;
+  if (target === null && retail === null && achievementPercent === null) return 25;
+  if (retail === null || achievementPercent === null) {
+    return retail === achievementPercent ? 0 : 100;
+  }
+  if (target === null || target < 0 || retail < 0 || achievementPercent < 0) return 1000;
+  if (target === 0) return retail === 0 && achievementPercent === 0 ? 0 : 500;
+  const expected = (retail / target) * 100;
+  return Math.abs(expected - achievementPercent);
+}
+
+function parseWeekCandidates(tokens: string[], offset: number): Array<{
+  nextOffset: number;
+  metrics: WeeklySalesWeekMetrics;
+  score: number;
+}> {
+  const candidates: Array<{
+    nextOffset: number;
+    metrics: WeeklySalesWeekMetrics;
+    score: number;
+  }> = [];
+
+  for (const targetLength of [1, 2]) {
+    for (const achievementLength of [1, 2]) {
+      const groupLength = targetLength + 1 + achievementLength;
+      if (offset + groupLength > tokens.length) continue;
+
+      const target = parseDecimalTokens(tokens.slice(offset, offset + targetLength));
+      const retail = parseIntegerToken(tokens[offset + targetLength] ?? "");
+      const achievementPercent = parseAchievementTokens(
+        tokens.slice(offset + targetLength + 1, offset + groupLength),
+      );
+      if (target === undefined || retail === undefined || achievementPercent === undefined) continue;
+
+      const metrics = { target, retail, achievementPercent };
+      const score = scoreWeek(metrics);
+      if (score >= 1000) continue;
+      candidates.push({ nextOffset: offset + groupLength, metrics, score });
+    }
+  }
+
+  return candidates;
+}
+
+function parseWeekGroups(tokens: string[]): ParsedCandidate | null {
+  if (tokens.length === 15) {
+    const weeks: Record<string, WeeklySalesWeekMetrics> = {};
+    for (let week = 1; week <= 5; week += 1) {
+      const offset = (week - 1) * 3;
+      const target = parseDecimalTokens([tokens[offset] ?? ""]);
+      const retail = parseIntegerToken(tokens[offset + 1] ?? "");
+      const achievementPercent = parseAchievementTokens([tokens[offset + 2] ?? ""]);
+      if (target === undefined || retail === undefined || achievementPercent === undefined) {
+        return null;
+      }
+      weeks[String(week)] = { target, retail, achievementPercent };
+    }
+    return { weeks, score: 0 };
+  }
+
+  const candidates: ParsedCandidate[] = [];
+
+  function walk(
+    week: WeeklySalesWeek,
+    offset: number,
+    weeks: Record<string, WeeklySalesWeekMetrics>,
+    score: number,
+  ): void {
+    if (week === 5) {
+      for (const candidate of parseWeekCandidates(tokens, offset)) {
+        if (candidate.nextOffset !== tokens.length) continue;
+        candidates.push({
+          weeks: { ...weeks, "5": candidate.metrics },
+          score: score + candidate.score,
+        });
+      }
+      return;
+    }
+
+    for (const candidate of parseWeekCandidates(tokens, offset)) {
+      walk(
+        (week + 1) as WeeklySalesWeek,
+        candidate.nextOffset,
+        { ...weeks, [String(week)]: candidate.metrics },
+        score + candidate.score,
+      );
+    }
+  }
+
+  walk(1, 0, {}, 0);
+  candidates.sort((left, right) => left.score - right.score);
+  const best = candidates[0];
+  if (!best || best.score > 2) return null;
+  const second = candidates[1];
+  if (second && Math.abs(second.score - best.score) < 0.0001) return null;
+  return best;
+}
+
+function classifyRow(name: string): WeeklySalesRow["rowType"] {
+  if (name.trim().toUpperCase() === "TOTAL") return "TOTAL";
+  if (/^R\d+$/i.test(name.trim())) return "REGION";
+  return "DEALER";
+}
+
+function resolveCanonicalDealer(sourceName: string): {
+  canonicalDealer: string;
+  explicitMapping: boolean;
+} {
+  const sourceKey = normalizeDealerLookupKey(sourceName);
+  const weeklyAlias = weeklySalesAliasMap.get(sourceKey);
+  if (weeklyAlias) {
+    return {
+      canonicalDealer: canonicalizeDealerName(weeklyAlias),
+      explicitMapping: true,
+    };
+  }
+
+  return {
+    canonicalDealer: canonicalizeDealerName(sourceName),
+    explicitMapping: isExplicitDealerAlias(sourceName),
+  };
+}
+
+function sumWeek4Retail(rows: WeeklySalesRow[]): number {
+  return rows.reduce((total, row) => total + (row.weeks["4"]?.retail ?? 0), 0);
+}
+
+export function parseWeeklySalesCsv(buffer: Buffer): WeeklySalesCsvPreview {
+  if (buffer.length === 0) throw new Error("O arquivo de vendas está vazio.");
+
+  const content = decodeCsv(buffer).replace(/\r\n?/g, "\n").trimEnd();
+  const lines = content.split("\n").filter(line => line.trim().length > 0);
+  if (lines.length < 2) throw new Error("O arquivo precisa conter cabeçalho e dados de vendas.");
+
+  const header = splitLooseCsvLine(lines[0]).map(value => value.toUpperCase());
+  if (
+    header.length !== EXPECTED_HEADER.length ||
+    header.some((value, index) => value !== EXPECTED_HEADER[index])
+  ) {
+    throw new Error("Cabeçalho incompatível com a base Weekly Target Achievement esperada.");
+  }
+
+  const fileHash = createHash("sha256").update(buffer).digest("hex");
+  const rows: WeeklySalesRow[] = [];
+  const errors: string[] = [];
+
+  for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
+    const sourceRowNumber = lineIndex + 1;
+    const columns = splitLooseCsvLine(lines[lineIndex]);
+    const sourceName = columns[0]?.trim() ?? "";
+    const tokens = columns.slice(1);
+    if (!sourceName) {
+      errors.push(`Linha ${sourceRowNumber}: nome da concessionária/região ausente.`);
+      continue;
+    }
+
+    const parsedGroups = parseWeekGroups(tokens);
+    if (!parsedGroups) {
+      errors.push(`Linha ${sourceRowNumber} (${sourceName}): colunas semanais ambíguas ou inválidas.`);
+      continue;
+    }
+
+    const rowType = classifyRow(sourceName);
+    const sourceKey = normalizeDealerLookupKey(sourceName);
+    const resolved =
+      rowType === "DEALER"
+        ? resolveCanonicalDealer(sourceName)
+        : { canonicalDealer: null, explicitMapping: false };
+    const recordHash = createHash("sha256")
+      .update(JSON.stringify({ sourceRowNumber, sourceName, weeks: parsedGroups.weeks }))
+      .digest("hex");
+
+    rows.push({
+      sourceRowNumber,
+      rowType,
+      sourceName,
+      sourceKey,
+      canonicalDealer: resolved.canonicalDealer,
+      canonicalDealerKey: resolved.canonicalDealer
+        ? normalizeDealerLookupKey(resolved.canonicalDealer)
+        : null,
+      explicitMapping: resolved.explicitMapping,
+      recordHash,
+      tokens,
+      weeks: parsedGroups.weeks,
+    });
+  }
+
+  const dealerRows = rows.filter(row => row.rowType === "DEALER");
+  const regionRows = rows.filter(row => row.rowType === "REGION");
+  const totalRows = rows.filter(row => row.rowType === "TOTAL");
+  const week4DealerSalesTotal = sumWeek4Retail(dealerRows);
+  const week4RegionSalesTotal = sumWeek4Retail(regionRows);
+  const week4ReportedSalesTotal = totalRows[0]?.weeks["4"]?.retail ?? null;
+  const reconciliationPassed =
+    totalRows.length === 1 &&
+    week4ReportedSalesTotal !== null &&
+    week4DealerSalesTotal === week4RegionSalesTotal &&
+    week4DealerSalesTotal === week4ReportedSalesTotal;
+
+  if (totalRows.length !== 1) {
+    errors.push(`Esperada exatamente 1 linha TOTAL; encontradas ${totalRows.length}.`);
+  }
+  if (!reconciliationPassed) {
+    errors.push(
+      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+    );
+  }
+
+  const warnings = dealerRows
+    .filter(row => row.weeks["4"]?.retail === null)
+    .map(row => `${row.sourceName}: Semana 4 sem vendas informadas.`);
+
+  return {
+    fileHash,
+    rows,
+    errors,
+    warnings,
+    summary: {
+      rowsTotal: lines.length - 1,
+      dealerRows: dealerRows.length,
+      regionRows: regionRows.length,
+      totalRows: totalRows.length,
+      dealersWithoutWeek4Sales: warnings.length,
+      week4DealerSalesTotal,
+      week4RegionSalesTotal,
+      week4ReportedSalesTotal,
+      reconciliationPassed,
+    },
+  };
+}

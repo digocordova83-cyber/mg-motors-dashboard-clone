@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { WeeklySalesPanel } from "./WeeklySalesPanel";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
@@ -926,6 +927,12 @@ export function LeadsTab({
         <BreakdownList title={ui(locale, "Leads por região", "Leads by region")} subtitle={ui(locale, "Ausências permanecem como Indisponível.", "Missing values remain Unavailable.")} items={data.regions} accent="#38bdf8" locale={locale} />
         <BreakdownList title={ui(locale, "Top concessionárias", "Top dealers")} subtitle={ui(locale, "Prévia por volume; auditoria completa abaixo.", "Volume preview; full audit below.")} items={data.dealers} accent="#10b981" locale={locale} formatItemLabel={formatDealerLabel} />
       </div>
+
+      <WeeklySalesPanel
+        competence={data.pacing.competence}
+        locale={locale}
+        canImportLeads={canImportLeads}
+      />
 
       <DealerAudit analytics={data} locale={locale} />
 

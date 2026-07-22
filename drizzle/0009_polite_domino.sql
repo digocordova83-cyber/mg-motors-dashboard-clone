@@ -1,0 +1,68 @@
+CREATE TABLE `weekly_sales_imports` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`fileName` varchar(255) NOT NULL,
+	`fileHash` varchar(64) NOT NULL,
+	`fileSizeBytes` int NOT NULL,
+	`fileKey` varchar(512),
+	`fileUrl` text,
+	`competence` varchar(7) NOT NULL,
+	`referenceWeek` int NOT NULL DEFAULT 4,
+	`status` enum('PROCESSING','COMPLETED','FAILED') NOT NULL DEFAULT 'PROCESSING',
+	`rowsTotal` int NOT NULL DEFAULT 0,
+	`dealerRows` int NOT NULL DEFAULT 0,
+	`regionRows` int NOT NULL DEFAULT 0,
+	`totalRows` int NOT NULL DEFAULT 0,
+	`rowsInserted` int NOT NULL DEFAULT 0,
+	`rowsInvalid` int NOT NULL DEFAULT 0,
+	`matchedDealerRows` int NOT NULL DEFAULT 0,
+	`unmatchedDealerRows` int NOT NULL DEFAULT 0,
+	`dealersWithoutWeek4Sales` int NOT NULL DEFAULT 0,
+	`week4DealerSalesTotal` int,
+	`week4RegionSalesTotal` int,
+	`week4ReportedSalesTotal` int,
+	`reconciliationPassed` boolean NOT NULL DEFAULT false,
+	`errorSummary` json,
+	`importedBy` varchar(120) NOT NULL,
+	`createdAt` bigint NOT NULL,
+	`completedAt` bigint,
+	CONSTRAINT `weekly_sales_imports_id` PRIMARY KEY(`id`),
+	CONSTRAINT `weekly_sales_imports_file_competence_unique` UNIQUE(`fileHash`,`competence`)
+);
+--> statement-breakpoint
+CREATE TABLE `weekly_sales_records` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`importId` int NOT NULL,
+	`competence` varchar(7) NOT NULL,
+	`sourceRowNumber` int NOT NULL,
+	`rowType` enum('DEALER','REGION','TOTAL') NOT NULL,
+	`sourceName` varchar(255) NOT NULL,
+	`sourceKey` varchar(255) NOT NULL,
+	`canonicalDealer` varchar(255),
+	`canonicalDealerKey` varchar(255),
+	`matchStatus` enum('MATCHED','UNMATCHED','AGGREGATE') NOT NULL,
+	`recordHash` varchar(64) NOT NULL,
+	`week1Target` decimal(12,2),
+	`week1Retail` int,
+	`week1Achievement` decimal(12,2),
+	`week2Target` decimal(12,2),
+	`week2Retail` int,
+	`week2Achievement` decimal(12,2),
+	`week3Target` decimal(12,2),
+	`week3Retail` int,
+	`week3Achievement` decimal(12,2),
+	`week4Target` decimal(12,2),
+	`week4Retail` int,
+	`week4Achievement` decimal(12,2),
+	`week5Target` decimal(12,2),
+	`week5Retail` int,
+	`week5Achievement` decimal(12,2),
+	`rawPayload` json NOT NULL,
+	`createdAt` bigint NOT NULL,
+	CONSTRAINT `weekly_sales_records_id` PRIMARY KEY(`id`),
+	CONSTRAINT `weekly_sales_records_import_row_unique` UNIQUE(`importId`,`sourceRowNumber`)
+);
+--> statement-breakpoint
+ALTER TABLE `weekly_sales_records` ADD CONSTRAINT `weekly_sales_records_importId_weekly_sales_imports_id_fk` FOREIGN KEY (`importId`) REFERENCES `weekly_sales_imports`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX `weekly_sales_imports_competence_status_idx` ON `weekly_sales_imports` (`competence`,`status`,`createdAt`);--> statement-breakpoint
+CREATE INDEX `weekly_sales_records_competence_dealer_idx` ON `weekly_sales_records` (`competence`,`canonicalDealer`);--> statement-breakpoint
+CREATE INDEX `weekly_sales_records_import_type_idx` ON `weekly_sales_records` (`importId`,`rowType`);

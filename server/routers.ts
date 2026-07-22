@@ -40,6 +40,12 @@ import {
   upsertLeadMonthlyGoal,
 } from "./leadsService";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
+import {
+  getWeeklySalesImportHistory,
+  getWeeklySalesMetrics,
+  importWeeklySalesCsv,
+  previewWeeklySalesCsv,
+} from "./weeklySalesService";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -98,6 +104,25 @@ const leadCsvUploadSchema = z.object({
   base64: z.string().min(4).max(14_100_000, "O arquivo CSV excede o limite de 10 MB"),
   fallbackDate: dateSchema.optional(),
 });
+
+const competenceSchema = z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida");
+const weeklySalesUploadSchema = z.object({
+  fileName: z.string().trim().min(1).max(255),
+  base64: z.string().min(4).max(7_100_000, "O arquivo CSV excede o limite de 5 MB"),
+  competence: competenceSchema,
+  expectedFileHash: z.string().length(64).optional(),
+});
+
+async function mapWeeklySalesError<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+    }
+    throw error;
+  }
+}
 
 async function mapLeadCsvError<T>(operation: () => Promise<T>): Promise<T> {
   try {
@@ -265,6 +290,36 @@ export const appRouter = router({
         }),
       ),
     ),
+    weeklySalesMetrics: leadsProcedure
+      .input(z.object({ competence: competenceSchema }))
+      .query(({ input }) => getWeeklySalesMetrics(input.competence)),
+    weeklySalesImportHistory: importLeadsProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }).optional())
+      .query(({ input }) => getWeeklySalesImportHistory(input?.limit ?? 20)),
+    previewWeeklySalesCsv: importLeadsProcedure
+      .input(weeklySalesUploadSchema.omit({ expectedFileHash: true }))
+      .mutation(({ input }) =>
+        mapWeeklySalesError(() =>
+          previewWeeklySalesCsv({
+            fileName: input.fileName,
+            bytes: decodeLeadCsvBase64(input.base64),
+            competence: input.competence,
+          }),
+        ),
+      ),
+    importWeeklySalesCsv: importLeadsProcedure
+      .input(weeklySalesUploadSchema)
+      .mutation(({ ctx, input }) =>
+        mapWeeklySalesError(() =>
+          importWeeklySalesCsv({
+            fileName: input.fileName,
+            bytes: decodeLeadCsvBase64(input.base64),
+            competence: input.competence,
+            expectedFileHash: input.expectedFileHash,
+            actor: ctx.dashboardSession.username,
+          }),
+        ),
+      ),
   }),
   metaAds: router({
     bounds: metaAdsProcedure.query(() => getMetaAdsBounds()),

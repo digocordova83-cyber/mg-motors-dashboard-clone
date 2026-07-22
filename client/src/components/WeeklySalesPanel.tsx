@@ -1,0 +1,904 @@
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { trpc } from "@/lib/trpc";
+import type { inferRouterOutputs } from "@trpc/server";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  ChevronDown,
+  FileCheck2,
+  FileUp,
+  Gauge,
+  History,
+  Loader2,
+  Search,
+  ShoppingCart,
+  Target,
+} from "lucide-react";
+import React, { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import type { AppRouter } from "../../../server/routers";
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
+type WeeklySalesDealer = WeeklySalesMetrics["dealers"][number];
+type WeeklySalesPreview = RouterOutputs["leads"]["previewWeeklySalesCsv"];
+type WeeklySalesHistory = RouterOutputs["leads"]["weeklySalesImportHistory"];
+type Locale = "pt-BR" | "en-US";
+
+type WeeklySalesPanelProps = {
+  competence: string;
+  locale?: Locale;
+  canImportLeads?: boolean;
+};
+
+const MAX_WEEKLY_SALES_CSV_SIZE_BYTES = 5 * 1024 * 1024;
+
+function ui(locale: Locale, pt: string, en: string) {
+  return locale === "en-US" ? en : pt;
+}
+
+function formatInteger(value: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatNumber(value: number, locale: Locale, maximumFractionDigits = 2) {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
+}
+
+function formatMetric(value: number | null, locale: Locale, suffix = "") {
+  return value === null ? "—" : `${formatNumber(value, locale)}${suffix}`;
+}
+
+function formatDateTime(value: number | null, locale: Locale) {
+  if (!value) return ui(locale, "Em processamento", "Processing");
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatCompetence(value: string, locale: Locale) {
+  const [year, month] = value.split("-").map(Number);
+  if (!year || !month) return value;
+  return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(year, month - 1, 1)),
+  );
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      typeof reader.result === "string"
+        ? resolve(reader.result)
+        : reject(new Error("Não foi possível ler o arquivo."));
+    reader.onerror = () => reject(reader.error ?? new Error("Não foi possível ler o arquivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function Panel({
+  title,
+  subtitle,
+  action,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-[#1e293b] bg-[#0d1421] shadow-[0_8px_24px_rgba(0,0,0,0.14)]">
+      <header className="flex flex-col gap-3 border-b border-[#1b2535] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-[11px] font-semibold text-slate-200">{title}</h3>
+          <p className="mt-0.5 text-[9px] leading-4 text-slate-600">{subtitle}</p>
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  accent,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: ReactNode;
+  accent: string;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-[#1f2a3b] bg-[#0d1421] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.14)]">
+      <span className="absolute inset-x-0 top-0 h-[2px]" style={{ backgroundColor: accent }} />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">{title}</p>
+          <p className="mt-2 truncate text-xl font-semibold text-white" title={value}>
+            {value}
+          </p>
+          <p className="mt-1 text-[9px] leading-4 text-slate-600">{subtitle}</p>
+        </div>
+        <span className="rounded-lg border border-white/[0.05] bg-white/[0.03] p-2" style={{ color: accent }}>
+          {icon}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function WeeklySalesSummaryCards({
+  metrics,
+  locale = "pt-BR",
+}: {
+  metrics: WeeklySalesMetrics;
+  locale?: Locale;
+}) {
+  const summary = metrics.summary;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <MetricCard
+        title={ui(locale, "Vendas — Semana 4", "Sales — Week 4")}
+        value={formatInteger(summary.totalSales, locale)}
+        subtitle={ui(
+          locale,
+          `${formatInteger(summary.matchedSales, locale)} correspondentes • ${formatInteger(summary.unmatchedSales, locale)} sem correspondência`,
+          `${formatInteger(summary.matchedSales, locale)} matched • ${formatInteger(summary.unmatchedSales, locale)} unmatched`,
+        )}
+        icon={<ShoppingCart className="h-4 w-4" />}
+        accent="#e2212d"
+      />
+      <MetricCard
+        title={ui(locale, "Taxa de conversão", "Conversion rate")}
+        value={formatMetric(summary.conversionRatePercent, locale, "%")}
+        subtitle={ui(locale, "Vendas correspondentes ÷ Leads", "Matched sales ÷ Leads")}
+        icon={<Gauge className="h-4 w-4" />}
+        accent="#38bdf8"
+      />
+      <MetricCard
+        title={ui(locale, "Leads por venda", "Leads per sale")}
+        value={formatMetric(summary.leadsPerSale, locale)}
+        subtitle={ui(locale, "Leads ÷ vendas correspondentes", "Leads ÷ matched sales")}
+        icon={<Building2 className="h-4 w-4" />}
+        accent="#10b981"
+      />
+      <MetricCard
+        title={ui(locale, "Leads estimados necessários", "Estimated Leads needed")}
+        value={formatMetric(summary.estimatedLeadsNeeded, locale)}
+        subtitle={ui(locale, "Arredondamento para gerar 1 venda", "Rounded estimate to generate 1 sale")}
+        icon={<Target className="h-4 w-4" />}
+        accent="#f59e0b"
+      />
+    </div>
+  );
+}
+
+export function WeeklySalesWeekHistory({
+  dealer,
+  locale = "pt-BR",
+}: {
+  dealer: WeeklySalesDealer;
+  locale?: Locale;
+}) {
+  return (
+    <div>
+      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[10px] font-semibold text-slate-300">
+          {ui(locale, "Histórico acumulado por semana", "Cumulative history by week")}
+        </p>
+        <p className="text-[9px] text-slate-600">
+          {ui(locale, "A Semana 4 representa o total mensal usado na conversão.", "Week 4 is the monthly total used for conversion.")}
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {([1, 2, 3, 4] as const).map(week => {
+          const values = dealer.weeks[week];
+          const isMonthlyReference = week === 4;
+          return (
+            <div
+              key={week}
+              className={`rounded-lg border p-3 ${
+                isMonthlyReference
+                  ? "border-[#e2212d]/35 bg-[#e2212d]/[0.07]"
+                  : "border-[#1c2738] bg-[#0d1522]"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+                  {ui(locale, `Semana ${week}`, `Week ${week}`)}
+                </p>
+                {isMonthlyReference ? (
+                  <span className="rounded-full border border-[#e2212d]/30 bg-[#e2212d]/10 px-2 py-0.5 text-[8px] font-medium text-[#ff8088]">
+                    {ui(locale, "Referência mensal", "Monthly reference")}
+                  </span>
+                ) : null}
+              </div>
+              <dl className="mt-3 grid grid-cols-3 gap-2 text-[9px]">
+                <div>
+                  <dt className="text-slate-600">{ui(locale, "Meta", "Target")}</dt>
+                  <dd className="mt-1 font-medium text-slate-300">{formatMetric(values.target, locale)}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-600">{ui(locale, "Vendas", "Sales")}</dt>
+                  <dd className="mt-1 font-semibold text-white">
+                    {values.retail === null ? "—" : formatInteger(values.retail, locale)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-600">{ui(locale, "Atingimento", "Achievement")}</dt>
+                  <dd className="mt-1 font-medium text-sky-300">{formatMetric(values.achievementPercent, locale, "%")}</dd>
+                </div>
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function WeeklySalesMetricsTable({
+  metrics,
+  locale = "pt-BR",
+}: {
+  metrics: WeeklySalesMetrics;
+  locale?: Locale;
+}) {
+  const [search, setSearch] = useState("");
+  const [expandedDealerKey, setExpandedDealerKey] = useState<string | null>(null);
+  const dealers = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase(locale);
+    return metrics.dealers.filter(dealer =>
+      !query
+        ? true
+        : `${dealer.dealerName} ${dealer.sourceName}`.toLocaleLowerCase(locale).includes(query),
+    );
+  }, [locale, metrics.dealers, search]);
+
+  return (
+    <Panel
+      title={ui(locale, "Eficiência de vendas por concessionária", "Sales efficiency by dealer")}
+      subtitle={ui(
+        locale,
+        "A Semana 4 é a referência mensal acumulada; não somamos as Semanas 1–4. Conversão usa apenas correspondências confirmadas com a base de Leads.",
+        "Week 4 is the cumulative monthly reference; Weeks 1–4 are not summed. Conversion uses only confirmed matches with the Leads database.",
+      )}
+      action={
+        <span className="text-[9px] font-medium text-slate-600">
+          {dealers.length} {ui(locale, "de", "of")} {metrics.summary.dealers}
+        </span>
+      }
+    >
+      <div className="flex flex-col gap-3 border-b border-[#1b2535] p-4 lg:flex-row lg:items-center lg:justify-between">
+        <label className="relative block w-full lg:max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+          <Input
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            placeholder={ui(locale, "Buscar concessionária...", "Search dealer...")}
+            className="h-9 border-[#273247] bg-[#101827] pl-9 text-xs text-white placeholder:text-slate-600 focus-visible:border-[#e2212d] focus-visible:ring-[#e2212d]/20"
+          />
+        </label>
+        {metrics.import ? (
+          <div className="text-[9px] leading-4 text-slate-600 lg:text-right">
+            <p className="font-medium text-slate-400">{metrics.import.fileName}</p>
+            <p>
+              {ui(locale, "Importado por", "Imported by")} {metrics.import.importedBy} • {formatDateTime(metrics.import.importedAt, locale)}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      {metrics.summary.unmatchedDealers > 0 ? (
+        <div className="flex items-start gap-3 border-b border-amber-500/15 bg-amber-500/[0.05] px-4 py-3 text-[10px] leading-5 text-amber-200/80">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+          <p>
+            <strong className="text-amber-300">
+              {formatInteger(metrics.summary.unmatchedDealers, locale)} {ui(locale, "concessionária(s) sem correspondência", "unmatched dealer(s)")}.
+            </strong>{" "}
+            {ui(
+              locale,
+              "As vendas permanecem auditáveis, mas não entram na conversão consolidada até o de/para ser confirmado.",
+              "Sales remain auditable, but are excluded from consolidated conversion until the mapping is confirmed.",
+            )}
+          </p>
+        </div>
+      ) : null}
+
+      <div className="max-w-full overflow-x-auto">
+        <table className="w-full min-w-[940px] text-left">
+          <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+            <tr>
+              <th className="px-4 py-3 font-semibold">{ui(locale, "Concessionária", "Dealer")}</th>
+              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Vendas S4", "W4 sales")}</th>
+              <th className="px-3 py-3 text-right font-semibold">Leads</th>
+              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th>
+              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Leads/venda", "Leads/sale")}</th>
+              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Leads estimados", "Estimated Leads")}</th>
+              <th className="px-4 py-3 font-semibold">{ui(locale, "Correspondência", "Match")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#172131]">
+            {dealers.map(dealer => {
+              const matched = dealer.matchStatus === "MATCHED";
+              const dealerKey = `${dealer.sourceName}-${dealer.dealerName}`;
+              const isExpanded = expandedDealerKey === dealerKey;
+              const detailId = `weekly-history-${dealerKey.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+
+              return (
+                <React.Fragment key={dealerKey}>
+                  <tr className="text-[10px] transition-colors hover:bg-white/[0.025]">
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        aria-controls={detailId}
+                        aria-label={ui(
+                          locale,
+                          `Ver histórico semanal de ${dealer.dealerName}`,
+                          `View weekly history for ${dealer.dealerName}`,
+                        )}
+                        onClick={() => setExpandedDealerKey(current => current === dealerKey ? null : dealerKey)}
+                        className="flex w-full items-center justify-between gap-3 rounded-md text-left outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-[#e2212d]/60"
+                      >
+                        <span className="min-w-0">
+                          <span className="block font-medium text-slate-200">{dealer.dealerName}</span>
+                          {dealer.sourceName !== dealer.dealerName ? (
+                            <span className="mt-0.5 block text-[8px] text-slate-600">CSV: {dealer.sourceName}</span>
+                          ) : null}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-slate-600 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                        />
+                      </button>
+                    </td>
+                    <td className="px-3 py-3 text-right font-semibold text-white">
+                      {dealer.sales === null ? "—" : formatInteger(dealer.sales, locale)}
+                    </td>
+                    <td className="px-3 py-3 text-right text-slate-300">{formatInteger(dealer.leads, locale)}</td>
+                    <td className="px-3 py-3 text-right font-medium text-sky-300">
+                      {formatMetric(dealer.conversionRatePercent, locale, "%")}
+                    </td>
+                    <td className="px-3 py-3 text-right text-slate-400">
+                      {formatMetric(dealer.leadsPerSale, locale)}
+                    </td>
+                    <td className="px-3 py-3 text-right text-amber-300">
+                      {formatMetric(dealer.estimatedLeadsNeeded, locale)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-medium ${
+                          matched
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${matched ? "bg-emerald-400" : "bg-amber-300"}`} />
+                        {matched ? ui(locale, "Correspondente", "Matched") : ui(locale, "Sem correspondência", "Unmatched")}
+                      </span>
+                    </td>
+                  </tr>
+                  {isExpanded ? (
+                    <tr id={detailId} className="bg-[#0a111d]">
+                      <td colSpan={7} className="px-4 py-4">
+                        <WeeklySalesWeekHistory dealer={dealer} locale={locale} />
+                      </td>
+                    </tr>
+                  ) : null}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+        {!dealers.length ? (
+          <div className="grid min-h-40 place-items-center px-5 text-center">
+            <div>
+              <Search className="mx-auto h-5 w-5 text-slate-700" />
+              <p className="mt-2 text-xs font-medium text-slate-300">
+                {ui(locale, "Nenhuma concessionária encontrada", "No dealer found")}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-600">
+                {ui(locale, "Ajuste a busca para voltar à lista.", "Adjust the search to return to the list.")}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Panel>
+  );
+}
+
+export function WeeklySalesPreviewSummary({
+  preview,
+  locale = "pt-BR",
+}: {
+  preview: WeeklySalesPreview;
+  locale?: Locale;
+}) {
+  const summaryItems = [
+    [ui(locale, "Concessionárias", "Dealers"), preview.summary.dealerRows],
+    [ui(locale, "Correspondentes", "Matched"), preview.summary.matchedDealerRows],
+    [ui(locale, "Sem correspondência", "Unmatched"), preview.summary.unmatchedDealerRows],
+    [ui(locale, "Vendas S4", "W4 sales"), preview.summary.week4DealerSalesTotal],
+    [ui(locale, "Sem venda S4", "No W4 sales"), preview.summary.dealersWithoutWeek4Sales],
+    [ui(locale, "Linhas totais", "Total rows"), preview.summary.rowsTotal],
+  ] as const;
+
+  return (
+    <div className="space-y-4">
+      <div
+        className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-[10px] leading-5 ${
+          preview.valid
+            ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-200/80"
+            : "border-red-500/20 bg-red-500/[0.06] text-red-200/80"
+        }`}
+      >
+        {preview.valid ? (
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+        ) : (
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />
+        )}
+        <p>
+          <strong className={preview.valid ? "text-emerald-300" : "text-red-300"}>
+            {preview.valid
+              ? ui(locale, "Reconciliação da Semana 4 aprovada.", "Week 4 reconciliation passed.")
+              : ui(locale, "Arquivo não aprovado para importação.", "File not approved for import.")}
+          </strong>{" "}
+          {ui(
+            locale,
+            "O total das concessionárias foi comparado com regiões e TOTAL.",
+            "Dealer totals were compared with regions and TOTAL.",
+          )}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {summaryItems.map(([label, value]) => (
+          <div key={label} className="rounded-lg border border-[#202b3d] bg-[#101827] p-3">
+            <p className="text-[8px] uppercase tracking-[0.1em] text-slate-600">{label}</p>
+            <p className="mt-1.5 text-sm font-semibold text-slate-200">{formatInteger(value, locale)}</p>
+          </div>
+        ))}
+      </div>
+
+      {preview.unmatchedDealers.length ? (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-3">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-amber-300">
+            {ui(locale, "Sem correspondência na base de Leads", "Not found in the Leads database")}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {preview.unmatchedDealers.map(dealer => (
+              <span key={dealer} className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-1 text-[9px] text-amber-200">
+                {dealer}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {preview.errors.length ? (
+        <div className="max-h-28 overflow-y-auto rounded-lg border border-red-500/15 bg-red-500/[0.04] p-3 text-[10px] leading-5 text-red-300">
+          {preview.errors.map(error => (
+            <p key={error}>{error}</p>
+          ))}
+        </div>
+      ) : null}
+
+      {preview.warnings.length ? (
+        <div className="max-h-28 overflow-y-auto rounded-lg border border-amber-500/15 bg-amber-500/[0.04] p-3 text-[10px] leading-5 text-amber-200/80">
+          {preview.warnings.map(warning => (
+            <p key={warning}>{warning}</p>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="max-h-60 overflow-auto rounded-xl border border-[#202b3d]">
+        <table className="w-full min-w-[640px] text-left">
+          <thead className="sticky top-0 bg-[#0a111d] text-[8px] uppercase tracking-[0.1em] text-slate-600">
+            <tr>
+              <th className="px-3 py-2.5">CSV</th>
+              <th className="px-3 py-2.5">{ui(locale, "Concessionária final", "Resolved dealer")}</th>
+              <th className="px-3 py-2.5 text-right">{ui(locale, "Vendas S4", "W4 sales")}</th>
+              <th className="px-3 py-2.5">{ui(locale, "Correspondência", "Match")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#172131]">
+            {preview.dealers.map(dealer => (
+              <tr key={`${dealer.sourceRowNumber}-${dealer.sourceName}`} className="text-[9px]">
+                <td className="px-3 py-2.5 text-slate-400">{dealer.sourceName}</td>
+                <td className="px-3 py-2.5 font-medium text-slate-200">{dealer.canonicalDealer}</td>
+                <td className="px-3 py-2.5 text-right text-white">
+                  {dealer.week4Retail === null ? "—" : formatInteger(dealer.week4Retail, locale)}
+                </td>
+                <td className={`px-3 py-2.5 font-medium ${dealer.matchStatus === "MATCHED" ? "text-emerald-300" : "text-amber-300"}`}>
+                  {dealer.matchStatus === "MATCHED"
+                    ? ui(locale, "Correspondente", "Matched")
+                    : ui(locale, "Sem correspondência", "Unmatched")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export function WeeklySalesImportHistory({
+  history,
+  locale = "pt-BR",
+}: {
+  history: WeeklySalesHistory;
+  locale?: Locale;
+}) {
+  return (
+    <Panel
+      title={ui(locale, "Histórico de vendas semanais", "Weekly sales import history")}
+      subtitle={ui(
+        locale,
+        "Arquivos preservados com competência, reconciliação e usuário responsável.",
+        "Files preserved with competence, reconciliation, and responsible user.",
+      )}
+      action={<History className="h-4 w-4 text-slate-600" />}
+    >
+      {history.length ? (
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full min-w-[920px] text-left">
+            <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+              <tr>
+                <th className="px-4 py-3">{ui(locale, "Arquivo", "File")}</th>
+                <th className="px-3 py-3">{ui(locale, "Competência", "Period")}</th>
+                <th className="px-3 py-3">{ui(locale, "Importado por", "Imported by")}</th>
+                <th className="px-3 py-3">{ui(locale, "Data", "Date")}</th>
+                <th className="px-3 py-3 text-right">{ui(locale, "Vendas S4", "W4 sales")}</th>
+                <th className="px-3 py-3 text-right">{ui(locale, "Correspondentes", "Matched")}</th>
+                <th className="px-3 py-3 text-right">{ui(locale, "Sem correspondência", "Unmatched")}</th>
+                <th className="px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#172131]">
+              {history.map(item => (
+                <tr key={item.id} className="text-[10px] transition-colors hover:bg-white/[0.02]">
+                  <td className="px-4 py-3">
+                    <p className="max-w-[250px] truncate font-medium text-slate-300" title={item.fileName}>
+                      {item.fileName}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[8px] text-slate-700">{item.fileHash.slice(0, 16)}…</p>
+                  </td>
+                  <td className="px-3 py-3 capitalize text-slate-400">{formatCompetence(item.competence, locale)}</td>
+                  <td className="px-3 py-3 text-slate-400">{item.importedBy}</td>
+                  <td className="px-3 py-3 text-slate-400">{formatDateTime(item.completedAt ?? item.createdAt, locale)}</td>
+                  <td className="px-3 py-3 text-right font-medium text-white">{item.week4DealerSalesTotal === null ? "—" : formatInteger(item.week4DealerSalesTotal, locale)}</td>
+                  <td className="px-3 py-3 text-right text-emerald-300">{formatInteger(item.matchedDealerRows, locale)}</td>
+                  <td className="px-3 py-3 text-right text-amber-300">{formatInteger(item.unmatchedDealerRows, locale)}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full border px-2 py-1 text-[9px] font-medium ${
+                        item.status === "COMPLETED"
+                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                          : item.status === "FAILED"
+                            ? "border-red-500/20 bg-red-500/10 text-red-300"
+                            : "border-sky-500/20 bg-sky-500/10 text-sky-300"
+                      }`}
+                    >
+                      {item.status === "COMPLETED"
+                        ? ui(locale, "Concluído", "Completed")
+                        : item.status === "FAILED"
+                          ? ui(locale, "Falhou", "Failed")
+                          : ui(locale, "Processando", "Processing")}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid min-h-32 place-items-center px-5 text-center">
+          <div>
+            <FileCheck2 className="mx-auto h-5 w-5 text-slate-700" />
+            <p className="mt-2 text-xs font-medium text-slate-300">
+              {ui(locale, "Nenhuma importação de vendas registrada", "No weekly sales import recorded")}
+            </p>
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+export function WeeklySalesPanel({
+  competence,
+  locale = "pt-BR",
+  canImportLeads = false,
+}: WeeklySalesPanelProps) {
+  const utils = trpc.useUtils();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [upload, setUpload] = useState<{
+    fileName: string;
+    base64: string;
+    competence: string;
+  } | null>(null);
+  const [preview, setPreview] = useState<WeeklySalesPreview | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<string | null>(null);
+
+  const metrics = trpc.leads.weeklySalesMetrics.useQuery(
+    { competence },
+    { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false, retry: 1 },
+  );
+  const history = trpc.leads.weeklySalesImportHistory.useQuery(
+    { limit: 8 },
+    { enabled: canImportLeads, staleTime: 60 * 1000, refetchOnWindowFocus: false },
+  );
+
+  useEffect(() => {
+    setUpload(null);
+    setPreview(null);
+    setPreviewOpen(false);
+    setMessage(null);
+    setClientError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [competence]);
+
+  const previewMutation = trpc.leads.previewWeeklySalesCsv.useMutation({
+    onSuccess: data => {
+      setPreview(data);
+      setPreviewOpen(true);
+      setClientError(null);
+    },
+  });
+  const importMutation = trpc.leads.importWeeklySalesCsv.useMutation({
+    onSuccess: async result => {
+      setPreviewOpen(false);
+      setMessage(
+        result.idempotent
+          ? ui(locale, "Arquivo já importado para esta competência; nenhuma linha foi duplicada.", "File already imported for this period; no rows were duplicated.")
+          : ui(
+              locale,
+              `${formatInteger(result.rowsInserted, locale)} linhas de vendas semanais importadas com sucesso.`,
+              `${formatInteger(result.rowsInserted, locale)} weekly sales rows imported successfully.`,
+            ),
+      );
+      setUpload(null);
+      setPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      await Promise.all([
+        utils.leads.weeklySalesMetrics.invalidate({ competence }),
+        utils.leads.weeklySalesImportHistory.invalidate(),
+      ]);
+    },
+  });
+
+  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+    if (!canImportLeads) return;
+    const file = event.target.files?.[0];
+    setMessage(null);
+    setClientError(null);
+    previewMutation.reset();
+    importMutation.reset();
+    if (!file) return;
+    if (!file.name.toLocaleLowerCase("pt-BR").endsWith(".csv")) {
+      setClientError(ui(locale, "Selecione um arquivo com extensão .csv.", "Select a .csv file."));
+      event.target.value = "";
+      return;
+    }
+    if (file.size > MAX_WEEKLY_SALES_CSV_SIZE_BYTES) {
+      setClientError(ui(locale, "O arquivo excede o limite de 5 MB.", "The file exceeds the 5 MB limit."));
+      event.target.value = "";
+      return;
+    }
+    try {
+      const base64 = await readFileAsDataUrl(file);
+      const nextUpload = { fileName: file.name, base64, competence };
+      setUpload(nextUpload);
+      previewMutation.mutate(nextUpload);
+    } catch (error) {
+      setClientError(
+        error instanceof Error
+          ? error.message
+          : ui(locale, "Não foi possível ler o arquivo.", "The file could not be read."),
+      );
+    }
+  }
+
+  function confirmImport() {
+    if (!canImportLeads || !upload || !preview?.valid) return;
+    importMutation.mutate({ ...upload, expectedFileHash: preview.fileHash });
+  }
+
+  const error = clientError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
+
+  return (
+    <section id="weekly-sales-panel" className="space-y-4" aria-labelledby="weekly-sales-title">
+      <div className="flex flex-col gap-3 rounded-xl border border-[#283449] bg-[linear-gradient(135deg,rgba(226,33,45,0.08),rgba(13,20,33,0.96)_42%)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.14)] lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.13em] text-[#ff8088]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#e2212d]" />
+            {ui(locale, "Vendas semanais", "Weekly sales")}
+          </div>
+          <h2 id="weekly-sales-title" className="mt-1 text-sm font-semibold text-white">
+            {ui(locale, "Conversão de Leads em vendas", "Lead-to-sale conversion")} • <span className="capitalize">{formatCompetence(competence, locale)}</span>
+          </h2>
+          <p className="mt-1 text-[10px] leading-5 text-slate-500">
+            {ui(
+              locale,
+              "Upload manual do Weekly Target Achievement. A Semana 4 é a referência mensal acumulada.",
+              "Manual Weekly Target Achievement upload. Week 4 is the cumulative monthly reference.",
+            )}
+          </p>
+        </div>
+        {canImportLeads ? (
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleFile}
+              className="hidden"
+              aria-label={ui(locale, "Selecionar CSV de vendas semanais", "Select weekly sales CSV")}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={previewMutation.isPending || importMutation.isPending}
+              className="border-[#e2212d]/35 bg-[#e2212d]/10 text-[#ff969c] hover:bg-[#e2212d]/15 hover:text-white"
+            >
+              {previewMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileUp className="mr-2 h-4 w-4" />
+              )}
+              {previewMutation.isPending
+                ? ui(locale, "Validando...", "Validating...")
+                : ui(locale, "Importar vendas", "Import sales")}
+            </Button>
+          </div>
+        ) : null}
+      </div>
+
+      {previewMutation.isPending || importMutation.isPending || message || error ? (
+        <div
+          role={error ? "alert" : "status"}
+          className={`rounded-xl border px-4 py-3 text-xs ${
+            error
+              ? "border-red-500/20 bg-red-500/[0.06] text-red-300"
+              : message
+                ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300"
+                : "border-sky-500/20 bg-sky-500/[0.06] text-sky-200"
+          }`}
+        >
+          {previewMutation.isPending ? (
+            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Validando reconciliação e correspondências...", "Validating reconciliation and dealer matches...")}</>
+          ) : importMutation.isPending ? (
+            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Arquivando e importando vendas semanais...", "Archiving and importing weekly sales...")}</>
+          ) : error ? (
+            <><AlertTriangle className="mr-2 inline h-4 w-4" />{error}</>
+          ) : (
+            <><CheckCircle2 className="mr-2 inline h-4 w-4" />{message}</>
+          )}
+        </div>
+      ) : null}
+
+      {metrics.isLoading ? (
+        <div className="grid min-h-52 place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
+          <div className="text-center">
+            <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#e2212d]" />
+            <p className="mt-2 text-xs text-slate-500">{ui(locale, "Carregando vendas semanais...", "Loading weekly sales...")}</p>
+          </div>
+        </div>
+      ) : metrics.error ? (
+        <div className="grid min-h-48 place-items-center rounded-xl border border-red-500/20 bg-red-500/[0.04] px-5 text-center">
+          <div>
+            <AlertTriangle className="mx-auto h-5 w-5 text-red-400" />
+            <p className="mt-2 text-xs font-medium text-red-200">{ui(locale, "Não foi possível carregar as vendas", "Weekly sales could not be loaded")}</p>
+            <p className="mt-1 text-[10px] text-red-300/70">{metrics.error.message}</p>
+            <Button type="button" size="sm" variant="outline" onClick={() => metrics.refetch()} className="mt-3 border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/15 hover:text-white">
+              {ui(locale, "Tentar novamente", "Try again")}
+            </Button>
+          </div>
+        </div>
+      ) : metrics.data?.import ? (
+        <>
+          <WeeklySalesSummaryCards metrics={metrics.data} locale={locale} />
+          <WeeklySalesMetricsTable metrics={metrics.data} locale={locale} />
+        </>
+      ) : (
+        <div className="grid min-h-52 place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421] px-6 text-center">
+          <div className="max-w-lg">
+            <FileCheck2 className="mx-auto h-6 w-6 text-slate-700" />
+            <p className="mt-3 text-sm font-medium text-slate-300">
+              {ui(locale, "Nenhuma venda semanal importada para esta competência", "No weekly sales imported for this period")}
+            </p>
+            <p className="mt-1 text-[10px] leading-5 text-slate-600">
+              {canImportLeads
+                ? ui(locale, "Use “Importar vendas” para validar o CSV, revisar correspondências e confirmar a carga.", "Use “Import sales” to validate the CSV, review dealer matches, and confirm the import.")
+                : ui(locale, "Aguardando o upload manual pelo administrador responsável.", "Waiting for the responsible administrator to upload the file.")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {canImportLeads ? (
+        history.isLoading ? (
+          <div className="grid min-h-32 place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#e2212d]" />
+          </div>
+        ) : history.error ? (
+          <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/[0.04] px-4 py-3 text-xs text-red-300">
+            {history.error.message}
+          </div>
+        ) : (
+          <WeeklySalesImportHistory history={history.data ?? []} locale={locale} />
+        )
+      ) : null}
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden border-[#263247] bg-[#0d1522] p-0 text-white shadow-2xl">
+          <DialogHeader className="border-b border-[#1b2535] px-5 pb-4 pt-5 text-left">
+            <div className="mb-2 inline-flex w-fit items-center gap-2 rounded-full border border-[#e2212d]/20 bg-[#e2212d]/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#ff969c]">
+              <FileCheck2 className="h-3.5 w-3.5" />
+              {ui(locale, "Prévia auditável", "Auditable preview")}
+            </div>
+            <DialogTitle className="pr-8 text-lg text-white">
+              {ui(locale, "Confirmar vendas semanais", "Confirm weekly sales")}
+            </DialogTitle>
+            <DialogDescription className="text-[11px] leading-5 text-slate-500">
+              {preview
+                ? `${preview.fileName} • ${formatCompetence(preview.competence, locale)}`
+                : ui(locale, "Revise a reconciliação antes de confirmar.", "Review reconciliation before confirming.")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[66vh] overflow-y-auto p-5">
+            {preview ? <WeeklySalesPreviewSummary preview={preview} locale={locale} /> : null}
+          </div>
+          <DialogFooter className="border-t border-[#1b2535] bg-[#0a111d]/70 px-5 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPreviewOpen(false)}
+              disabled={importMutation.isPending}
+              className="border-[#2b374b] bg-[#111a29] text-slate-300 hover:bg-[#182338] hover:text-white"
+            >
+              {ui(locale, "Cancelar", "Cancel")}
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmImport}
+              disabled={!preview?.valid || importMutation.isPending}
+              className="bg-[#e2212d] text-white hover:bg-[#c91622]"
+            >
+              {importMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileUp className="mr-2 h-4 w-4" />
+              )}
+              {ui(locale, "Confirmar importação", "Confirm import")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}

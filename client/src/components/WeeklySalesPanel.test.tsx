@@ -1,0 +1,165 @@
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+
+import {
+  WeeklySalesMetricsTable,
+  WeeklySalesPreviewSummary,
+  WeeklySalesSummaryCards,
+  WeeklySalesWeekHistory,
+} from "./WeeklySalesPanel";
+
+const dealerWithHistory = {
+  sourceName: "BALTIC BARUERI",
+  dealerName: "Baltic Shopping Tamboré",
+  matchStatus: "MATCHED",
+  leads: 100,
+  sales: 4,
+  conversionRatePercent: 4,
+  leadsPerSale: 25,
+  estimatedLeadsNeeded: 25,
+  weeks: {
+    1: { target: 1, retail: 1, achievementPercent: 100 },
+    2: { target: 3, retail: 2, achievementPercent: 66.7 },
+    3: { target: 6, retail: 3, achievementPercent: 50 },
+    4: { target: 8, retail: 4, achievementPercent: 50 },
+    5: { target: 10, retail: null, achievementPercent: null },
+  },
+} as never;
+
+const metrics = {
+  competence: "2026-07",
+  dateFrom: "2026-07-01",
+  dateTo: "2026-07-31",
+  import: {
+    id: 1,
+    fileName: "weekly-sales.csv",
+    importedBy: "rodrigo",
+    importedAt: Date.UTC(2026, 6, 22, 12, 0),
+  },
+  summary: {
+    dealers: 2,
+    matchedDealers: 1,
+    unmatchedDealers: 1,
+    dealersWithoutWeek4Sales: 0,
+    totalLeads: 100,
+    totalSales: 7,
+    matchedSales: 4,
+    unmatchedSales: 3,
+    conversionRatePercent: 4,
+    leadsPerSale: 25,
+    estimatedLeadsNeeded: 25,
+  },
+  dealers: [
+    dealerWithHistory,
+    {
+      sourceName: "DEALER SEM MAPA",
+      dealerName: "DEALER SEM MAPA",
+      matchStatus: "UNMATCHED",
+      leads: 0,
+      sales: 3,
+      conversionRatePercent: null,
+      leadsPerSale: null,
+      estimatedLeadsNeeded: null,
+      weeks: {},
+    },
+  ],
+} as never;
+
+describe("vendas semanais na experiência de concessionárias", () => {
+  it("exibe Semana 4 e fórmulas de eficiência sem somar semanas anteriores", () => {
+    const cards = renderToStaticMarkup(<WeeklySalesSummaryCards metrics={metrics} />);
+    const table = renderToStaticMarkup(<WeeklySalesMetricsTable metrics={metrics} />);
+
+    expect(cards).toContain("Vendas — Semana 4");
+    expect(cards).toContain("Taxa de conversão");
+    expect(cards).toContain("Leads por venda");
+    expect(cards).toContain("Leads estimados necessários");
+    expect(cards).toContain("4%");
+    expect(cards).toContain("25");
+    expect(table).toContain("A Semana 4 é a referência mensal acumulada");
+    expect(table).toContain("não somamos as Semanas 1–4");
+  });
+
+  it("exibe o histórico acumulado Semanas 1–4 e marca a Semana 4 como referência mensal", () => {
+    const historyPt = renderToStaticMarkup(<WeeklySalesWeekHistory dealer={dealerWithHistory} />);
+    const historyEn = renderToStaticMarkup(<WeeklySalesWeekHistory dealer={dealerWithHistory} locale="en-US" />);
+
+    expect(historyPt).toContain("Histórico acumulado por semana");
+    expect(historyPt).toContain("Semana 1");
+    expect(historyPt).toContain("Semana 4");
+    expect(historyPt).toContain("Referência mensal");
+    expect(historyPt).toContain("A Semana 4 representa o total mensal usado na conversão");
+    expect(historyEn).toContain("Cumulative history by week");
+    expect(historyEn).toContain("Week 4");
+    expect(historyEn).toContain("Monthly reference");
+    expect(historyEn).toContain("Target");
+    expect(historyEn).toContain("Sales");
+    expect(historyEn).toContain("Achievement");
+  });
+
+  it("mantém métricas e correspondência integralmente em inglês para mgsales", () => {
+    const cards = renderToStaticMarkup(<WeeklySalesSummaryCards metrics={metrics} locale="en-US" />);
+    const table = renderToStaticMarkup(<WeeklySalesMetricsTable metrics={metrics} locale="en-US" />);
+
+    expect(cards).toContain("Sales — Week 4");
+    expect(cards).toContain("Conversion rate");
+    expect(cards).toContain("Leads per sale");
+    expect(cards).toContain("Estimated Leads needed");
+    expect(table).toContain("Sales efficiency by dealer");
+    expect(table).toContain("1 unmatched dealer(s)");
+    expect(table).toContain("Matched");
+    expect(table).toContain("Unmatched");
+    expect(table).not.toContain("Sem correspondência");
+  });
+
+  it("destaca na prévia os dealers que não existem na base de Leads", () => {
+    const preview = {
+      fileName: "weekly-sales.csv",
+      fileHash: "a".repeat(64),
+      competence: "2026-07",
+      valid: true,
+      errors: [],
+      warnings: [],
+      summary: {
+        rowsTotal: 4,
+        dealerRows: 2,
+        regionRows: 1,
+        totalRows: 1,
+        dealersWithoutWeek4Sales: 0,
+        week4DealerSalesTotal: 7,
+        week4RegionSalesTotal: 7,
+        week4ReportedSalesTotal: 7,
+        reconciliationPassed: true,
+        matchedDealerRows: 1,
+        unmatchedDealerRows: 1,
+      },
+      dealers: [
+        {
+          sourceRowNumber: 2,
+          sourceName: "BALTIC BARUERI",
+          canonicalDealer: "Baltic Shopping Tamboré",
+          matchStatus: "MATCHED",
+          week4Retail: 4,
+          week4AchievementPercent: 40,
+        },
+        {
+          sourceRowNumber: 3,
+          sourceName: "DEALER SEM MAPA",
+          canonicalDealer: "DEALER SEM MAPA",
+          matchStatus: "UNMATCHED",
+          week4Retail: 3,
+          week4AchievementPercent: 30,
+        },
+      ],
+      unmatchedDealers: ["DEALER SEM MAPA"],
+    } as never;
+
+    const html = renderToStaticMarkup(<WeeklySalesPreviewSummary preview={preview} />);
+
+    expect(html).toContain("Reconciliação da Semana 4 aprovada");
+    expect(html).toContain("Sem correspondência na base de Leads");
+    expect(html).toContain("DEALER SEM MAPA");
+    expect(html).toContain("Baltic Shopping Tamboré");
+  });
+});
