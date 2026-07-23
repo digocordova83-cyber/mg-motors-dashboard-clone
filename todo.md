@@ -751,3 +751,13 @@
 - [x] Validar que a interface exibe somente `ORVEL - VITÓRIA` e recalcula as métricas consolidadas corretamente
 - [x] Executar testes, checagem de tipos e build após a correção
 - [x] Revisar todo.md e salvar checkpoint da consolidação ORVEL
+
+## Histórico de canais na tabela de vendas — Julho de 2026
+
+- [x] Mapear o popup existente de Leads por canal e a fonte de dados usada pela auditoria de concessionárias
+- [x] Adicionar botão `Histórico dos canais` ao lado do status `Correspondente` na tabela semanal
+- [x] Exibir no popup quantidade, participação e total de Leads por canal para o dealer selecionado
+- [x] Respeitar período ativo, normalização canônica, canal `Site`, locale e estados sem dados
+- [x] Garantir acessibilidade, responsividade e ausência do botão para dealers sem correspondência
+- [x] Adicionar testes e validar tipagem, suíte completa, build e interface
+- [x] Revisar todo.md e salvar checkpoint da melhoria

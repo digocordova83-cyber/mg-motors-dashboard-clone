@@ -12,6 +12,7 @@ import { trpc } from "@/lib/trpc";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
+  BarChart3,
   Building2,
   CheckCircle2,
   ChevronDown,
@@ -38,6 +39,8 @@ type WeeklySalesPanelProps = {
   competence: string;
   locale?: Locale;
   canImportLeads?: boolean;
+  channelHistoryDealerNames?: ReadonlySet<string>;
+  onViewChannelHistory?: (dealerName: string) => void;
 };
 
 const MAX_WEEKLY_SALES_CSV_SIZE_BYTES = 5 * 1024 * 1024;
@@ -259,9 +262,13 @@ export function WeeklySalesWeekHistory({
 export function WeeklySalesMetricsTable({
   metrics,
   locale = "pt-BR",
+  channelHistoryDealerNames,
+  onViewChannelHistory,
 }: {
   metrics: WeeklySalesMetrics;
   locale?: Locale;
+  channelHistoryDealerNames?: ReadonlySet<string>;
+  onViewChannelHistory?: (dealerName: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const [expandedDealerKey, setExpandedDealerKey] = useState<string | null>(null);
@@ -385,16 +392,33 @@ export function WeeklySalesMetricsTable({
                       {formatMetric(dealer.estimatedLeadsNeeded, locale)}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-medium ${
-                          matched
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                            : "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                        }`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${matched ? "bg-emerald-400" : "bg-amber-300"}`} />
-                        {matched ? ui(locale, "Correspondente", "Matched") : ui(locale, "Sem correspondência", "Unmatched")}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-medium ${
+                            matched
+                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                              : "border-amber-500/20 bg-amber-500/10 text-amber-300"
+                          }`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${matched ? "bg-emerald-400" : "bg-amber-300"}`} />
+                          {matched ? ui(locale, "Correspondente", "Matched") : ui(locale, "Sem correspondência", "Unmatched")}
+                        </span>
+                        {matched && channelHistoryDealerNames?.has(dealer.dealerName) && onViewChannelHistory ? (
+                          <button
+                            type="button"
+                            onClick={() => onViewChannelHistory(dealer.dealerName)}
+                            aria-label={ui(
+                              locale,
+                              `Abrir histórico dos canais de ${dealer.dealerName}`,
+                              `Open channel history for ${dealer.dealerName}`,
+                            )}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-sky-400/20 bg-sky-400/[0.07] px-2 py-1 font-medium text-sky-300 outline-none transition-colors hover:border-sky-400/35 hover:bg-sky-400/[0.12] hover:text-sky-200 focus-visible:ring-2 focus-visible:ring-sky-400/70"
+                          >
+                            <BarChart3 className="h-3 w-3" aria-hidden="true" />
+                            {ui(locale, "Histórico dos canais", "Channel history")}
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                   {isExpanded ? (
@@ -630,6 +654,8 @@ export function WeeklySalesPanel({
   competence,
   locale = "pt-BR",
   canImportLeads = false,
+  channelHistoryDealerNames,
+  onViewChannelHistory,
 }: WeeklySalesPanelProps) {
   const utils = trpc.useUtils();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -822,7 +848,12 @@ export function WeeklySalesPanel({
       ) : metrics.data?.import ? (
         <>
           <WeeklySalesSummaryCards metrics={metrics.data} locale={locale} />
-          <WeeklySalesMetricsTable metrics={metrics.data} locale={locale} />
+          <WeeklySalesMetricsTable
+            metrics={metrics.data}
+            locale={locale}
+            channelHistoryDealerNames={channelHistoryDealerNames}
+            onViewChannelHistory={onViewChannelHistory}
+          />
         </>
       ) : (
         <div className="grid min-h-52 place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421] px-6 text-center">

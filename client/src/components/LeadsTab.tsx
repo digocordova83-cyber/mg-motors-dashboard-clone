@@ -728,10 +728,15 @@ export function LeadsTab({
   const [goalOpen, setGoalOpen] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [clientUploadError, setClientUploadError] = useState<string | null>(null);
+  const [selectedWeeklyChannelDealer, setSelectedWeeklyChannelDealer] = useState<DealerAuditItem | null>(null);
 
   useEffect(() => {
     if (analytics.data?.metadata.updatedAt) onUpdatedAt?.(analytics.data.metadata.updatedAt);
   }, [analytics.data?.metadata.updatedAt, onUpdatedAt]);
+
+  useEffect(() => {
+    setSelectedWeeklyChannelDealer(null);
+  }, [dateFrom, dateTo]);
 
   const previewMutation = trpc.leads.previewCsv.useMutation({
     onSuccess: (data, variables) => {
@@ -807,6 +812,7 @@ export function LeadsTab({
   if (!analytics.data) return <LeadsError message={ui(locale, "A análise retornou sem dados.", "The analysis returned no data.")} onRetry={() => analytics.refetch()} locale={locale} />;
 
   const data = analytics.data;
+  const channelHistoryDealerNames = new Set(data.dealerAudit.dealers.map(dealer => dealer.dealerName));
   const stackedDaily = data.daily.map(point => ({ date: point.date, total: point.total, media7d: point.rollingAverage7d, ...point.values }));
   const uploadError = clientUploadError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
 
@@ -932,6 +938,21 @@ export function LeadsTab({
         competence={data.pacing.competence}
         locale={locale}
         canImportLeads={canImportLeads}
+        channelHistoryDealerNames={channelHistoryDealerNames}
+        onViewChannelHistory={dealerName => {
+          setSelectedWeeklyChannelDealer(
+            data.dealerAudit.dealers.find(dealer => dealer.dealerName === dealerName) ?? null,
+          );
+        }}
+      />
+
+      <DealerChannelDialog
+        dealer={selectedWeeklyChannelDealer}
+        open={selectedWeeklyChannelDealer !== null}
+        onOpenChange={open => {
+          if (!open) setSelectedWeeklyChannelDealer(null);
+        }}
+        locale={locale}
       />
 
       <DealerAudit analytics={data} locale={locale} />

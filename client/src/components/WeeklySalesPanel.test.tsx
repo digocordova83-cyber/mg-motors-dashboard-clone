@@ -113,6 +113,31 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(table).not.toContain("Sem correspondência");
   });
 
+  it("oferece histórico dos canais somente para dealers correspondentes com dados no período", () => {
+    const channelHistoryDealerNames = new Set(["Baltic Shopping Tamboré"]);
+    const pt = renderToStaticMarkup(
+      <WeeklySalesMetricsTable
+        metrics={metrics}
+        channelHistoryDealerNames={channelHistoryDealerNames}
+        onViewChannelHistory={() => undefined}
+      />,
+    );
+    const en = renderToStaticMarkup(
+      <WeeklySalesMetricsTable
+        metrics={metrics}
+        locale="en-US"
+        channelHistoryDealerNames={channelHistoryDealerNames}
+        onViewChannelHistory={() => undefined}
+      />,
+    );
+
+    expect(pt).toContain("Histórico dos canais");
+    expect(pt).toContain("Abrir histórico dos canais de Baltic Shopping Tamboré");
+    expect(pt).not.toContain("Abrir histórico dos canais de DEALER SEM MAPA");
+    expect(en).toContain("Channel history");
+    expect(en).toContain("Open channel history for Baltic Shopping Tamboré");
+  });
+
   it("destaca na prévia os dealers que não existem na base de Leads", () => {
     const preview = {
       fileName: "weekly-sales.csv",
