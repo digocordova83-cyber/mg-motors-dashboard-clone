@@ -18,6 +18,7 @@ import {
   Building2,
   CheckCircle2,
   Clock3,
+  Download,
   FileCheck2,
   FileUp,
   Gauge,
@@ -285,6 +286,52 @@ export function LeadEmptyState({ title, description }: { title: string; descript
       <div><AlertTriangle className="mx-auto h-6 w-6 text-slate-700" /><p className="mt-2 text-xs font-medium text-slate-300">{title}</p><p className="mt-1 text-[10px] leading-5 text-slate-600">{description}</p></div>
     </div>
   );
+}
+
+export function LeadsExportButton({
+  locale = "pt-BR",
+  isPending,
+  onExport,
+}: {
+  locale?: Locale;
+  isPending: boolean;
+  onExport: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onExport}
+      disabled={isPending}
+      className="w-full border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 hover:text-white sm:w-auto"
+    >
+      {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+      {isPending
+        ? ui(locale, "Gerando Excel...", "Generating Excel...")
+        : ui(locale, "Exportar base", "Export database")}
+    </Button>
+  );
+}
+
+export function downloadBase64File(input: {
+  base64: string;
+  fileName: string;
+  mimeType: string;
+}): void {
+  const binary = globalThis.atob(input.base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type: input.mimeType }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = input.fileName;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  globalThis.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export type CsvImportPhase = "IDLE" | "PREVIEWING" | "READY" | "IMPORTING" | "SUCCESS" | "ERROR";
@@ -744,6 +791,7 @@ export function LeadsTab({
   const [goalOpen, setGoalOpen] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [clientUploadError, setClientUploadError] = useState<string | null>(null);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [selectedWeeklyChannelDealer, setSelectedWeeklyChannelDealer] = useState<DealerAuditItem | null>(null);
 
   useEffect(() => {
@@ -792,6 +840,23 @@ export function LeadsTab({
       await utils.leads.analytics.invalidate(queryInput);
     },
   });
+  const exportMutation = trpc.leads.exportBase.useMutation({
+    onSuccess: result => {
+      downloadBase64File(result);
+      setExportMessage(
+        ui(
+          locale,
+          `${formatInteger(result.exportedRows, locale)} Leads exportados; ${formatInteger(result.duplicatesRemoved, locale)} duplicata(s) removida(s).`,
+          `${formatInteger(result.exportedRows, locale)} Leads exported; ${formatInteger(result.duplicatesRemoved, locale)} duplicate(s) removed.`,
+        ),
+      );
+    },
+  });
+
+  useEffect(() => {
+    setExportMessage(null);
+    exportMutation.reset();
+  }, [dateFrom, dateTo]);
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     if (!canImportLeads) return;
@@ -825,6 +890,12 @@ export function LeadsTab({
     if (canImportLeads && upload) importMutation.mutate(upload);
   }
 
+  function handleExport() {
+    setExportMessage(null);
+    exportMutation.reset();
+    exportMutation.mutate({ dateFrom, dateTo, locale });
+  }
+
   if (analytics.isLoading) return <LeadsLoading locale={locale} />;
   if (analytics.error) return <LeadsError message={analytics.error.message} onRetry={() => analytics.refetch()} locale={locale} />;
   if (!analytics.data) return <LeadsError message={ui(locale, "A análise retornou sem dados.", "The analysis returned no data.")} onRetry={() => analytics.refetch()} locale={locale} />;
@@ -842,15 +913,32 @@ export function LeadsTab({
           <p className="mt-1 text-xs text-slate-500">{ui(locale, `${formatInteger(data.summary.totalLeads, locale)} Leads no período consolidado em D-1 • ${formatDate(dateFrom, locale)} a ${formatDate(dateTo, locale)}`, `${formatInteger(data.summary.totalLeads, locale)} Leads in the D-1 consolidated period • ${formatDate(dateFrom, locale)} to ${formatDate(dateTo, locale)}`)}</p>
           <p className="mt-1 text-[10px] text-slate-700"><LeadFilterIdentity dateFrom={dateFrom} dateTo={dateTo} locale={locale} /></p>
         </div>
-        {canImportLeads ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleFile} className="hidden" aria-label={locale === "en-US" ? "Select Leads CSV file" : "Selecionar arquivo CSV de Leads"} />
-            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={previewMutation.isPending || importMutation.isPending} className="border-[#e2212d]/30 bg-[#e2212d]/10 text-[#ff8c93] hover:bg-[#e2212d]/15 hover:text-white">
-              {previewMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}{locale === "en-US" ? "Update CSV" : "Atualizar CSV"}
-            </Button>
-          </div>
-        ) : null}
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <LeadsExportButton
+            locale={locale}
+            isPending={exportMutation.isPending}
+            onExport={handleExport}
+          />
+          {canImportLeads ? (
+            <>
+              <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleFile} className="hidden" aria-label={locale === "en-US" ? "Select Leads CSV file" : "Selecionar arquivo CSV de Leads"} />
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={previewMutation.isPending || importMutation.isPending} className="w-full border-[#e2212d]/30 bg-[#e2212d]/10 text-[#ff8c93] hover:bg-[#e2212d]/15 hover:text-white sm:w-auto">
+                {previewMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}{locale === "en-US" ? "Update CSV" : "Atualizar CSV"}
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
+
+      {exportMessage ? (
+        <div role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">
+          {exportMessage}
+        </div>
+      ) : exportMutation.error ? (
+        <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-xs text-red-300">
+          {exportMutation.error.message}
+        </div>
+      ) : null}
 
       {canImportLeads ? (
         <CsvImportFeedback
@@ -954,6 +1042,8 @@ export function LeadsTab({
 
       <WeeklySalesPanel
         competence={data.pacing.competence}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
         locale={locale}
         canImportLeads={canImportLeads}
         channelHistoryDealerNames={channelHistoryDealerNames}

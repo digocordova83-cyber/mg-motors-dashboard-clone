@@ -37,6 +37,8 @@ type Locale = "pt-BR" | "en-US";
 
 type WeeklySalesPanelProps = {
   competence: string;
+  dateFrom: string;
+  dateTo: string;
   locale?: Locale;
   canImportLeads?: boolean;
   channelHistoryDealerNames?: ReadonlySet<string>;
@@ -77,6 +79,46 @@ function formatCompetence(value: string, locale: Locale) {
   if (!year || !month) return value;
   return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(Date.UTC(year, month - 1, 1)),
+  );
+}
+
+function formatIsoDate(value: string, locale: Locale) {
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return value;
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+export function WeeklySalesPeriodIdentity({
+  competence,
+  dateFrom,
+  dateTo,
+  locale = "pt-BR",
+}: {
+  competence: string;
+  dateFrom: string;
+  dateTo: string;
+  locale?: Locale;
+}) {
+  return (
+    <>
+      <span className="font-medium text-slate-300">
+        {ui(locale, "Leads", "Leads")}: {formatIsoDate(dateFrom, locale)}–{formatIsoDate(dateTo, locale)}
+      </span>
+      <span aria-hidden="true"> • </span>
+      {ui(locale, "Vendas: referência mensal", "Sales: monthly reference")} {formatCompetence(competence, locale)}.
+      <span className="block sm:inline sm:before:content-[' • ']">
+        {ui(
+          locale,
+          "Upload manual do Weekly Target Achievement; a Semana 4 permanece como referência acumulada.",
+          "Manual Weekly Target Achievement upload; Week 4 remains the cumulative reference.",
+        )}
+      </span>
+    </>
   );
 }
 
@@ -662,6 +704,8 @@ export function WeeklySalesImportHistory({
 
 export function WeeklySalesPanel({
   competence,
+  dateFrom,
+  dateTo,
   locale = "pt-BR",
   canImportLeads = false,
   channelHistoryDealerNames,
@@ -680,7 +724,7 @@ export function WeeklySalesPanel({
   const [clientError, setClientError] = useState<string | null>(null);
 
   const metrics = trpc.leads.weeklySalesMetrics.useQuery(
-    { competence },
+    { competence, dateFrom, dateTo },
     { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false, retry: 1 },
   );
   const history = trpc.leads.weeklySalesImportHistory.useQuery(
@@ -777,11 +821,12 @@ export function WeeklySalesPanel({
             {ui(locale, "Conversão de Leads em vendas", "Lead-to-sale conversion")} • <span className="capitalize">{formatCompetence(competence, locale)}</span>
           </h2>
           <p className="mt-1 text-[10px] leading-5 text-slate-500">
-            {ui(
-              locale,
-              "Upload manual do Weekly Target Achievement. A Semana 4 é a referência mensal acumulada.",
-              "Manual Weekly Target Achievement upload. Week 4 is the cumulative monthly reference.",
-            )}
+            <WeeklySalesPeriodIdentity
+              competence={competence}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              locale={locale}
+            />
           </p>
         </div>
         {canImportLeads ? (

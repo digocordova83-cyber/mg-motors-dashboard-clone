@@ -783,3 +783,27 @@
 - [x] Preservar a nova tabela de Eficiência de vendas e o popup `Histórico dos canais`
 - [x] Atualizar testes e validar o fluxo real de upload, recálculo, tipagem, build e responsividade
 - [x] Revisar todo.md e salvar checkpoint das alterações
+
+## Reconciliação DRSUL 632 × 650 — Julho de 2026
+
+- [x] Confirmar o período, corte D-1 e regra canônica que produzem os 632 Leads exibidos para DRSUL - PORTO ALEGRE
+- [x] Levantar todas as grafias e aliases DRSUL presentes na base consolidada e nos arquivos importados
+- [x] Identificar nominalmente os 18 registros da diferença por data, canal, dealer original, lote e status de deduplicação
+- [x] Verificar se os 650 incluem dados fora do período, dia atual, duplicidades ou nomes ainda não mapeados
+- [ ] Corrigir regra, alias ou dado somente se a reconciliação comprovar erro do dashboard
+- [ ] Revalidar total de DRSUL, conversão, Leads semanais e histórico dos canais após a conclusão
+- [ ] Documentar a causa exata e informar ao usuário sem estimativas
+- [ ] Revisar todo.md e salvar checkpoint somente se houver alteração no projeto
+
+## Filtro aplicado à Eficiência de vendas e Exportar base — Julho de 2026
+
+- [x] Mapear o intervalo ativo da aba Leads até a consulta de Eficiência de vendas e a futura exportação
+- [x] Recalcular Leads, conversão, Leads por venda, estimativa e canais conforme `Data Corrigida` no período selecionado
+- [x] Manter vendas da Semana 4 fixas como referência mensal e identificar claramente o período dos Leads
+- [x] Implementar endpoint autenticado de exportação disponível a todos os usuários com acesso à aba Leads
+- [x] Exportar Excel `.xlsx` com abas `Resumo` e `Base de Leads`, cabeçalhos, filtros, congelamento, larguras e datas formatadas
+- [x] Remover repetições exatas somente da exportação, preservando registros distintos por data, canal ou concessionária
+- [x] Informar no Resumo as linhas filtradas, as linhas exportadas e as duplicatas removidas
+- [x] Adicionar botão `Exportar base` visível para todos os usuários da aba Leads e vinculado ao filtro ativo
+- [x] Validar conteúdo do Excel, autorização, filtros de data, recálculo da tabela, idiomas e responsividade
+- [x] Executar testes, tipagem, build, revisar todo.md e salvar checkpoint

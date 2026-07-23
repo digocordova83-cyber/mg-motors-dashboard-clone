@@ -9,6 +9,7 @@ import {
   LeadEmptyState,
   LeadFilterIdentity,
   LeadSummaryCards,
+  LeadsExportButton,
   LeadsError,
   formatDailyBarTotal,
   formatDealerLabel,
@@ -158,6 +159,23 @@ describe("interface de Leads", () => {
     expect(formatDailyBarTotal(1234, "en-US")).toBe("1,234");
     expect(formatDailyBarTotal(0, "pt-BR")).toBe("0");
     expect(formatDailyBarTotal("indisponível", "pt-BR")).toBe("");
+  });
+
+  it("mantém a exportação visível, bilíngue e com estado de carregamento", () => {
+    const pt = renderToStaticMarkup(
+      <LeadsExportButton isPending={false} onExport={() => undefined} />,
+    );
+    const en = renderToStaticMarkup(
+      <LeadsExportButton locale="en-US" isPending={false} onExport={() => undefined} />,
+    );
+    const pending = renderToStaticMarkup(
+      <LeadsExportButton isPending onExport={() => undefined} />,
+    );
+
+    expect(pt).toContain("Exportar base");
+    expect(en).toContain("Export database");
+    expect(pending).toContain("Gerando Excel...");
+    expect(pending).toContain("disabled");
   });
 
   it("identifica o período filtrado pelo campo Data Corrigida", () => {

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   WeeklySalesMetricsTable,
+  WeeklySalesPeriodIdentity,
   WeeklySalesPreviewSummary,
   WeeklySalesSummaryCards,
   WeeklySalesWeekHistory,
@@ -67,6 +68,31 @@ const metrics = {
 } as never;
 
 describe("vendas semanais na experiência de concessionárias", () => {
+  it("identifica o período filtrado dos Leads sem alterar a referência mensal das vendas", () => {
+    const pt = renderToStaticMarkup(
+      <WeeklySalesPeriodIdentity
+        competence="2026-07"
+        dateFrom="2026-07-08"
+        dateTo="2026-07-22"
+      />,
+    );
+    const en = renderToStaticMarkup(
+      <WeeklySalesPeriodIdentity
+        competence="2026-07"
+        dateFrom="2026-07-08"
+        dateTo="2026-07-22"
+        locale="en-US"
+      />,
+    );
+
+    expect(pt).toContain("Leads: 08/07/2026–22/07/2026");
+    expect(pt).toContain("Vendas: referência mensal");
+    expect(pt).toContain("julho de 2026");
+    expect(en).toContain("Leads: 07/08/2026–07/22/2026");
+    expect(en).toContain("Sales: monthly reference");
+    expect(en).toContain("July 2026");
+  });
+
   it("exibe Semana 4 e fórmulas de eficiência sem somar semanas anteriores", () => {
     const cards = renderToStaticMarkup(<WeeklySalesSummaryCards metrics={metrics} />);
     const table = renderToStaticMarkup(<WeeklySalesMetricsTable metrics={metrics} />);

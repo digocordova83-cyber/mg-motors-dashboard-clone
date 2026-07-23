@@ -1,4 +1,4 @@
-import { getDashboardCutoffDate } from "@shared/dashboardDates";
+import { getDashboardCutoffDate, resolveDashboardPeriod } from "@shared/dashboardDates";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 import {
@@ -213,12 +213,34 @@ export function buildCumulativeWeeklyLeadCounts(
   return counts;
 }
 
+type WeeklySalesMetricsOptions = {
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+function resolveWeeklyLeadPeriod(
+  competence: string,
+  options: WeeklySalesMetricsOptions = {},
+): { dateFrom: string; dateTo: string } {
+  const month = monthBounds(competence);
+  const dateFrom = options.dateFrom ?? month.dateFrom;
+  const dateTo = options.dateTo ?? month.dateTo;
+  const period = resolveDashboardPeriod(dateFrom, dateTo);
+
+  if (!period.dateFrom.startsWith(`${competence}-`) || !period.dateTo.startsWith(`${competence}-`)) {
+    throw new Error("O período de Leads precisa pertencer à competência mensal das vendas.");
+  }
+
+  return { dateFrom: period.dateFrom, dateTo: period.dateTo };
+}
+
 async function getLeadCountsByDealerAndWeek(
   competence: string,
+  options: WeeklySalesMetricsOptions = {},
 ): Promise<Map<string, WeeklyLeadCounts>> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const { dateFrom, dateTo } = monthBounds(competence);
+  const { dateFrom, dateTo } = resolveWeeklyLeadPeriod(competence, options);
   const rows = await db
     .select({
       dealerName: leads.dealerName,
@@ -579,11 +601,14 @@ export function calculateWeeklySalesEfficiency(leadsCount: number, sales: number
   };
 }
 
-export async function getWeeklySalesMetrics(competence: string): Promise<WeeklySalesMetrics> {
+export async function getWeeklySalesMetrics(
+  competence: string,
+  options: WeeklySalesMetricsOptions = {},
+): Promise<WeeklySalesMetrics> {
   assertCompetence(competence);
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  const { dateFrom, dateTo } = monthBounds(competence);
+  const { dateFrom, dateTo } = resolveWeeklyLeadPeriod(competence, options);
   const [latestImport] = await db
     .select()
     .from(weeklySalesImports)
@@ -629,7 +654,7 @@ export async function getWeeklySalesMetrics(competence: string): Promise<WeeklyS
           eq(weeklySalesRecords.rowType, "DEALER"),
         ),
       ),
-    getLeadCountsByDealerAndWeek(competence),
+    getLeadCountsByDealerAndWeek(competence, { dateFrom, dateTo }),
   ]);
 
   const dealers = records

@@ -39,6 +39,7 @@ import {
   getLeadMonthlyGoal,
   upsertLeadMonthlyGoal,
 } from "./leadsService";
+import { exportLeadsBase } from "./leadsExportService";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import {
   getWeeklySalesImportHistory,
@@ -98,6 +99,9 @@ const dashboardPeriodSchema = z
       });
     }
   });
+const leadsExportSchema = dashboardPeriodSchema.and(
+  z.object({ locale: z.enum(["pt-BR", "en-US"]).default("pt-BR") }),
+);
 
 const leadCsvUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
@@ -106,6 +110,40 @@ const leadCsvUploadSchema = z.object({
 });
 
 const competenceSchema = z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida");
+const weeklySalesMetricsSchema = z
+  .object({
+    competence: competenceSchema,
+    dateFrom: dateSchema.optional(),
+    dateTo: dateSchema.optional(),
+  })
+  .superRefine((input, context) => {
+    if (Boolean(input.dateFrom) !== Boolean(input.dateTo)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe data inicial e final do período de Leads",
+        path: input.dateFrom ? ["dateTo"] : ["dateFrom"],
+      });
+      return;
+    }
+    if (!input.dateFrom || !input.dateTo) return;
+    if (input.dateFrom > input.dateTo) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A data inicial deve anteceder a data final",
+        path: ["dateTo"],
+      });
+    }
+    if (
+      !input.dateFrom.startsWith(`${input.competence}-`) ||
+      !input.dateTo.startsWith(`${input.competence}-`)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "O período de Leads deve pertencer à competência das vendas",
+        path: ["dateFrom"],
+      });
+    }
+  });
 const weeklySalesUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
   base64: z.string().min(4).max(7_100_000, "O arquivo CSV excede o limite de 5 MB"),
@@ -255,6 +293,9 @@ export const appRouter = router({
     analytics: leadsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => getLeadAnalytics(input)),
+    exportBase: leadsProcedure
+      .input(leadsExportSchema)
+      .mutation(({ input }) => exportLeadsBase(input)),
     monthlyGoal: leadsProcedure
       .input(z.object({ competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida") }))
       .query(({ input }) => getLeadMonthlyGoal(input.competence)),
@@ -291,8 +332,13 @@ export const appRouter = router({
       ),
     ),
     weeklySalesMetrics: leadsProcedure
-      .input(z.object({ competence: competenceSchema }))
-      .query(({ input }) => getWeeklySalesMetrics(input.competence)),
+      .input(weeklySalesMetricsSchema)
+      .query(({ input }) =>
+        getWeeklySalesMetrics(input.competence, {
+          dateFrom: input.dateFrom,
+          dateTo: input.dateTo,
+        }),
+      ),
     weeklySalesImportHistory: importLeadsProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }).optional())
       .query(({ input }) => getWeeklySalesImportHistory(input?.limit ?? 20)),

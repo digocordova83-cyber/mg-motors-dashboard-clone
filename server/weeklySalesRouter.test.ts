@@ -95,9 +95,34 @@ describe("rotas de vendas semanais", () => {
       }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
-    expect(serviceMocks.getWeeklySalesMetrics).toHaveBeenCalledWith("2026-07");
+    expect(serviceMocks.getWeeklySalesMetrics).toHaveBeenCalledWith("2026-07", {
+      dateFrom: undefined,
+      dateTo: undefined,
+    });
     expect(serviceMocks.previewWeeklySalesCsv).not.toHaveBeenCalled();
     expect(serviceMocks.importWeeklySalesCsv).not.toHaveBeenCalled();
+  });
+
+  it("repassa o período filtrado de Leads ao serviço semanal", async () => {
+    const token = await createToken({
+      accountId: 4,
+      username: "mgsales",
+      displayName: "MG Sales",
+      locale: "en-US",
+      permissions: basePermissions,
+    });
+    const caller = appRouter.createCaller(createContext(token));
+
+    await caller.leads.weeklySalesMetrics({
+      competence: "2026-07",
+      dateFrom: "2026-07-08",
+      dateTo: "2026-07-22",
+    });
+
+    expect(serviceMocks.getWeeklySalesMetrics).toHaveBeenCalledWith("2026-07", {
+      dateFrom: "2026-07-08",
+      dateTo: "2026-07-22",
+    });
   });
 
   it("permite preview, confirmação e histórico a quem possui canImportLeads", async () => {
