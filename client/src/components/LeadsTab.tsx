@@ -26,7 +26,6 @@ import {
   PencilLine,
   Search,
   Target,
-  TrendingUp,
   UsersRound,
 } from "lucide-react";
 import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -232,13 +231,11 @@ export function LeadSummaryCards({
   locale?: Locale;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <LeadMetricCard title={ui(locale, "Total de Leads", "Total Leads")} value={formatInteger(summary.totalLeads, locale)} subtitle={ui(locale, `${summary.calendarDays} dia(s) no período`, `${summary.calendarDays} day(s) in period`)} icon={<UsersRound className="h-4 w-4" />} accent="#e2212d" />
       <LeadMetricCard title={ui(locale, "Total de Leads nas concessionárias", "Total Leads in dealerships")} value={formatInteger(dealerSummary.assignedLeads, locale)} subtitle={ui(locale, `${formatNumber(dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<Building2 className="h-4 w-4" />} accent="#10b981" />
       <LeadMetricCard title={ui(locale, "Leads em qualificação", "Leads in qualification")} value={formatInteger(dealerSummary.unavailableLeads, locale)} subtitle={ui(locale, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<AlertTriangle className="h-4 w-4" />} accent="#fb923c" />
       <LeadMetricCard title={ui(locale, "Média diária", "Daily average")} value={formatNumber(summary.dailyAverage, locale)} subtitle={ui(locale, "Dias corridos, inclusive zeros", "Calendar days, including zeroes")} icon={<Gauge className="h-4 w-4" />} accent="#38bdf8" />
-      <LeadMetricCard title={ui(locale, "Canal principal", "Top channel")} value={formatCategoryLabel(summary.primaryChannel, locale)} subtitle={`${formatInteger(summary.primaryChannelLeads, locale)} Leads`} icon={<TrendingUp className="h-4 w-4" />} accent="#f59e0b" />
-      <LeadMetricCard title={ui(locale, "Canais ativos", "Active channels")} value={formatInteger(summary.activeChannels, locale)} subtitle={ui(locale, "Canais identificados no período", "Channels identified in this period")} icon={<BarChart3 className="h-4 w-4" />} accent="#a78bfa" />
     </div>
   );
 }

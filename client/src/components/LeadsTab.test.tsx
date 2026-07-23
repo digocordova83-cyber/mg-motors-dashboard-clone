@@ -87,7 +87,7 @@ describe("interface de Leads", () => {
     expect(source).toContain("weeklySalesMetrics: () => utils.leads.weeklySalesMetrics.invalidate()");
   });
 
-  it("exibe no topo os três totais reconciliados em cards independentes", () => {
+  it("exibe no topo os quatro indicadores restantes sem Canal principal ou Canais ativos", () => {
     const summary = {
       totalLeads: 8080,
       dailyAverage: 384.76,
@@ -110,7 +110,7 @@ describe("interface de Leads", () => {
     );
 
     expect(dealerSummary.assignedLeads + dealerSummary.unavailableLeads).toBe(summary.totalLeads);
-    expect(html).toContain("xl:grid-cols-6");
+    expect(html).toContain("lg:grid-cols-4");
     expect(html).toContain("Total de Leads nas concessionárias");
     expect(html).toContain("Leads em qualificação");
     expect(html.indexOf("Total de Leads nas concessionárias")).toBeLessThan(html.indexOf("Leads em qualificação"));
@@ -119,6 +119,8 @@ describe("interface de Leads", () => {
     expect(html).toContain("87,14% do total");
     expect(html).toContain("12,86% do total");
     expect(html).not.toContain("1.039 em qualificação");
+    expect(html).not.toContain("Canal principal");
+    expect(html).not.toContain("Canais ativos");
   });
 
   it("mantém o novo card integralmente em inglês para o locale en-US do usuário mgmotor", () => {
@@ -151,6 +153,8 @@ describe("interface de Leads", () => {
     expect(html).toContain("12.86% of total");
     expect(html).not.toContain("Leads em qualificação");
     expect(html).not.toContain("do total");
+    expect(html).not.toContain("Top channel");
+    expect(html).not.toContain("Active channels");
   });
 
   it("formata o total reconciliado exibido acima de cada barra diária", () => {

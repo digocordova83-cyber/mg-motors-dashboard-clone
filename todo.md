@@ -790,10 +790,10 @@
 - [x] Levantar todas as grafias e aliases DRSUL presentes na base consolidada e nos arquivos importados
 - [x] Identificar nominalmente os 18 registros da diferença por data, canal, dealer original, lote e status de deduplicação
 - [x] Verificar se os 650 incluem dados fora do período, dia atual, duplicidades ou nomes ainda não mapeados
-- [ ] Corrigir regra, alias ou dado somente se a reconciliação comprovar erro do dashboard
-- [ ] Revalidar total de DRSUL, conversão, Leads semanais e histórico dos canais após a conclusão
-- [ ] Documentar a causa exata e informar ao usuário sem estimativas
-- [ ] Revisar todo.md e salvar checkpoint somente se houver alteração no projeto
+- [x] Corrigir regra, alias ou dado somente se a reconciliação comprovar erro do dashboard — não aplicável: a auditoria confirmou que o dashboard está correto
+- [x] Revalidar total de DRSUL, conversão, Leads semanais e histórico dos canais após a conclusão
+- [x] Documentar a causa exata e informar ao usuário sem estimativas
+- [x] Revisar todo.md e salvar checkpoint somente se houver alteração no projeto
 
 ## Filtro aplicado à Eficiência de vendas e Exportar base — Julho de 2026
 
@@ -807,3 +807,11 @@
 - [x] Adicionar botão `Exportar base` visível para todos os usuários da aba Leads e vinculado ao filtro ativo
 - [x] Validar conteúdo do Excel, autorização, filtros de data, recálculo da tabela, idiomas e responsividade
 - [x] Executar testes, tipagem, build, revisar todo.md e salvar checkpoint
+
+## Remoção de Canal principal e Canais ativos — Julho de 2026
+
+- [x] Remover os cards `Canal principal` e `Canais ativos` do topo da aba Leads
+- [x] Reajustar a grade dos indicadores restantes em desktop e mobile
+- [x] Atualizar testes para garantir a ausência dos dois cards
+- [x] Validar tipagem, testes, build e interface responsiva
+- [x] Revisar todo.md e salvar checkpoint consolidado
