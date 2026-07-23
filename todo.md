@@ -772,3 +772,14 @@
 - [x] Validar dados reais, reconciliação, acessibilidade e responsividade dos cards
 - [x] Adicionar testes e executar tipagem, suíte completa e build
 - [x] Revisar todo.md e salvar checkpoint da melhoria
+
+## Recálculo após upload de Leads e remoção da auditoria legada — Julho de 2026
+
+- [x] Auditar a invalidação de consultas após confirmar um upload de CSV de Leads
+- [x] Garantir atualização automática da Eficiência de vendas, Leads semanais, conversão e histórico dos canais após cada importação concluída
+- [x] Cobrir importações novas e reprocessamentos idempotentes sem exigir novo upload do CSV de vendas
+- [x] Remover os cards `Concessionárias válidas`, `Leads atribuídos` e `Leads em qualificação` do bloco legado
+- [x] Remover a tabela `Auditoria de recebimento por concessionária` e seus controles da aba Leads
+- [x] Preservar a nova tabela de Eficiência de vendas e o popup `Histórico dos canais`
+- [x] Atualizar testes e validar o fluxo real de upload, recálculo, tipagem, build e responsividade
+- [x] Revisar todo.md e salvar checkpoint das alterações

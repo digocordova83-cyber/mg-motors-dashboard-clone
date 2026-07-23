@@ -1,4 +1,5 @@
 import React from "react";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -11,6 +12,7 @@ import {
   LeadsError,
   formatDailyBarTotal,
   formatDealerLabel,
+  invalidateLeadImportCaches,
   LeadsLoading,
   resolveCsvImportPhase,
 } from "./LeadsTab";
@@ -73,6 +75,15 @@ describe("interface de Leads", () => {
     expect(html).toContain("Ver Leads em qualificação por canal");
     expect(html).toContain("Dealer A");
     expect(html).toContain("Ver canais");
+  });
+
+  it("mantém a Eficiência de vendas e remove a auditoria legada da aba Leads", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain("<WeeklySalesPanel");
+    expect(source).toContain("<DealerChannelDialog");
+    expect(source).not.toContain("<DealerAudit analytics={data}");
+    expect(source).toContain("weeklySalesMetrics: () => utils.leads.weeklySalesMetrics.invalidate()");
   });
 
   it("exibe no topo os três totais reconciliados em cards independentes", () => {
@@ -190,6 +201,24 @@ describe("interface de Leads", () => {
     expect(resolveCsvImportPhase({ isPreviewing: false, isImporting: true, hasPreview: true, success: null, error: null })).toBe("IMPORTING");
     expect(resolveCsvImportPhase({ isPreviewing: false, isImporting: false, hasPreview: false, success: "Arquivo processado.", error: null })).toBe("SUCCESS");
     expect(resolveCsvImportPhase({ isPreviewing: false, isImporting: false, hasPreview: false, success: null, error: "Arquivo inválido." })).toBe("ERROR");
+  });
+
+  it("atualiza também a Eficiência de vendas após importações novas ou idempotentes", async () => {
+    const invalidated: string[] = [];
+
+    await invalidateLeadImportCaches({
+      analytics: async () => invalidated.push("analytics"),
+      bounds: async () => invalidated.push("bounds"),
+      importHistory: async () => invalidated.push("importHistory"),
+      weeklySalesMetrics: async () => invalidated.push("weeklySalesMetrics"),
+    });
+
+    expect(invalidated).toEqual([
+      "analytics",
+      "bounds",
+      "importHistory",
+      "weeklySalesMetrics",
+    ]);
   });
 
   it("expõe progresso e resultados do fluxo CSV sem depender de persistência", () => {
