@@ -19,11 +19,11 @@ const dealerWithHistory = {
   leadsPerSale: 25,
   estimatedLeadsNeeded: 25,
   weeks: {
-    1: { target: 1, retail: 1, achievementPercent: 100 },
-    2: { target: 3, retail: 2, achievementPercent: 66.7 },
-    3: { target: 6, retail: 3, achievementPercent: 50 },
-    4: { target: 8, retail: 4, achievementPercent: 50 },
-    5: { target: 10, retail: null, achievementPercent: null },
+    1: { target: 1, leads: 20, retail: 1, achievementPercent: 100 },
+    2: { target: 3, leads: 45, retail: 2, achievementPercent: 66.7 },
+    3: { target: 6, leads: 70, retail: 3, achievementPercent: 50 },
+    4: { target: 8, leads: 100, retail: 4, achievementPercent: 50 },
+    5: { target: 10, leads: null, retail: null, achievementPercent: null },
   },
 } as never;
 
@@ -89,13 +89,16 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(historyPt).toContain("Semana 1");
     expect(historyPt).toContain("Semana 4");
     expect(historyPt).toContain("Referência mensal");
-    expect(historyPt).toContain("A Semana 4 representa o total mensal usado na conversão");
+    expect(historyPt).toContain("Meta, vendas e Leads são acumulados");
+    expect(historyPt).toMatch(/Semana 1[\s\S]*Leads[\s\S]*20/);
+    expect(historyPt).toMatch(/Semana 4[\s\S]*Leads[\s\S]*100/);
     expect(historyEn).toContain("Cumulative history by week");
     expect(historyEn).toContain("Week 4");
     expect(historyEn).toContain("Monthly reference");
     expect(historyEn).toContain("Target");
     expect(historyEn).toContain("Sales");
     expect(historyEn).toContain("Achievement");
+    expect(historyEn).toContain("Target, sales and Leads are cumulative");
   });
 
   it("mantém métricas e correspondência integralmente em inglês para mgsales", () => {

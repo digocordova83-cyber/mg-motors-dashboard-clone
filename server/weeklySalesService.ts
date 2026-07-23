@@ -56,6 +56,12 @@ export type WeeklySalesImportResult = WeeklySalesPreviewResult & {
   importedAt: number;
 };
 
+export type WeeklyLeadCounts = Record<"1" | "2" | "3" | "4", number>;
+
+export type WeeklySalesDealerWeekMetric = WeeklySalesWeekMetrics & {
+  leads: number | null;
+};
+
 export type WeeklySalesDealerMetric = {
   sourceName: string;
   dealerName: string;
@@ -65,7 +71,7 @@ export type WeeklySalesDealerMetric = {
   conversionRatePercent: number | null;
   leadsPerSale: number | null;
   estimatedLeadsNeeded: number | null;
-  weeks: Record<string, WeeklySalesWeekMetrics>;
+  weeks: Record<string, WeeklySalesDealerWeekMetric>;
 };
 
 export type WeeklySalesMetrics = {
@@ -165,28 +171,68 @@ async function getKnownDealerKeys(): Promise<Set<string>> {
   );
 }
 
-async function getLeadCountsByDealer(competence: string): Promise<Map<string, number>> {
+export function getWeeklyLeadCutoffDates(
+  competence: string,
+  dateTo: string,
+): Record<keyof WeeklyLeadCounts, string> {
+  assertCompetence(competence);
+  if (!dateTo.startsWith(`${competence}-`)) {
+    throw new Error("A data final precisa pertencer à competência informada.");
+  }
+  const cappedDate = (day: number) => {
+    const boundary = `${competence}-${String(day).padStart(2, "0")}`;
+    return boundary < dateTo ? boundary : dateTo;
+  };
+  return {
+    "1": cappedDate(7),
+    "2": cappedDate(14),
+    "3": cappedDate(21),
+    "4": dateTo,
+  };
+}
+
+export function buildCumulativeWeeklyLeadCounts(
+  rows: Array<{ dealerName: string | null; correctedDate: string; count: number }>,
+  cutoffs: Record<keyof WeeklyLeadCounts, string>,
+): Map<string, WeeklyLeadCounts> {
+  const counts = new Map<string, WeeklyLeadCounts>();
+  const unavailableKey = normalizeDealerLookupKey(LEADS_UNAVAILABLE);
+  const weeks: Array<keyof WeeklyLeadCounts> = ["1", "2", "3", "4"];
+
+  for (const row of rows) {
+    const canonical = canonicalizeDealerName(row.dealerName ?? "");
+    const key = normalizeDealerLookupKey(canonical);
+    if (!key || key === unavailableKey) continue;
+    const current = counts.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0 };
+    for (const week of weeks) {
+      if (row.correctedDate <= cutoffs[week]) current[week] += Number(row.count ?? 0);
+    }
+    counts.set(key, current);
+  }
+
+  return counts;
+}
+
+async function getLeadCountsByDealerAndWeek(
+  competence: string,
+): Promise<Map<string, WeeklyLeadCounts>> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const { dateFrom, dateTo } = monthBounds(competence);
   const rows = await db
     .select({
       dealerName: leads.dealerName,
+      correctedDate: leads.correctedDate,
       count: sql<number>`count(*)`,
     })
     .from(leads)
     .where(and(gte(leads.correctedDate, dateFrom), lte(leads.correctedDate, dateTo)))
-    .groupBy(leads.dealerName);
+    .groupBy(leads.dealerName, leads.correctedDate);
 
-  const counts = new Map<string, number>();
-  const unavailableKey = normalizeDealerLookupKey(LEADS_UNAVAILABLE);
-  for (const row of rows) {
-    const canonical = canonicalizeDealerName(row.dealerName ?? "");
-    const key = normalizeDealerLookupKey(canonical);
-    if (!key || key === unavailableKey) continue;
-    counts.set(key, (counts.get(key) ?? 0) + Number(row.count ?? 0));
-  }
-  return counts;
+  return buildCumulativeWeeklyLeadCounts(
+    rows.map(row => ({ ...row, count: Number(row.count ?? 0) })),
+    getWeeklyLeadCutoffDates(competence, dateTo),
+  );
 }
 
 function enrichRows(parsed: WeeklySalesCsvPreview, knownDealerKeys: Set<string>): EnrichedSalesRow[] {
@@ -486,22 +532,27 @@ export async function getWeeklySalesImportHistory(limit = 20): Promise<WeeklySal
     .limit(Math.max(1, Math.min(MAX_HISTORY_LIMIT, limit)));
 }
 
-function toWeekMetrics(record: typeof weeklySalesRecords.$inferSelect): Record<string, WeeklySalesWeekMetrics> {
+function toWeekMetrics(
+  record: typeof weeklySalesRecords.$inferSelect,
+  weeklyLeads: WeeklyLeadCounts | null,
+): Record<string, WeeklySalesDealerWeekMetric> {
   const metric = (
     target: string | null,
     retail: number | null,
     achievement: string | null,
-  ): WeeklySalesWeekMetrics => ({
+    leadsCount: number | null,
+  ): WeeklySalesDealerWeekMetric => ({
     target: target === null ? null : Number(target),
     retail,
     achievementPercent: achievement === null ? null : Number(achievement),
+    leads: leadsCount,
   });
   return {
-    "1": metric(record.week1Target, record.week1Retail, record.week1Achievement),
-    "2": metric(record.week2Target, record.week2Retail, record.week2Achievement),
-    "3": metric(record.week3Target, record.week3Retail, record.week3Achievement),
-    "4": metric(record.week4Target, record.week4Retail, record.week4Achievement),
-    "5": metric(record.week5Target, record.week5Retail, record.week5Achievement),
+    "1": metric(record.week1Target, record.week1Retail, record.week1Achievement, weeklyLeads?.["1"] ?? null),
+    "2": metric(record.week2Target, record.week2Retail, record.week2Achievement, weeklyLeads?.["2"] ?? null),
+    "3": metric(record.week3Target, record.week3Retail, record.week3Achievement, weeklyLeads?.["3"] ?? null),
+    "4": metric(record.week4Target, record.week4Retail, record.week4Achievement, weeklyLeads?.["4"] ?? null),
+    "5": metric(record.week5Target, record.week5Retail, record.week5Achievement, null),
   };
 }
 
@@ -568,7 +619,7 @@ export async function getWeeklySalesMetrics(competence: string): Promise<WeeklyS
     };
   }
 
-  const [records, leadCounts] = await Promise.all([
+  const [records, leadCountsByWeek] = await Promise.all([
     db
       .select()
       .from(weeklySalesRecords)
@@ -578,13 +629,17 @@ export async function getWeeklySalesMetrics(competence: string): Promise<WeeklyS
           eq(weeklySalesRecords.rowType, "DEALER"),
         ),
       ),
-    getLeadCountsByDealer(competence),
+    getLeadCountsByDealerAndWeek(competence),
   ]);
 
   const dealers = records
     .map(record => {
       const key = record.canonicalDealerKey ?? "";
-      const leadsCount = record.matchStatus === "MATCHED" ? (leadCounts.get(key) ?? 0) : 0;
+      const weeklyLeads =
+        record.matchStatus === "MATCHED"
+          ? (leadCountsByWeek.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0 })
+          : null;
+      const leadsCount = weeklyLeads?.["4"] ?? 0;
       const efficiency = calculateWeeklySalesEfficiency(leadsCount, record.week4Retail);
       return {
         sourceName: record.sourceName,
@@ -593,7 +648,7 @@ export async function getWeeklySalesMetrics(competence: string): Promise<WeeklyS
         leads: leadsCount,
         sales: record.week4Retail,
         ...efficiency,
-        weeks: toWeekMetrics(record),
+        weeks: toWeekMetrics(record, weeklyLeads),
       } satisfies WeeklySalesDealerMetric;
     })
     .sort(

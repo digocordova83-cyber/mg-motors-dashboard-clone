@@ -761,3 +761,14 @@
 - [x] Garantir acessibilidade, responsividade e ausência do botão para dealers sem correspondência
 - [x] Adicionar testes e validar tipagem, suíte completa, build e interface
 - [x] Revisar todo.md e salvar checkpoint da melhoria
+
+## Leads acumulados nos cards semanais — Julho de 2026
+
+- [x] Confirmar os cortes das Semanas 1–4 e sua relação acumulada com metas e vendas do CSV
+- [x] Calcular Leads acumulados por dealer em cada corte semanal, respeitando competência, D-1 e normalização canônica
+- [x] Garantir que os Leads da Semana 4 conciliem com o total mensal usado na conversão do dealer
+- [x] Expor o campo semanal no contrato da API sem alterar fórmulas ou importações existentes
+- [x] Exibir `Leads` em cada card Semana 1–4, com tradução para `en-US` e estado indisponível quando aplicável
+- [x] Validar dados reais, reconciliação, acessibilidade e responsividade dos cards
+- [x] Adicionar testes e executar tipagem, suíte completa e build
+- [x] Revisar todo.md e salvar checkpoint da melhoria

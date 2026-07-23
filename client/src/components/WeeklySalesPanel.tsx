@@ -203,13 +203,17 @@ export function WeeklySalesWeekHistory({
   locale?: Locale;
 }) {
   return (
-    <div>
+    <div className="w-[calc(100vw-3rem)] min-w-0 lg:w-auto">
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[10px] font-semibold text-slate-300">
           {ui(locale, "Histórico acumulado por semana", "Cumulative history by week")}
         </p>
         <p className="text-[9px] text-slate-600">
-          {ui(locale, "A Semana 4 representa o total mensal usado na conversão.", "Week 4 is the monthly total used for conversion.")}
+          {ui(
+            locale,
+            "Meta, vendas e Leads são acumulados; a Semana 4 é a referência mensal da conversão.",
+            "Target, sales and Leads are cumulative; Week 4 is the monthly conversion reference.",
+          )}
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -235,10 +239,16 @@ export function WeeklySalesWeekHistory({
                   </span>
                 ) : null}
               </div>
-              <dl className="mt-3 grid grid-cols-3 gap-2 text-[9px]">
+              <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-[9px] sm:grid-cols-4">
                 <div>
                   <dt className="text-slate-600">{ui(locale, "Meta", "Target")}</dt>
                   <dd className="mt-1 font-medium text-slate-300">{formatMetric(values.target, locale)}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-600">Leads</dt>
+                  <dd className="mt-1 font-semibold text-emerald-300">
+                    {values.leads === null ? "—" : formatInteger(values.leads, locale)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-slate-600">{ui(locale, "Vendas", "Sales")}</dt>
