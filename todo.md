@@ -742,3 +742,12 @@
 - [x] Implementar exclusivamente a opção escolhida de upload manual semanal, sem agendamento ou dependência externa
 - [x] Incorporar ao de/para de vendas os seis aliases confirmados: Baltic, Indiana, JRCA, Toriba, Potenza e Tecar Brasília
 - [x] Gerar ao final a lista das concessionárias do CSV de vendas sem correspondência na base atual de Leads do dashboard
+
+## Correção de consolidação ORVEL — Julho de 2026
+
+- [x] Mapear todas as ocorrências de `orvel_shopping_vitória_-_vitória/es_` no código, na base de Leads e nas métricas exibidas
+- [x] Adicionar de/para explícito de `orvel_shopping_vitória_-_vitória/es_` para `ORVEL - VITÓRIA`
+- [x] Consolidar registros persistidos no dealer canônico sem duplicar Leads nem alterar totais gerais
+- [x] Validar que a interface exibe somente `ORVEL - VITÓRIA` e recalcula as métricas consolidadas corretamente
+- [x] Executar testes, checagem de tipos e build após a correção
+- [x] Revisar todo.md e salvar checkpoint da consolidação ORVEL

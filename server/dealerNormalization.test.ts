@@ -16,6 +16,7 @@ describe("dealer normalization", () => {
     expect(canonicalizeDealerName("DRSUL POA")).toBe("DRSUL - PORTO ALEGRE");
     expect(canonicalizeDealerName("Barigui Curitiba - 3964357")).toBe("BARIGUI - CURITIBA");
     expect(isExplicitDealerAlias("orvel_shopping_vitória_-_vitória/es_")).toBe(true);
+    expect(canonicalizeDealerName("orvel_shopping_vitória_-_vitória/es_")).toBe("ORVEL - VITÓRIA");
     expect(isExplicitDealerAlias("ligação_")).toBe(false);
   });
 
@@ -41,7 +42,7 @@ describe("dealer normalization", () => {
       sourceRowCount: 86,
       mappingCount: 86,
       uniqueAliasCount: 75,
-      canonicalCount: 26,
+      canonicalCount: 25,
     });
     expect(stats.sourceModifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });

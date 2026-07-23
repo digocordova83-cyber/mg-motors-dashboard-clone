@@ -9,7 +9,7 @@
   "sourceRowCount": 86,
   "mappingCount": 86,
   "uniqueAliasCount": 75,
-  "canonicalCount": 26,
+  "canonicalCount": 25,
   "mappings": [
     {
       "source": "vega_belém_-_belém/pa_",
@@ -200,8 +200,8 @@
     {
       "source": "orvel_shopping_vitória_-_vitória/es_",
       "sourceKey": "ORVEL SHOPPING VITORIA VITORIA ES",
-      "canonical": "orvel_shopping_vitória_-_vitória/es_",
-      "canonicalKey": "ORVEL SHOPPING VITORIA VITORIA ES"
+      "canonical": "ORVEL - VITÓRIA",
+      "canonicalKey": "ORVEL VITORIA"
     },
     {
       "source": "orvel_-_vitória/es",
