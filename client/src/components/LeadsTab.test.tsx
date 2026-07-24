@@ -16,6 +16,7 @@ import {
   invalidateLeadImportCaches,
   LeadsLoading,
   resolveCsvImportPhase,
+  resolveLeadsActionVisibility,
 } from "./LeadsTab";
 
 describe("interface de Leads", () => {
@@ -87,7 +88,7 @@ describe("interface de Leads", () => {
     expect(source).toContain("weeklySalesMetrics: () => utils.leads.weeklySalesMetrics.invalidate()");
   });
 
-  it("exibe no topo os quatro indicadores restantes sem Canal principal ou Canais ativos", () => {
+  it("exibe no topo os três indicadores solicitados sem cards auxiliares", () => {
     const summary = {
       totalLeads: 8080,
       dailyAverage: 384.76,
@@ -110,9 +111,9 @@ describe("interface de Leads", () => {
     );
 
     expect(dealerSummary.assignedLeads + dealerSummary.unavailableLeads).toBe(summary.totalLeads);
-    expect(html).toContain("lg:grid-cols-4");
+    expect(html).toContain("md:grid-cols-3");
     expect(html).toContain("Total de Leads nas concessionárias");
-    expect(html).toContain("Leads em qualificação");
+    expect(html).toContain("Leads em qualificação / sem cobertura de PDV");
     expect(html.indexOf("Total de Leads nas concessionárias")).toBeLessThan(html.indexOf("Leads em qualificação"));
     expect(html).toContain("7.041");
     expect(html).toContain("1.039");
@@ -121,6 +122,7 @@ describe("interface de Leads", () => {
     expect(html).not.toContain("1.039 em qualificação");
     expect(html).not.toContain("Canal principal");
     expect(html).not.toContain("Canais ativos");
+    expect(html).not.toContain("Média diária");
   });
 
   it("mantém o novo card integralmente em inglês para o locale en-US do usuário mgmotor", () => {
@@ -146,7 +148,7 @@ describe("interface de Leads", () => {
     );
 
     expect(html).toContain("Total Leads in dealerships");
-    expect(html).toContain("Leads in qualification");
+    expect(html).toContain("Leads in qualification / no POS coverage");
     expect(html).toContain("7,041");
     expect(html).toContain("1,039");
     expect(html).toContain("87.14% of total");
@@ -155,6 +157,7 @@ describe("interface de Leads", () => {
     expect(html).not.toContain("do total");
     expect(html).not.toContain("Top channel");
     expect(html).not.toContain("Active channels");
+    expect(html).not.toContain("Daily average");
   });
 
   it("formata o total reconciliado exibido acima de cada barra diária", () => {
@@ -180,6 +183,19 @@ describe("interface de Leads", () => {
     expect(en).toContain("Export database");
     expect(pending).toContain("Gerando Excel...");
     expect(pending).toContain("disabled");
+  });
+
+  it("oculta todas as ações mutáveis no modo somente leitura de mgsales", () => {
+    expect(resolveLeadsActionVisibility({ readOnly: true, canImportLeads: true })).toEqual({
+      canExport: false,
+      canImport: false,
+      canEditGoal: false,
+    });
+    expect(resolveLeadsActionVisibility({ readOnly: false, canImportLeads: false })).toEqual({
+      canExport: true,
+      canImport: false,
+      canEditGoal: true,
+    });
   });
 
   it("identifica o período filtrado pelo campo Data Corrigida", () => {

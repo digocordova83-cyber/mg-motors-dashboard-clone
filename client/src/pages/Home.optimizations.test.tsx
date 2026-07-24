@@ -4,6 +4,15 @@ import { describe, expect, it } from "vitest";
 const homeSource = readFileSync(new URL("./Home.tsx", import.meta.url), "utf8");
 const routerSource = readFileSync(new URL("../../../server/routers.ts", import.meta.url), "utf8");
 
+describe("política de navegação do dashboard", () => {
+  it("identifica mgsales e entrega Leads em modo somente leitura", () => {
+    expect(homeSource).toContain('return username.trim().toLowerCase() === "mgsales"');
+    expect(homeSource).toContain("const leadsReadOnly = isMgSalesReadOnlyUsername(session.username)");
+    expect(homeSource).toContain("readOnly={leadsReadOnly}");
+    expect(homeSource).toContain("canImportLeads={permissions.canImportLeads && !leadsReadOnly}");
+  });
+});
+
 describe("interface aprofundada de Otimizações", () => {
   it("expõe parâmetros de origem e destino, estratégias, evidências, impacto, risco e execução", () => {
     expect(homeSource).toContain("Alteração recomendada");

@@ -9,6 +9,7 @@ import {
   authenticateDashboardCredentials,
   clearDashboardSession,
   type DashboardPermissions,
+  isMgSalesReadOnlyUsername,
   readDashboardSession,
   setDashboardSession,
 } from "./dashboardAuth";
@@ -74,6 +75,12 @@ const leadsProcedure = createPermissionProcedure("canAccessLeads");
 const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations");
 const historyProcedure = createPermissionProcedure("canAccessHistory");
 const importLeadsProcedure = createPermissionProcedure("canImportLeads");
+const mutableLeadsProcedure = leadsProcedure.use(({ ctx, next }) => {
+  if (isMgSalesReadOnlyUsername(ctx.dashboardSession.username)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Este usuário possui acesso somente para visualização de Leads" });
+  }
+  return next({ ctx });
+});
 const accessHistoryProcedure = createPermissionProcedure("canAccessAccessHistory");
 
 const dateSchema = z
@@ -293,13 +300,13 @@ export const appRouter = router({
     analytics: leadsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => getLeadAnalytics(input)),
-    exportBase: leadsProcedure
+    exportBase: mutableLeadsProcedure
       .input(leadsExportSchema)
       .mutation(({ input }) => exportLeadsBase(input)),
     monthlyGoal: leadsProcedure
       .input(z.object({ competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida") }))
       .query(({ input }) => getLeadMonthlyGoal(input.competence)),
-    updateMonthlyGoal: leadsProcedure
+    updateMonthlyGoal: mutableLeadsProcedure
       .input(
         z.object({
           competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida"),

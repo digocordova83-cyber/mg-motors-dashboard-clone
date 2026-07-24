@@ -21,7 +21,6 @@ import {
   Download,
   FileCheck2,
   FileUp,
-  Gauge,
   Loader2,
   PencilLine,
   Search,
@@ -55,10 +54,25 @@ type LeadsTabProps = {
   dateTo: string;
   locale?: Locale;
   canImportLeads?: boolean;
+  readOnly?: boolean;
   onUpdatedAt?: (value: string) => void;
 };
 
 type DealerSort = "leads" | "inactiveDays" | "lastReceipt";
+
+export function resolveLeadsActionVisibility({
+  readOnly,
+  canImportLeads,
+}: {
+  readOnly: boolean;
+  canImportLeads: boolean;
+}) {
+  return {
+    canExport: !readOnly,
+    canImport: !readOnly && canImportLeads,
+    canEditGoal: !readOnly,
+  };
+}
 
 type LeadImportCacheInvalidators = {
   analytics: () => Promise<unknown>;
@@ -231,11 +245,10 @@ export function LeadSummaryCards({
   locale?: Locale;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-3">
       <LeadMetricCard title={ui(locale, "Total de Leads", "Total Leads")} value={formatInteger(summary.totalLeads, locale)} subtitle={ui(locale, `${summary.calendarDays} dia(s) no período`, `${summary.calendarDays} day(s) in period`)} icon={<UsersRound className="h-4 w-4" />} accent="#e2212d" />
       <LeadMetricCard title={ui(locale, "Total de Leads nas concessionárias", "Total Leads in dealerships")} value={formatInteger(dealerSummary.assignedLeads, locale)} subtitle={ui(locale, `${formatNumber(dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<Building2 className="h-4 w-4" />} accent="#10b981" />
-      <LeadMetricCard title={ui(locale, "Leads em qualificação", "Leads in qualification")} value={formatInteger(dealerSummary.unavailableLeads, locale)} subtitle={ui(locale, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<AlertTriangle className="h-4 w-4" />} accent="#fb923c" />
-      <LeadMetricCard title={ui(locale, "Média diária", "Daily average")} value={formatNumber(summary.dailyAverage, locale)} subtitle={ui(locale, "Dias corridos, inclusive zeros", "Calendar days, including zeroes")} icon={<Gauge className="h-4 w-4" />} accent="#38bdf8" />
+      <LeadMetricCard title={ui(locale, "Leads em qualificação / sem cobertura de PDV", "Leads in qualification / no POS coverage")} value={formatInteger(dealerSummary.unavailableLeads, locale)} subtitle={ui(locale, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<AlertTriangle className="h-4 w-4" />} accent="#fb923c" />
     </div>
   );
 }
@@ -767,11 +780,13 @@ export function LeadsTab({
   dateTo,
   locale = "pt-BR",
   canImportLeads = true,
+  readOnly = false,
   onUpdatedAt,
 }: LeadsTabProps) {
   const utils = trpc.useUtils();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryInput = useMemo(() => ({ dateFrom, dateTo }), [dateFrom, dateTo]);
+  const actionVisibility = resolveLeadsActionVisibility({ readOnly, canImportLeads });
   const analytics = trpc.leads.analytics.useQuery(queryInput, { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false, retry: 1 });
   const bounds = trpc.leads.bounds.useQuery(undefined, { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false });
   const history = trpc.leads.importHistory.useQuery(
@@ -888,6 +903,7 @@ export function LeadsTab({
   }
 
   function handleExport() {
+    if (readOnly) return;
     setExportMessage(null);
     exportMutation.reset();
     exportMutation.mutate({ dateFrom, dateTo, locale });
@@ -911,12 +927,14 @@ export function LeadsTab({
           <p className="mt-1 text-[10px] text-slate-700"><LeadFilterIdentity dateFrom={dateFrom} dateTo={dateTo} locale={locale} /></p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <LeadsExportButton
-            locale={locale}
-            isPending={exportMutation.isPending}
-            onExport={handleExport}
-          />
-          {canImportLeads ? (
+          {actionVisibility.canExport ? (
+            <LeadsExportButton
+              locale={locale}
+              isPending={exportMutation.isPending}
+              onExport={handleExport}
+            />
+          ) : null}
+          {actionVisibility.canImport ? (
             <>
               <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleFile} className="hidden" aria-label={locale === "en-US" ? "Select Leads CSV file" : "Selecionar arquivo CSV de Leads"} />
               <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={previewMutation.isPending || importMutation.isPending} className="w-full border-[#e2212d]/30 bg-[#e2212d]/10 text-[#ff8c93] hover:bg-[#e2212d]/15 hover:text-white sm:w-auto">
@@ -927,17 +945,17 @@ export function LeadsTab({
         </div>
       </div>
 
-      {exportMessage ? (
+      {actionVisibility.canExport && exportMessage ? (
         <div role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">
           {exportMessage}
         </div>
-      ) : exportMutation.error ? (
+      ) : actionVisibility.canExport && exportMutation.error ? (
         <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-xs text-red-300">
           {exportMutation.error.message}
         </div>
       ) : null}
 
-      {canImportLeads ? (
+      {actionVisibility.canImport ? (
         <CsvImportFeedback
           isPreviewing={previewMutation.isPending}
           isImporting={importMutation.isPending}
@@ -958,7 +976,7 @@ export function LeadsTab({
       <LeadPanel
         title={ui(locale, `Pacing de Leads — ${data.pacing.competence}`, `Leads pacing — ${data.pacing.competence}`)}
         subtitle={ui(locale, `Dados fechados até ${formatDate(data.pacing.asOfDate, locale)} • meta persistente e auditável`, `Closed data through ${formatDate(data.pacing.asOfDate, locale)} • persistent, auditable goal`)}
-        action={<Button type="button" size="sm" variant="outline" onClick={() => setGoalOpen(true)} className="h-8 border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338] hover:text-white"><PencilLine className="mr-1.5 h-3.5 w-3.5" />{ui(locale, "Editar meta", "Edit goal")}</Button>}
+        action={actionVisibility.canEditGoal ? <Button type="button" size="sm" variant="outline" onClick={() => setGoalOpen(true)} className="h-8 border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338] hover:text-white"><PencilLine className="mr-1.5 h-3.5 w-3.5" />{ui(locale, "Editar meta", "Edit goal")}</Button> : undefined}
       >
         <div className="grid gap-5 p-5 lg:grid-cols-[1.2fr_2fr]">
           <div className="rounded-xl border border-[#202b3d] bg-[#0a111d] p-4">
@@ -1076,8 +1094,8 @@ export function LeadsTab({
       </LeadPanel>
       ) : null}
 
-      {canImportLeads ? <CsvPreviewDialog preview={preview} open={previewOpen} isImporting={importMutation.isPending} onOpenChange={setPreviewOpen} onConfirm={confirmImport} locale={locale} /> : null}
-      <GoalDialog analytics={data} open={goalOpen} isSaving={goalMutation.isPending} error={goalMutation.error?.message ?? null} onOpenChange={setGoalOpen} onSave={goal => goalMutation.mutate({ competence: data.pacing.competence, goalCount: goal })} locale={locale} />
+      {actionVisibility.canImport ? <CsvPreviewDialog preview={preview} open={previewOpen} isImporting={importMutation.isPending} onOpenChange={setPreviewOpen} onConfirm={confirmImport} locale={locale} /> : null}
+      {actionVisibility.canEditGoal ? <GoalDialog analytics={data} open={goalOpen} isSaving={goalMutation.isPending} error={goalMutation.error?.message ?? null} onOpenChange={setGoalOpen} onSave={goal => goalMutation.mutate({ competence: data.pacing.competence, goalCount: goal })} locale={locale} /> : null}
     </div>
   );
 }

@@ -152,6 +152,10 @@ function localizeMetricLabel(locale: DashboardLocale, key: string, fallback: str
   } as Record<string, string>)[key] ?? fallback;
 }
 
+export function isMgSalesReadOnlyUsername(username: string) {
+  return username.trim().toLowerCase() === "mgsales";
+}
+
 const dashboardModules: Array<{
   id: DashboardModuleId;
   labels: Record<"pt-BR" | "en-US", string>;
@@ -1208,6 +1212,7 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
 function DashboardScreen({ session }: { session: DashboardSession }) {
   const utils = trpc.useUtils();
   const { locale, permissions } = session;
+  const leadsReadOnly = isMgSalesReadOnlyUsername(session.username);
   const initialRoute = useMemo(getRouteFromUrl, []);
   const accessibleModules = useMemo(
     () => dashboardModules.filter(module => permissions[module.permission]),
@@ -1513,7 +1518,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
           ) : null}
 
           {isLeads ? (
-            <LeadsTab dateFrom={leadsDateFrom} dateTo={leadsDateTo} locale={locale} canImportLeads={permissions.canImportLeads} onUpdatedAt={handleUpdatedAt} />
+            <LeadsTab dateFrom={leadsDateFrom} dateTo={leadsDateTo} locale={locale} canImportLeads={permissions.canImportLeads && !leadsReadOnly} readOnly={leadsReadOnly} onUpdatedAt={handleUpdatedAt} />
           ) : dashboard.isLoading ? (
             <div className="grid min-h-[520px] place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
               <div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-xs text-slate-500">{ui(locale, "Atualizando dados do Google Ads...", "Updating Google Ads data...")}</p></div>

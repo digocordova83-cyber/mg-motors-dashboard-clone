@@ -815,3 +815,15 @@
 - [x] Atualizar testes para garantir a ausência dos dois cards
 - [x] Validar tipagem, testes, build e interface responsiva
 - [x] Revisar todo.md e salvar checkpoint consolidado
+
+## Indicadores de Leads e acesso exclusivo do mgsales — Julho de 2026
+
+- [x] Atualizar o título `Leads em qualificação` para incluir `/ sem cobertura de PDV` em português
+- [x] Exibir `/ no POS coverage` no título equivalente para usuários `en-US`
+- [x] Ocultar o card `Média diária` e reorganizar os três indicadores restantes em desktop e mobile
+- [x] Restringir o usuário `mgsales` exclusivamente ao módulo Leads
+- [x] Tornar a experiência de `mgsales` somente leitura, ocultando importações, exportação e demais ações de alteração
+- [x] Bloquear no backend o acesso direto de `mgsales` a módulos e operações não permitidos
+- [x] Atualizar testes de locale, layout, navegação, autorização e modo somente leitura
+- [x] Validar tipagem, suíte completa, build e interface em desktop e mobile
+- [x] Revisar todo.md e salvar checkpoint consolidado
