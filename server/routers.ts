@@ -43,6 +43,7 @@ import {
   upsertLeadMonthlyGoal,
 } from "./leadsService";
 import { exportLeadsBase } from "./leadsExportService";
+import { loadMetaCreativeInventory } from "./metaCreativeInventory";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import {
   getWeeklySalesImportHistory,
@@ -401,6 +402,7 @@ export const appRouter = router({
     data: metaAdsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => loadMetaAdsData(input.dateFrom, input.dateTo)),
+    creativeInventory: metaAdsProcedure.query(() => loadMetaCreativeInventory()),
   }),
   dashboard: router({
     getData: googleAdsProcedure

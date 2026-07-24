@@ -892,3 +892,36 @@
 - [x] Revalidar Otimizações e Histórico autenticados em desktop e mobile
 - [x] Executar suíte completa, TypeScript, build, revisar todo.md e salvar checkpoint consolidado
 - [x] Corrigir o erro `Invalid time value` ao formatar a data de liberação do cooldown e cobrir a regressão
+
+## Cobertura de criativos ativos — Meta Ads e Google Ads
+
+- [x] Auditar a fonte atual dos criativos do Meta e confirmar conta, paginação, status efetivo e formatos disponíveis
+- [x] Validar a cobertura real de imagens, vídeos, carrosséis e demais variações do Meta sem limitar a primeira página
+- [x] Auditar a fonte do Google Ads e confirmar disponibilidade de ativos de Performance Max, YouTube e Display
+- [x] Definir de forma explícita o que significa `rodando ativo` em campanha, grupo/conjunto, anúncio e ativo
+- [x] Implementar contratos tipados, paginação completa, deduplicação e cache seguro para criativos do Meta
+- [x] Retirar os contratos e a interface de criativos Google desta versão por decisão do usuário
+- [x] Garantir prévias reais de imagem e vídeo sem armazenar mídia localmente nem expor credenciais
+- [x] Substituir o requisito de apenas ativos pelo escopo confirmado de todos os criativos Meta acessíveis, com status operacional
+- [x] Retirar a aba Google Ads `Criativos` desta versão por decisão do usuário
+- [x] Preservar a auditoria de Google Ads para uma implementação futura com fonte de mídia compatível
+- [x] Informar na interface a data da atualização, a cobertura retornada e eventuais mídias sem URL disponível na fonte
+- [x] Cobrir paginação, atividade, deduplicação, formatos, autorização e estados indisponíveis com Vitest
+- [x] Validar os totais contra a fonte Meta real e revisar casos sem prévia para não afirmar cobertura inexistente
+- [x] Validar a experiência Meta autenticada em desktop e mobile, sem overflow e com carregamento progressivo
+- [x] Executar suíte completa, TypeScript, build, revisar todo.md e salvar checkpoint consolidado
+
+## Escopo confirmado — cobertura integral de criativos Meta
+
+- [x] Consultar todos os anúncios acessíveis da conta Meta, inclusive objetos sem insights no período, sem depender de gasto ou impressão
+- [x] Reconciliar a cobertura do backend com a listagem operacional da conta e declarar total, ativos, pausados e itens sem prévia
+- [x] Persistir no contrato os status efetivos de campanha, conjunto e anúncio e derivar um estado operacional único
+- [x] Identificar imagem, carrossel e vídeo pelos campos próprios da fonte, sem inferir formato apenas por thumbnail
+- [x] Preservar capa, permalink, prévias de vídeo e metadados dos cartões de carrossel quando disponíveis
+- [x] Deduplicar por anúncio e criativo sem ocultar peças diferentes nem multiplicar linhas de desempenho
+- [x] Exibir aviso geral de que os criativos estão desativados no momento quando não houver cadeia efetivamente ativa
+- [x] Marcar cada card como `Desativado`, `Campanha pausada`, `Conjunto pausado` ou `Anúncio pausado`, conforme o status real
+- [x] Informar a data de atualização, a cobertura retornada e qualquer limitação de mídia diretamente na interface
+- [x] Cobrir coleta completa, deduplicação, formatos, status, cobertura e interface com Vitest
+- [x] Validar os totais e formatos contra a conta real e inspecionar a experiência autenticada em desktop e mobile
+- [x] Executar suíte completa, TypeScript e build; revisar todo.md e salvar checkpoint consolidado
