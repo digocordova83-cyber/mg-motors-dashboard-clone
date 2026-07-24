@@ -38,6 +38,11 @@ export type WeeklySalesCsvPreview = {
     dealerRows: number;
     regionRows: number;
     totalRows: number;
+    referenceWeek: WeeklySalesWeek | null;
+    dealersWithoutReferenceSales: number;
+    referenceDealerSalesTotal: number;
+    referenceRegionSalesTotal: number;
+    referenceReportedSalesTotal: number | null;
     dealersWithoutWeek4Sales: number;
     week4DealerSalesTotal: number;
     week4RegionSalesTotal: number;
@@ -330,8 +335,22 @@ export function createWeeklySalesRow(input: {
   };
 }
 
-function sumWeek4Retail(rows: WeeklySalesRow[]): number {
-  return rows.reduce((total, row) => total + (row.weeks["4"]?.retail ?? 0), 0);
+const WEEK_NUMBERS: WeeklySalesWeek[] = [1, 2, 3, 4, 5];
+
+function sumWeekRetail(rows: WeeklySalesRow[], week: WeeklySalesWeek): number {
+  return rows.reduce((total, row) => total + (row.weeks[String(week)]?.retail ?? 0), 0);
+}
+
+export function resolveWeeklySalesReferenceWeek(
+  rows: WeeklySalesRow[],
+): WeeklySalesWeek | null {
+  const totalRows = rows.filter(row => row.rowType === "TOTAL");
+  if (totalRows.length !== 1) return null;
+  const total = totalRows[0];
+  for (const week of [...WEEK_NUMBERS].reverse()) {
+    if (total.weeks[String(week)]?.retail !== null) return week;
+  }
+  return null;
 }
 
 export function buildWeeklySalesPreview(input: {
@@ -345,28 +364,56 @@ export function buildWeeklySalesPreview(input: {
   const dealerRows = input.rows.filter(row => row.rowType === "DEALER");
   const regionRows = input.rows.filter(row => row.rowType === "REGION");
   const totalRows = input.rows.filter(row => row.rowType === "TOTAL");
-  const week4DealerSalesTotal = sumWeek4Retail(dealerRows);
-  const week4RegionSalesTotal = sumWeek4Retail(regionRows);
+  const referenceWeek = resolveWeeklySalesReferenceWeek(input.rows);
+  const referenceDealerSalesTotal = referenceWeek === null ? 0 : sumWeekRetail(dealerRows, referenceWeek);
+  const referenceRegionSalesTotal = referenceWeek === null ? 0 : sumWeekRetail(regionRows, referenceWeek);
+  const referenceReportedSalesTotal =
+    referenceWeek === null ? null : totalRows[0]?.weeks[String(referenceWeek)]?.retail ?? null;
+  const week4DealerSalesTotal = sumWeekRetail(dealerRows, 4);
+  const week4RegionSalesTotal = sumWeekRetail(regionRows, 4);
   const week4ReportedSalesTotal = totalRows[0]?.weeks["4"]?.retail ?? null;
   const reconciliationPassed =
     totalRows.length === 1 &&
-    week4ReportedSalesTotal !== null &&
-    week4DealerSalesTotal === week4RegionSalesTotal &&
-    week4DealerSalesTotal === week4ReportedSalesTotal;
+    referenceWeek !== null &&
+    referenceReportedSalesTotal !== null &&
+    referenceDealerSalesTotal === referenceRegionSalesTotal &&
+    referenceDealerSalesTotal === referenceReportedSalesTotal;
 
   if (totalRows.length !== 1) {
     errors.push(`Esperada exatamente 1 linha TOTAL; encontradas ${totalRows.length}.`);
-  }
-  if (!reconciliationPassed) {
+  } else if (referenceWeek === null) {
+    errors.push("A linha TOTAL não possui vendas Retail preenchidas em nenhuma semana.");
+  } else if (!reconciliationPassed) {
     errors.push(
-      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+      `A soma das vendas da Semana ${referenceWeek} não reconcilia entre concessionárias, regiões e TOTAL.`,
     );
   }
 
-  const week4Warnings = dealerRows
-    .filter(row => row.weeks["4"]?.retail === null)
-    .map(row => `${row.sourceName}: Semana 4 sem vendas informadas.`);
-  const warnings = Array.from(new Set([...(input.warnings ?? []), ...week4Warnings]));
+  if (totalRows.length === 1) {
+    const partialWeeks = WEEK_NUMBERS.filter(week => {
+      const reportedRetail = totalRows[0]?.weeks[String(week)]?.retail ?? null;
+      if (reportedRetail !== null) return false;
+      return [...dealerRows, ...regionRows].some(
+        row => row.weeks[String(week)]?.retail !== null,
+      );
+    });
+    for (const week of partialWeeks) {
+      errors.push(
+        `A Semana ${week} possui vendas em concessionárias ou regiões, mas o Retail do TOTAL está vazio.`,
+      );
+    }
+  }
+
+  const referenceWarnings =
+    referenceWeek === null
+      ? []
+      : dealerRows
+          .filter(row => row.weeks[String(referenceWeek)]?.retail === null)
+          .map(row => `${row.sourceName}: Semana ${referenceWeek} sem vendas informadas.`);
+  const dealersWithoutWeek4Sales = dealerRows.filter(
+    row => row.weeks["4"]?.retail === null,
+  ).length;
+  const warnings = Array.from(new Set([...(input.warnings ?? []), ...referenceWarnings]));
 
   return {
     fileHash: input.fileHash,
@@ -378,7 +425,12 @@ export function buildWeeklySalesPreview(input: {
       dealerRows: dealerRows.length,
       regionRows: regionRows.length,
       totalRows: totalRows.length,
-      dealersWithoutWeek4Sales: week4Warnings.length,
+      referenceWeek,
+      dealersWithoutReferenceSales: referenceWarnings.length,
+      referenceDealerSalesTotal,
+      referenceRegionSalesTotal,
+      referenceReportedSalesTotal,
+      dealersWithoutWeek4Sales,
       week4DealerSalesTotal,
       week4RegionSalesTotal,
       week4ReportedSalesTotal,

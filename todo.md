@@ -841,3 +841,16 @@
 - [x] Validar a prévia do arquivo enviado e o caminho transacional/idempotente sem duplicar lotes ou vendas e sem gravar o relatório de referência
 - [x] Executar tipagem, suíte completa, build e validação responsiva
 - [x] Revisar todo.md e salvar checkpoint consolidado
+
+## Última semana preenchida como referência de vendas — Julho de 2026
+
+- [x] Mapear todos os usos fixos de Semana 4 no parser, serviço, métricas, exportação e interface
+- [x] Definir a última semana preenchida como a maior W1–W5 com Retail informado no Total do arquivo
+- [x] Impedir que semanas futuras, vazias ou apenas com meta sejam escolhidas como referência
+- [x] Persistir e expor a semana de referência do lote sem perder importações CSV/PDF existentes
+- [x] Recalcular vendas, conversão, Leads por venda e estimativa pela semana de referência dinâmica
+- [x] Atualizar textos, cards, tabela, histórico e prévia para identificar a semana realmente utilizada
+- [x] Preservar todas as semanas importadas, competência, de/para, autorização e idempotência
+- [x] Cobrir W1, W2, W3, W4 e W5, células vazias, arquivos legados e regressões CSV/PDF com Vitest
+- [x] Validar tipagem, suíte completa, build e interface responsiva
+- [x] Revisar todo.md e salvar checkpoint consolidado

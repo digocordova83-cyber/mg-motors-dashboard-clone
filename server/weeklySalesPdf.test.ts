@@ -61,6 +61,11 @@ describe("Weekly Target Achievement PDF", () => {
       dealerRows: 1,
       regionRows: 1,
       totalRows: 1,
+      referenceWeek: 4,
+      dealersWithoutReferenceSales: 0,
+      referenceDealerSalesTotal: 12,
+      referenceRegionSalesTotal: 12,
+      referenceReportedSalesTotal: 12,
       week4DealerSalesTotal: 12,
       week4RegionSalesTotal: 12,
       week4ReportedSalesTotal: 12,
@@ -77,6 +82,29 @@ describe("Weekly Target Achievement PDF", () => {
       target: 53,
       retail: null,
       achievementPercent: null,
+    });
+  });
+
+  it("passa a usar W5 quando o PDF contém Retail reconciliado nessa semana", () => {
+    const base = extraction();
+    const rows = base.rows.map(row => ({
+      ...row,
+      weeks: { ...row.weeks, "5": metric(53, 15, 28.3) },
+    }));
+    const preview = buildWeeklySalesPreviewFromPdfExtraction(PDF, { ...base, rows });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.summary).toMatchObject({
+      referenceWeek: 5,
+      referenceDealerSalesTotal: 15,
+      referenceRegionSalesTotal: 15,
+      referenceReportedSalesTotal: 15,
+      reconciliationPassed: true,
+    });
+    expect(preview.rows[1]?.weeks["5"]).toEqual({
+      target: 53,
+      retail: 15,
+      achievementPercent: 28.3,
     });
   });
 

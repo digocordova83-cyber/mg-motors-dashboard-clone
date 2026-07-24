@@ -27,7 +27,7 @@ function weeks(retail: number): Record<string, WeeklySalesWeekMetrics> {
     "2": metric(2, retail, retail * 50),
     "3": metric(3, retail, Number(((retail / 3) * 100).toFixed(1))),
     "4": metric(4, retail, retail * 25),
-    "5": metric(5, null, null),
+    "5": metric(5, retail, retail * 20),
   };
 }
 
@@ -44,6 +44,8 @@ const parsedPdf: WeeklySalesCsvPreview = {
       explicitMapping: false,
       recordHash: "region-hash",
       tokens: [],
+      referenceRetail: 2,
+      referenceAchievementPercent: 40,
       weeks: weeks(2),
     },
     {
@@ -56,6 +58,8 @@ const parsedPdf: WeeklySalesCsvPreview = {
       explicitMapping: true,
       recordHash: "dealer-hash",
       tokens: [],
+      referenceRetail: 2,
+      referenceAchievementPercent: 40,
       weeks: weeks(2),
     },
     {
@@ -68,6 +72,8 @@ const parsedPdf: WeeklySalesCsvPreview = {
       explicitMapping: false,
       recordHash: "total-hash",
       tokens: [],
+      referenceRetail: 2,
+      referenceAchievementPercent: 40,
       weeks: weeks(2),
     },
   ],
@@ -78,6 +84,11 @@ const parsedPdf: WeeklySalesCsvPreview = {
     dealerRows: 1,
     regionRows: 1,
     totalRows: 1,
+    referenceWeek: 5,
+    dealersWithoutReferenceSales: 0,
+    referenceDealerSalesTotal: 2,
+    referenceRegionSalesTotal: 2,
+    referenceReportedSalesTotal: 2,
     dealersWithoutWeek4Sales: 0,
     week4DealerSalesTotal: 2,
     week4RegionSalesTotal: 2,
@@ -174,6 +185,17 @@ describe("importação semanal por PDF", () => {
     );
     expect(recordValues).toHaveBeenCalledOnce();
     expect(recordValues.mock.calls[0]?.[0]).toHaveLength(3);
+    expect(importValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        referenceWeek: 5,
+        referenceDealerSalesTotal: 2,
+        referenceRegionSalesTotal: 2,
+        referenceReportedSalesTotal: 2,
+      }),
+    );
+    expect(txUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "COMPLETED", rowsInserted: 3 }),
+    );
     expect(storagePutMock).toHaveBeenCalledOnce();
     expect(transaction).toHaveBeenCalledOnce();
     expect(parseWeeklySalesPdfMock).toHaveBeenCalledTimes(2);
