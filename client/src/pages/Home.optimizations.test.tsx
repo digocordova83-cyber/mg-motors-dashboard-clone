@@ -36,4 +36,27 @@ describe("interface aprofundada de Otimizações", () => {
     expect(homeSource).not.toContain("minLength={3}");
     expect(routerSource).toContain('notes: z.string().trim().max(4_000).optional().default("")');
   });
+
+  it("distingue recomendações e tarefas de CPA em observação, consolida legadas e registra negativas aplicadas", () => {
+    expect(homeSource).toContain("eligibleRecommendationCount");
+    expect(homeSource).toContain("cooldownRecommendations");
+    expect(homeSource).toContain("em observação");
+    expect(homeSource).toContain("Nova análise elegível em");
+    expect(homeSource).toContain("eligibility.daysRemaining");
+    expect(homeSource).toContain("taskExecutionEligibility");
+    expect(homeSource).toContain('status === "LEGACY_DUPLICATE"');
+    expect(homeSource).toContain("tarefa(s) operacional(is)");
+    expect(homeSource).toContain("duplicata(s) legada(s) consolidada(s)");
+    expect(homeSource).toContain("Quarentena de CPA");
+    expect(homeSource).toContain("Execução temporariamente bloqueada");
+    expect(homeSource).toContain("isTaskQuarantined ? (");
+    expect(homeSource).toContain("toISOString().slice(0, 10)");
+    expect(homeSource).not.toContain("formatLongDate(new Date(eligibility.nextEligibleAt).toISOString())");
+    expect(homeSource).not.toContain("formatLongDate(new Date(executionEligibility.nextEligibleAt).toISOString())");
+    expect(homeSource).toContain("Negativas aplicadas");
+    expect(homeSource).toContain("parseNegativeKeywordList");
+    expect(homeSource).toContain("negativeKeywordsRecorded");
+    expect(homeSource).toContain("somente as");
+    expect(homeSource).toContain("elegíveis");
+  });
 });

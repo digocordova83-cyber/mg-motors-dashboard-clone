@@ -4,14 +4,20 @@ import {
   completeOptimizationTask,
   getDb,
   getOptimizationWorkspace,
+  listOptimizationNegativeKeywords,
   reopenOptimizationTaskInTransaction,
   rolloverOptimizationCycleInTransaction,
+  startOptimizationTask,
   syncOptimizationFollowUpsInTransaction,
   syncRecommendationsToActiveCycle,
 } from "./db";
 import { optimizationCycles, optimizationTasks, performanceSnapshots, taskEvents } from "../drizzle/schema";
 
 const signature = `vitest-optimization-${Date.now()}`;
+const cpaSignature20 = `${signature}-cpa-20`;
+const cpaSignature7 = `${signature}-cpa-7`;
+const cpaLegacySignature = `${signature}-cpa-legada-7`;
+const cpaCampaignId = `${signature}-sem-marca`;
 const actor = "vitest-operador";
 let taskId: number | null = null;
 let testCreatedCycleId: number | null = null;
@@ -25,7 +31,9 @@ describe.sequential("workflow integrado de otimização", () => {
   afterAll(async () => {
     const db = await getDb();
     if (!db) return;
-    await db.delete(optimizationTasks).where(eq(optimizationTasks.sourceSignature, signature));
+    await db
+      .delete(optimizationTasks)
+      .where(inArray(optimizationTasks.sourceSignature, [signature, cpaSignature20, cpaSignature7, cpaLegacySignature]));
     if (testCreatedCycleId && testCreatedCycleId > 0) {
       await db.delete(optimizationCycles).where(eq(optimizationCycles.id, testCreatedCycleId));
     }
@@ -91,8 +99,14 @@ describe.sequential("workflow integrado de otimização", () => {
             campaignName: recommendation.campaignName,
             ...recommendation.snapshot,
           },
+          accountId: "vitest-account-id",
+          negativeKeywords: [
+            { term: "curso grátis", matchType: "BROAD" },
+            { term: "  CURSO   GRÁTIS  ", matchType: "BROAD" },
+            { term: "concorrente", matchType: "EXACT" },
+          ],
         }),
-      ).resolves.toEqual({ success: true });
+      ).resolves.toEqual({ success: true, negativeKeywordsRecorded: 2 });
 
       workspace = await getOptimizationWorkspace();
       const completed = workspace.tasks.find(task => task.id === taskId);
@@ -113,6 +127,144 @@ describe.sequential("workflow integrado de otimização", () => {
       expect(taskSnapshots.map(snapshot => snapshot.snapshotType)).toEqual(
         expect.arrayContaining(["TASK_CREATED", "TASK_COMPLETED"]),
       );
+      const negativeHistory = (await listOptimizationNegativeKeywords({
+        campaignId: recommendation.campaignId,
+        search: actor,
+      })).filter(item => item.taskId === taskId);
+      expect(negativeHistory).toHaveLength(2);
+      expect(negativeHistory).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountId: "vitest-account-id",
+            campaignId: recommendation.campaignId,
+            campaignName: recommendation.campaignName,
+            term: "curso grátis",
+            normalizedTerm: "curso grátis",
+            matchType: "BROAD",
+            origin: "TASK_COMPLETION",
+            appliedBy: actor,
+          }),
+          expect.objectContaining({
+            term: "concorrente",
+            matchType: "EXACT",
+            appliedBy: actor,
+          }),
+        ]),
+      );
+    },
+    30_000,
+  );
+
+  it(
+    "bloqueia uma nova troca de CPA da mesma campanha antes de sete dias mesmo quando o valor sugerido muda",
+    async () => {
+      const baseSnapshot = {
+        snapshotDate: "2026-07-24",
+        windowDateFrom: "2026-07-18",
+        windowDateTo: "2026-07-24",
+        spend: 700,
+        conversions: 35,
+        cpa: 20,
+        ctr: 8,
+        cpc: 1.25,
+        clicks: 560,
+        impressions: 7_000,
+        dailyBudget: 100,
+        optimizationScore: 0.8,
+        searchImpressionShare: 0.6,
+      };
+      const recommendation = (sourceSignature: string, targetCpa: number) => ({
+        sourceSignature,
+        campaignId: cpaCampaignId,
+        campaignName: "Sem Marca — validação de cooldown",
+        region: "SP",
+        monthlyLeadGoal: null,
+        actionType: "REVIEW_BIDDING" as const,
+        description: `Ajustar o CPA alvo para R$ ${targetCpa}.`,
+        rationale: "Validar o bloqueio de oscilações com menos de sete dias.",
+        evidence: { spend: 700, conversions: 35, cpa: 20, targetCpa },
+        steps: [`Definir CPA alvo em R$ ${targetCpa}.`],
+        expectedImpact: "Estabilizar o aprendizado da campanha.",
+        risk: "Mudanças frequentes podem reiniciar o aprendizado.",
+        priority: "HIGH" as const,
+        snapshot: baseSnapshot,
+      });
+
+      const first = await syncRecommendationsToActiveCycle({
+        recommendations: [recommendation(cpaSignature20, 20)],
+        actor,
+      });
+      expect(first.createdCount).toBe(1);
+      const workspaceAfterFirst = await getOptimizationWorkspace();
+      const cpaTask = workspaceAfterFirst.tasks.find(task => task.sourceSignature === cpaSignature20);
+      expect(cpaTask).toBeDefined();
+
+      await completeOptimizationTask({
+        taskId: cpaTask!.id,
+        actor,
+        snapshot: {
+          campaignId: cpaCampaignId,
+          campaignName: "Sem Marca — validação de cooldown",
+          ...baseSnapshot,
+        },
+      });
+
+      const second = await syncRecommendationsToActiveCycle({
+        recommendations: [recommendation(cpaSignature7, 7)],
+        actor,
+      });
+      expect(second).toMatchObject({ createdCount: 0, skippedCount: 1 });
+      const workspaceAfterSecond = await getOptimizationWorkspace();
+      expect(workspaceAfterSecond.tasks.filter(task => task.campaignId === cpaCampaignId)).toHaveLength(1);
+
+      const db = await getDb();
+      if (!db) throw new Error("Banco de dados indisponível para o teste integrado");
+      const legacyRecommendation = recommendation(cpaLegacySignature, 7);
+      const now = Date.now();
+      await db.insert(optimizationTasks).values({
+        cycleId: second.activeCycle.id,
+        campaignId: legacyRecommendation.campaignId,
+        campaignName: legacyRecommendation.campaignName,
+        region: legacyRecommendation.region,
+        monthlyLeadGoal: legacyRecommendation.monthlyLeadGoal,
+        actionType: legacyRecommendation.actionType,
+        description: legacyRecommendation.description,
+        rationale: legacyRecommendation.rationale,
+        evidence: legacyRecommendation.evidence,
+        steps: legacyRecommendation.steps,
+        expectedImpact: legacyRecommendation.expectedImpact,
+        risk: legacyRecommendation.risk,
+        priority: legacyRecommendation.priority,
+        status: "PENDING",
+        sourceSignature: legacyRecommendation.sourceSignature,
+        createdBy: actor,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const workspaceWithLegacyTask = await getOptimizationWorkspace();
+      const legacyTask = workspaceWithLegacyTask.tasks.find(
+        task => task.sourceSignature === cpaLegacySignature,
+      );
+      expect(legacyTask).toBeDefined();
+      expect(
+        workspaceWithLegacyTask.taskExecutionEligibility.find(item => item.taskId === legacyTask!.id),
+      ).toMatchObject({
+        status: "COOLDOWN",
+        eligible: false,
+        daysRemaining: 7,
+        blockingTaskId: cpaTask!.id,
+      });
+      await expect(
+        startOptimizationTask({ taskId: legacyTask!.id, actor }),
+      ).rejects.toThrow(/em observação.*Aguarde até/i);
+      await expect(
+        completeOptimizationTask({
+          taskId: legacyTask!.id,
+          actor,
+          snapshot: null,
+        }),
+      ).rejects.toThrow(/em observação.*Aguarde até/i);
     },
     30_000,
   );

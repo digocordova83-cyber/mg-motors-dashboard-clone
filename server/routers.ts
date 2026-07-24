@@ -19,6 +19,7 @@ import {
   completeOptimizationTask,
   getOptimizationWorkspace,
   listDashboardAccessEvents,
+  listOptimizationNegativeKeywords,
   OptimizationRecommendationInput,
   reopenOptimizationTask,
   rolloverOptimizationCycle,
@@ -27,6 +28,7 @@ import {
   upsertMonthlyBudgetGoal,
 } from "./db";
 import { buildOptimizationHistory } from "./optimizationHistory";
+import { evaluateRecommendationCadence } from "./optimizationPolicy";
 import { LeadCsvValidationError } from "./leadsCsv";
 import {
   decodeLeadCsvBase64,
@@ -202,6 +204,21 @@ function buildTaskSnapshot(
     optimizationScore: campaign.optimizationScore,
     searchImpressionShare: campaign.searchImpressionShare,
   };
+}
+
+async function loadDashboardDataWithOptimizationPolicy(dateFrom: string, dateTo: string) {
+  const [data, workspace] = await Promise.all([
+    loadDashboardData(dateFrom, dateTo),
+    getOptimizationWorkspace(),
+  ]);
+  const recommendationEligibility = evaluateRecommendationCadence({
+    recommendations: data.recommendations.map(recommendation => ({
+      ...recommendation,
+      campaignName: recommendation.campaign,
+    })),
+    tasks: workspace.tasks,
+  });
+  return { ...data, recommendationEligibility };
 }
 
 function mapRecommendationToTask(
@@ -388,7 +405,7 @@ export const appRouter = router({
   dashboard: router({
     getData: googleAdsProcedure
       .input(dashboardPeriodSchema)
-      .query(({ input }) => loadDashboardData(input.dateFrom, input.dateTo)),
+      .query(({ input }) => loadDashboardDataWithOptimizationPolicy(input.dateFrom, input.dateTo)),
     updateMonthlyBudgetGoal: googleAdsProcedure
       .input(
         z.object({
@@ -408,6 +425,19 @@ export const appRouter = router({
     optimizationHistory: historyProcedure.query(async () =>
       buildOptimizationHistory(await getOptimizationWorkspace()),
     ),
+    negativeKeywordHistory: historyProcedure
+      .input(
+        z
+          .object({
+            campaignId: z.string().trim().max(64).optional(),
+            search: z.string().trim().max(120).optional(),
+            dateFrom: dateSchema.optional(),
+            dateTo: dateSchema.optional(),
+            limit: z.number().int().min(1).max(1_000).default(250),
+          })
+          .optional(),
+      )
+      .query(({ input }) => listOptimizationNegativeKeywords(input)),
     captureOptimizationFollowUps: historyProcedure
       .input(dashboardPeriodSchema)
       .mutation(async ({ input }) => {
@@ -458,6 +488,16 @@ export const appRouter = router({
           z.object({
             taskId: z.number().int().positive(),
             notes: z.string().trim().max(4_000).optional().default(""),
+            negativeKeywords: z
+              .array(
+                z.object({
+                  term: z.string().trim().min(1).max(500),
+                  matchType: z.enum(["BROAD", "PHRASE", "EXACT"]),
+                }),
+              )
+              .max(200)
+              .optional()
+              .default([]),
           }),
         ),
       )
@@ -471,6 +511,8 @@ export const appRouter = router({
           taskId: task.id,
           notes: input.notes,
           actor: ctx.dashboardSession.username,
+          accountId: MG_MOTORS_ACCOUNT_ID,
+          negativeKeywords: input.negativeKeywords,
           snapshot: snapshot ? { ...snapshot, campaignId: task.campaignId, campaignName: task.campaignName } : null,
         });
       }),

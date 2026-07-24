@@ -865,3 +865,30 @@
 - [x] Cobrir PDF real/assinado, nomes sanitizados, CSV válido e formatos inválidos com Vitest
 - [x] Validar tipagem, suíte completa, build e interface
 - [x] Revisar todo.md e salvar checkpoint consolidado
+
+## Cadência de CPA e histórico de negativas — feedback operacional de Julho de 2026
+
+- [x] Auditar onde o dashboard calcula a janela de sete dias e identifica a última otimização por campanha
+- [x] Reproduzir os casos Sem Marca relatados em que uma nova troca de CPA surge após três dias, incluindo as identidades encontradas na base real
+- [x] Definir cooldown mínimo de sete dias corridos após uma ação de CPA efetivamente concluída
+- [x] Manter recomendações pendentes no ciclo seguinte sem duplicá-las nem reiniciar sua data de origem
+- [x] Exibir quantos dias faltam e a data da próxima elegibilidade quando uma campanha estiver em cooldown
+- [x] Bloquear oscilações de CPA causadas por amostras inferiores a sete dias, inclusive mudanças de R$ 20 para R$ 7
+- [x] Identificar e remover tarefas redundantes de gerar relatório quando os mesmos dados já estão no dashboard
+- [x] Registrar palavras-chave negativas aplicadas com conta, campanha, termo, data, origem e responsável
+- [x] Expor histórico filtrável de negativas sem exigir relatório manual separado
+- [x] Preservar negativações normais, tarefas pendentes, histórico de otimizações, orçamento e permissões
+- [x] Cobrir cooldown, carry-over, deduplicação, casos Sem Marca encontrados na base e histórico de negativas com Vitest
+- [x] Validar tipagem, suíte completa, build e interface responsiva
+- [x] Revisar todo.md e salvar checkpoint consolidado
+
+## Correção adicional — quarentena operacional de tarefas CPA legadas
+
+- [x] Decorar tarefas abertas de CPA do ciclo ativo com elegibilidade, cooldown, data de liberação e duplicidade por família
+- [x] Consolidar visualmente duplicatas legadas por campanha+família sem apagar histórico persistido
+- [x] Bloquear no servidor início e conclusão de tarefa CPA durante os sete dias ou quando ela for duplicata legada
+- [x] Exibir tarefas canônicas em observação com dias restantes e próxima data elegível, sem botão executável
+- [x] Cobrir a cronologia real Sem Marca SP/SCS e a quarentena de tarefas legadas com Vitest
+- [x] Revalidar Otimizações e Histórico autenticados em desktop e mobile
+- [x] Executar suíte completa, TypeScript, build, revisar todo.md e salvar checkpoint consolidado
+- [x] Corrigir o erro `Invalid time value` ao formatar a data de liberação do cooldown e cobrir a regressão

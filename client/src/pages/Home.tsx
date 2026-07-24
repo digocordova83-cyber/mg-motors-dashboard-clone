@@ -36,6 +36,7 @@ import {
   type GoogleAdsTabId,
 } from "@/lib/dashboardNavigation";
 import { getDashboardCutoffDate } from "@shared/dashboardDates";
+import { parseNegativeKeywordList } from "@shared/negativeKeywords";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
@@ -972,13 +973,20 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
   const [taskStatus, setTaskStatus] = useState<TaskStatusFilter>("ALL");
   const [search, setSearch] = useState("");
   const [completionNotes, setCompletionNotes] = useState<Record<number, string>>({});
+  const [negativeKeywordDrafts, setNegativeKeywordDrafts] = useState<Record<number, string>>({});
+  const [completionInputErrors, setCompletionInputErrors] = useState<Record<number, string>>({});
 
   const invalidateWorkspace = () => utils.dashboard.optimizationWorkspace.invalidate();
   const createAll = trpc.dashboard.createAllOptimizationTasks.useMutation({ onSuccess: invalidateWorkspace });
   const completeTask = trpc.dashboard.completeOptimizationTask.useMutation({
     onSuccess: async () => {
       setCompletionNotes({});
-      await invalidateWorkspace();
+      setNegativeKeywordDrafts({});
+      setCompletionInputErrors({});
+      await Promise.all([
+        invalidateWorkspace(),
+        utils.dashboard.negativeKeywordHistory.invalidate(),
+      ]);
     },
   });
   const rolloverCycle = trpc.dashboard.rolloverOptimizationCycle.useMutation({
@@ -1019,9 +1027,34 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
   const tasks = workspace.data?.tasks ?? [];
   const activeCycle = workspace.data?.activeCycle ?? null;
   const activeTasks = activeCycle ? tasks.filter(task => task.cycleId === activeCycle.id) : [];
-  const existingSignatures = new Set(activeTasks.map(task => task.sourceSignature));
+  const taskExecutionById = new Map(
+    (workspace.data?.taskExecutionEligibility ?? []).map(item => [item.taskId, item] as const),
+  );
+  const legacyDuplicateTasks = activeTasks.filter(
+    task => task.status !== "COMPLETED" && taskExecutionById.get(task.id)?.status === "LEGACY_DUPLICATE",
+  );
+  const operationalActiveTasks = activeTasks.filter(
+    task => task.status === "COMPLETED" || taskExecutionById.get(task.id)?.status !== "LEGACY_DUPLICATE",
+  );
+  const cooldownTasks = operationalActiveTasks.flatMap(task => {
+    const eligibility = taskExecutionById.get(task.id);
+    return eligibility?.status === "COOLDOWN" ? [{ task, eligibility }] : [];
+  });
+  const executableTaskCount = operationalActiveTasks.filter(
+    task => task.status !== "COMPLETED" && taskExecutionById.get(task.id)?.eligible !== false,
+  ).length;
+  const eligibilityBySignature = new Map(
+    data.recommendationEligibility.map(item => [item.sourceSignature, item] as const),
+  );
+  const eligibleRecommendationCount = data.recommendations.filter(
+    recommendation => eligibilityBySignature.get(recommendation.sourceSignature)?.eligible !== false,
+  ).length;
+  const cooldownRecommendations = data.recommendations.flatMap(recommendation => {
+    const eligibility = eligibilityBySignature.get(recommendation.sourceSignature);
+    return eligibility?.status === "COOLDOWN" ? [{ recommendation, eligibility }] : [];
+  });
   const normalized = search.trim().toLowerCase();
-  const filteredTasks = activeTasks.filter(task => {
+  const filteredTasks = operationalActiveTasks.filter(task => {
     const matchesStatus =
       taskStatus === "ALL" ||
       (taskStatus === "PENDING"
@@ -1031,18 +1064,40 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
       (!normalized || task.campaignName.toLowerCase().includes(normalized) || task.campaignId.toLowerCase().includes(normalized));
   });
   const taskCounts = {
-    ALL: activeTasks.length,
-    PENDING: activeTasks.filter(task => task.status === "PENDING" || task.status === "REOPENED").length,
-    IN_PROGRESS: activeTasks.filter(task => task.status === "IN_PROGRESS").length,
-    COMPLETED: activeTasks.filter(task => task.status === "COMPLETED").length,
-    REOPENED: activeTasks.filter(task => task.status === "REOPENED").length,
+    ALL: operationalActiveTasks.length,
+    PENDING: operationalActiveTasks.filter(task => task.status === "PENDING" || task.status === "REOPENED").length,
+    IN_PROGRESS: operationalActiveTasks.filter(task => task.status === "IN_PROGRESS").length,
+    COMPLETED: operationalActiveTasks.filter(task => task.status === "COMPLETED").length,
+    REOPENED: operationalActiveTasks.filter(task => task.status === "REOPENED").length,
   };
-  const openTaskCount = activeTasks.filter(task => task.status !== "COMPLETED").length;
+  const openTaskCount = operationalActiveTasks.filter(task => task.status !== "COMPLETED").length;
   const mutationError =
     createAll.error ??
     completeTask.error ??
     rolloverCycle.error ??
     reopenTask.error;
+
+  function handleCompleteTask(task: OptimizationTask) {
+    try {
+      const negativeKeywords = parseNegativeKeywordList(negativeKeywordDrafts[task.id] ?? "").map(item => ({
+        term: item.term,
+        matchType: item.matchType,
+      }));
+      setCompletionInputErrors(current => ({ ...current, [task.id]: "" }));
+      completeTask.mutate({
+        taskId: task.id,
+        notes: completionNotes[task.id] ?? "",
+        negativeKeywords,
+        dateFrom,
+        dateTo,
+      });
+    } catch (error) {
+      setCompletionInputErrors(current => ({
+        ...current,
+        [task.id]: error instanceof Error ? error.message : "Revise as palavras-chave negativas informadas.",
+      }));
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -1055,13 +1110,17 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
               type="button"
               size="sm"
               onClick={() => createAll.mutate({ dateFrom, dateTo })}
-              disabled={!data.recommendations.length || createAll.isPending}
+              disabled={!eligibleRecommendationCount || createAll.isPending}
               className="h-8 bg-[#e2212d] px-3 text-[10px] hover:bg-[#c91622]"
             >
               {createAll.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
               Sincronizar tarefas sugeridas
             </Button>
-            <span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400">{activeTasks.length} tarefa(s)</span>
+            <span className="rounded-full border border-[#2b364a] bg-[#111a29] px-2.5 py-1 text-[10px] text-slate-400">{operationalActiveTasks.length} tarefa(s) operacional(is)</span>
+            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] text-emerald-300">{eligibleRecommendationCount} recomendação(ões) elegível(is)</span>
+            <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] text-sky-300">{executableTaskCount} tarefa(s) executável(is)</span>
+            {cooldownTasks.length || cooldownRecommendations.length ? <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] text-amber-300">{cooldownTasks.length || cooldownRecommendations.length} em observação</span> : null}
+            {legacyDuplicateTasks.length ? <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2.5 py-1 text-[10px] text-violet-300">{legacyDuplicateTasks.length} duplicata(s) legada(s) consolidada(s)</span> : null}
             {activeCycle ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -1076,7 +1135,7 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
                     <AlertDialogDescription className="space-y-3 text-slate-400">
                       <span className="block">Esta ação encerrará <strong className="text-white">{activeCycle.name}</strong> e criará o próximo ciclo com rastreabilidade completa.</span>
                       <span className="block rounded-lg border border-[#273247] bg-[#0a111d] p-3 text-[11px] leading-5">
-                        <strong className="text-white">{openTaskCount} pendência(s)</strong> serão transferidas sem alterar o ciclo anterior. As <strong className="text-white">{data.recommendations.length} recomendações atuais</strong> serão reavaliadas e só gerarão tarefas novas quando não houver equivalente transferida.
+                        <strong className="text-white">{openTaskCount} pendência(s)</strong> serão transferidas com a data de origem preservada. Das <strong className="text-white">{data.recommendations.length} recomendações atuais</strong>, somente as <strong className="text-white">{eligibleRecommendationCount} elegíveis</strong> poderão gerar tarefa; CPA em observação continuará bloqueado até completar sete dias.
                       </span>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -1093,6 +1152,34 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
         {rolloverCycle.data ? (
           <div className="border-b border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-[10px] text-emerald-300">
             {rolloverCycle.data.newCycle.name} criado: {rolloverCycle.data.transferredCount} pendência(s) transferida(s) e {rolloverCycle.data.recommendationCreatedCount} nova(s) tarefa(s) sugerida(s).
+          </div>
+        ) : null}
+        {cooldownTasks.length || cooldownRecommendations.length ? (
+          <div className="border-b border-amber-500/15 bg-amber-500/[0.04] p-4">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-300">
+              <Clock3 className="h-3.5 w-3.5" /> CPA em observação — janela mínima de 7 dias
+            </div>
+            <div className="mt-3 grid gap-2 lg:grid-cols-2">
+              {cooldownTasks.map(({ task, eligibility }) => (
+                <div key={`task-cooldown-${task.id}`} className="rounded-lg border border-amber-500/15 bg-[#0b121e] px-3 py-2.5">
+                  <CampaignIdentity name={task.campaignName} campaignId={task.campaignId} nameClassName="text-[10px] font-semibold text-slate-200" idClassName="mt-0.5" />
+                  <p className="mt-2 text-[9px] leading-4 text-amber-200/75">
+                    Tarefa canônica <strong className="text-amber-300">#{task.id}</strong>: faltam <strong className="text-amber-300">{eligibility.daysRemaining} dia(s)</strong>. Execução liberada em <strong className="text-amber-300">{eligibility.nextEligibleAt ? formatLongDate(new Date(eligibility.nextEligibleAt).toISOString().slice(0, 10)) : "data indisponível"}</strong>.
+                  </p>
+                  {eligibility.duplicateCount ? <p className="mt-1 text-[9px] leading-4 text-violet-300/75">{eligibility.duplicateCount} variação(ões) legada(s) preservada(s) no Histórico e consolidada(s) neste card.</p> : null}
+                  <p className="mt-1 text-[9px] leading-4 text-slate-600">{eligibility.reason}</p>
+                </div>
+              ))}
+              {cooldownRecommendations.map(({ recommendation, eligibility }) => (
+                <div key={recommendation.sourceSignature} className="rounded-lg border border-amber-500/15 bg-[#0b121e] px-3 py-2.5">
+                  <CampaignIdentity name={recommendation.campaign} campaignId={recommendation.campaignId} nameClassName="text-[10px] font-semibold text-slate-200" idClassName="mt-0.5" />
+                  <p className="mt-2 text-[9px] leading-4 text-amber-200/75">
+                    Faltam <strong className="text-amber-300">{eligibility.daysRemaining} dia(s)</strong>. Nova análise elegível em <strong className="text-amber-300">{eligibility.nextEligibleAt ? formatLongDate(new Date(eligibility.nextEligibleAt).toISOString().slice(0, 10)) : "data indisponível"}</strong>.
+                  </p>
+                  <p className="mt-1 text-[9px] leading-4 text-slate-600">{eligibility.reason}</p>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
         <div className="border-b border-[#1b2535] p-4">
@@ -1119,6 +1206,9 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
           <div className="grid gap-3 p-4 lg:grid-cols-2 xl:grid-cols-3">
             {filteredTasks.map(task => {
               const notes = completionNotes[task.id] ?? "";
+              const negativeKeywordDraft = negativeKeywordDrafts[task.id] ?? "";
+              const completionInputError = completionInputErrors[task.id] ?? "";
+              const canRecordNegativeKeywords = task.actionType === "REDUCE_WASTE" || task.steps.some(step => /negativ/i.test(step));
               const evidence = task.evidence as Record<string, number | string | boolean | null>;
               const hasDecisionModel = Boolean(
                 evidence.parameterLabel || evidence.currentStrategy || evidence.recommendedTargetCpa || evidence.recommendedDailyBudget,
@@ -1129,17 +1219,22 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
               const targetCpa = typeof evidence.recommendedTargetCpa === "number" ? evidence.recommendedTargetCpa : null;
               const currentBudget = typeof evidence.currentDailyBudget === "number" ? evidence.currentDailyBudget : Number(evidence.dailyBudget ?? 0);
               const targetBudget = typeof evidence.recommendedDailyBudget === "number" ? evidence.recommendedDailyBudget : null;
+              const executionEligibility = taskExecutionById.get(task.id);
+              const isTaskQuarantined = executionEligibility?.eligible === false;
               const sourceTask = task.sourceTaskId ? tasks.find(item => item.id === task.sourceTaskId) : null;
               const sourceCycle = sourceTask
                 ? workspace.data?.cycles.find(cycle => cycle.id === sourceTask.cycleId)
                 : null;
               return (
-                <article key={task.id} className="min-w-0 max-w-full overflow-hidden rounded-xl border border-[#202b3d] bg-[#0b121e] p-4">
+                <article key={task.id} className={`min-w-0 max-w-full overflow-hidden rounded-xl border bg-[#0b121e] p-4 ${isTaskQuarantined ? "border-amber-500/30" : "border-[#202b3d]"}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full border border-[#2b374b] bg-[#111a29] px-2 py-1 text-[9px] text-slate-400">#{task.id}</span>
                         <span className={`rounded-full border px-2 py-1 text-[9px] font-semibold ${task.status === "COMPLETED" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : task.status === "IN_PROGRESS" ? "border-sky-500/25 bg-sky-500/10 text-sky-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}>{statusLabels[task.status]}</span>
+                        {executionEligibility?.status === "COOLDOWN" ? (
+                          <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-300">Em observação</span>
+                        ) : null}
                         {task.sourceTaskId ? (
                           <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-[9px] font-medium text-violet-300">
                             {task.status === "REOPENED" ? "Reaberta" : "Transferida"} • origem #{task.sourceTaskId}{sourceCycle ? ` (${sourceCycle.name})` : ""}
@@ -1152,6 +1247,13 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
                     </div>
                     <span className="shrink-0 text-[10px] font-medium text-[#f45b65]">{actionLabels[task.actionType] ?? task.actionType}</span>
                   </div>
+                  {executionEligibility?.status === "COOLDOWN" ? (
+                    <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] p-3">
+                      <div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-300"><Clock3 className="h-3.5 w-3.5" /> Quarentena de CPA</div>
+                      <p className="mt-2 text-[10px] leading-5 text-amber-100/80">Faltam <strong className="text-amber-300">{executionEligibility.daysRemaining} dia(s)</strong>. Esta tarefa só poderá ser executada em <strong className="text-amber-300">{executionEligibility.nextEligibleAt ? formatLongDate(new Date(executionEligibility.nextEligibleAt).toISOString().slice(0, 10)) : "data indisponível"}</strong>.</p>
+                      {executionEligibility.duplicateCount ? <p className="mt-1 text-[9px] leading-4 text-violet-300/75">{executionEligibility.duplicateCount} variação(ões) legada(s) foram consolidadas neste card sem apagar o histórico.</p> : null}
+                    </div>
+                  ) : null}
                   <p className="mt-3 text-[11px] leading-5 text-slate-400">{task.description}</p>
                   <p className="mt-2 text-[10px] leading-5 text-slate-600"><strong className="text-slate-400">Motivo da otimização:</strong> {task.rationale}</p>
                   <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-[#080e18] p-3 text-center">
@@ -1181,11 +1283,28 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
                   ) : null}
                   <details className="mt-3 rounded-lg border border-[#1b2637] bg-[#0a111d]"><summary className="cursor-pointer px-3 py-2 text-[10px] text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-[#e2212d]/40">Ver evidências, impacto, risco e passo a passo</summary><div className="space-y-3 border-t border-[#1b2637] p-3 text-[10px] leading-5 text-slate-500"><p><strong className="text-emerald-300">Impacto esperado:</strong> {task.expectedImpact}</p><p><strong className="text-amber-300">Risco e critério de parada:</strong> {task.risk}</p><ol className="list-decimal space-y-1 pl-4">{task.steps.map(step => <li key={step}>{step}</li>)}</ol></div></details>
 
-                  {task.status !== "COMPLETED" ? (
+                  {task.status !== "COMPLETED" ? isTaskQuarantined ? (
+                    <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-3 text-[10px] leading-5 text-amber-100/75">
+                      <div className="flex items-center gap-2 font-semibold text-amber-300"><Clock3 className="h-4 w-4" /> Execução temporariamente bloqueada</div>
+                      <p className="mt-1">O dashboard preserva a tarefa para auditoria, mas não permite uma nova alteração de CPA antes de completar sete dias da última otimização concluída.</p>
+                    </div>
+                  ) : (
                     <div className="mt-4 space-y-3 border-t border-[#1b2637] pt-4">
                       <textarea value={notes} onChange={event => setCompletionNotes(current => ({ ...current, [task.id]: event.target.value }))} placeholder="Comentário opcional: registre uma observação somente se houver contexto adicional..." rows={2} className="w-full resize-y rounded-md border border-[#273247] bg-[#101827] px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-[#e2212d] focus:ring-2 focus:ring-[#e2212d]/20" />
-                      <Button type="button" size="sm" onClick={() => completeTask.mutate({ taskId: task.id, notes, dateFrom, dateTo })} disabled={completeTask.isPending} className="h-9 w-full bg-emerald-600 text-[10px] hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Concluir e registrar snapshot</Button>
-                      <p className="text-[9px] leading-4 text-slate-600">Você pode concluir sem preencher este campo; usuário, horário e snapshot serão registrados automaticamente.</p>
+                      <p className="text-[10px] leading-4 text-slate-600">Você pode concluir sem preencher este campo.</p>
+                      {canRecordNegativeKeywords ? (
+                        <div className="rounded-lg border border-violet-500/15 bg-violet-500/[0.04] p-3">
+                          <label className="text-[9px] font-semibold uppercase tracking-[0.1em] text-violet-300" htmlFor={`negative-keywords-${task.id}`}>Negativas aplicadas</label>
+                          <textarea id={`negative-keywords-${task.id}`} value={negativeKeywordDraft} onChange={event => {
+                            setNegativeKeywordDrafts(current => ({ ...current, [task.id]: event.target.value }));
+                            setCompletionInputErrors(current => ({ ...current, [task.id]: "" }));
+                          }} placeholder={'Uma por linha. Ex.:\ntermo amplo\n"correspondência de frase"\n[correspondência exata]'} rows={4} className="mt-2 w-full resize-y rounded-md border border-[#273247] bg-[#101827] px-3 py-2 font-mono text-[10px] text-white outline-none placeholder:text-slate-700 focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20" />
+                          <p className="mt-2 text-[9px] leading-4 text-slate-600">Informe somente os termos que você realmente adicionou no Google Ads. O dashboard guarda campanha, data, tipo de correspondência e responsável; não é necessário gerar outro relatório.</p>
+                          {completionInputError ? <p className="mt-2 text-[9px] text-red-300">{completionInputError}</p> : null}
+                        </div>
+                      ) : null}
+                      <Button type="button" size="sm" onClick={() => handleCompleteTask(task)} disabled={completeTask.isPending} className="h-9 w-full bg-emerald-600 text-[10px] hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Concluir e registrar snapshot</Button>
+                      <p className="text-[9px] leading-4 text-slate-600">Comentário e negativas são opcionais; usuário, horário e snapshot serão registrados automaticamente.</p>
                     </div>
                   ) : (
                     <div className="mt-4 space-y-2">
@@ -1204,6 +1323,7 @@ function OptimizationsTab({ data, dateFrom, dateTo }: { data: DashboardData; dat
         )}
       </Panel>
 
+      {completeTask.data?.negativeKeywordsRecorded ? <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">{completeTask.data.negativeKeywordsRecorded} palavra(s)-chave negativa(s) registrada(s) no histórico operacional.</div> : null}
       {mutationError ? <div className="rounded-xl border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-xs text-red-300">{mutationError.message}</div> : null}
     </div>
   );

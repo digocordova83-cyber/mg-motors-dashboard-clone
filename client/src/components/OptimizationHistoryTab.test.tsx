@@ -1,8 +1,10 @@
+import { readFileSync } from "node:fs";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ComparisonMetric } from "./OptimizationHistoryTab";
 
+const historySource = readFileSync(new URL("./OptimizationHistoryTab.tsx", import.meta.url), "utf8");
 const NUMBER = (value: number) => value.toFixed(1);
 
 describe("ComparisonMetric", () => {
@@ -46,5 +48,17 @@ describe("ComparisonMetric", () => {
     expect(html).toContain("Δ abs.");
     expect(html).toContain("Δ %");
     expect(html.match(/Indisponível/g)).toHaveLength(2);
+  });
+
+  it("inclui um histórico filtrável de negativas sem solicitar relatório manual", () => {
+    expect(historySource).toContain("Histórico de palavras-chave negativas");
+    expect(historySource).toContain("dashboard.negativeKeywordHistory.useQuery");
+    expect(historySource).toContain("Buscar no histórico");
+    expect(historySource).toContain("negativeDateFrom");
+    expect(historySource).toContain("negativeDateTo");
+    for (const column of ["Termo", "Campanha", "Conta", "Data", "Origem", "Responsável"]) {
+      expect(historySource).toContain(column);
+    }
+    expect(historySource).not.toContain("Gerar relatório de palavras-chave negativas");
   });
 });
