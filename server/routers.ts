@@ -48,6 +48,7 @@ import {
   importWeeklySalesCsv,
   previewWeeklySalesCsv,
 } from "./weeklySalesService";
+import { decodeWeeklySalesBase64 } from "./weeklySalesUpload";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -352,26 +353,30 @@ export const appRouter = router({
     previewWeeklySalesCsv: importLeadsProcedure
       .input(weeklySalesUploadSchema.omit({ expectedFileHash: true }))
       .mutation(({ input }) =>
-        mapWeeklySalesError(() =>
-          previewWeeklySalesCsv({
+        mapWeeklySalesError(() => {
+          const upload = decodeWeeklySalesBase64(input.base64);
+          return previewWeeklySalesCsv({
             fileName: input.fileName,
-            bytes: decodeLeadCsvBase64(input.base64),
+            bytes: upload.bytes,
+            declaredMimeType: upload.declaredMimeType,
             competence: input.competence,
-          }),
-        ),
+          });
+        }),
       ),
     importWeeklySalesCsv: importLeadsProcedure
       .input(weeklySalesUploadSchema)
       .mutation(({ ctx, input }) =>
-        mapWeeklySalesError(() =>
-          importWeeklySalesCsv({
+        mapWeeklySalesError(() => {
+          const upload = decodeWeeklySalesBase64(input.base64);
+          return importWeeklySalesCsv({
             fileName: input.fileName,
-            bytes: decodeLeadCsvBase64(input.base64),
+            bytes: upload.bytes,
+            declaredMimeType: upload.declaredMimeType,
             competence: input.competence,
             expectedFileHash: input.expectedFileHash,
             actor: ctx.dashboardSession.username,
-          }),
-        ),
+          });
+        }),
       ),
   }),
   metaAds: router({

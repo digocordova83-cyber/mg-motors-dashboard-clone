@@ -854,3 +854,14 @@
 - [x] Cobrir W1, W2, W3, W4 e W5, células vazias, arquivos legados e regressões CSV/PDF com Vitest
 - [x] Validar tipagem, suíte completa, build e interface responsiva
 - [x] Revisar todo.md e salvar checkpoint consolidado
+
+## Correção do reconhecimento de PDF no upload de vendas — Julho de 2026
+
+- [x] Reproduzir o erro que encaminha um PDF ao parser CSV e rastrear nome, MIME e bytes entre navegador, tRPC e serviço
+- [x] Detectar PDF pela assinatura `%PDF-` além da extensão e do MIME, sem confiar apenas no nome do arquivo
+- [x] Encaminhar PDFs válidos ao parser `Weekly Target Achievement - Retail` e manter CSV no parser existente
+- [x] Rejeitar arquivos com extensão, MIME e assinatura conflitantes com uma mensagem específica e segura
+- [x] Preservar a última semana preenchida, competência, autorização, idempotência e limite de upload
+- [x] Cobrir PDF real/assinado, nomes sanitizados, CSV válido e formatos inválidos com Vitest
+- [x] Validar tipagem, suíte completa, build e interface
+- [x] Revisar todo.md e salvar checkpoint consolidado

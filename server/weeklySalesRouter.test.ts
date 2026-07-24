@@ -155,12 +155,14 @@ describe("rotas de vendas semanais", () => {
     expect(serviceMocks.previewWeeklySalesCsv).toHaveBeenCalledWith({
       fileName: "sales.csv",
       bytes: Buffer.from("a"),
+      declaredMimeType: null,
       competence: "2026-07",
     });
     expect(serviceMocks.importWeeklySalesCsv).toHaveBeenCalledWith({
       competence: "2026-07",
       fileName: "sales.csv",
       bytes: Buffer.from("a"),
+      declaredMimeType: null,
       expectedFileHash: PREVIEW_HASH,
       actor: "rodrigo",
     });
@@ -176,7 +178,7 @@ describe("rotas de vendas semanais", () => {
       permissions: { ...basePermissions, canImportLeads: true },
     });
     const caller = appRouter.createCaller(createContext(token));
-    const pdfBase64 = Buffer.from("%PDF-1.7\nretail").toString("base64");
+    const pdfBase64 = `data:application/pdf;base64,${Buffer.from("%PDF-1.7\nretail").toString("base64")}`;
 
     await caller.leads.previewWeeklySalesCsv({
       fileName: "Daily Sales Planning Report.pdf",
@@ -193,11 +195,13 @@ describe("rotas de vendas semanais", () => {
     expect(serviceMocks.previewWeeklySalesCsv).toHaveBeenCalledWith({
       fileName: "Daily Sales Planning Report.pdf",
       bytes: Buffer.from("%PDF-1.7\nretail"),
+      declaredMimeType: "application/pdf",
       competence: "2026-07",
     });
     expect(serviceMocks.importWeeklySalesCsv).toHaveBeenCalledWith({
       fileName: "Daily Sales Planning Report.pdf",
       bytes: Buffer.from("%PDF-1.7\nretail"),
+      declaredMimeType: "application/pdf",
       competence: "2026-07",
       expectedFileHash: PREVIEW_HASH,
       actor: "rodrigo",

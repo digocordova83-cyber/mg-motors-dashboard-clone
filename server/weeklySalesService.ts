@@ -19,6 +19,7 @@ import {
   type WeeklySalesWeekMetrics,
 } from "./weeklySalesCsv";
 import { parseWeeklySalesPdf } from "./weeklySalesPdf";
+import { describeWeeklySalesFile, type WeeklySalesFileDescriptor } from "./weeklySalesUpload";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_HISTORY_LIMIT = 100;
@@ -118,32 +119,6 @@ function assertCompetence(competence: string): void {
   if (year < 2020 || year > 2100 || month < 1 || month > 12) {
     throw new Error("Competência de vendas fora do intervalo permitido.");
   }
-}
-
-type WeeklySalesFileDescriptor = {
-  fileName: string;
-  kind: "CSV" | "PDF";
-  contentType: string;
-};
-
-function describeWeeklySalesFile(fileName: string): WeeklySalesFileDescriptor {
-  const clean = fileName.trim().replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 180);
-  const lowerName = clean.toLocaleLowerCase("en-US");
-  if (lowerName.endsWith(".csv")) {
-    return {
-      fileName: clean || "weekly-sales.csv",
-      kind: "CSV",
-      contentType: "text/csv; charset=utf-8",
-    };
-  }
-  if (lowerName.endsWith(".pdf")) {
-    return {
-      fileName: clean || "weekly-sales.pdf",
-      kind: "PDF",
-      contentType: "application/pdf",
-    };
-  }
-  throw new Error("Selecione um arquivo de vendas no formato CSV ou PDF.");
 }
 
 function assertFileSize(bytes: Buffer): void {
@@ -353,8 +328,13 @@ export async function previewWeeklySalesCsv(input: {
   fileName: string;
   bytes: Buffer;
   competence: string;
+  declaredMimeType?: string | null;
 }): Promise<WeeklySalesPreviewResult> {
-  const file = describeWeeklySalesFile(input.fileName);
+  const file = describeWeeklySalesFile({
+    fileName: input.fileName,
+    bytes: input.bytes,
+    declaredMimeType: input.declaredMimeType,
+  });
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
   const [parsed, knownDealerKeys] = await Promise.all([
@@ -458,10 +438,15 @@ export async function importWeeklySalesCsv(input: {
   competence: string;
   actor: string;
   expectedFileHash?: string;
+  declaredMimeType?: string | null;
 }): Promise<WeeklySalesImportResult> {
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
-  const file = describeWeeklySalesFile(input.fileName);
+  const file = describeWeeklySalesFile({
+    fileName: input.fileName,
+    bytes: input.bytes,
+    declaredMimeType: input.declaredMimeType,
+  });
   const fileName = file.fileName;
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
