@@ -45,7 +45,13 @@ type WeeklySalesPanelProps = {
   onViewChannelHistory?: (dealerName: string) => void;
 };
 
-const MAX_WEEKLY_SALES_CSV_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+export const WEEKLY_SALES_FILE_ACCEPT = ".csv,text/csv,.pdf,application/pdf";
+
+export function isSupportedWeeklySalesFileName(fileName: string): boolean {
+  const lowerName = fileName.toLocaleLowerCase("pt-BR");
+  return lowerName.endsWith(".csv") || lowerName.endsWith(".pdf");
+}
 
 function ui(locale: Locale, pt: string, en: string) {
   return locale === "en-US" ? en : pt;
@@ -422,7 +428,7 @@ export function WeeklySalesMetricsTable({
                         <span className="min-w-0">
                           <span className="block font-medium text-slate-200">{dealer.dealerName}</span>
                           {dealer.sourceName !== dealer.dealerName ? (
-                            <span className="mt-0.5 block text-[8px] text-slate-600">CSV: {dealer.sourceName}</span>
+                            <span className="mt-0.5 block text-[8px] text-slate-600">{ui(locale, "Origem", "Source")}: {dealer.sourceName}</span>
                           ) : null}
                         </span>
                         <ChevronDown
@@ -591,7 +597,7 @@ export function WeeklySalesPreviewSummary({
         <table className="w-full min-w-[640px] text-left">
           <thead className="sticky top-0 bg-[#0a111d] text-[8px] uppercase tracking-[0.1em] text-slate-600">
             <tr>
-              <th className="px-3 py-2.5">CSV</th>
+              <th className="px-3 py-2.5">{ui(locale, "Arquivo", "File")}</th>
               <th className="px-3 py-2.5">{ui(locale, "Concessionária final", "Resolved dealer")}</th>
               <th className="px-3 py-2.5 text-right">{ui(locale, "Vendas S4", "W4 sales")}</th>
               <th className="px-3 py-2.5">{ui(locale, "Correspondência", "Match")}</th>
@@ -778,12 +784,14 @@ export function WeeklySalesPanel({
     previewMutation.reset();
     importMutation.reset();
     if (!file) return;
-    if (!file.name.toLocaleLowerCase("pt-BR").endsWith(".csv")) {
-      setClientError(ui(locale, "Selecione um arquivo com extensão .csv.", "Select a .csv file."));
+    if (!isSupportedWeeklySalesFileName(file.name)) {
+      setClientError(
+        ui(locale, "Selecione um arquivo com extensão .csv ou .pdf.", "Select a .csv or .pdf file."),
+      );
       event.target.value = "";
       return;
     }
-    if (file.size > MAX_WEEKLY_SALES_CSV_SIZE_BYTES) {
+    if (file.size > MAX_WEEKLY_SALES_FILE_SIZE_BYTES) {
       setClientError(ui(locale, "O arquivo excede o limite de 5 MB.", "The file exceeds the 5 MB limit."));
       event.target.value = "";
       return;
@@ -834,10 +842,14 @@ export function WeeklySalesPanel({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,text/csv"
+              accept={WEEKLY_SALES_FILE_ACCEPT}
               onChange={handleFile}
               className="hidden"
-              aria-label={ui(locale, "Selecionar CSV de vendas semanais", "Select weekly sales CSV")}
+              aria-label={ui(
+                locale,
+                "Selecionar CSV ou PDF de vendas semanais",
+                "Select weekly sales CSV or PDF",
+              )}
             />
             <Button
               type="button"
@@ -852,7 +864,9 @@ export function WeeklySalesPanel({
                 <FileUp className="mr-2 h-4 w-4" />
               )}
               {previewMutation.isPending
-                ? ui(locale, "Validando...", "Validating...")
+                ? upload?.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
+                  ? ui(locale, "Lendo PDF...", "Reading PDF...")
+                  : ui(locale, "Validando...", "Validating...")
                 : ui(locale, "Importar vendas", "Import sales")}
             </Button>
           </div>
@@ -871,7 +885,20 @@ export function WeeklySalesPanel({
           }`}
         >
           {previewMutation.isPending ? (
-            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Validando reconciliação e correspondências...", "Validating reconciliation and dealer matches...")}</>
+            <>
+              <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+              {upload?.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
+                ? ui(
+                    locale,
+                    "Lendo a tabela Weekly Target Achievement - Retail e validando a reconciliação...",
+                    "Reading the Weekly Target Achievement - Retail table and validating reconciliation...",
+                  )
+                : ui(
+                    locale,
+                    "Validando reconciliação e correspondências...",
+                    "Validating reconciliation and dealer matches...",
+                  )}
+            </>
           ) : importMutation.isPending ? (
             <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Arquivando e importando vendas semanais...", "Archiving and importing weekly sales...")}</>
           ) : error ? (
@@ -919,7 +946,11 @@ export function WeeklySalesPanel({
             </p>
             <p className="mt-1 text-[10px] leading-5 text-slate-600">
               {canImportLeads
-                ? ui(locale, "Use “Importar vendas” para validar o CSV, revisar correspondências e confirmar a carga.", "Use “Import sales” to validate the CSV, review dealer matches, and confirm the import.")
+                ? ui(
+                    locale,
+                    "Use “Importar vendas” para enviar o CSV semanal ou o PDF Daily Sales Planning Report, revisar correspondências e confirmar a carga.",
+                    "Use “Import sales” to upload the weekly CSV or Daily Sales Planning Report PDF, review dealer matches, and confirm the import.",
+                  )
                 : ui(locale, "Aguardando o upload manual pelo administrador responsável.", "Waiting for the responsible administrator to upload the file.")}
             </p>
           </div>

@@ -827,3 +827,17 @@
 - [x] Atualizar testes de locale, layout, navegação, autorização e modo somente leitura
 - [x] Validar tipagem, suíte completa, build e interface em desktop e mobile
 - [x] Revisar todo.md e salvar checkpoint consolidado
+
+## Importação PDF Weekly Target Achievement - Retail — Julho de 2026
+
+- [x] Auditar no PDF real a tabela `Weekly Target Achievement - Retail`, suas páginas, regiões, dealers e colunas semanais
+- [x] Mapear `W1–W5 TGT`, `W1–W5 Retail` e percentuais sem tratar subtotais regionais ou Total como concessionárias
+- [x] Definir a competência e as regras para semanas ainda não preenchidas sem fabricar valores
+- [x] Implementar extração estruturada do PDF rasterizado com validação determinística de título, linhas, percentuais e reconciliação
+- [x] Preservar compatibilidade integral com o importador CSV semanal existente
+- [x] Integrar seleção de PDF, pré-validação, confirmação e mensagens bilíngues ao fluxo `Atualizar vendas`
+- [x] Manter autorização administrativa e impedir importação pelo usuário `mgsales`
+- [x] Cobrir com Vitest variações de espaçamento, casas decimais, células vazias, totais e regressões CSV, além de validar o PDF real ponta a ponta
+- [x] Validar a prévia do arquivo enviado e o caminho transacional/idempotente sem duplicar lotes ou vendas e sem gravar o relatório de referência
+- [x] Executar tipagem, suíte completa, build e validação responsiva
+- [x] Revisar todo.md e salvar checkpoint consolidado

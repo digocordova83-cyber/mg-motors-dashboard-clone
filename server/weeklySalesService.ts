@@ -17,6 +17,7 @@ import {
   type WeeklySalesRow,
   type WeeklySalesWeekMetrics,
 } from "./weeklySalesCsv";
+import { parseWeeklySalesPdf } from "./weeklySalesPdf";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_HISTORY_LIMIT = 100;
@@ -114,12 +115,30 @@ function assertCompetence(competence: string): void {
   }
 }
 
-function sanitizeFileName(fileName: string): string {
+type WeeklySalesFileDescriptor = {
+  fileName: string;
+  kind: "CSV" | "PDF";
+  contentType: string;
+};
+
+function describeWeeklySalesFile(fileName: string): WeeklySalesFileDescriptor {
   const clean = fileName.trim().replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 180);
-  if (!clean.toLocaleLowerCase("en-US").endsWith(".csv")) {
-    throw new Error("Selecione um arquivo de vendas no formato CSV.");
+  const lowerName = clean.toLocaleLowerCase("en-US");
+  if (lowerName.endsWith(".csv")) {
+    return {
+      fileName: clean || "weekly-sales.csv",
+      kind: "CSV",
+      contentType: "text/csv; charset=utf-8",
+    };
   }
-  return clean || "weekly-sales.csv";
+  if (lowerName.endsWith(".pdf")) {
+    return {
+      fileName: clean || "weekly-sales.pdf",
+      kind: "PDF",
+      contentType: "application/pdf",
+    };
+  }
+  throw new Error("Selecione um arquivo de vendas no formato CSV ou PDF.");
 }
 
 function assertFileSize(bytes: Buffer): void {
@@ -127,6 +146,13 @@ function assertFileSize(bytes: Buffer): void {
   if (bytes.length > MAX_FILE_SIZE_BYTES) {
     throw new Error("O arquivo de vendas excede o limite de 5 MB.");
   }
+}
+
+async function parseWeeklySalesFile(
+  bytes: Buffer,
+  kind: WeeklySalesFileDescriptor["kind"],
+): Promise<WeeklySalesCsvPreview> {
+  return kind === "PDF" ? parseWeeklySalesPdf(bytes) : parseWeeklySalesCsv(bytes);
 }
 
 function monthBounds(competence: string): { dateFrom: string; dateTo: string } {
@@ -314,15 +340,15 @@ export async function previewWeeklySalesCsv(input: {
   bytes: Buffer;
   competence: string;
 }): Promise<WeeklySalesPreviewResult> {
-  const fileName = sanitizeFileName(input.fileName);
+  const file = describeWeeklySalesFile(input.fileName);
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
   const [parsed, knownDealerKeys] = await Promise.all([
-    Promise.resolve(parseWeeklySalesCsv(input.bytes)),
+    parseWeeklySalesFile(input.bytes, file.kind),
     getKnownDealerKeys(),
   ]);
   const rows = enrichRows(parsed, knownDealerKeys);
-  return buildPreview({ fileName, competence: input.competence, parsed, rows });
+  return buildPreview({ fileName: file.fileName, competence: input.competence, parsed, rows });
 }
 
 async function findImportByIdentity(fileHash: string, competence: string): Promise<WeeklySalesImport | null> {
@@ -417,12 +443,13 @@ export async function importWeeklySalesCsv(input: {
 }): Promise<WeeklySalesImportResult> {
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
-  const fileName = sanitizeFileName(input.fileName);
+  const file = describeWeeklySalesFile(input.fileName);
+  const fileName = file.fileName;
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
 
   const [parsed, knownDealerKeys] = await Promise.all([
-    Promise.resolve(parseWeeklySalesCsv(input.bytes)),
+    parseWeeklySalesFile(input.bytes, file.kind),
     getKnownDealerKeys(),
   ]);
   if (input.expectedFileHash && input.expectedFileHash !== parsed.fileHash) {
@@ -463,7 +490,7 @@ export async function importWeeklySalesCsv(input: {
     const stored = await storagePut(
       `weekly-sales/${input.competence}/${parsed.fileHash.slice(0, 12)}/${fileName}`,
       input.bytes,
-      "text/csv; charset=utf-8",
+      file.contentType,
     );
     const db = await getDb();
     if (!db) throw new Error("Banco de dados indisponível");

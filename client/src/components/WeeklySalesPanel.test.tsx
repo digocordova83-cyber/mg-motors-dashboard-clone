@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  isSupportedWeeklySalesFileName,
+  WEEKLY_SALES_FILE_ACCEPT,
   WeeklySalesMetricsTable,
   WeeklySalesPeriodIdentity,
   WeeklySalesPreviewSummary,
@@ -68,6 +70,14 @@ const metrics = {
 } as never;
 
 describe("vendas semanais na experiência de concessionárias", () => {
+  it("aceita CSV e PDF no seletor semanal e rejeita outros formatos", () => {
+    expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".csv");
+    expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".pdf");
+    expect(isSupportedWeeklySalesFileName("weekly-sales.csv")).toBe(true);
+    expect(isSupportedWeeklySalesFileName("Daily Sales Planning Report.PDF")).toBe(true);
+    expect(isSupportedWeeklySalesFileName("weekly-sales.xlsx")).toBe(false);
+  });
+
   it("identifica o período filtrado dos Leads sem alterar a referência mensal das vendas", () => {
     const pt = renderToStaticMarkup(
       <WeeklySalesPeriodIdentity
@@ -105,6 +115,8 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(cards).toContain("25");
     expect(table).toContain("A Semana 4 é a referência mensal acumulada");
     expect(table).toContain("não somamos as Semanas 1–4");
+    expect(table).toContain("Origem");
+    expect(table).not.toContain("CSV:");
   });
 
   it("exibe o histórico acumulado Semanas 1–4 e marca a Semana 4 como referência mensal", () => {

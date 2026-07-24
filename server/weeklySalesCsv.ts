@@ -268,13 +268,13 @@ function parseWeekGroups(tokens: string[]): ParsedCandidate | null {
   return best;
 }
 
-function classifyRow(name: string): WeeklySalesRow["rowType"] {
+export function classifyWeeklySalesRow(name: string): WeeklySalesRow["rowType"] {
   if (name.trim().toUpperCase() === "TOTAL") return "TOTAL";
   if (/^R\d+$/i.test(name.trim())) return "REGION";
   return "DEALER";
 }
 
-function resolveCanonicalDealer(sourceName: string): {
+export function resolveWeeklySalesCanonicalDealer(sourceName: string): {
   canonicalDealer: string;
   explicitMapping: boolean;
 } {
@@ -293,8 +293,98 @@ function resolveCanonicalDealer(sourceName: string): {
   };
 }
 
+export function createWeeklySalesRow(input: {
+  sourceRowNumber: number;
+  sourceName: string;
+  weeks: Record<string, WeeklySalesWeekMetrics>;
+  tokens?: string[];
+}): WeeklySalesRow {
+  const sourceName = input.sourceName.trim();
+  const rowType = classifyWeeklySalesRow(sourceName);
+  const sourceKey = normalizeDealerLookupKey(sourceName);
+  const resolved =
+    rowType === "DEALER"
+      ? resolveWeeklySalesCanonicalDealer(sourceName)
+      : { canonicalDealer: null, explicitMapping: false };
+  const recordHash = createHash("sha256")
+    .update(JSON.stringify({
+      sourceRowNumber: input.sourceRowNumber,
+      sourceName,
+      weeks: input.weeks,
+    }))
+    .digest("hex");
+
+  return {
+    sourceRowNumber: input.sourceRowNumber,
+    rowType,
+    sourceName,
+    sourceKey,
+    canonicalDealer: resolved.canonicalDealer,
+    canonicalDealerKey: resolved.canonicalDealer
+      ? normalizeDealerLookupKey(resolved.canonicalDealer)
+      : null,
+    explicitMapping: resolved.explicitMapping,
+    recordHash,
+    tokens: input.tokens ?? [],
+    weeks: input.weeks,
+  };
+}
+
 function sumWeek4Retail(rows: WeeklySalesRow[]): number {
   return rows.reduce((total, row) => total + (row.weeks["4"]?.retail ?? 0), 0);
+}
+
+export function buildWeeklySalesPreview(input: {
+  fileHash: string;
+  rows: WeeklySalesRow[];
+  rowsTotal: number;
+  errors?: string[];
+  warnings?: string[];
+}): WeeklySalesCsvPreview {
+  const errors = [...(input.errors ?? [])];
+  const dealerRows = input.rows.filter(row => row.rowType === "DEALER");
+  const regionRows = input.rows.filter(row => row.rowType === "REGION");
+  const totalRows = input.rows.filter(row => row.rowType === "TOTAL");
+  const week4DealerSalesTotal = sumWeek4Retail(dealerRows);
+  const week4RegionSalesTotal = sumWeek4Retail(regionRows);
+  const week4ReportedSalesTotal = totalRows[0]?.weeks["4"]?.retail ?? null;
+  const reconciliationPassed =
+    totalRows.length === 1 &&
+    week4ReportedSalesTotal !== null &&
+    week4DealerSalesTotal === week4RegionSalesTotal &&
+    week4DealerSalesTotal === week4ReportedSalesTotal;
+
+  if (totalRows.length !== 1) {
+    errors.push(`Esperada exatamente 1 linha TOTAL; encontradas ${totalRows.length}.`);
+  }
+  if (!reconciliationPassed) {
+    errors.push(
+      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+    );
+  }
+
+  const week4Warnings = dealerRows
+    .filter(row => row.weeks["4"]?.retail === null)
+    .map(row => `${row.sourceName}: Semana 4 sem vendas informadas.`);
+  const warnings = Array.from(new Set([...(input.warnings ?? []), ...week4Warnings]));
+
+  return {
+    fileHash: input.fileHash,
+    rows: input.rows,
+    errors,
+    warnings,
+    summary: {
+      rowsTotal: input.rowsTotal,
+      dealerRows: dealerRows.length,
+      regionRows: regionRows.length,
+      totalRows: totalRows.length,
+      dealersWithoutWeek4Sales: week4Warnings.length,
+      week4DealerSalesTotal,
+      week4RegionSalesTotal,
+      week4ReportedSalesTotal,
+      reconciliationPassed,
+    },
+  };
 }
 
 export function parseWeeklySalesCsv(buffer: Buffer): WeeklySalesCsvPreview {
@@ -332,72 +422,20 @@ export function parseWeeklySalesCsv(buffer: Buffer): WeeklySalesCsvPreview {
       continue;
     }
 
-    const rowType = classifyRow(sourceName);
-    const sourceKey = normalizeDealerLookupKey(sourceName);
-    const resolved =
-      rowType === "DEALER"
-        ? resolveCanonicalDealer(sourceName)
-        : { canonicalDealer: null, explicitMapping: false };
-    const recordHash = createHash("sha256")
-      .update(JSON.stringify({ sourceRowNumber, sourceName, weeks: parsedGroups.weeks }))
-      .digest("hex");
-
-    rows.push({
-      sourceRowNumber,
-      rowType,
-      sourceName,
-      sourceKey,
-      canonicalDealer: resolved.canonicalDealer,
-      canonicalDealerKey: resolved.canonicalDealer
-        ? normalizeDealerLookupKey(resolved.canonicalDealer)
-        : null,
-      explicitMapping: resolved.explicitMapping,
-      recordHash,
-      tokens,
-      weeks: parsedGroups.weeks,
-    });
-  }
-
-  const dealerRows = rows.filter(row => row.rowType === "DEALER");
-  const regionRows = rows.filter(row => row.rowType === "REGION");
-  const totalRows = rows.filter(row => row.rowType === "TOTAL");
-  const week4DealerSalesTotal = sumWeek4Retail(dealerRows);
-  const week4RegionSalesTotal = sumWeek4Retail(regionRows);
-  const week4ReportedSalesTotal = totalRows[0]?.weeks["4"]?.retail ?? null;
-  const reconciliationPassed =
-    totalRows.length === 1 &&
-    week4ReportedSalesTotal !== null &&
-    week4DealerSalesTotal === week4RegionSalesTotal &&
-    week4DealerSalesTotal === week4ReportedSalesTotal;
-
-  if (totalRows.length !== 1) {
-    errors.push(`Esperada exatamente 1 linha TOTAL; encontradas ${totalRows.length}.`);
-  }
-  if (!reconciliationPassed) {
-    errors.push(
-      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+    rows.push(
+      createWeeklySalesRow({
+        sourceRowNumber,
+        sourceName,
+        tokens,
+        weeks: parsedGroups.weeks,
+      }),
     );
   }
 
-  const warnings = dealerRows
-    .filter(row => row.weeks["4"]?.retail === null)
-    .map(row => `${row.sourceName}: Semana 4 sem vendas informadas.`);
-
-  return {
+  return buildWeeklySalesPreview({
     fileHash,
     rows,
     errors,
-    warnings,
-    summary: {
-      rowsTotal: lines.length - 1,
-      dealerRows: dealerRows.length,
-      regionRows: regionRows.length,
-      totalRows: totalRows.length,
-      dealersWithoutWeek4Sales: warnings.length,
-      week4DealerSalesTotal,
-      week4RegionSalesTotal,
-      week4ReportedSalesTotal,
-      reconciliationPassed,
-    },
-  };
+    rowsTotal: lines.length - 1,
+  });
 }

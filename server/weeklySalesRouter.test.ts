@@ -82,16 +82,16 @@ describe("rotas de vendas semanais", () => {
     });
     await expect(
       caller.leads.previewWeeklySalesCsv({
-        fileName: "sales.csv",
-        base64: "YQ==",
+        fileName: "daily-sales-planning.pdf",
+        base64: "JVBERi0=",
         competence: "2026-07",
       }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(
       caller.leads.importWeeklySalesCsv({
         competence: "2026-07",
-        fileName: "sales.csv",
-        base64: "YQ==",
+        fileName: "daily-sales-planning.pdf",
+        base64: "JVBERi0=",
       }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
@@ -165,5 +165,42 @@ describe("rotas de vendas semanais", () => {
       actor: "rodrigo",
     });
     expect(serviceMocks.getWeeklySalesImportHistory).toHaveBeenCalledWith(25);
+  });
+
+  it("aceita PDF e repassa seus bytes sem alterar o contrato de prévia e confirmação", async () => {
+    const token = await createToken({
+      accountId: 1,
+      username: "rodrigo",
+      displayName: "Rodrigo",
+      locale: "pt-BR",
+      permissions: { ...basePermissions, canImportLeads: true },
+    });
+    const caller = appRouter.createCaller(createContext(token));
+    const pdfBase64 = Buffer.from("%PDF-1.7\nretail").toString("base64");
+
+    await caller.leads.previewWeeklySalesCsv({
+      fileName: "Daily Sales Planning Report.pdf",
+      base64: pdfBase64,
+      competence: "2026-07",
+    });
+    await caller.leads.importWeeklySalesCsv({
+      fileName: "Daily Sales Planning Report.pdf",
+      base64: pdfBase64,
+      competence: "2026-07",
+      expectedFileHash: PREVIEW_HASH,
+    });
+
+    expect(serviceMocks.previewWeeklySalesCsv).toHaveBeenCalledWith({
+      fileName: "Daily Sales Planning Report.pdf",
+      bytes: Buffer.from("%PDF-1.7\nretail"),
+      competence: "2026-07",
+    });
+    expect(serviceMocks.importWeeklySalesCsv).toHaveBeenCalledWith({
+      fileName: "Daily Sales Planning Report.pdf",
+      bytes: Buffer.from("%PDF-1.7\nretail"),
+      competence: "2026-07",
+      expectedFileHash: PREVIEW_HASH,
+      actor: "rodrigo",
+    });
   });
 });
