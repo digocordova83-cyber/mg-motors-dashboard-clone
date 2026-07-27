@@ -15,8 +15,11 @@ import {
   parseWeeklySalesCsv,
   type WeeklySalesCsvPreview,
   type WeeklySalesRow,
+  type WeeklySalesWeek,
   type WeeklySalesWeekMetrics,
 } from "./weeklySalesCsv";
+import { parseWeeklySalesPdf } from "./weeklySalesPdf";
+import { describeWeeklySalesFile, type WeeklySalesFileDescriptor } from "./weeklySalesUpload";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_HISTORY_LIMIT = 100;
@@ -28,6 +31,8 @@ export type WeeklySalesDealerPreviewRow = {
   sourceName: string;
   canonicalDealer: string;
   matchStatus: "MATCHED" | "UNMATCHED";
+  referenceRetail: number | null;
+  referenceAchievementPercent: number | null;
   week4Retail: number | null;
   week4AchievementPercent: number | null;
 };
@@ -56,7 +61,7 @@ export type WeeklySalesImportResult = WeeklySalesPreviewResult & {
   importedAt: number;
 };
 
-export type WeeklyLeadCounts = Record<"1" | "2" | "3" | "4", number>;
+export type WeeklyLeadCounts = Record<"1" | "2" | "3" | "4" | "5", number>;
 
 export type WeeklySalesDealerWeekMetric = WeeklySalesWeekMetrics & {
   leads: number | null;
@@ -78,6 +83,7 @@ export type WeeklySalesMetrics = {
   competence: string;
   dateFrom: string;
   dateTo: string;
+  referenceWeek: WeeklySalesWeek | null;
   import: {
     id: number;
     fileName: string;
@@ -88,6 +94,7 @@ export type WeeklySalesMetrics = {
     dealers: number;
     matchedDealers: number;
     unmatchedDealers: number;
+    dealersWithoutReferenceSales: number;
     dealersWithoutWeek4Sales: number;
     totalLeads: number;
     totalSales: number;
@@ -114,19 +121,18 @@ function assertCompetence(competence: string): void {
   }
 }
 
-function sanitizeFileName(fileName: string): string {
-  const clean = fileName.trim().replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 180);
-  if (!clean.toLocaleLowerCase("en-US").endsWith(".csv")) {
-    throw new Error("Selecione um arquivo de vendas no formato CSV.");
-  }
-  return clean || "weekly-sales.csv";
-}
-
 function assertFileSize(bytes: Buffer): void {
   if (bytes.length === 0) throw new Error("O arquivo de vendas está vazio.");
   if (bytes.length > MAX_FILE_SIZE_BYTES) {
     throw new Error("O arquivo de vendas excede o limite de 5 MB.");
   }
+}
+
+async function parseWeeklySalesFile(
+  bytes: Buffer,
+  kind: WeeklySalesFileDescriptor["kind"],
+): Promise<WeeklySalesCsvPreview> {
+  return kind === "PDF" ? parseWeeklySalesPdf(bytes) : parseWeeklySalesCsv(bytes);
 }
 
 function monthBounds(competence: string): { dateFrom: string; dateTo: string } {
@@ -187,7 +193,8 @@ export function getWeeklyLeadCutoffDates(
     "1": cappedDate(7),
     "2": cappedDate(14),
     "3": cappedDate(21),
-    "4": dateTo,
+    "4": cappedDate(28),
+    "5": dateTo,
   };
 }
 
@@ -197,13 +204,13 @@ export function buildCumulativeWeeklyLeadCounts(
 ): Map<string, WeeklyLeadCounts> {
   const counts = new Map<string, WeeklyLeadCounts>();
   const unavailableKey = normalizeDealerLookupKey(LEADS_UNAVAILABLE);
-  const weeks: Array<keyof WeeklyLeadCounts> = ["1", "2", "3", "4"];
+  const weeks: Array<keyof WeeklyLeadCounts> = ["1", "2", "3", "4", "5"];
 
   for (const row of rows) {
     const canonical = canonicalizeDealerName(row.dealerName ?? "");
     const key = normalizeDealerLookupKey(canonical);
     if (!key || key === unavailableKey) continue;
-    const current = counts.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0 };
+    const current = counts.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
     for (const week of weeks) {
       if (row.correctedDate <= cutoffs[week]) current[week] += Number(row.count ?? 0);
     }
@@ -285,6 +292,8 @@ function buildPreview(input: {
     .map(row => row.sourceName)
     .sort((left, right) => left.localeCompare(right, "pt-BR"));
 
+  const referenceWeek = input.parsed.summary.referenceWeek;
+
   return {
     fileName: input.fileName,
     fileHash: input.parsed.fileHash,
@@ -302,6 +311,12 @@ function buildPreview(input: {
       sourceName: row.sourceName,
       canonicalDealer: row.canonicalDealer,
       matchStatus: row.matchStatus as "MATCHED" | "UNMATCHED",
+      referenceRetail:
+        referenceWeek === null ? null : row.weeks[String(referenceWeek)]?.retail ?? null,
+      referenceAchievementPercent:
+        referenceWeek === null
+          ? null
+          : row.weeks[String(referenceWeek)]?.achievementPercent ?? null,
       week4Retail: row.weeks["4"]?.retail ?? null,
       week4AchievementPercent: row.weeks["4"]?.achievementPercent ?? null,
     })),
@@ -313,16 +328,21 @@ export async function previewWeeklySalesCsv(input: {
   fileName: string;
   bytes: Buffer;
   competence: string;
+  declaredMimeType?: string | null;
 }): Promise<WeeklySalesPreviewResult> {
-  const fileName = sanitizeFileName(input.fileName);
+  const file = describeWeeklySalesFile({
+    fileName: input.fileName,
+    bytes: input.bytes,
+    declaredMimeType: input.declaredMimeType,
+  });
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
   const [parsed, knownDealerKeys] = await Promise.all([
-    Promise.resolve(parseWeeklySalesCsv(input.bytes)),
+    parseWeeklySalesFile(input.bytes, file.kind),
     getKnownDealerKeys(),
   ]);
   const rows = enrichRows(parsed, knownDealerKeys);
-  return buildPreview({ fileName, competence: input.competence, parsed, rows });
+  return buildPreview({ fileName: file.fileName, competence: input.competence, parsed, rows });
 }
 
 async function findImportByIdentity(fileHash: string, competence: string): Promise<WeeklySalesImport | null> {
@@ -357,7 +377,7 @@ async function createOrResetImport(input: {
     fileName: input.fileName,
     fileSizeBytes: input.bytes.length,
     competence: input.competence,
-    referenceWeek: 4,
+    referenceWeek: input.parsed.summary.referenceWeek ?? 4,
     status: "PROCESSING" as const,
     rowsTotal: input.parsed.summary.rowsTotal,
     dealerRows: input.parsed.summary.dealerRows,
@@ -367,6 +387,10 @@ async function createOrResetImport(input: {
     rowsInvalid: input.parsed.errors.length,
     matchedDealerRows: input.preview.summary.matchedDealerRows,
     unmatchedDealerRows: input.preview.summary.unmatchedDealerRows,
+    dealersWithoutReferenceSales: input.parsed.summary.dealersWithoutReferenceSales,
+    referenceDealerSalesTotal: input.parsed.summary.referenceDealerSalesTotal,
+    referenceRegionSalesTotal: input.parsed.summary.referenceRegionSalesTotal,
+    referenceReportedSalesTotal: input.parsed.summary.referenceReportedSalesTotal,
     dealersWithoutWeek4Sales: input.parsed.summary.dealersWithoutWeek4Sales,
     week4DealerSalesTotal: input.parsed.summary.week4DealerSalesTotal,
     week4RegionSalesTotal: input.parsed.summary.week4RegionSalesTotal,
@@ -414,15 +438,21 @@ export async function importWeeklySalesCsv(input: {
   competence: string;
   actor: string;
   expectedFileHash?: string;
+  declaredMimeType?: string | null;
 }): Promise<WeeklySalesImportResult> {
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
-  const fileName = sanitizeFileName(input.fileName);
+  const file = describeWeeklySalesFile({
+    fileName: input.fileName,
+    bytes: input.bytes,
+    declaredMimeType: input.declaredMimeType,
+  });
+  const fileName = file.fileName;
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
 
   const [parsed, knownDealerKeys] = await Promise.all([
-    Promise.resolve(parseWeeklySalesCsv(input.bytes)),
+    parseWeeklySalesFile(input.bytes, file.kind),
     getKnownDealerKeys(),
   ]);
   if (input.expectedFileHash && input.expectedFileHash !== parsed.fileHash) {
@@ -432,7 +462,7 @@ export async function importWeeklySalesCsv(input: {
   const preview = buildPreview({ fileName, competence: input.competence, parsed, rows });
   if (!preview.valid) {
     throw new Error(
-      preview.errors[0] ?? "O arquivo de vendas não passou na reconciliação da Semana 4.",
+      preview.errors[0] ?? "O arquivo de vendas não passou na reconciliação da semana de referência.",
     );
   }
 
@@ -463,7 +493,7 @@ export async function importWeeklySalesCsv(input: {
     const stored = await storagePut(
       `weekly-sales/${input.competence}/${parsed.fileHash.slice(0, 12)}/${fileName}`,
       input.bytes,
-      "text/csv; charset=utf-8",
+      file.contentType,
     );
     const db = await getDb();
     if (!db) throw new Error("Banco de dados indisponível");
@@ -574,7 +604,18 @@ function toWeekMetrics(
     "2": metric(record.week2Target, record.week2Retail, record.week2Achievement, weeklyLeads?.["2"] ?? null),
     "3": metric(record.week3Target, record.week3Retail, record.week3Achievement, weeklyLeads?.["3"] ?? null),
     "4": metric(record.week4Target, record.week4Retail, record.week4Achievement, weeklyLeads?.["4"] ?? null),
-    "5": metric(record.week5Target, record.week5Retail, record.week5Achievement, null),
+    "5": metric(record.week5Target, record.week5Retail, record.week5Achievement, weeklyLeads?.["5"] ?? null),
+  };
+}
+
+export function selectWeeklySalesReference(
+  weeks: Record<string, WeeklySalesDealerWeekMetric>,
+  referenceWeek: WeeklySalesWeek,
+): { leads: number; sales: number | null } {
+  const reference = weeks[String(referenceWeek)];
+  return {
+    leads: reference?.leads ?? 0,
+    sales: reference?.retail ?? null,
   };
 }
 
@@ -626,11 +667,13 @@ export async function getWeeklySalesMetrics(
       competence,
       dateFrom,
       dateTo,
+      referenceWeek: null,
       import: null,
       summary: {
         dealers: 0,
         matchedDealers: 0,
         unmatchedDealers: 0,
+        dealersWithoutReferenceSales: 0,
         dealersWithoutWeek4Sales: 0,
         totalLeads: 0,
         totalSales: 0,
@@ -657,23 +700,28 @@ export async function getWeeklySalesMetrics(
     getLeadCountsByDealerAndWeek(competence, { dateFrom, dateTo }),
   ]);
 
+  const referenceWeek =
+    latestImport.referenceWeek >= 1 && latestImport.referenceWeek <= 5
+      ? (latestImport.referenceWeek as WeeklySalesWeek)
+      : 4;
   const dealers = records
     .map(record => {
       const key = record.canonicalDealerKey ?? "";
       const weeklyLeads =
         record.matchStatus === "MATCHED"
-          ? (leadCountsByWeek.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0 })
+          ? (leadCountsByWeek.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 })
           : null;
-      const leadsCount = weeklyLeads?.["4"] ?? 0;
-      const efficiency = calculateWeeklySalesEfficiency(leadsCount, record.week4Retail);
+      const weeks = toWeekMetrics(record, weeklyLeads);
+      const { leads: leadsCount, sales } = selectWeeklySalesReference(weeks, referenceWeek);
+      const efficiency = calculateWeeklySalesEfficiency(leadsCount, sales);
       return {
         sourceName: record.sourceName,
         dealerName: record.canonicalDealer ?? record.sourceName,
         matchStatus: record.matchStatus as "MATCHED" | "UNMATCHED",
         leads: leadsCount,
-        sales: record.week4Retail,
+        sales,
         ...efficiency,
-        weeks: toWeekMetrics(record, weeklyLeads),
+        weeks,
       } satisfies WeeklySalesDealerMetric;
     })
     .sort(
@@ -694,6 +742,7 @@ export async function getWeeklySalesMetrics(
     competence,
     dateFrom,
     dateTo,
+    referenceWeek,
     import: {
       id: latestImport.id,
       fileName: latestImport.fileName,
@@ -704,7 +753,8 @@ export async function getWeeklySalesMetrics(
       dealers: dealers.length,
       matchedDealers: matchedDealers.length,
       unmatchedDealers: unmatchedDealers.length,
-      dealersWithoutWeek4Sales: dealers.filter(dealer => dealer.sales === null).length,
+      dealersWithoutReferenceSales: dealers.filter(dealer => dealer.sales === null).length,
+      dealersWithoutWeek4Sales: records.filter(record => record.week4Retail === null).length,
       totalLeads,
       totalSales,
       matchedSales,

@@ -21,7 +21,6 @@ import {
   Download,
   FileCheck2,
   FileUp,
-  Gauge,
   Loader2,
   PencilLine,
   Search,
@@ -46,7 +45,6 @@ import type { AppRouter } from "../../../server/routers";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type LeadAnalytics = RouterOutputs["leads"]["analytics"];
 type LeadPreview = RouterOutputs["leads"]["previewCsv"];
-type LeadImportResult = RouterOutputs["leads"]["importCsv"];
 type DealerAuditItem = LeadAnalytics["dealerAudit"]["dealers"][number];
 
 type Locale = "pt-BR" | "en-US";
@@ -56,10 +54,25 @@ type LeadsTabProps = {
   dateTo: string;
   locale?: Locale;
   canImportLeads?: boolean;
+  readOnly?: boolean;
   onUpdatedAt?: (value: string) => void;
 };
 
 type DealerSort = "leads" | "inactiveDays" | "lastReceipt";
+
+export function resolveLeadsActionVisibility({
+  readOnly,
+  canImportLeads,
+}: {
+  readOnly: boolean;
+  canImportLeads: boolean;
+}) {
+  return {
+    canExport: !readOnly,
+    canImport: !readOnly && canImportLeads,
+    canEditGoal: !readOnly,
+  };
+}
 
 type LeadImportCacheInvalidators = {
   analytics: () => Promise<unknown>;
@@ -100,15 +113,10 @@ const CHANNEL_COLORS = ["#e2212d", "#38bdf8", "#a78bfa", "#f59e0b", "#10b981", "
 const MAX_CSV_SIZE_BYTES = 10 * 1024 * 1024;
 
 function formatCategoryLabel(value: string | null | undefined, locale: Locale) {
-  const normalized = value?.trim() ?? "";
-  const folded = normalized
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("pt-BR");
-  if (!folded || ["indisponivel", "indefinido", "n/a", "na", "null"].includes(folded)) {
+  if (!value || value.trim().toLocaleLowerCase("pt-BR") === "indisponível") {
     return ui(locale, "Indisponível", "Unavailable");
   }
-  return normalized;
+  return value;
 }
 
 const DEALER_QUALIFICATION_LABELS = new Set([
@@ -237,11 +245,10 @@ export function LeadSummaryCards({
   locale?: Locale;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-3">
       <LeadMetricCard title={ui(locale, "Total de Leads", "Total Leads")} value={formatInteger(summary.totalLeads, locale)} subtitle={ui(locale, `${summary.calendarDays} dia(s) no período`, `${summary.calendarDays} day(s) in period`)} icon={<UsersRound className="h-4 w-4" />} accent="#e2212d" />
       <LeadMetricCard title={ui(locale, "Total de Leads nas concessionárias", "Total Leads in dealerships")} value={formatInteger(dealerSummary.assignedLeads, locale)} subtitle={ui(locale, `${formatNumber(dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<Building2 className="h-4 w-4" />} accent="#10b981" />
-      <LeadMetricCard title={ui(locale, "Leads em qualificação", "Leads in qualification")} value={formatInteger(dealerSummary.unavailableLeads, locale)} subtitle={ui(locale, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<AlertTriangle className="h-4 w-4" />} accent="#fb923c" />
-      <LeadMetricCard title={ui(locale, "Média diária", "Daily average")} value={formatNumber(summary.dailyAverage, locale)} subtitle={ui(locale, "Dias corridos, inclusive zeros", "Calendar days, including zeroes")} icon={<Gauge className="h-4 w-4" />} accent="#38bdf8" />
+      <LeadMetricCard title={ui(locale, "Leads em qualificação / sem cobertura de PDV", "Leads in qualification / no POS coverage")} value={formatInteger(dealerSummary.unavailableLeads, locale)} subtitle={ui(locale, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% do total`, `${formatNumber(100 - dealerSummary.assignedSharePercent, locale)}% of total`)} icon={<AlertTriangle className="h-4 w-4" />} accent="#fb923c" />
     </div>
   );
 }
@@ -354,88 +361,18 @@ export function resolveCsvImportPhase(input: {
   return "IDLE";
 }
 
-export function CsvDuplicateChannelBreakdown({
-  items,
-  locale = "pt-BR",
-}: {
-  items: LeadPreview["duplicateRowsByChannel"];
-  locale?: Locale;
-}) {
-  const totals = items.reduce(
-    (result, item) => ({
-      withinFile: result.withinFile + item.withinFile,
-      alreadyStored: result.alreadyStored + item.alreadyStored,
-      total: result.total + item.total,
-    }),
-    { withinFile: 0, alreadyStored: 0, total: 0 },
-  );
-
-  return (
-    <div data-testid="csv-duplicate-channels" className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-300">
-            {ui(locale, "Duplicações por canal", "Duplicates by channel")}
-          </p>
-          <p className="mt-1 text-[10px] leading-4 text-slate-500">
-            {ui(locale, "Separação entre repetições do próprio CSV e linhas já armazenadas.", "Split between repeated CSV rows and rows already stored.")}
-          </p>
-        </div>
-        <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-200">
-          {formatInteger(totals.total, locale)} {ui(locale, "duplicada(s)", "duplicate(s)")}
-        </span>
-      </div>
-
-      {items.length ? (
-        <div className="mt-3 overflow-x-auto rounded-md border border-[#273247]">
-          <div role="table" aria-label={ui(locale, "Duplicações por canal", "Duplicates by channel")} className="min-w-[430px]">
-            <div role="row" className="grid grid-cols-[minmax(130px,1fr)_100px_100px_70px] border-b border-[#273247] bg-[#101827] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">
-              <span role="columnheader">{ui(locale, "Canal", "Channel")}</span>
-              <span role="columnheader" className="text-right">{ui(locale, "No CSV", "In CSV")}</span>
-              <span role="columnheader" className="text-right">{ui(locale, "Já na base", "In database")}</span>
-              <span role="columnheader" className="text-right">Total</span>
-            </div>
-            {items.map(item => (
-              <div key={item.channel} role="row" className="grid grid-cols-[minmax(130px,1fr)_100px_100px_70px] border-b border-[#202b3d] px-3 py-2 text-[11px] last:border-b-0">
-                <span role="cell" className="truncate font-medium text-slate-200" title={formatCategoryLabel(item.channel, locale)}>{formatCategoryLabel(item.channel, locale)}</span>
-                <span role="cell" className="text-right text-amber-200">{formatInteger(item.withinFile, locale)}</span>
-                <span role="cell" className="text-right text-sky-300">{formatInteger(item.alreadyStored, locale)}</span>
-                <span role="cell" className="text-right font-semibold text-white">{formatInteger(item.total, locale)}</span>
-              </div>
-            ))}
-            <div role="row" className="grid grid-cols-[minmax(130px,1fr)_100px_100px_70px] bg-[#0a111d] px-3 py-2 text-[10px] font-semibold text-slate-400">
-              <span role="cell">Total</span>
-              <span role="cell" className="text-right">{formatInteger(totals.withinFile, locale)}</span>
-              <span role="cell" className="text-right">{formatInteger(totals.alreadyStored, locale)}</span>
-              <span role="cell" className="text-right text-amber-200">{formatInteger(totals.total, locale)}</span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <p className="mt-3 rounded-md border border-emerald-500/15 bg-emerald-500/[0.05] px-3 py-2 text-[10px] text-emerald-300">
-          {ui(locale, "Nenhuma duplicação encontrada neste arquivo.", "No duplicates found in this file.")}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function CsvImportFeedback({
   isPreviewing,
   isImporting,
   hasPreview = false,
   success,
-  result = null,
   error,
-  locale = "pt-BR",
 }: {
   isPreviewing: boolean;
   isImporting: boolean;
   hasPreview?: boolean;
   success: string | null;
-  result?: LeadImportResult | null;
   error: string | null;
-  locale?: Locale;
 }) {
   const phase = resolveCsvImportPhase({ isPreviewing, isImporting, hasPreview, success, error });
   if (phase === "IMPORTING") {
@@ -445,28 +382,7 @@ export function CsvImportFeedback({
     return <div role="status" className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] px-4 py-3 text-xs text-sky-200"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Pré-validando o arquivo CSV...</div>;
   }
   if (phase === "SUCCESS") {
-    return (
-      <div role="status" className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">
-        <p className="font-medium">{success}</p>
-        {result ? (
-          <>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {[
-                [ui(locale, "Inseridas", "Inserted"), result.rowsInserted, "text-emerald-200"],
-                [ui(locale, "Duplicadas", "Duplicates"), result.rowsSkipped, "text-amber-200"],
-                [ui(locale, "Inválidas", "Invalid"), result.invalidRows, "text-red-300"],
-              ].map(([label, value, tone]) => (
-                <div key={String(label)} className="rounded-lg border border-emerald-500/15 bg-[#0a111d]/60 px-3 py-2">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">{label}</p>
-                  <p className={`mt-1 text-base font-semibold ${tone}`}>{formatInteger(Number(value), locale)}</p>
-                </div>
-              ))}
-            </div>
-            <CsvDuplicateChannelBreakdown items={result.duplicateRowsByChannel} locale={locale} />
-          </>
-        ) : null}
-      </div>
-    );
+    return <div role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">{success}</div>;
   }
   if (phase === "ERROR") {
     return <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-xs text-red-300">{error}</div>;
@@ -502,7 +418,6 @@ export function CsvPreviewSummary({
         ))}
       </div>
       <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-[11px] leading-5 text-amber-100">Duplicidades exatas serão descartadas automaticamente. A primeira ocorrência válida de cada Lead será preservada, e a quantidade ignorada ficará registrada no histórico da importação.</div>
-      <CsvDuplicateChannelBreakdown items={preview.duplicateRowsByChannel} locale={locale} />
       {preview.fallbackDateCount > 0 ? (
         <div data-testid="lead-date-fallback-notice" className="rounded-lg border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2 text-[11px] leading-5 text-sky-100">
           {ui(
@@ -865,11 +780,13 @@ export function LeadsTab({
   dateTo,
   locale = "pt-BR",
   canImportLeads = true,
+  readOnly = false,
   onUpdatedAt,
 }: LeadsTabProps) {
   const utils = trpc.useUtils();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryInput = useMemo(() => ({ dateFrom, dateTo }), [dateFrom, dateTo]);
+  const actionVisibility = resolveLeadsActionVisibility({ readOnly, canImportLeads });
   const analytics = trpc.leads.analytics.useQuery(queryInput, { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false, retry: 1 });
   const bounds = trpc.leads.bounds.useQuery(undefined, { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false });
   const history = trpc.leads.importHistory.useQuery(
@@ -885,7 +802,6 @@ export function LeadsTab({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
-  const [uploadResult, setUploadResult] = useState<LeadImportResult | null>(null);
   const [clientUploadError, setClientUploadError] = useState<string | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [selectedWeeklyChannelDealer, setSelectedWeeklyChannelDealer] = useState<DealerAuditItem | null>(null);
@@ -913,7 +829,6 @@ export function LeadsTab({
   const importMutation = trpc.leads.importCsv.useMutation({
     onSuccess: async result => {
       setPreviewOpen(false);
-      setUploadResult(result);
       setUploadMessage(
         result.idempotent
           ? ui(locale, "Arquivo já processado: nenhuma linha foi inserida novamente.", "File already processed: no rows were inserted again.")
@@ -959,7 +874,6 @@ export function LeadsTab({
     if (!canImportLeads) return;
     const file = event.target.files?.[0];
     setUploadMessage(null);
-    setUploadResult(null);
     setClientUploadError(null);
     previewMutation.reset();
     importMutation.reset();
@@ -989,6 +903,7 @@ export function LeadsTab({
   }
 
   function handleExport() {
+    if (readOnly) return;
     setExportMessage(null);
     exportMutation.reset();
     exportMutation.mutate({ dateFrom, dateTo, locale });
@@ -1012,12 +927,14 @@ export function LeadsTab({
           <p className="mt-1 text-[10px] text-slate-700"><LeadFilterIdentity dateFrom={dateFrom} dateTo={dateTo} locale={locale} /></p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <LeadsExportButton
-            locale={locale}
-            isPending={exportMutation.isPending}
-            onExport={handleExport}
-          />
-          {canImportLeads ? (
+          {actionVisibility.canExport ? (
+            <LeadsExportButton
+              locale={locale}
+              isPending={exportMutation.isPending}
+              onExport={handleExport}
+            />
+          ) : null}
+          {actionVisibility.canImport ? (
             <>
               <input ref={fileInputRef} type="file" accept=".csv,text/csv" onChange={handleFile} className="hidden" aria-label={locale === "en-US" ? "Select Leads CSV file" : "Selecionar arquivo CSV de Leads"} />
               <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={previewMutation.isPending || importMutation.isPending} className="w-full border-[#e2212d]/30 bg-[#e2212d]/10 text-[#ff8c93] hover:bg-[#e2212d]/15 hover:text-white sm:w-auto">
@@ -1028,25 +945,23 @@ export function LeadsTab({
         </div>
       </div>
 
-      {exportMessage ? (
+      {actionVisibility.canExport && exportMessage ? (
         <div role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">
           {exportMessage}
         </div>
-      ) : exportMutation.error ? (
+      ) : actionVisibility.canExport && exportMutation.error ? (
         <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-xs text-red-300">
           {exportMutation.error.message}
         </div>
       ) : null}
 
-      {canImportLeads ? (
+      {actionVisibility.canImport ? (
         <CsvImportFeedback
           isPreviewing={previewMutation.isPending}
           isImporting={importMutation.isPending}
           hasPreview={Boolean(preview)}
           success={uploadMessage}
-          result={uploadResult}
           error={uploadError}
-          locale={locale}
         />
       ) : null}
 
@@ -1061,7 +976,7 @@ export function LeadsTab({
       <LeadPanel
         title={ui(locale, `Pacing de Leads — ${data.pacing.competence}`, `Leads pacing — ${data.pacing.competence}`)}
         subtitle={ui(locale, `Dados fechados até ${formatDate(data.pacing.asOfDate, locale)} • meta persistente e auditável`, `Closed data through ${formatDate(data.pacing.asOfDate, locale)} • persistent, auditable goal`)}
-        action={<Button type="button" size="sm" variant="outline" onClick={() => setGoalOpen(true)} className="h-8 border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338] hover:text-white"><PencilLine className="mr-1.5 h-3.5 w-3.5" />{ui(locale, "Editar meta", "Edit goal")}</Button>}
+        action={actionVisibility.canEditGoal ? <Button type="button" size="sm" variant="outline" onClick={() => setGoalOpen(true)} className="h-8 border-[#2b374b] bg-[#111a29] text-[10px] text-slate-300 hover:bg-[#182338] hover:text-white"><PencilLine className="mr-1.5 h-3.5 w-3.5" />{ui(locale, "Editar meta", "Edit goal")}</Button> : undefined}
       >
         <div className="grid gap-5 p-5 lg:grid-cols-[1.2fr_2fr]">
           <div className="rounded-xl border border-[#202b3d] bg-[#0a111d] p-4">
@@ -1179,8 +1094,8 @@ export function LeadsTab({
       </LeadPanel>
       ) : null}
 
-      {canImportLeads ? <CsvPreviewDialog preview={preview} open={previewOpen} isImporting={importMutation.isPending} onOpenChange={setPreviewOpen} onConfirm={confirmImport} locale={locale} /> : null}
-      <GoalDialog analytics={data} open={goalOpen} isSaving={goalMutation.isPending} error={goalMutation.error?.message ?? null} onOpenChange={setGoalOpen} onSave={goal => goalMutation.mutate({ competence: data.pacing.competence, goalCount: goal })} locale={locale} />
+      {actionVisibility.canImport ? <CsvPreviewDialog preview={preview} open={previewOpen} isImporting={importMutation.isPending} onOpenChange={setPreviewOpen} onConfirm={confirmImport} locale={locale} /> : null}
+      {actionVisibility.canEditGoal ? <GoalDialog analytics={data} open={goalOpen} isSaving={goalMutation.isPending} error={goalMutation.error?.message ?? null} onOpenChange={setGoalOpen} onSave={goal => goalMutation.mutate({ competence: data.pacing.competence, goalCount: goal })} locale={locale} /> : null}
     </div>
   );
 }

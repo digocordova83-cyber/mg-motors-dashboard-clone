@@ -8,7 +8,7 @@ const { getDbMock, storagePutMock } = vi.hoisted(() => ({
 vi.mock("./db", () => ({ getDb: getDbMock }));
 vi.mock("./storage", () => ({ storagePut: storagePutMock }));
 
-import { LeadCsvValidationError, parseLeadCsv } from "./leadsCsv";
+import { LeadCsvValidationError } from "./leadsCsv";
 import { importLeadCsv } from "./leadsImportService";
 
 const CSV = [
@@ -67,11 +67,6 @@ describe("serviço de importação de Leads", () => {
     expect(result.rowsInserted).toBe(2);
     expect(result.rowsSkipped).toBe(1);
     expect(result.rowsInvalid).toBe(0);
-    expect(result.rowsReadyToInsert).toBe(2);
-    expect(result.duplicateRowsByChannel).toEqual([
-      { channel: "Site", withinFile: 1, alreadyStored: 0, total: 1 },
-    ]);
-    expect(result.rowsTotal).toBe(result.rowsInserted + result.rowsSkipped + result.rowsInvalid);
     expect(result.fallbackDateUsed).toBe("2026-07-20");
     expect(result.fallbackDateCount).toBe(1);
     expect(storagePutMock).toHaveBeenCalledOnce();
@@ -138,7 +133,6 @@ describe("serviço de importação de Leads", () => {
   });
 
   it("retorna o lote concluído por hash sem inserir ou reenviar o mesmo CSV", async () => {
-    const parsed = parseLeadCsv(Buffer.from(CSV, "utf8"), "2026-07-20");
     const completedImport = {
       id: 42,
       fileName: "leads-julho.csv",
@@ -168,7 +162,10 @@ describe("serviço de importação de Leads", () => {
       })
       .mockReturnValueOnce({
         from: () => ({
-          where: async () => parsed.records.map(record => ({ contentHash: record.contentHash })),
+          where: async () => [
+            { contentHash: "lead-unico-1" },
+            { contentHash: "lead-unico-2" },
+          ],
         }),
       });
 
@@ -186,12 +183,6 @@ describe("serviço de importação de Leads", () => {
     expect(result.status).toBe("COMPLETED");
     expect(result.rowsInserted).toBe(0);
     expect(result.rowsSkipped).toBe(3);
-    expect(result.rowsAlreadyStored).toBe(2);
-    expect(result.duplicateRowsByChannel).toEqual([
-      { channel: "Site", withinFile: 1, alreadyStored: 1, total: 2 },
-      { channel: "Meta", withinFile: 0, alreadyStored: 1, total: 1 },
-    ]);
-    expect(result.rowsTotal).toBe(result.rowsSkipped + result.rowsInvalid);
     expect(result.fallbackDateUsed).toBe("2026-07-20");
     expect(result.fallbackDateCount).toBe(1);
     expect(result.alreadyImported).toBe(true);

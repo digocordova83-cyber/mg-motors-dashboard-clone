@@ -45,7 +45,13 @@ type WeeklySalesPanelProps = {
   onViewChannelHistory?: (dealerName: string) => void;
 };
 
-const MAX_WEEKLY_SALES_CSV_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+export const WEEKLY_SALES_FILE_ACCEPT = ".csv,text/csv,.pdf,application/pdf";
+
+export function isSupportedWeeklySalesFileName(fileName: string): boolean {
+  const lowerName = fileName.toLocaleLowerCase("pt-BR");
+  return lowerName.endsWith(".csv") || lowerName.endsWith(".pdf");
+}
 
 function ui(locale: Locale, pt: string, en: string) {
   return locale === "en-US" ? en : pt;
@@ -97,11 +103,13 @@ export function WeeklySalesPeriodIdentity({
   competence,
   dateFrom,
   dateTo,
+  referenceWeek = null,
   locale = "pt-BR",
 }: {
   competence: string;
   dateFrom: string;
   dateTo: string;
+  referenceWeek?: number | null;
   locale?: Locale;
 }) {
   return (
@@ -110,13 +118,19 @@ export function WeeklySalesPeriodIdentity({
         {ui(locale, "Leads", "Leads")}: {formatIsoDate(dateFrom, locale)}–{formatIsoDate(dateTo, locale)}
       </span>
       <span aria-hidden="true"> • </span>
-      {ui(locale, "Vendas: referência mensal", "Sales: monthly reference")} {formatCompetence(competence, locale)}.
+      {ui(locale, "Vendas: referência acumulada", "Sales: cumulative reference")} {formatCompetence(competence, locale)}.
       <span className="block sm:inline sm:before:content-[' • ']">
-        {ui(
-          locale,
-          "Upload manual do Weekly Target Achievement; a Semana 4 permanece como referência acumulada.",
-          "Manual Weekly Target Achievement upload; Week 4 remains the cumulative reference.",
-        )}
+        {referenceWeek
+          ? ui(
+              locale,
+              `A Semana ${referenceWeek} é a última semana com Retail preenchido e serve como base dos indicadores.`,
+              `Week ${referenceWeek} is the latest week with Retail filled and is used as the KPI reference.`,
+            )
+          : ui(
+              locale,
+              "A última semana com Retail preenchido será usada automaticamente como base dos indicadores.",
+              "The latest week with Retail filled will automatically be used as the KPI reference.",
+            )}
       </span>
     </>
   );
@@ -202,7 +216,11 @@ export function WeeklySalesSummaryCards({
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <MetricCard
-        title={ui(locale, "Vendas — Semana 4", "Sales — Week 4")}
+        title={ui(
+          locale,
+          `Vendas — Semana ${metrics.referenceWeek ?? "—"}`,
+          `Sales — Week ${metrics.referenceWeek ?? "—"}`,
+        )}
         value={formatInteger(summary.totalSales, locale)}
         subtitle={ui(
           locale,
@@ -239,9 +257,11 @@ export function WeeklySalesSummaryCards({
 
 export function WeeklySalesWeekHistory({
   dealer,
+  referenceWeek,
   locale = "pt-BR",
 }: {
   dealer: WeeklySalesDealer;
+  referenceWeek: number | null;
   locale?: Locale;
 }) {
   return (
@@ -253,15 +273,19 @@ export function WeeklySalesWeekHistory({
         <p className="text-[9px] text-slate-600">
           {ui(
             locale,
-            "Meta, vendas e Leads são acumulados; a Semana 4 é a referência mensal da conversão.",
-            "Target, sales and Leads are cumulative; Week 4 is the monthly conversion reference.",
+            referenceWeek
+              ? `Meta, vendas e Leads são acumulados; a Semana ${referenceWeek} é a referência atual da conversão.`
+              : "Meta, vendas e Leads são acumulados; a última semana preenchida será a referência da conversão.",
+            referenceWeek
+              ? `Target, sales and Leads are cumulative; Week ${referenceWeek} is the current conversion reference.`
+              : "Target, sales and Leads are cumulative; the latest filled week will be the conversion reference.",
           )}
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {([1, 2, 3, 4] as const).map(week => {
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {([1, 2, 3, 4, 5] as const).map(week => {
           const values = dealer.weeks[week];
-          const isMonthlyReference = week === 4;
+          const isMonthlyReference = week === referenceWeek;
           return (
             <div
               key={week}
@@ -338,8 +362,12 @@ export function WeeklySalesMetricsTable({
       title={ui(locale, "Eficiência de vendas por concessionária", "Sales efficiency by dealer")}
       subtitle={ui(
         locale,
-        "A Semana 4 é a referência mensal acumulada; não somamos as Semanas 1–4. Conversão usa apenas correspondências confirmadas com a base de Leads.",
-        "Week 4 is the cumulative monthly reference; Weeks 1–4 are not summed. Conversion uses only confirmed matches with the Leads database.",
+            metrics.referenceWeek
+              ? `A Semana ${metrics.referenceWeek} é a última com Retail preenchido; semanas não são somadas. Conversão usa apenas correspondências confirmadas com a base de Leads.`
+              : "A última semana com Retail preenchido será a referência; semanas não são somadas.",
+            metrics.referenceWeek
+              ? `Week ${metrics.referenceWeek} is the latest with Retail filled; weeks are not summed. Conversion uses only confirmed matches with the Leads database.`
+              : "The latest week with Retail filled will be the reference; weeks are not summed.",
       )}
       action={
         <span className="text-[9px] font-medium text-slate-600">
@@ -388,7 +416,13 @@ export function WeeklySalesMetricsTable({
           <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600">
             <tr>
               <th className="px-4 py-3 font-semibold">{ui(locale, "Concessionária", "Dealer")}</th>
-              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Vendas S4", "W4 sales")}</th>
+              <th className="px-3 py-3 text-right font-semibold">
+                {ui(
+                  locale,
+                  `Vendas S${metrics.referenceWeek ?? "—"}`,
+                  `W${metrics.referenceWeek ?? "—"} sales`,
+                )}
+              </th>
               <th className="px-3 py-3 text-right font-semibold">Leads</th>
               <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th>
               <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Leads/venda", "Leads/sale")}</th>
@@ -422,7 +456,7 @@ export function WeeklySalesMetricsTable({
                         <span className="min-w-0">
                           <span className="block font-medium text-slate-200">{dealer.dealerName}</span>
                           {dealer.sourceName !== dealer.dealerName ? (
-                            <span className="mt-0.5 block text-[8px] text-slate-600">CSV: {dealer.sourceName}</span>
+                            <span className="mt-0.5 block text-[8px] text-slate-600">{ui(locale, "Origem", "Source")}: {dealer.sourceName}</span>
                           ) : null}
                         </span>
                         <ChevronDown
@@ -476,7 +510,11 @@ export function WeeklySalesMetricsTable({
                   {isExpanded ? (
                     <tr id={detailId} className="bg-[#0a111d]">
                       <td colSpan={7} className="px-4 py-4">
-                        <WeeklySalesWeekHistory dealer={dealer} locale={locale} />
+                        <WeeklySalesWeekHistory
+                          dealer={dealer}
+                          referenceWeek={metrics.referenceWeek}
+                          locale={locale}
+                        />
                       </td>
                     </tr>
                   ) : null}
@@ -510,12 +548,19 @@ export function WeeklySalesPreviewSummary({
   preview: WeeklySalesPreview;
   locale?: Locale;
 }) {
+  const referenceWeek = preview.summary.referenceWeek;
   const summaryItems = [
     [ui(locale, "Concessionárias", "Dealers"), preview.summary.dealerRows],
     [ui(locale, "Correspondentes", "Matched"), preview.summary.matchedDealerRows],
     [ui(locale, "Sem correspondência", "Unmatched"), preview.summary.unmatchedDealerRows],
-    [ui(locale, "Vendas S4", "W4 sales"), preview.summary.week4DealerSalesTotal],
-    [ui(locale, "Sem venda S4", "No W4 sales"), preview.summary.dealersWithoutWeek4Sales],
+    [
+      ui(locale, `Vendas S${referenceWeek ?? "—"}`, `W${referenceWeek ?? "—"} sales`),
+      preview.summary.referenceDealerSalesTotal,
+    ],
+    [
+      ui(locale, `Sem venda S${referenceWeek ?? "—"}`, `No W${referenceWeek ?? "—"} sales`),
+      preview.summary.dealersWithoutReferenceSales,
+    ],
     [ui(locale, "Linhas totais", "Total rows"), preview.summary.rowsTotal],
   ] as const;
 
@@ -536,7 +581,11 @@ export function WeeklySalesPreviewSummary({
         <p>
           <strong className={preview.valid ? "text-emerald-300" : "text-red-300"}>
             {preview.valid
-              ? ui(locale, "Reconciliação da Semana 4 aprovada.", "Week 4 reconciliation passed.")
+              ? ui(
+                  locale,
+                  `Reconciliação da Semana ${referenceWeek} aprovada.`,
+                  `Week ${referenceWeek} reconciliation passed.`,
+                )
               : ui(locale, "Arquivo não aprovado para importação.", "File not approved for import.")}
           </strong>{" "}
           {ui(
@@ -591,9 +640,11 @@ export function WeeklySalesPreviewSummary({
         <table className="w-full min-w-[640px] text-left">
           <thead className="sticky top-0 bg-[#0a111d] text-[8px] uppercase tracking-[0.1em] text-slate-600">
             <tr>
-              <th className="px-3 py-2.5">CSV</th>
+              <th className="px-3 py-2.5">{ui(locale, "Arquivo", "File")}</th>
               <th className="px-3 py-2.5">{ui(locale, "Concessionária final", "Resolved dealer")}</th>
-              <th className="px-3 py-2.5 text-right">{ui(locale, "Vendas S4", "W4 sales")}</th>
+              <th className="px-3 py-2.5 text-right">
+                {ui(locale, `Vendas S${referenceWeek ?? "—"}`, `W${referenceWeek ?? "—"} sales`)}
+              </th>
               <th className="px-3 py-2.5">{ui(locale, "Correspondência", "Match")}</th>
             </tr>
           </thead>
@@ -603,7 +654,9 @@ export function WeeklySalesPreviewSummary({
                 <td className="px-3 py-2.5 text-slate-400">{dealer.sourceName}</td>
                 <td className="px-3 py-2.5 font-medium text-slate-200">{dealer.canonicalDealer}</td>
                 <td className="px-3 py-2.5 text-right text-white">
-                  {dealer.week4Retail === null ? "—" : formatInteger(dealer.week4Retail, locale)}
+                  {dealer.referenceRetail === null
+                    ? "—"
+                    : formatInteger(dealer.referenceRetail, locale)}
                 </td>
                 <td className={`px-3 py-2.5 font-medium ${dealer.matchStatus === "MATCHED" ? "text-emerald-300" : "text-amber-300"}`}>
                   {dealer.matchStatus === "MATCHED"
@@ -645,7 +698,7 @@ export function WeeklySalesImportHistory({
                 <th className="px-3 py-3">{ui(locale, "Competência", "Period")}</th>
                 <th className="px-3 py-3">{ui(locale, "Importado por", "Imported by")}</th>
                 <th className="px-3 py-3">{ui(locale, "Data", "Date")}</th>
-                <th className="px-3 py-3 text-right">{ui(locale, "Vendas S4", "W4 sales")}</th>
+                <th className="px-3 py-3 text-right">{ui(locale, "Vendas referência", "Reference sales")}</th>
                 <th className="px-3 py-3 text-right">{ui(locale, "Correspondentes", "Matched")}</th>
                 <th className="px-3 py-3 text-right">{ui(locale, "Sem correspondência", "Unmatched")}</th>
                 <th className="px-4 py-3">Status</th>
@@ -663,7 +716,16 @@ export function WeeklySalesImportHistory({
                   <td className="px-3 py-3 capitalize text-slate-400">{formatCompetence(item.competence, locale)}</td>
                   <td className="px-3 py-3 text-slate-400">{item.importedBy}</td>
                   <td className="px-3 py-3 text-slate-400">{formatDateTime(item.completedAt ?? item.createdAt, locale)}</td>
-                  <td className="px-3 py-3 text-right font-medium text-white">{item.week4DealerSalesTotal === null ? "—" : formatInteger(item.week4DealerSalesTotal, locale)}</td>
+                  <td className="px-3 py-3 text-right font-medium text-white">
+                    <span className="block">
+                      {item.referenceDealerSalesTotal === null
+                        ? "—"
+                        : formatInteger(item.referenceDealerSalesTotal, locale)}
+                    </span>
+                    <span className="mt-0.5 block text-[8px] font-normal text-slate-600">
+                      {ui(locale, `Semana ${item.referenceWeek}`, `Week ${item.referenceWeek}`)}
+                    </span>
+                  </td>
                   <td className="px-3 py-3 text-right text-emerald-300">{formatInteger(item.matchedDealerRows, locale)}</td>
                   <td className="px-3 py-3 text-right text-amber-300">{formatInteger(item.unmatchedDealerRows, locale)}</td>
                   <td className="px-4 py-3">
@@ -778,12 +840,14 @@ export function WeeklySalesPanel({
     previewMutation.reset();
     importMutation.reset();
     if (!file) return;
-    if (!file.name.toLocaleLowerCase("pt-BR").endsWith(".csv")) {
-      setClientError(ui(locale, "Selecione um arquivo com extensão .csv.", "Select a .csv file."));
+    if (!isSupportedWeeklySalesFileName(file.name)) {
+      setClientError(
+        ui(locale, "Selecione um arquivo com extensão .csv ou .pdf.", "Select a .csv or .pdf file."),
+      );
       event.target.value = "";
       return;
     }
-    if (file.size > MAX_WEEKLY_SALES_CSV_SIZE_BYTES) {
+    if (file.size > MAX_WEEKLY_SALES_FILE_SIZE_BYTES) {
       setClientError(ui(locale, "O arquivo excede o limite de 5 MB.", "The file exceeds the 5 MB limit."));
       event.target.value = "";
       return;
@@ -825,6 +889,7 @@ export function WeeklySalesPanel({
               competence={competence}
               dateFrom={dateFrom}
               dateTo={dateTo}
+              referenceWeek={metrics.data?.referenceWeek ?? null}
               locale={locale}
             />
           </p>
@@ -834,10 +899,14 @@ export function WeeklySalesPanel({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,text/csv"
+              accept={WEEKLY_SALES_FILE_ACCEPT}
               onChange={handleFile}
               className="hidden"
-              aria-label={ui(locale, "Selecionar CSV de vendas semanais", "Select weekly sales CSV")}
+              aria-label={ui(
+                locale,
+                "Selecionar CSV ou PDF de vendas semanais",
+                "Select weekly sales CSV or PDF",
+              )}
             />
             <Button
               type="button"
@@ -852,7 +921,9 @@ export function WeeklySalesPanel({
                 <FileUp className="mr-2 h-4 w-4" />
               )}
               {previewMutation.isPending
-                ? ui(locale, "Validando...", "Validating...")
+                ? upload?.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
+                  ? ui(locale, "Lendo PDF...", "Reading PDF...")
+                  : ui(locale, "Validando...", "Validating...")
                 : ui(locale, "Importar vendas", "Import sales")}
             </Button>
           </div>
@@ -871,7 +942,20 @@ export function WeeklySalesPanel({
           }`}
         >
           {previewMutation.isPending ? (
-            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Validando reconciliação e correspondências...", "Validating reconciliation and dealer matches...")}</>
+            <>
+              <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+              {upload?.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
+                ? ui(
+                    locale,
+                    "Lendo a tabela Weekly Target Achievement - Retail e validando a reconciliação...",
+                    "Reading the Weekly Target Achievement - Retail table and validating reconciliation...",
+                  )
+                : ui(
+                    locale,
+                    "Validando reconciliação e correspondências...",
+                    "Validating reconciliation and dealer matches...",
+                  )}
+            </>
           ) : importMutation.isPending ? (
             <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Arquivando e importando vendas semanais...", "Archiving and importing weekly sales...")}</>
           ) : error ? (
@@ -919,7 +1003,11 @@ export function WeeklySalesPanel({
             </p>
             <p className="mt-1 text-[10px] leading-5 text-slate-600">
               {canImportLeads
-                ? ui(locale, "Use “Importar vendas” para validar o CSV, revisar correspondências e confirmar a carga.", "Use “Import sales” to validate the CSV, review dealer matches, and confirm the import.")
+                ? ui(
+                    locale,
+                    "Use “Importar vendas” para enviar o CSV semanal ou o PDF Daily Sales Planning Report, revisar correspondências e confirmar a carga.",
+                    "Use “Import sales” to upload the weekly CSV or Daily Sales Planning Report PDF, review dealer matches, and confirm the import.",
+                  )
                 : ui(locale, "Aguardando o upload manual pelo administrador responsável.", "Waiting for the responsible administrator to upload the file.")}
             </p>
           </div>

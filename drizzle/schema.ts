@@ -276,6 +276,38 @@ export const taskEvents = mysqlTable(
   ],
 );
 
+export const optimizationNegativeKeywords = mysqlTable(
+  "optimization_negative_keywords",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    taskId: int("taskId")
+      .notNull()
+      .references(() => optimizationTasks.id, { onDelete: "cascade" }),
+    cycleId: int("cycleId")
+      .notNull()
+      .references(() => optimizationCycles.id, { onDelete: "cascade" }),
+    accountId: varchar("accountId", { length: 64 }).notNull(),
+    campaignId: varchar("campaignId", { length: 64 }).notNull(),
+    campaignName: varchar("campaignName", { length: 255 }).notNull(),
+    term: varchar("term", { length: 500 }).notNull(),
+    normalizedTerm: varchar("normalizedTerm", { length: 500 }).notNull(),
+    matchType: mysqlEnum("matchType", ["BROAD", "PHRASE", "EXACT"]).notNull(),
+    origin: mysqlEnum("origin", ["TASK_COMPLETION", "MANUAL"]).default("TASK_COMPLETION").notNull(),
+    appliedBy: varchar("appliedBy", { length: 120 }).notNull(),
+    appliedAt: bigint("appliedAt", { mode: "number" }).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("optimization_negative_keywords_task_term_unique").on(
+      table.taskId,
+      table.normalizedTerm,
+      table.matchType,
+    ),
+    index("optimization_negative_keywords_campaign_idx").on(table.campaignId, table.appliedAt),
+    index("optimization_negative_keywords_cycle_idx").on(table.cycleId, table.appliedAt),
+  ],
+);
+
 export const performanceSnapshots = mysqlTable(
   "performance_snapshots",
   {
@@ -439,6 +471,10 @@ export const weeklySalesImports = mysqlTable(
     rowsInvalid: int("rowsInvalid").default(0).notNull(),
     matchedDealerRows: int("matchedDealerRows").default(0).notNull(),
     unmatchedDealerRows: int("unmatchedDealerRows").default(0).notNull(),
+    dealersWithoutReferenceSales: int("dealersWithoutReferenceSales").default(0).notNull(),
+    referenceDealerSalesTotal: int("referenceDealerSalesTotal"),
+    referenceRegionSalesTotal: int("referenceRegionSalesTotal"),
+    referenceReportedSalesTotal: int("referenceReportedSalesTotal"),
     dealersWithoutWeek4Sales: int("dealersWithoutWeek4Sales").default(0).notNull(),
     week4DealerSalesTotal: int("week4DealerSalesTotal"),
     week4RegionSalesTotal: int("week4RegionSalesTotal"),

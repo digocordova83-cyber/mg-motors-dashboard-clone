@@ -1,0 +1,126 @@
+const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
+const PDF_MIME_TYPES = new Set(["application/pdf", "application/x-pdf"]);
+const CSV_MIME_TYPES = new Set([
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel",
+  "text/plain",
+]);
+const GENERIC_MIME_TYPES = new Set(["application/octet-stream", "binary/octet-stream"]);
+
+export type WeeklySalesFileDescriptor = {
+  fileName: string;
+  kind: "CSV" | "PDF";
+  contentType: string;
+};
+
+export type DecodedWeeklySalesUpload = {
+  bytes: Buffer;
+  declaredMimeType: string | null;
+};
+
+function normalizeMimeType(value: string | null | undefined): string | null {
+  const normalized = value?.split(";", 1)[0]?.trim().toLocaleLowerCase("en-US") ?? "";
+  return normalized || null;
+}
+
+function sanitizeFileName(fileName: string): string {
+  const basename = fileName.replace(/\\/g, "/").split("/").at(-1)?.trim() ?? "";
+  return basename
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 180);
+}
+
+function hasPdfSignature(bytes: Buffer): boolean {
+  return bytes.length >= 5 && bytes.subarray(0, 5).toString("ascii") === "%PDF-";
+}
+
+function assertLikelyCsv(bytes: Buffer): void {
+  if (bytes.includes(0)) {
+    throw new Error("O conteúdo do arquivo não corresponde a um CSV de texto válido.");
+  }
+}
+
+export function decodeWeeklySalesBase64(value: string): DecodedWeeklySalesUpload {
+  const trimmed = value.trim();
+  const dataUrlMatch = trimmed.match(/^data:([^;,]+)(?:;charset=[^;,]+)?;base64,/i);
+  const declaredMimeType = normalizeMimeType(dataUrlMatch?.[1]);
+  let base64 = dataUrlMatch ? trimmed.slice(dataUrlMatch[0].length) : trimmed;
+
+  if (!dataUrlMatch && /^data:/i.test(trimmed)) {
+    throw new Error("O arquivo de vendas não está em um Data URL Base64 válido.");
+  }
+
+  base64 = base64.replace(/\s+/g, "");
+  if (!base64 || base64.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
+    throw new Error("O conteúdo do arquivo de vendas está corrompido.");
+  }
+
+  const bytes = Buffer.from(base64, "base64");
+  const canonicalInput = base64.replace(/=+$/, "");
+  const canonicalDecoded = bytes.toString("base64").replace(/=+$/, "");
+  if (canonicalInput !== canonicalDecoded) {
+    throw new Error("O conteúdo do arquivo de vendas está corrompido.");
+  }
+  if (bytes.length === 0) {
+    throw new Error("O arquivo de vendas está vazio.");
+  }
+  if (bytes.length > MAX_WEEKLY_SALES_FILE_SIZE_BYTES) {
+    throw new Error("O arquivo de vendas excede o limite de 5 MB.");
+  }
+
+  return { bytes, declaredMimeType };
+}
+
+export function describeWeeklySalesFile(input: {
+  fileName: string;
+  bytes: Buffer;
+  declaredMimeType?: string | null;
+}): WeeklySalesFileDescriptor {
+  const fileName = sanitizeFileName(input.fileName);
+  const lowerName = fileName.toLocaleLowerCase("en-US");
+  const extensionKind = lowerName.endsWith(".pdf")
+    ? "PDF"
+    : lowerName.endsWith(".csv")
+      ? "CSV"
+      : null;
+  const declaredMimeType = normalizeMimeType(input.declaredMimeType);
+  const mimeKind = declaredMimeType && PDF_MIME_TYPES.has(declaredMimeType)
+    ? "PDF"
+    : declaredMimeType && CSV_MIME_TYPES.has(declaredMimeType)
+      ? "CSV"
+      : null;
+  const signatureKind = hasPdfSignature(input.bytes) ? "PDF" : "CSV";
+
+  if (!extensionKind) {
+    throw new Error("Selecione um arquivo de vendas no formato CSV ou PDF.");
+  }
+  if (declaredMimeType && !mimeKind && !GENERIC_MIME_TYPES.has(declaredMimeType)) {
+    throw new Error(`O tipo de arquivo ${declaredMimeType} não é aceito. Envie um CSV ou PDF.`);
+  }
+  if (extensionKind !== signatureKind || (mimeKind && mimeKind !== signatureKind)) {
+    throw new Error(
+      "A extensão, o tipo e o conteúdo do arquivo não correspondem. Selecione o CSV ou PDF original.",
+    );
+  }
+
+  if (signatureKind === "PDF") {
+    return {
+      fileName: fileName || "weekly-sales.pdf",
+      kind: "PDF",
+      contentType: "application/pdf",
+    };
+  }
+
+  assertLikelyCsv(input.bytes);
+  return {
+    fileName: fileName || "weekly-sales.csv",
+    kind: "CSV",
+    contentType: "text/csv; charset=utf-8",
+  };
+}

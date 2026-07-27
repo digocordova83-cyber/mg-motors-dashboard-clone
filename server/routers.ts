@@ -9,6 +9,7 @@ import {
   authenticateDashboardCredentials,
   clearDashboardSession,
   type DashboardPermissions,
+  isMgSalesReadOnlyUsername,
   readDashboardSession,
   setDashboardSession,
 } from "./dashboardAuth";
@@ -18,6 +19,7 @@ import {
   completeOptimizationTask,
   getOptimizationWorkspace,
   listDashboardAccessEvents,
+  listOptimizationNegativeKeywords,
   OptimizationRecommendationInput,
   reopenOptimizationTask,
   rolloverOptimizationCycle,
@@ -26,6 +28,7 @@ import {
   upsertMonthlyBudgetGoal,
 } from "./db";
 import { buildOptimizationHistory } from "./optimizationHistory";
+import { evaluateRecommendationCadence } from "./optimizationPolicy";
 import { LeadCsvValidationError } from "./leadsCsv";
 import {
   decodeLeadCsvBase64,
@@ -40,6 +43,7 @@ import {
   upsertLeadMonthlyGoal,
 } from "./leadsService";
 import { exportLeadsBase } from "./leadsExportService";
+import { loadMetaCreativeInventory } from "./metaCreativeInventory";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import {
   getWeeklySalesImportHistory,
@@ -47,6 +51,7 @@ import {
   importWeeklySalesCsv,
   previewWeeklySalesCsv,
 } from "./weeklySalesService";
+import { decodeWeeklySalesBase64 } from "./weeklySalesUpload";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -74,6 +79,12 @@ const leadsProcedure = createPermissionProcedure("canAccessLeads");
 const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations");
 const historyProcedure = createPermissionProcedure("canAccessHistory");
 const importLeadsProcedure = createPermissionProcedure("canImportLeads");
+const mutableLeadsProcedure = leadsProcedure.use(({ ctx, next }) => {
+  if (isMgSalesReadOnlyUsername(ctx.dashboardSession.username)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Este usuário possui acesso somente para visualização de Leads" });
+  }
+  return next({ ctx });
+});
 const accessHistoryProcedure = createPermissionProcedure("canAccessAccessHistory");
 
 const dateSchema = z
@@ -146,7 +157,7 @@ const weeklySalesMetricsSchema = z
   });
 const weeklySalesUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
-  base64: z.string().min(4).max(7_100_000, "O arquivo CSV excede o limite de 5 MB"),
+  base64: z.string().min(4).max(7_100_000, "O arquivo de vendas excede o limite de 5 MB"),
   competence: competenceSchema,
   expectedFileHash: z.string().length(64).optional(),
 });
@@ -194,6 +205,21 @@ function buildTaskSnapshot(
     optimizationScore: campaign.optimizationScore,
     searchImpressionShare: campaign.searchImpressionShare,
   };
+}
+
+async function loadDashboardDataWithOptimizationPolicy(dateFrom: string, dateTo: string) {
+  const [data, workspace] = await Promise.all([
+    loadDashboardData(dateFrom, dateTo),
+    getOptimizationWorkspace(),
+  ]);
+  const recommendationEligibility = evaluateRecommendationCadence({
+    recommendations: data.recommendations.map(recommendation => ({
+      ...recommendation,
+      campaignName: recommendation.campaign,
+    })),
+    tasks: workspace.tasks,
+  });
+  return { ...data, recommendationEligibility };
 }
 
 function mapRecommendationToTask(
@@ -293,13 +319,13 @@ export const appRouter = router({
     analytics: leadsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => getLeadAnalytics(input)),
-    exportBase: leadsProcedure
+    exportBase: mutableLeadsProcedure
       .input(leadsExportSchema)
       .mutation(({ input }) => exportLeadsBase(input)),
     monthlyGoal: leadsProcedure
       .input(z.object({ competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida") }))
       .query(({ input }) => getLeadMonthlyGoal(input.competence)),
-    updateMonthlyGoal: leadsProcedure
+    updateMonthlyGoal: mutableLeadsProcedure
       .input(
         z.object({
           competence: z.string().regex(/^\d{4}-\d{2}$/, "Competência inválida"),
@@ -345,26 +371,30 @@ export const appRouter = router({
     previewWeeklySalesCsv: importLeadsProcedure
       .input(weeklySalesUploadSchema.omit({ expectedFileHash: true }))
       .mutation(({ input }) =>
-        mapWeeklySalesError(() =>
-          previewWeeklySalesCsv({
+        mapWeeklySalesError(() => {
+          const upload = decodeWeeklySalesBase64(input.base64);
+          return previewWeeklySalesCsv({
             fileName: input.fileName,
-            bytes: decodeLeadCsvBase64(input.base64),
+            bytes: upload.bytes,
+            declaredMimeType: upload.declaredMimeType,
             competence: input.competence,
-          }),
-        ),
+          });
+        }),
       ),
     importWeeklySalesCsv: importLeadsProcedure
       .input(weeklySalesUploadSchema)
       .mutation(({ ctx, input }) =>
-        mapWeeklySalesError(() =>
-          importWeeklySalesCsv({
+        mapWeeklySalesError(() => {
+          const upload = decodeWeeklySalesBase64(input.base64);
+          return importWeeklySalesCsv({
             fileName: input.fileName,
-            bytes: decodeLeadCsvBase64(input.base64),
+            bytes: upload.bytes,
+            declaredMimeType: upload.declaredMimeType,
             competence: input.competence,
             expectedFileHash: input.expectedFileHash,
             actor: ctx.dashboardSession.username,
-          }),
-        ),
+          });
+        }),
       ),
   }),
   metaAds: router({
@@ -372,11 +402,12 @@ export const appRouter = router({
     data: metaAdsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => loadMetaAdsData(input.dateFrom, input.dateTo)),
+    creativeInventory: metaAdsProcedure.query(() => loadMetaCreativeInventory()),
   }),
   dashboard: router({
     getData: googleAdsProcedure
       .input(dashboardPeriodSchema)
-      .query(({ input }) => loadDashboardData(input.dateFrom, input.dateTo)),
+      .query(({ input }) => loadDashboardDataWithOptimizationPolicy(input.dateFrom, input.dateTo)),
     updateMonthlyBudgetGoal: googleAdsProcedure
       .input(
         z.object({
@@ -396,6 +427,19 @@ export const appRouter = router({
     optimizationHistory: historyProcedure.query(async () =>
       buildOptimizationHistory(await getOptimizationWorkspace()),
     ),
+    negativeKeywordHistory: historyProcedure
+      .input(
+        z
+          .object({
+            campaignId: z.string().trim().max(64).optional(),
+            search: z.string().trim().max(120).optional(),
+            dateFrom: dateSchema.optional(),
+            dateTo: dateSchema.optional(),
+            limit: z.number().int().min(1).max(1_000).default(250),
+          })
+          .optional(),
+      )
+      .query(({ input }) => listOptimizationNegativeKeywords(input)),
     captureOptimizationFollowUps: historyProcedure
       .input(dashboardPeriodSchema)
       .mutation(async ({ input }) => {
@@ -446,6 +490,16 @@ export const appRouter = router({
           z.object({
             taskId: z.number().int().positive(),
             notes: z.string().trim().max(4_000).optional().default(""),
+            negativeKeywords: z
+              .array(
+                z.object({
+                  term: z.string().trim().min(1).max(500),
+                  matchType: z.enum(["BROAD", "PHRASE", "EXACT"]),
+                }),
+              )
+              .max(200)
+              .optional()
+              .default([]),
           }),
         ),
       )
@@ -459,6 +513,8 @@ export const appRouter = router({
           taskId: task.id,
           notes: input.notes,
           actor: ctx.dashboardSession.username,
+          accountId: MG_MOTORS_ACCOUNT_ID,
+          negativeKeywords: input.negativeKeywords,
           snapshot: snapshot ? { ...snapshot, campaignId: task.campaignId, campaignName: task.campaignName } : null,
         });
       }),

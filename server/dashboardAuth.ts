@@ -39,6 +39,30 @@ export type DashboardSession = DashboardIdentity & {
   expiresAt: number;
 };
 
+const MG_SALES_USERNAME = "mgsales";
+const MG_SALES_READ_ONLY_PERMISSIONS: DashboardPermissions = {
+  canAccessGoogleAds: false,
+  canAccessMetaAds: false,
+  canAccessLeads: true,
+  canAccessMediaPlan: false,
+  canAccessOptimizations: false,
+  canAccessHistory: false,
+  canImportLeads: false,
+  canAccessAccessHistory: false,
+};
+
+export function isMgSalesReadOnlyUsername(username: string) {
+  return username.trim().toLowerCase() === MG_SALES_USERNAME;
+}
+
+export function applyDashboardAccessPolicy<T extends DashboardIdentity>(identity: T): T {
+  if (!isMgSalesReadOnlyUsername(identity.username)) return identity;
+  return {
+    ...identity,
+    permissions: { ...MG_SALES_READ_ONLY_PERMISSIONS },
+  };
+}
+
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET não está configurado");
@@ -110,7 +134,7 @@ export async function verifyDashboardPassword(password: string, encodedHash: str
 }
 
 function mapDashboardIdentity(account: DashboardAccount): DashboardIdentity {
-  return {
+  return applyDashboardAccessPolicy({
     accountId: account.id,
     username: account.username,
     displayName: account.displayName,
@@ -125,7 +149,7 @@ function mapDashboardIdentity(account: DashboardAccount): DashboardIdentity {
       canImportLeads: account.canImportLeads,
       canAccessAccessHistory: account.canAccessAccessHistory,
     },
-  };
+  });
 }
 
 async function consumeInvalidCredentialWork(password: string) {
@@ -210,14 +234,14 @@ export async function readDashboardSession(req: Request): Promise<DashboardSessi
       return null;
     }
 
-    return {
+    return applyDashboardAccessPolicy({
       accountId,
       username,
       displayName,
       locale,
       permissions,
       expiresAt: (payload.exp ?? 0) * 1000,
-    };
+    });
   } catch {
     return null;
   }

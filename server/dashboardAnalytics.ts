@@ -725,9 +725,10 @@ export function buildRecommendations(
         risk = "Negativas ou exclusões amplas podem remover demanda relevante; aplicar mudanças em blocos pequenos e registrar cada exclusão.";
         priority = severeCpa ? "CRITICAL" : "HIGH";
         steps = [
-          "Abrir Insights e relatórios > Termos de pesquisa e ordenar por custo sem conversão.",
+          "No Google Ads, abrir Termos de pesquisa e ordenar por custo sem conversão; não gerar relatório separado.",
           "Adicionar como negativas somente consultas inequivocamente irrelevantes; revisar correspondência antes de salvar.",
           "Em Performance Max, revisar insights de termos, grupos de recursos e posicionamentos inadequados.",
+          "Ao concluir, registrar no dashboard somente as palavras-chave negativas efetivamente aplicadas.",
           `Manter ${currentStrategyLabel} até atingir ${MIN_STRATEGY_CHANGE_CONVERSIONS} conversões; então reavaliar CPA desejado em torno de ${formatBrl(wasteReferenceCpa)}.`,
         ];
       } else if (allocation) {

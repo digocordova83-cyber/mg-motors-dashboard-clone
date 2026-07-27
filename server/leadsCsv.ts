@@ -95,7 +95,6 @@ export type ParsedLeadCsv = {
   fallbackDateCount: number;
   uniqueValidRows: number;
   duplicateRowsWithinFile: number;
-  duplicateRowsByChannel: LeadCsvBreakdown[];
   dateFrom: string | null;
   dateTo: string | null;
   channels: LeadCsvBreakdown[];
@@ -454,7 +453,6 @@ export function parseLeadCsv(
   const records: NormalizedLeadRecord[] = [];
   const seenContentHashes = new Set<string>();
   const errors: LeadCsvRowError[] = [];
-  const duplicateChannelCounts = new Map<string, number>();
   let invalidRows = 0;
   let validRows = 0;
   let fallbackDateCount = 0;
@@ -471,7 +469,6 @@ export function parseLeadCsv(
     if (!normalizeWhitespace(normalized.correctedDateRaw)) fallbackDateCount += 1;
     if (seenContentHashes.has(normalized.contentHash)) {
       duplicateRowsWithinFile += 1;
-      increment(duplicateChannelCounts, normalized.channel);
       return;
     }
     seenContentHashes.add(normalized.contentHash);
@@ -497,7 +494,6 @@ export function parseLeadCsv(
     fallbackDateCount,
     uniqueValidRows: seenContentHashes.size,
     duplicateRowsWithinFile,
-    duplicateRowsByChannel: breakdown(duplicateChannelCounts),
     dateFrom: dates.at(0) ?? null,
     dateTo: dates.at(-1) ?? null,
     channels: breakdown(channelCounts),

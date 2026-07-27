@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  isSupportedWeeklySalesFileName,
+  WEEKLY_SALES_FILE_ACCEPT,
   WeeklySalesMetricsTable,
   WeeklySalesPeriodIdentity,
   WeeklySalesPreviewSummary,
@@ -14,8 +16,8 @@ const dealerWithHistory = {
   sourceName: "BALTIC BARUERI",
   dealerName: "Baltic Shopping Tamboré",
   matchStatus: "MATCHED",
-  leads: 100,
-  sales: 4,
+  leads: 125,
+  sales: 5,
   conversionRatePercent: 4,
   leadsPerSale: 25,
   estimatedLeadsNeeded: 25,
@@ -24,7 +26,7 @@ const dealerWithHistory = {
     2: { target: 3, leads: 45, retail: 2, achievementPercent: 66.7 },
     3: { target: 6, leads: 70, retail: 3, achievementPercent: 50 },
     4: { target: 8, leads: 100, retail: 4, achievementPercent: 50 },
-    5: { target: 10, leads: null, retail: null, achievementPercent: null },
+    5: { target: 10, leads: 125, retail: 5, achievementPercent: 50 },
   },
 } as never;
 
@@ -32,6 +34,7 @@ const metrics = {
   competence: "2026-07",
   dateFrom: "2026-07-01",
   dateTo: "2026-07-31",
+  referenceWeek: 5,
   import: {
     id: 1,
     fileName: "weekly-sales.csv",
@@ -42,10 +45,11 @@ const metrics = {
     dealers: 2,
     matchedDealers: 1,
     unmatchedDealers: 1,
+    dealersWithoutReferenceSales: 0,
     dealersWithoutWeek4Sales: 0,
-    totalLeads: 100,
-    totalSales: 7,
-    matchedSales: 4,
+    totalLeads: 125,
+    totalSales: 8,
+    matchedSales: 5,
     unmatchedSales: 3,
     conversionRatePercent: 4,
     leadsPerSale: 25,
@@ -68,12 +72,21 @@ const metrics = {
 } as never;
 
 describe("vendas semanais na experiência de concessionárias", () => {
-  it("identifica o período filtrado dos Leads sem alterar a referência mensal das vendas", () => {
+  it("aceita CSV e PDF no seletor semanal e rejeita outros formatos", () => {
+    expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".csv");
+    expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".pdf");
+    expect(isSupportedWeeklySalesFileName("weekly-sales.csv")).toBe(true);
+    expect(isSupportedWeeklySalesFileName("Daily Sales Planning Report.PDF")).toBe(true);
+    expect(isSupportedWeeklySalesFileName("weekly-sales.xlsx")).toBe(false);
+  });
+
+  it("identifica o período filtrado dos Leads e a última semana preenchida", () => {
     const pt = renderToStaticMarkup(
       <WeeklySalesPeriodIdentity
         competence="2026-07"
         dateFrom="2026-07-08"
         dateTo="2026-07-22"
+        referenceWeek={5}
       />,
     );
     const en = renderToStaticMarkup(
@@ -81,45 +94,57 @@ describe("vendas semanais na experiência de concessionárias", () => {
         competence="2026-07"
         dateFrom="2026-07-08"
         dateTo="2026-07-22"
+        referenceWeek={5}
         locale="en-US"
       />,
     );
 
     expect(pt).toContain("Leads: 08/07/2026–22/07/2026");
-    expect(pt).toContain("Vendas: referência mensal");
+    expect(pt).toContain("Vendas: referência acumulada");
+    expect(pt).toContain("A Semana 5 é a última semana com Retail preenchido");
     expect(pt).toContain("julho de 2026");
     expect(en).toContain("Leads: 07/08/2026–07/22/2026");
-    expect(en).toContain("Sales: monthly reference");
+    expect(en).toContain("Sales: cumulative reference");
+    expect(en).toContain("Week 5 is the latest week with Retail filled");
     expect(en).toContain("July 2026");
   });
 
-  it("exibe Semana 4 e fórmulas de eficiência sem somar semanas anteriores", () => {
+  it("exibe a última semana preenchida e fórmulas de eficiência sem somar semanas anteriores", () => {
     const cards = renderToStaticMarkup(<WeeklySalesSummaryCards metrics={metrics} />);
     const table = renderToStaticMarkup(<WeeklySalesMetricsTable metrics={metrics} />);
 
-    expect(cards).toContain("Vendas — Semana 4");
+    expect(cards).toContain("Vendas — Semana 5");
     expect(cards).toContain("Taxa de conversão");
     expect(cards).toContain("Leads por venda");
     expect(cards).toContain("Leads estimados necessários");
     expect(cards).toContain("4%");
     expect(cards).toContain("25");
-    expect(table).toContain("A Semana 4 é a referência mensal acumulada");
-    expect(table).toContain("não somamos as Semanas 1–4");
+    expect(table).toContain("A Semana 5 é a última com Retail preenchido");
+    expect(table).toContain("semanas não são somadas");
+    expect(table).toContain("Vendas S5");
+    expect(table).toContain("Origem");
+    expect(table).not.toContain("CSV:");
   });
 
-  it("exibe o histórico acumulado Semanas 1–4 e marca a Semana 4 como referência mensal", () => {
-    const historyPt = renderToStaticMarkup(<WeeklySalesWeekHistory dealer={dealerWithHistory} />);
-    const historyEn = renderToStaticMarkup(<WeeklySalesWeekHistory dealer={dealerWithHistory} locale="en-US" />);
+  it("exibe o histórico acumulado W1–W5 e marca a última semana como referência", () => {
+    const historyPt = renderToStaticMarkup(
+      <WeeklySalesWeekHistory dealer={dealerWithHistory} referenceWeek={5} />,
+    );
+    const historyEn = renderToStaticMarkup(
+      <WeeklySalesWeekHistory dealer={dealerWithHistory} referenceWeek={5} locale="en-US" />,
+    );
 
     expect(historyPt).toContain("Histórico acumulado por semana");
     expect(historyPt).toContain("Semana 1");
     expect(historyPt).toContain("Semana 4");
+    expect(historyPt).toContain("Semana 5");
     expect(historyPt).toContain("Referência mensal");
     expect(historyPt).toContain("Meta, vendas e Leads são acumulados");
     expect(historyPt).toMatch(/Semana 1[\s\S]*Leads[\s\S]*20/);
     expect(historyPt).toMatch(/Semana 4[\s\S]*Leads[\s\S]*100/);
+    expect(historyPt).toMatch(/Semana 5[\s\S]*Leads[\s\S]*125/);
     expect(historyEn).toContain("Cumulative history by week");
-    expect(historyEn).toContain("Week 4");
+    expect(historyEn).toContain("Week 5");
     expect(historyEn).toContain("Monthly reference");
     expect(historyEn).toContain("Target");
     expect(historyEn).toContain("Sales");
@@ -131,7 +156,7 @@ describe("vendas semanais na experiência de concessionárias", () => {
     const cards = renderToStaticMarkup(<WeeklySalesSummaryCards metrics={metrics} locale="en-US" />);
     const table = renderToStaticMarkup(<WeeklySalesMetricsTable metrics={metrics} locale="en-US" />);
 
-    expect(cards).toContain("Sales — Week 4");
+    expect(cards).toContain("Sales — Week 5");
     expect(cards).toContain("Conversion rate");
     expect(cards).toContain("Leads per sale");
     expect(cards).toContain("Estimated Leads needed");
@@ -180,6 +205,11 @@ describe("vendas semanais na experiência de concessionárias", () => {
         dealerRows: 2,
         regionRows: 1,
         totalRows: 1,
+        referenceWeek: 5,
+        dealersWithoutReferenceSales: 0,
+        referenceDealerSalesTotal: 8,
+        referenceRegionSalesTotal: 8,
+        referenceReportedSalesTotal: 8,
         dealersWithoutWeek4Sales: 0,
         week4DealerSalesTotal: 7,
         week4RegionSalesTotal: 7,
@@ -194,6 +224,8 @@ describe("vendas semanais na experiência de concessionárias", () => {
           sourceName: "BALTIC BARUERI",
           canonicalDealer: "Baltic Shopping Tamboré",
           matchStatus: "MATCHED",
+          referenceRetail: 5,
+          referenceAchievementPercent: 50,
           week4Retail: 4,
           week4AchievementPercent: 40,
         },
@@ -202,6 +234,8 @@ describe("vendas semanais na experiência de concessionárias", () => {
           sourceName: "DEALER SEM MAPA",
           canonicalDealer: "DEALER SEM MAPA",
           matchStatus: "UNMATCHED",
+          referenceRetail: 3,
+          referenceAchievementPercent: 30,
           week4Retail: 3,
           week4AchievementPercent: 30,
         },
@@ -211,7 +245,8 @@ describe("vendas semanais na experiência de concessionárias", () => {
 
     const html = renderToStaticMarkup(<WeeklySalesPreviewSummary preview={preview} />);
 
-    expect(html).toContain("Reconciliação da Semana 4 aprovada");
+    expect(html).toContain("Reconciliação da Semana 5 aprovada");
+    expect(html).toContain("Vendas S5");
     expect(html).toContain("Sem correspondência na base de Leads");
     expect(html).toContain("DEALER SEM MAPA");
     expect(html).toContain("Baltic Shopping Tamboré");
