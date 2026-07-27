@@ -115,10 +115,37 @@ describe("parseLeadCsv", () => {
     expect(result.validRows).toBe(3);
     expect(result.uniqueValidRows).toBe(2);
     expect(result.duplicateRowsWithinFile).toBe(1);
+    expect(result.duplicateRowsByChannel).toEqual([{ value: "Site", count: 1 }]);
     expect(result.records.map(record => record.dealerName)).toEqual(["Dealer A", "Dealer B"]);
     expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 2);
     expect(result.records.every(record => record.recordHash === record.contentHash)).toBe(true);
     expect(result.records[0].sourceRowNumber).toBe(2);
+  });
+
+  it("separa repetições internas por canal normalizado sem perder categorias não reconhecidas", () => {
+    const rows = [
+      "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa 1,a@example.com,11999990001,Site,19/07/2026,Dealer A",
+      "2026-07-19T12:30:00,MG4,SP,São Paulo,Dealer Original,Pessoa 1,a@example.com,11999990001,Site,19/07/2026,Dealer A",
+      "2026-07-19T12:31:00,MG4,SP,São Paulo,Dealer Original,Pessoa 2,b@example.com,11999990002,Meta,19/07/2026,Dealer A",
+      "2026-07-19T12:31:00,MG4,SP,São Paulo,Dealer Original,Pessoa 2,b@example.com,11999990002,Meta,19/07/2026,Dealer A",
+      "2026-07-19T12:32:00,MG4,SP,São Paulo,Dealer Original,Pessoa 3,c@example.com,11999990003,Canal novo,19/07/2026,Dealer A",
+      "2026-07-19T12:32:00,MG4,SP,São Paulo,Dealer Original,Pessoa 3,c@example.com,11999990003,Canal novo,19/07/2026,Dealer A",
+      "2026-07-19T12:33:00,MG4,SP,São Paulo,Dealer Original,Pessoa 4,d@example.com,11999990004,Indefinido,19/07/2026,Dealer A",
+      "2026-07-19T12:33:00,MG4,SP,São Paulo,Dealer Original,Pessoa 4,d@example.com,11999990004,Indefinido,19/07/2026,Dealer A",
+    ];
+
+    const result = parseLeadCsv(csv(...rows));
+
+    expect(result.rowsTotal).toBe(8);
+    expect(result.uniqueValidRows).toBe(4);
+    expect(result.duplicateRowsWithinFile).toBe(4);
+    expect(result.duplicateRowsByChannel).toEqual(expect.arrayContaining([
+      { value: "Site", count: 1 },
+      { value: "Meta", count: 1 },
+      { value: "Canal novo", count: 1 },
+      { value: "Indisponível", count: 1 },
+    ]));
+    expect(result.duplicateRowsByChannel.reduce((sum, item) => sum + item.count, 0)).toBe(4);
   });
 
   it("descarta 99 repetições e mantém uma ocorrência importável e auditável", () => {
@@ -130,6 +157,7 @@ describe("parseLeadCsv", () => {
     expect(result.invalidRows).toBe(0);
     expect(result.uniqueValidRows).toBe(1);
     expect(result.duplicateRowsWithinFile).toBe(99);
+    expect(result.duplicateRowsByChannel).toEqual([{ value: "Site", count: 99 }]);
     expect(result.records).toHaveLength(1);
     expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 1);
     expect(new Set(result.records.map(record => record.contentHash))).toHaveProperty("size", 1);
@@ -173,6 +201,7 @@ describe("parseLeadCsv", () => {
     });
     expect(result.records[0].rawPayload.correctedDate).toBe("");
     expect(result.duplicateRowsWithinFile).toBe(1);
+    expect(result.duplicateRowsByChannel).toEqual([{ value: "Site", count: 1 }]);
   });
 
   it("mantém Data Corrigida inválida como erro em vez de aplicar o fallback", () => {

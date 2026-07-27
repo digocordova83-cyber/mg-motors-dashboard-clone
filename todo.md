@@ -925,3 +925,19 @@
 - [x] Cobrir coleta completa, deduplicação, formatos, status, cobertura e interface com Vitest
 - [x] Validar os totais e formatos contra a conta real e inspecionar a experiência autenticada em desktop e mobile
 - [x] Executar suíte completa, TypeScript e build; revisar todo.md e salvar checkpoint consolidado
+
+## Duplicações por canal no fluxo Atualizar CSV — Julho de 2026
+
+- [x] Auditar a pré-validação, a confirmação e o banner final do botão `Atualizar CSV`
+- [x] Preservar a identidade canônica e a contagem integral de linhas do CSV durante a classificação
+- [x] Calcular duplicatas internas do arquivo por canal normalizado
+- [x] Calcular duplicatas já existentes na base por canal normalizado
+- [x] Reconciliar por canal e no total: linhas do arquivo = inseridas + duplicadas internas + duplicadas da base + inválidas
+- [x] Expor o detalhamento tipado por canal na pré-validação e no resultado persistido da importação
+- [x] Exibir no modal de confirmação os canais com duplicações e suas duas origens
+- [x] Exibir após a importação o resumo por canal junto ao total de linhas inseridas
+- [x] Tratar canal vazio ou não reconhecido como categoria explícita, sem ocultar duplicações
+- [x] Preservar permissões, idempotência, exportação, recálculos e mensagens atuais de sucesso/erro
+- [x] Cobrir classificação, reconciliação, contrato e interface com Vitest
+- [x] Validar o fluxo autenticado em desktop e mobile com uma fixture determinística
+- [x] Executar suíte completa, TypeScript e build; revisar todo.md e salvar checkpoint consolidado

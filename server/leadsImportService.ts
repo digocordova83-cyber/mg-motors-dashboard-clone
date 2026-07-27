@@ -15,6 +15,13 @@ const INSERT_CHUNK_SIZE = 500;
 const QUERY_CHUNK_SIZE = 1_000;
 const PROCESSING_TIMEOUT_MS = 15 * 60 * 1_000;
 
+export type LeadDuplicateChannelBreakdown = {
+  channel: string;
+  withinFile: number;
+  alreadyStored: number;
+  total: number;
+};
+
 export type LeadCsvPreview = {
   fileName: string;
   fileHash: string;
@@ -26,6 +33,7 @@ export type LeadCsvPreview = {
   fallbackDateCount: number;
   uniqueValidRows: number;
   duplicateRowsWithinFile: number;
+  duplicateRowsByChannel: LeadDuplicateChannelBreakdown[];
   rowsAlreadyStored: number;
   rowsReadyToInsert: number;
   dateFrom: string | null;
@@ -96,27 +104,74 @@ async function findImportByHash(fileHash: string): Promise<LeadImport | null> {
   return record ?? null;
 }
 
-async function countExistingRecords(contentHashes: string[]): Promise<number> {
+async function findExistingContentHashes(contentHashes: string[]): Promise<Set<string>> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  let total = 0;
+  const existing = new Set<string>();
   for (const hashChunk of chunk(contentHashes, QUERY_CHUNK_SIZE)) {
     if (!hashChunk.length) continue;
     const rows = await db
       .select({ contentHash: leads.contentHash })
       .from(leads)
       .where(inArray(leads.contentHash, hashChunk));
-    total += rows.length;
+    for (const row of rows) existing.add(row.contentHash);
   }
-  return total;
+  return existing;
+}
+
+function buildDuplicateRowsByChannel(
+  parsed: ParsedLeadCsv,
+  existingContentHashes: ReadonlySet<string>,
+): LeadDuplicateChannelBreakdown[] {
+  const byChannel = new Map<string, { withinFile: number; alreadyStored: number }>();
+  const getEntry = (channel: string) => {
+    const current = byChannel.get(channel) ?? { withinFile: 0, alreadyStored: 0 };
+    byChannel.set(channel, current);
+    return current;
+  };
+
+  for (const item of parsed.duplicateRowsByChannel) {
+    getEntry(item.value).withinFile += item.count;
+  }
+  for (const record of parsed.records) {
+    if (existingContentHashes.has(record.contentHash)) {
+      getEntry(record.channel).alreadyStored += 1;
+    }
+  }
+
+  return Array.from(byChannel.entries())
+    .map(([channel, counts]) => ({
+      channel,
+      withinFile: counts.withinFile,
+      alreadyStored: counts.alreadyStored,
+      total: counts.withinFile + counts.alreadyStored,
+    }))
+    .sort(
+      (left, right) =>
+        right.total - left.total || left.channel.localeCompare(right.channel, "pt-BR"),
+    );
 }
 
 function buildPreview(
   parsed: ParsedLeadCsv,
   fileName: string,
-  rowsAlreadyStored: number,
+  existingContentHashes: ReadonlySet<string>,
   existingImport: LeadImport | null,
 ): LeadCsvPreview {
+  const rowsAlreadyStored = existingContentHashes.size;
+  const rowsReadyToInsert = Math.max(0, parsed.uniqueValidRows - rowsAlreadyStored);
+  const duplicateRowsByChannel = buildDuplicateRowsByChannel(parsed, existingContentHashes);
+  const classifiedDuplicates = duplicateRowsByChannel.reduce(
+    (sum, item) => sum + item.total,
+    0,
+  );
+  const reconciledRows = rowsReadyToInsert + classifiedDuplicates + parsed.invalidRows;
+  if (reconciledRows !== parsed.rowsTotal) {
+    throw new Error(
+      `Falha de reconciliação do CSV: ${parsed.rowsTotal} linha(s) lida(s), mas ${reconciledRows} foram classificadas.`,
+    );
+  }
+
   return {
     fileName,
     fileHash: parsed.fileHash,
@@ -128,8 +183,9 @@ function buildPreview(
     fallbackDateCount: parsed.fallbackDateCount,
     uniqueValidRows: parsed.uniqueValidRows,
     duplicateRowsWithinFile: parsed.duplicateRowsWithinFile,
+    duplicateRowsByChannel,
     rowsAlreadyStored,
-    rowsReadyToInsert: Math.max(0, parsed.uniqueValidRows - rowsAlreadyStored),
+    rowsReadyToInsert,
     dateFrom: parsed.dateFrom,
     dateTo: parsed.dateTo,
     channels: parsed.channels,
@@ -152,10 +208,10 @@ export async function previewLeadCsv(input: {
   const fallbackDate =
     existingImport?.fallbackDateUsed ?? input.fallbackDate ?? getYesterdayInSaoPaulo();
   const parsed = parseLeadCsv(input.bytes, fallbackDate);
-  const rowsAlreadyStored = existingImport
-    ? await countExistingRecords(parsed.records.map(record => record.contentHash))
-    : 0;
-  return buildPreview(parsed, fileName, rowsAlreadyStored, existingImport);
+  const existingContentHashes = existingImport
+    ? await findExistingContentHashes(parsed.records.map(record => record.contentHash))
+    : new Set<string>();
+  return buildPreview(parsed, fileName, existingContentHashes, existingImport);
 }
 
 async function markImportFailed(importId: number, error: unknown): Promise<void> {
@@ -249,10 +305,11 @@ export async function importLeadCsv(input: {
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
 
-  const rowsAlreadyStored = existingImport
-    ? await countExistingRecords(parsed.records.map(record => record.contentHash))
-    : 0;
-  const preview = buildPreview(parsed, fileName, rowsAlreadyStored, existingImport);
+  const existingContentHashes = existingImport
+    ? await findExistingContentHashes(parsed.records.map(record => record.contentHash))
+    : new Set<string>();
+  const rowsAlreadyStored = existingContentHashes.size;
+  const preview = buildPreview(parsed, fileName, existingContentHashes, existingImport);
 
   if (
     existingImport?.status === "COMPLETED" &&

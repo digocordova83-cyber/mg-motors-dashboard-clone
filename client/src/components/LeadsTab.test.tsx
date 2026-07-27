@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  CsvDuplicateChannelBreakdown,
   CsvImportFeedback,
   CsvPreviewSummary,
   DealerAudit,
@@ -260,15 +261,53 @@ describe("interface de Leads", () => {
   });
 
   it("expõe progresso e resultados do fluxo CSV sem depender de persistência", () => {
+    const result = {
+      fileName: "leads-julho.csv",
+      fileHash: "abc123",
+      fileSizeBytes: 4096,
+      rowsTotal: 100,
+      validRows: 98,
+      invalidRows: 2,
+      fallbackDateUsed: "2026-07-20",
+      fallbackDateCount: 2,
+      uniqueValidRows: 95,
+      duplicateRowsWithinFile: 3,
+      duplicateRowsByChannel: [
+        { channel: "Meta", withinFile: 2, alreadyStored: 1, total: 3 },
+        { channel: "Site", withinFile: 1, alreadyStored: 2, total: 3 },
+      ],
+      rowsAlreadyStored: 3,
+      rowsReadyToInsert: 92,
+      dateFrom: "2026-07-01",
+      dateTo: "2026-07-20",
+      channels: [],
+      models: [],
+      regions: [],
+      errors: [],
+      alreadyImported: false,
+      existingImport: null,
+      importId: 7,
+      status: "COMPLETED" as const,
+      rowsInserted: 92,
+      rowsSkipped: 6,
+      rowsInvalid: 2,
+      idempotent: false,
+      fileUrl: "https://storage.example/leads-julho.csv",
+      importedAt: 1_700_000_000_000,
+    };
     const previewing = renderToStaticMarkup(<CsvImportFeedback isPreviewing isImporting={false} success={null} error={null} />);
     const importing = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting success={null} error={null} />);
-    const success = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success="Arquivo já processado: nenhuma linha foi inserida novamente." error={null} />);
+    const success = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success="92 linhas de Leads inseridas com sucesso." result={result} error={null} />);
     const failure = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success={null} error="Arquivo inválido." />);
 
     expect(previewing).toContain("Pré-validando o arquivo CSV");
     expect(importing).toContain("Importando Leads únicos e descartando duplicidades exatas");
-    expect(success).toContain("Arquivo já processado");
-    expect(success).toContain("nenhuma linha foi inserida novamente");
+    expect(success).toContain("92 linhas de Leads inseridas com sucesso");
+    expect(success).toContain("Duplicações por canal");
+    expect(success).toContain("No CSV");
+    expect(success).toContain("Já na base");
+    expect(success).toContain("Meta");
+    expect(success).toContain("Site");
     expect(failure).toContain("Arquivo inválido");
   });
 
@@ -282,8 +321,12 @@ describe("interface de Leads", () => {
       invalidRows: 2,
       uniqueValidRows: 95,
       duplicateRowsWithinFile: 3,
-      rowsAlreadyStored: 0,
-      rowsReadyToInsert: 95,
+      duplicateRowsByChannel: [
+        { channel: "Meta", withinFile: 2, alreadyStored: 1, total: 3 },
+        { channel: "Site", withinFile: 1, alreadyStored: 2, total: 3 },
+      ],
+      rowsAlreadyStored: 3,
+      rowsReadyToInsert: 92,
       dateFrom: "2026-07-01",
       dateTo: "2026-07-20",
       fallbackDateUsed: "2026-07-20",
@@ -304,7 +347,12 @@ describe("interface de Leads", () => {
     expect(html).toContain("Linhas válidas");
     expect(html).toContain("98");
     expect(html).toContain("Duplicadas (descartadas)");
-    expect(html).toContain("3");
+    expect(html).toContain("6");
+    expect(html).toContain("Duplicações por canal");
+    expect(html).toContain("No CSV");
+    expect(html).toContain("Já na base");
+    expect(html).toContain("Meta");
+    expect(html).toContain("Site");
     expect(html).toContain("Duplicidades exatas serão descartadas automaticamente");
     expect(html).toContain("primeira ocorrência válida");
     expect(html).toContain("Inválidas");
@@ -315,5 +363,18 @@ describe("interface de Leads", () => {
     expect(html).toContain("valor original vazio continuará preservado");
     expect(english).toContain("2 row(s) without Corrected Date");
     expect(english).toContain("original blank value will remain preserved");
+    expect(english).toContain("Duplicates by channel");
+  });
+
+  it("classifica canal não reconhecido sem ocultar duplicações", () => {
+    const html = renderToStaticMarkup(
+      <CsvDuplicateChannelBreakdown
+        items={[{ channel: "INDISPONIVEL", withinFile: 1, alreadyStored: 2, total: 3 }]}
+      />,
+    );
+
+    expect(html).toContain("Duplicações por canal");
+    expect(html).toContain("Indisponível");
+    expect(html).toContain("3 duplicada(s)");
   });
 });
