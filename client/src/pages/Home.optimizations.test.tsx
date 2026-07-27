@@ -4,15 +4,6 @@ import { describe, expect, it } from "vitest";
 const homeSource = readFileSync(new URL("./Home.tsx", import.meta.url), "utf8");
 const routerSource = readFileSync(new URL("../../../server/routers.ts", import.meta.url), "utf8");
 
-describe("política de navegação do dashboard", () => {
-  it("identifica mgsales e entrega Leads em modo somente leitura", () => {
-    expect(homeSource).toContain('return username.trim().toLowerCase() === "mgsales"');
-    expect(homeSource).toContain("const leadsReadOnly = isMgSalesReadOnlyUsername(session.username)");
-    expect(homeSource).toContain("readOnly={leadsReadOnly}");
-    expect(homeSource).toContain("canImportLeads={permissions.canImportLeads && !leadsReadOnly}");
-  });
-});
-
 describe("interface aprofundada de Otimizações", () => {
   it("expõe parâmetros de origem e destino, estratégias, evidências, impacto, risco e execução", () => {
     expect(homeSource).toContain("Alteração recomendada");
@@ -35,28 +26,5 @@ describe("interface aprofundada de Otimizações", () => {
     expect(homeSource).toContain("Você pode concluir sem preencher este campo");
     expect(homeSource).not.toContain("minLength={3}");
     expect(routerSource).toContain('notes: z.string().trim().max(4_000).optional().default("")');
-  });
-
-  it("distingue recomendações e tarefas de CPA em observação, consolida legadas e registra negativas aplicadas", () => {
-    expect(homeSource).toContain("eligibleRecommendationCount");
-    expect(homeSource).toContain("cooldownRecommendations");
-    expect(homeSource).toContain("em observação");
-    expect(homeSource).toContain("Nova análise elegível em");
-    expect(homeSource).toContain("eligibility.daysRemaining");
-    expect(homeSource).toContain("taskExecutionEligibility");
-    expect(homeSource).toContain('status === "LEGACY_DUPLICATE"');
-    expect(homeSource).toContain("tarefa(s) operacional(is)");
-    expect(homeSource).toContain("duplicata(s) legada(s) consolidada(s)");
-    expect(homeSource).toContain("Quarentena de CPA");
-    expect(homeSource).toContain("Execução temporariamente bloqueada");
-    expect(homeSource).toContain("isTaskQuarantined ? (");
-    expect(homeSource).toContain("toISOString().slice(0, 10)");
-    expect(homeSource).not.toContain("formatLongDate(new Date(eligibility.nextEligibleAt).toISOString())");
-    expect(homeSource).not.toContain("formatLongDate(new Date(executionEligibility.nextEligibleAt).toISOString())");
-    expect(homeSource).toContain("Negativas aplicadas");
-    expect(homeSource).toContain("parseNegativeKeywordList");
-    expect(homeSource).toContain("negativeKeywordsRecorded");
-    expect(homeSource).toContain("somente as");
-    expect(homeSource).toContain("elegíveis");
   });
 });

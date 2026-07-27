@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, like, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   campaignGoals,
@@ -10,7 +10,6 @@ import {
   InsertDashboardAccount,
   InsertUser,
   optimizationCycles,
-  optimizationNegativeKeywords,
   optimizationTasks,
   performanceSnapshots,
   taskCompletions,
@@ -18,17 +17,6 @@ import {
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
-import {
-  normalizeNegativeKeywordTerm,
-  type NegativeKeywordMatchType,
-} from "../shared/negativeKeywords";
-import {
-  eligibleRecommendations,
-  evaluateTaskExecutionCadence,
-  normalizeNegativeKeywordTaskSteps,
-  optimizationDedupKey,
-  uniqueOptimizationItems,
-} from "./optimizationPolicy";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -518,23 +506,13 @@ export async function getOptimizationWorkspace() {
         .orderBy(desc(performanceSnapshots.createdAt))
     : [];
 
-  const activeCycle = cycles.find(cycle => cycle.status === "ACTIVE") ?? null;
-  const taskExecutionEligibility = activeCycle
-    ? evaluateTaskExecutionCadence({ tasks, activeCycleId: activeCycle.id })
-    : [];
-
   return {
-    activeCycle,
+    activeCycle: cycles.find(cycle => cycle.status === "ACTIVE") ?? null,
     cycles,
-    tasks: tasks.map(task =>
-      task.status === "COMPLETED"
-        ? task
-        : { ...task, steps: normalizeNegativeKeywordTaskSteps(task.steps) },
-    ),
+    tasks,
     events,
     completions,
     snapshots,
-    taskExecutionEligibility,
   };
 }
 
@@ -581,24 +559,11 @@ export async function syncRecommendationsToActiveCycle(input: {
     if (!activeCycle) throw new Error("Não foi possível criar o ciclo ativo");
 
     const existing = await tx
-      .select()
+      .select({ sourceSignature: optimizationTasks.sourceSignature })
       .from(optimizationTasks)
       .where(eq(optimizationTasks.cycleId, activeCycle.id));
-    const uniqueIncoming = uniqueOptimizationItems(input.recommendations);
-    const campaignIds = Array.from(new Set(uniqueIncoming.map(item => item.campaignId)));
-    const historicalTasks = campaignIds.length
-      ? await tx
-          .select()
-          .from(optimizationTasks)
-          .where(inArray(optimizationTasks.campaignId, campaignIds))
-      : [];
-    const eligibleIncoming = eligibleRecommendations({
-      recommendations: uniqueIncoming,
-      tasks: historicalTasks,
-      now,
-    });
-    const existingKeys = new Set(existing.map(item => optimizationDedupKey(item)));
-    const missing = eligibleIncoming.filter(item => !existingKeys.has(optimizationDedupKey(item)));
+    const existingSignatures = new Set(existing.map(item => item.sourceSignature));
+    const missing = input.recommendations.filter(item => !existingSignatures.has(item.sourceSignature));
 
     if (missing.length) {
       await tx.insert(optimizationTasks).values(
@@ -694,44 +659,6 @@ async function getTaskForUpdate(
   return task;
 }
 
-function formatCooldownDate(timestamp: number) {
-  const [year, month, day] = new Date(timestamp).toISOString().slice(0, 10).split("-");
-  return `${day}/${month}/${year}`;
-}
-
-async function assertOptimizationTaskExecutable(
-  tx: Parameters<Parameters<NonNullable<Awaited<ReturnType<typeof getDb>>>["transaction"]>[0]>[0],
-  task: typeof optimizationTasks.$inferSelect,
-  now: number,
-) {
-  const [cycle] = await tx
-    .select({ status: optimizationCycles.status })
-    .from(optimizationCycles)
-    .where(eq(optimizationCycles.id, task.cycleId))
-    .limit(1);
-  if (!cycle || cycle.status !== "ACTIVE") {
-    throw new Error("Somente tarefas do ciclo ativo podem ser executadas");
-  }
-
-  const campaignTasks = await tx
-    .select()
-    .from(optimizationTasks)
-    .where(eq(optimizationTasks.campaignId, task.campaignId));
-  const eligibility = evaluateTaskExecutionCadence({
-    tasks: campaignTasks,
-    activeCycleId: task.cycleId,
-    now,
-  }).find(item => item.taskId === task.id);
-  if (!eligibility || eligibility.eligible) return;
-
-  if (eligibility.status === "COOLDOWN" && eligibility.nextEligibleAt) {
-    throw new Error(
-      `Esta otimização de CPA está em observação. Aguarde até ${formatCooldownDate(eligibility.nextEligibleAt)} para executar uma nova alteração.`,
-    );
-  }
-  throw new Error(eligibility.reason ?? "Esta tarefa foi consolidada e não pode ser executada separadamente");
-}
-
 export async function assignOptimizationTask(input: { taskId: number; assignee: string; actor: string }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -763,7 +690,6 @@ export async function startOptimizationTask(input: { taskId: number; actor: stri
   return db.transaction(async tx => {
     const task = await getTaskForUpdate(tx, input.taskId);
     if (task.status === "COMPLETED") throw new Error("Tarefa concluída não pode ser iniciada");
-    await assertOptimizationTaskExecutable(tx, task, now);
     if (!task.assignee?.trim()) throw new Error("Defina um responsável antes de iniciar a tarefa");
     if (task.status === "IN_PROGRESS") return { success: true } as const;
     await tx
@@ -787,8 +713,6 @@ export async function completeOptimizationTask(input: {
   notes?: string;
   actor: string;
   snapshot: TaskPerformanceSnapshotInput | null;
-  accountId?: string;
-  negativeKeywords?: Array<{ term: string; matchType: NegativeKeywordMatchType }>;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
@@ -797,7 +721,6 @@ export async function completeOptimizationTask(input: {
   return db.transaction(async tx => {
     const task = await getTaskForUpdate(tx, input.taskId);
     if (task.status === "COMPLETED") throw new Error("Tarefa já concluída");
-    await assertOptimizationTaskExecutable(tx, task, now);
     await tx
       .update(optimizationTasks)
       .set({
@@ -822,32 +745,6 @@ export async function completeOptimizationTask(input: {
       notes: notes || null,
       createdAt: now,
     });
-    const uniqueNegatives = new Map<string, { term: string; normalizedTerm: string; matchType: NegativeKeywordMatchType }>();
-    for (const negative of input.negativeKeywords ?? []) {
-      const term = negative.term.trim().replace(/\s+/g, " ");
-      const normalizedTerm = normalizeNegativeKeywordTerm(term);
-      if (!normalizedTerm) continue;
-      const key = `${normalizedTerm}::${negative.matchType}`;
-      if (!uniqueNegatives.has(key)) uniqueNegatives.set(key, { term, normalizedTerm, matchType: negative.matchType });
-    }
-    if (uniqueNegatives.size) {
-      await tx.insert(optimizationNegativeKeywords).values(
-        Array.from(uniqueNegatives.values()).map(negative => ({
-          taskId: task.id,
-          cycleId: task.cycleId,
-          accountId: input.accountId ?? "unknown",
-          campaignId: task.campaignId,
-          campaignName: task.campaignName,
-          term: negative.term,
-          normalizedTerm: negative.normalizedTerm,
-          matchType: negative.matchType,
-          origin: "TASK_COMPLETION" as const,
-          appliedBy: input.actor,
-          appliedAt: now,
-          createdAt: now,
-        })),
-      );
-    }
     if (input.snapshot) {
       const snapshot = input.snapshot;
       await tx.insert(performanceSnapshots).values({
@@ -873,45 +770,8 @@ export async function completeOptimizationTask(input: {
         createdAt: now,
       });
     }
-    return { success: true, negativeKeywordsRecorded: uniqueNegatives.size } as const;
+    return { success: true } as const;
   });
-}
-
-export async function listOptimizationNegativeKeywords(input?: {
-  campaignId?: string;
-  search?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  limit?: number;
-}) {
-  const db = await getDb();
-  if (!db) throw new Error("Banco de dados indisponível");
-
-  const conditions = [];
-  if (input?.campaignId?.trim()) conditions.push(eq(optimizationNegativeKeywords.campaignId, input.campaignId.trim()));
-  if (input?.search?.trim()) {
-    const search = `%${input.search.trim()}%`;
-    conditions.push(
-      or(
-        like(optimizationNegativeKeywords.term, search),
-        like(optimizationNegativeKeywords.campaignName, search),
-        like(optimizationNegativeKeywords.appliedBy, search),
-      )!,
-    );
-  }
-  if (input?.dateFrom) {
-    conditions.push(gte(optimizationNegativeKeywords.appliedAt, Date.parse(`${input.dateFrom}T00:00:00.000Z`)));
-  }
-  if (input?.dateTo) {
-    conditions.push(lte(optimizationNegativeKeywords.appliedAt, Date.parse(`${input.dateTo}T23:59:59.999Z`)));
-  }
-
-  return db
-    .select()
-    .from(optimizationNegativeKeywords)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(optimizationNegativeKeywords.appliedAt), desc(optimizationNegativeKeywords.id))
-    .limit(Math.min(Math.max(input?.limit ?? 250, 1), 1_000));
 }
 
 
@@ -1012,12 +872,8 @@ export async function rolloverOptimizationCycleInTransaction(
         inArray(optimizationTasks.status, ["PENDING", "IN_PROGRESS", "REOPENED"]),
       ),
     );
-  const uniquePendingByKey = new Map<string, (typeof pendingTasks)[number]>();
-  for (const task of [...pendingTasks].sort((left, right) => left.createdAt - right.createdAt)) {
-    const key = optimizationDedupKey(task);
-    if (!uniquePendingByKey.has(key)) uniquePendingByKey.set(key, task);
-  }
-  const pendingToTransfer = Array.from(uniquePendingByKey.values());
+  const uniquePendingBySignature = new Map(pendingTasks.map(task => [task.sourceSignature, task]));
+  const pendingToTransfer = Array.from(uniquePendingBySignature.values());
 
   if (pendingToTransfer.length) {
     await tx.insert(optimizationTasks).values(
@@ -1040,7 +896,7 @@ export async function rolloverOptimizationCycleInTransaction(
         sourceTaskId: task.id,
         createdBy: task.createdBy,
         assignee: task.assignee,
-        createdAt: task.createdAt,
+        createdAt: now,
         updatedAt: now,
       })),
     );
@@ -1108,22 +964,10 @@ export async function rolloverOptimizationCycleInTransaction(
   });
   if (transferredSnapshotValues.length) await tx.insert(performanceSnapshots).values(transferredSnapshotValues);
 
-  const uniqueRecommendations = uniqueOptimizationItems(input.recommendations);
-  const recommendationCampaignIds = Array.from(new Set(uniqueRecommendations.map(item => item.campaignId)));
-  const historicalTasks = recommendationCampaignIds.length
-    ? await tx
-        .select()
-        .from(optimizationTasks)
-        .where(inArray(optimizationTasks.campaignId, recommendationCampaignIds))
-    : [];
-  const eligibleIncoming = eligibleRecommendations({
-    recommendations: uniqueRecommendations,
-    tasks: historicalTasks,
-    now,
-  });
-  const keysInNewCycle = new Set(transferredTasks.map(task => optimizationDedupKey(task)));
-  const recommendationsToCreate = eligibleIncoming.filter(
-    item => !keysInNewCycle.has(optimizationDedupKey(item)),
+  const signaturesInNewCycle = new Set(transferredTasks.map(task => task.sourceSignature));
+  const uniqueRecommendations = new Map(input.recommendations.map(item => [item.sourceSignature, item]));
+  const recommendationsToCreate = Array.from(uniqueRecommendations.values()).filter(
+    item => !signaturesInNewCycle.has(item.sourceSignature),
   );
 
   if (recommendationsToCreate.length) {

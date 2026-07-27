@@ -44,10 +44,10 @@ const mgSalesIdentity: DashboardIdentity = {
   displayName: "MG Sales",
   locale: "en-US",
   permissions: {
-    canAccessGoogleAds: false,
-    canAccessMetaAds: false,
+    canAccessGoogleAds: true,
+    canAccessMetaAds: true,
     canAccessLeads: true,
-    canAccessMediaPlan: false,
+    canAccessMediaPlan: true,
     canAccessOptimizations: false,
     canAccessHistory: false,
     canImportLeads: false,
@@ -116,23 +116,15 @@ describe("autenticação do dashboard", () => {
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(2);
   });
 
-  it("autentica mgsales em inglês exclusivamente para visualização de Leads", async () => {
+  it("autentica mgsales em inglês com exatamente as mesmas restrições de mgmotor", async () => {
     dbMocks.getDashboardAccountByUsername.mockResolvedValue(accountFromIdentity(mgSalesIdentity));
 
     const identity = await authenticateDashboardCredentials("mgsales", testPassword);
 
     expect(identity).toEqual(mgSalesIdentity);
     expect(identity?.locale).toBe("en-US");
-    expect(identity?.permissions).toEqual({
-      canAccessGoogleAds: false,
-      canAccessMetaAds: false,
-      canAccessLeads: true,
-      canAccessMediaPlan: false,
-      canAccessOptimizations: false,
-      canAccessHistory: false,
-      canImportLeads: false,
-      canAccessAccessHistory: false,
-    });
+    expect(identity?.permissions).toEqual(mgMotorIdentity.permissions);
+    expect(identity?.permissions.canAccessAccessHistory).toBe(false);
     expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mgsales");
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(4);
   });
@@ -181,27 +173,6 @@ describe("autenticação do dashboard", () => {
     } as Request;
 
     await expect(readDashboardSession(req)).resolves.toMatchObject(mgMotorIdentity);
-  });
-
-  it("restringe também uma sessão antiga de mgsales que ainda carregue permissões amplas", async () => {
-    const token = await createDashboardSession({
-      ...mgSalesIdentity,
-      permissions: {
-        canAccessGoogleAds: true,
-        canAccessMetaAds: true,
-        canAccessLeads: true,
-        canAccessMediaPlan: true,
-        canAccessOptimizations: true,
-        canAccessHistory: true,
-        canImportLeads: true,
-        canAccessAccessHistory: true,
-      },
-    });
-    const req = {
-      headers: { cookie: `${DASHBOARD_SESSION_COOKIE}=${token}` },
-    } as Request;
-
-    await expect(readDashboardSession(req)).resolves.toMatchObject(mgSalesIdentity);
   });
 
   it("rejeita cookie ausente ou adulterado", async () => {

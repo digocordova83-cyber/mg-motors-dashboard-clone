@@ -816,112 +816,18 @@
 - [x] Validar tipagem, testes, build e interface responsiva
 - [x] Revisar todo.md e salvar checkpoint consolidado
 
-## Indicadores de Leads e acesso exclusivo do mgsales — Julho de 2026
+## Duplicações por canal no fluxo Atualizar CSV — Julho de 2026
 
-- [x] Atualizar o título `Leads em qualificação` para incluir `/ sem cobertura de PDV` em português
-- [x] Exibir `/ no POS coverage` no título equivalente para usuários `en-US`
-- [x] Ocultar o card `Média diária` e reorganizar os três indicadores restantes em desktop e mobile
-- [x] Restringir o usuário `mgsales` exclusivamente ao módulo Leads
-- [x] Tornar a experiência de `mgsales` somente leitura, ocultando importações, exportação e demais ações de alteração
-- [x] Bloquear no backend o acesso direto de `mgsales` a módulos e operações não permitidos
-- [x] Atualizar testes de locale, layout, navegação, autorização e modo somente leitura
-- [x] Validar tipagem, suíte completa, build e interface em desktop e mobile
-- [x] Revisar todo.md e salvar checkpoint consolidado
-
-## Importação PDF Weekly Target Achievement - Retail — Julho de 2026
-
-- [x] Auditar no PDF real a tabela `Weekly Target Achievement - Retail`, suas páginas, regiões, dealers e colunas semanais
-- [x] Mapear `W1–W5 TGT`, `W1–W5 Retail` e percentuais sem tratar subtotais regionais ou Total como concessionárias
-- [x] Definir a competência e as regras para semanas ainda não preenchidas sem fabricar valores
-- [x] Implementar extração estruturada do PDF rasterizado com validação determinística de título, linhas, percentuais e reconciliação
-- [x] Preservar compatibilidade integral com o importador CSV semanal existente
-- [x] Integrar seleção de PDF, pré-validação, confirmação e mensagens bilíngues ao fluxo `Atualizar vendas`
-- [x] Manter autorização administrativa e impedir importação pelo usuário `mgsales`
-- [x] Cobrir com Vitest variações de espaçamento, casas decimais, células vazias, totais e regressões CSV, além de validar o PDF real ponta a ponta
-- [x] Validar a prévia do arquivo enviado e o caminho transacional/idempotente sem duplicar lotes ou vendas e sem gravar o relatório de referência
-- [x] Executar tipagem, suíte completa, build e validação responsiva
-- [x] Revisar todo.md e salvar checkpoint consolidado
-
-## Última semana preenchida como referência de vendas — Julho de 2026
-
-- [x] Mapear todos os usos fixos de Semana 4 no parser, serviço, métricas, exportação e interface
-- [x] Definir a última semana preenchida como a maior W1–W5 com Retail informado no Total do arquivo
-- [x] Impedir que semanas futuras, vazias ou apenas com meta sejam escolhidas como referência
-- [x] Persistir e expor a semana de referência do lote sem perder importações CSV/PDF existentes
-- [x] Recalcular vendas, conversão, Leads por venda e estimativa pela semana de referência dinâmica
-- [x] Atualizar textos, cards, tabela, histórico e prévia para identificar a semana realmente utilizada
-- [x] Preservar todas as semanas importadas, competência, de/para, autorização e idempotência
-- [x] Cobrir W1, W2, W3, W4 e W5, células vazias, arquivos legados e regressões CSV/PDF com Vitest
-- [x] Validar tipagem, suíte completa, build e interface responsiva
-- [x] Revisar todo.md e salvar checkpoint consolidado
-
-## Correção do reconhecimento de PDF no upload de vendas — Julho de 2026
-
-- [x] Reproduzir o erro que encaminha um PDF ao parser CSV e rastrear nome, MIME e bytes entre navegador, tRPC e serviço
-- [x] Detectar PDF pela assinatura `%PDF-` além da extensão e do MIME, sem confiar apenas no nome do arquivo
-- [x] Encaminhar PDFs válidos ao parser `Weekly Target Achievement - Retail` e manter CSV no parser existente
-- [x] Rejeitar arquivos com extensão, MIME e assinatura conflitantes com uma mensagem específica e segura
-- [x] Preservar a última semana preenchida, competência, autorização, idempotência e limite de upload
-- [x] Cobrir PDF real/assinado, nomes sanitizados, CSV válido e formatos inválidos com Vitest
-- [x] Validar tipagem, suíte completa, build e interface
-- [x] Revisar todo.md e salvar checkpoint consolidado
-
-## Cadência de CPA e histórico de negativas — feedback operacional de Julho de 2026
-
-- [x] Auditar onde o dashboard calcula a janela de sete dias e identifica a última otimização por campanha
-- [x] Reproduzir os casos Sem Marca relatados em que uma nova troca de CPA surge após três dias, incluindo as identidades encontradas na base real
-- [x] Definir cooldown mínimo de sete dias corridos após uma ação de CPA efetivamente concluída
-- [x] Manter recomendações pendentes no ciclo seguinte sem duplicá-las nem reiniciar sua data de origem
-- [x] Exibir quantos dias faltam e a data da próxima elegibilidade quando uma campanha estiver em cooldown
-- [x] Bloquear oscilações de CPA causadas por amostras inferiores a sete dias, inclusive mudanças de R$ 20 para R$ 7
-- [x] Identificar e remover tarefas redundantes de gerar relatório quando os mesmos dados já estão no dashboard
-- [x] Registrar palavras-chave negativas aplicadas com conta, campanha, termo, data, origem e responsável
-- [x] Expor histórico filtrável de negativas sem exigir relatório manual separado
-- [x] Preservar negativações normais, tarefas pendentes, histórico de otimizações, orçamento e permissões
-- [x] Cobrir cooldown, carry-over, deduplicação, casos Sem Marca encontrados na base e histórico de negativas com Vitest
-- [x] Validar tipagem, suíte completa, build e interface responsiva
-- [x] Revisar todo.md e salvar checkpoint consolidado
-
-## Correção adicional — quarentena operacional de tarefas CPA legadas
-
-- [x] Decorar tarefas abertas de CPA do ciclo ativo com elegibilidade, cooldown, data de liberação e duplicidade por família
-- [x] Consolidar visualmente duplicatas legadas por campanha+família sem apagar histórico persistido
-- [x] Bloquear no servidor início e conclusão de tarefa CPA durante os sete dias ou quando ela for duplicata legada
-- [x] Exibir tarefas canônicas em observação com dias restantes e próxima data elegível, sem botão executável
-- [x] Cobrir a cronologia real Sem Marca SP/SCS e a quarentena de tarefas legadas com Vitest
-- [x] Revalidar Otimizações e Histórico autenticados em desktop e mobile
-- [x] Executar suíte completa, TypeScript, build, revisar todo.md e salvar checkpoint consolidado
-- [x] Corrigir o erro `Invalid time value` ao formatar a data de liberação do cooldown e cobrir a regressão
-
-## Cobertura de criativos ativos — Meta Ads e Google Ads
-
-- [x] Auditar a fonte atual dos criativos do Meta e confirmar conta, paginação, status efetivo e formatos disponíveis
-- [x] Validar a cobertura real de imagens, vídeos, carrosséis e demais variações do Meta sem limitar a primeira página
-- [x] Auditar a fonte do Google Ads e confirmar disponibilidade de ativos de Performance Max, YouTube e Display
-- [x] Definir de forma explícita o que significa `rodando ativo` em campanha, grupo/conjunto, anúncio e ativo
-- [x] Implementar contratos tipados, paginação completa, deduplicação e cache seguro para criativos do Meta
-- [x] Retirar os contratos e a interface de criativos Google desta versão por decisão do usuário
-- [x] Garantir prévias reais de imagem e vídeo sem armazenar mídia localmente nem expor credenciais
-- [x] Substituir o requisito de apenas ativos pelo escopo confirmado de todos os criativos Meta acessíveis, com status operacional
-- [x] Retirar a aba Google Ads `Criativos` desta versão por decisão do usuário
-- [x] Preservar a auditoria de Google Ads para uma implementação futura com fonte de mídia compatível
-- [x] Informar na interface a data da atualização, a cobertura retornada e eventuais mídias sem URL disponível na fonte
-- [x] Cobrir paginação, atividade, deduplicação, formatos, autorização e estados indisponíveis com Vitest
-- [x] Validar os totais contra a fonte Meta real e revisar casos sem prévia para não afirmar cobertura inexistente
-- [x] Validar a experiência Meta autenticada em desktop e mobile, sem overflow e com carregamento progressivo
-- [x] Executar suíte completa, TypeScript, build, revisar todo.md e salvar checkpoint consolidado
-
-## Escopo confirmado — cobertura integral de criativos Meta
-
-- [x] Consultar todos os anúncios acessíveis da conta Meta, inclusive objetos sem insights no período, sem depender de gasto ou impressão
-- [x] Reconciliar a cobertura do backend com a listagem operacional da conta e declarar total, ativos, pausados e itens sem prévia
-- [x] Persistir no contrato os status efetivos de campanha, conjunto e anúncio e derivar um estado operacional único
-- [x] Identificar imagem, carrossel e vídeo pelos campos próprios da fonte, sem inferir formato apenas por thumbnail
-- [x] Preservar capa, permalink, prévias de vídeo e metadados dos cartões de carrossel quando disponíveis
-- [x] Deduplicar por anúncio e criativo sem ocultar peças diferentes nem multiplicar linhas de desempenho
-- [x] Exibir aviso geral de que os criativos estão desativados no momento quando não houver cadeia efetivamente ativa
-- [x] Marcar cada card como `Desativado`, `Campanha pausada`, `Conjunto pausado` ou `Anúncio pausado`, conforme o status real
-- [x] Informar a data de atualização, a cobertura retornada e qualquer limitação de mídia diretamente na interface
-- [x] Cobrir coleta completa, deduplicação, formatos, status, cobertura e interface com Vitest
-- [x] Validar os totais e formatos contra a conta real e inspecionar a experiência autenticada em desktop e mobile
+- [x] Auditar a pré-validação, a confirmação e o banner final do botão `Atualizar CSV`
+- [x] Preservar a identidade canônica e a contagem integral de linhas do CSV durante a classificação
+- [x] Calcular duplicatas internas do arquivo por canal normalizado
+- [x] Calcular duplicatas já existentes na base por canal normalizado
+- [x] Reconciliar por canal e no total: linhas do arquivo = inseridas + duplicadas internas + duplicadas da base + inválidas
+- [x] Expor o detalhamento tipado por canal na pré-validação e no resultado persistido da importação
+- [x] Exibir no modal de confirmação os canais com duplicações e suas duas origens
+- [x] Exibir após a importação o resumo por canal junto ao total de linhas inseridas
+- [x] Tratar canal vazio ou não reconhecido como categoria explícita, sem ocultar duplicações
+- [x] Preservar permissões, idempotência, exportação, recálculos e mensagens atuais de sucesso/erro
+- [x] Cobrir classificação, reconciliação, contrato e interface com Vitest
+- [x] Validar o fluxo autenticado em desktop e mobile com uma fixture determinística
 - [x] Executar suíte completa, TypeScript e build; revisar todo.md e salvar checkpoint consolidado

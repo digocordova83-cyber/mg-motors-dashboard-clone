@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import React, { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { MetaCreativeInventoryPanel } from "@/components/MetaCreativeInventoryPanel";
 import { trpc } from "@/lib/trpc";
 import { openNativeDatePicker } from "@/lib/nativeDatePicker";
 import { getDashboardCutoffDate } from "@shared/dashboardDates";
@@ -290,6 +289,12 @@ export function MetaAdsEmptyState({ title, description }: { title: string; descr
   );
 }
 
+function CreativeImage({ src, alt, fallbackLabel }: { src: string | null; alt: string; fallbackLabel: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return <div className="grid aspect-[1.6] place-items-center bg-[#111a29] px-6 text-center"><div><ImageIcon className="mx-auto h-7 w-7 text-slate-700" /><p className="mt-2 text-[9px] text-slate-600">{fallbackLabel}</p></div></div>;
+  return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} className="aspect-[1.6] w-full object-cover" />;
+}
+
 function MetaTooltip({ active, payload, label, locale }: { active?: boolean; payload?: Array<{ name?: string; value?: number; color?: string }>; label?: string; locale: Locale }) {
   if (!active || !payload?.length) return null;
   return (
@@ -481,7 +486,9 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
         <DataTable emptyLabel={t.noItems} columns={[t.audiencesTitle, t.investment, t.leads, "CPL", t.reach, t.period]} rows={data.audiences.slice(0, 12).map(item => [<div className="max-w-[470px]"><p className="font-medium text-slate-200">{item.name}</p><p className="mt-1 line-clamp-2 text-[8px] leading-4 text-slate-600">{item.targetingSummary.map(summary => translateMetaAdsTargeting(summary, locale)).join(" • ") || t.unknown}</p></div>, formatCurrency(item.spend, locale), formatNumber(item.leads, locale), item.cpl == null ? "—" : formatCurrency(item.cpl, locale), formatNumber(item.reach, locale), item.status.includes("ACTIVE") ? t.active : formatMetaAdsStatus(item.status, locale)])} />
       </Panel>
 
-      <MetaCreativeInventoryPanel locale={locale} performanceCreatives={data.creatives} />
+      <Panel title={t.creativesTitle} subtitle={t.creativesSubtitle} className="mt-4">
+        <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">{data.creatives.slice(0, 9).map(creative => <article key={creative.id} className="overflow-hidden rounded-xl border border-[#202b3d] bg-[#0a101b]"><CreativeImage src={creative.imageUrl} alt={creative.name} fallbackLabel={t.imageUnavailable} /><div className="p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-xs font-semibold text-white" title={creative.name}>{creative.name}</p><p className="mt-1 truncate text-[9px] text-slate-600">{creative.model} • {creative.adsetName || creative.campaignName}</p><p className="mt-2 break-all font-mono text-[8px] leading-3.5 text-slate-700">{t.adId}: {creative.adId || "—"}<br />{t.creativeId}: {creative.creativeId || "—"}</p></div><span className="shrink-0 rounded-full border border-[#e2212d]/20 bg-[#e2212d]/10 px-2 py-1 text-[8px] font-semibold text-[#f87171]">{creative.model}</span></div><div className="mt-4 grid grid-cols-3 gap-2 border-t border-[#1b2535] pt-3 text-center"><div><p className="text-[8px] uppercase text-slate-700">{t.leads}</p><p className="mt-1 text-xs font-semibold text-slate-200">{formatNumber(creative.leads, locale)}</p></div><div><p className="text-[8px] uppercase text-slate-700">CPL</p><p className="mt-1 text-xs font-semibold text-slate-200">{creative.cpl == null ? "—" : formatCurrency(creative.cpl, locale)}</p></div><div><p className="text-[8px] uppercase text-slate-700">{t.investment}</p><p className="mt-1 text-xs font-semibold text-slate-200">{formatCurrency(creative.spend, locale, true)}</p></div></div></div></article>)}</div>
+      </Panel>
 
       <Panel title={t.audienceAnalysisTitle} subtitle={t.audienceAnalysisSubtitle} className="mt-4">
         <div className="grid gap-3 border-b border-[#1b2535] p-4 sm:grid-cols-2 xl:grid-cols-5">{insightCards.map(card => <InsightCard key={card.label} {...card} />)}</div>

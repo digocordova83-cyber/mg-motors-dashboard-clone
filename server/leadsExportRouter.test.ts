@@ -71,11 +71,11 @@ describe("rota de exportação da base de Leads", () => {
     expect(exportMocks.exportLeadsBase).not.toHaveBeenCalled();
   });
 
-  it("permite exportação a um usuário comum de Leads mesmo sem canImportLeads", async () => {
+  it("permite exportação a mgsales mesmo sem canImportLeads", async () => {
     const token = await createToken({
-      accountId: 5,
-      username: "leads-viewer",
-      displayName: "Leads Viewer",
+      accountId: 4,
+      username: "mgsales",
+      displayName: "MG Sales",
       locale: "en-US",
       permissions: basePermissions,
     });
@@ -93,26 +93,6 @@ describe("rota de exportação da base de Leads", () => {
       dateTo: "2026-07-22",
       locale: "en-US",
     });
-  });
-
-  it("bloqueia exportação para mgsales mesmo se uma sessão antiga declarar permissões amplas", async () => {
-    const token = await createToken({
-      accountId: 4,
-      username: "mgsales",
-      displayName: "MG Sales",
-      locale: "en-US",
-      permissions: { ...basePermissions, canImportLeads: true },
-    });
-    const caller = appRouter.createCaller(createContext(token));
-
-    await expect(
-      caller.leads.exportBase({
-        dateFrom: "2026-07-01",
-        dateTo: "2026-07-22",
-        locale: "en-US",
-      }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(exportMocks.exportLeadsBase).not.toHaveBeenCalled();
   });
 
   it("bloqueia perfil sem acesso à aba Leads", async () => {
@@ -137,9 +117,9 @@ describe("rota de exportação da base de Leads", () => {
 
   it("rejeita período invertido antes de gerar o arquivo", async () => {
     const token = await createToken({
-      accountId: 5,
-      username: "leads-viewer",
-      displayName: "Leads Viewer",
+      accountId: 4,
+      username: "mgsales",
+      displayName: "MG Sales",
       locale: "en-US",
       permissions: basePermissions,
     });

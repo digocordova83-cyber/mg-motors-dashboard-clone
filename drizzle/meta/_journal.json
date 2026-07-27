@@ -71,20 +71,6 @@
       "when": 1784752558756,
       "tag": "0009_polite_domino",
       "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "5",
-      "when": 1784907477698,
-      "tag": "0010_awesome_triton",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "5",
-      "when": 1784911604583,
-      "tag": "0011_thankful_rachel_grey",
-      "breakpoints": true
     }
   ]
 }

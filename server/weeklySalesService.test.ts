@@ -4,31 +4,21 @@ import {
   buildCumulativeWeeklyLeadCounts,
   calculateWeeklySalesEfficiency,
   getWeeklyLeadCutoffDates,
-  selectWeeklySalesReference,
 } from "./weeklySalesService";
 
 describe("Leads acumulados por semana", () => {
-  it("define os cortes acumulados W1–W5, com W4 no dia 28 e W5 no fim do período", () => {
+  it("define os cortes nos dias 7, 14, 21 e D-1 da competência", () => {
     expect(getWeeklyLeadCutoffDates("2026-07", "2026-07-22")).toEqual({
       "1": "2026-07-07",
       "2": "2026-07-14",
       "3": "2026-07-21",
       "4": "2026-07-22",
-      "5": "2026-07-22",
     });
     expect(getWeeklyLeadCutoffDates("2026-07", "2026-07-05")).toEqual({
       "1": "2026-07-05",
       "2": "2026-07-05",
       "3": "2026-07-05",
       "4": "2026-07-05",
-      "5": "2026-07-05",
-    });
-    expect(getWeeklyLeadCutoffDates("2026-07", "2026-07-31")).toEqual({
-      "1": "2026-07-07",
-      "2": "2026-07-14",
-      "3": "2026-07-21",
-      "4": "2026-07-28",
-      "5": "2026-07-31",
     });
   });
 
@@ -50,35 +40,15 @@ describe("Leads acumulados por semana", () => {
         "2": "2026-07-14",
         "3": "2026-07-21",
         "4": "2026-07-22",
-        "5": "2026-07-22",
       },
     );
 
     expect(result.size).toBe(1);
-    expect([...result.values()][0]).toEqual({
-      "1": 2,
-      "2": 5,
-      "3": 10,
-      "4": 17,
-      "5": 17,
-    });
+    expect([...result.values()][0]).toEqual({ "1": 2, "2": 5, "3": 10, "4": 17 });
   });
 });
 
 describe("eficiência semanal de vendas", () => {
-  it("seleciona Leads e vendas da última semana preenchida informada pelo lote", () => {
-    const weeks = {
-      "1": { target: 2, retail: 1, achievementPercent: 50, leads: 10 },
-      "2": { target: 4, retail: 2, achievementPercent: 50, leads: 20 },
-      "3": { target: 6, retail: 3, achievementPercent: 50, leads: 30 },
-      "4": { target: 8, retail: 4, achievementPercent: 50, leads: 40 },
-      "5": { target: 10, retail: 5, achievementPercent: 50, leads: 50 },
-    };
-
-    expect(selectWeeklySalesReference(weeks, 5)).toEqual({ leads: 50, sales: 5 });
-    expect(selectWeeklySalesReference(weeks, 3)).toEqual({ leads: 30, sales: 3 });
-  });
-
   it("calcula conversão, leads por venda e arredondamento da necessidade", () => {
     expect(calculateWeeklySalesEfficiency(101, 4)).toEqual({
       conversionRatePercent: 3.96,

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  CsvDuplicateChannelBreakdown,
   CsvImportFeedback,
   CsvPreviewSummary,
   DealerAudit,
@@ -16,7 +17,6 @@ import {
   invalidateLeadImportCaches,
   LeadsLoading,
   resolveCsvImportPhase,
-  resolveLeadsActionVisibility,
 } from "./LeadsTab";
 
 describe("interface de Leads", () => {
@@ -88,7 +88,7 @@ describe("interface de Leads", () => {
     expect(source).toContain("weeklySalesMetrics: () => utils.leads.weeklySalesMetrics.invalidate()");
   });
 
-  it("exibe no topo os três indicadores solicitados sem cards auxiliares", () => {
+  it("exibe no topo os quatro indicadores restantes sem Canal principal ou Canais ativos", () => {
     const summary = {
       totalLeads: 8080,
       dailyAverage: 384.76,
@@ -111,9 +111,9 @@ describe("interface de Leads", () => {
     );
 
     expect(dealerSummary.assignedLeads + dealerSummary.unavailableLeads).toBe(summary.totalLeads);
-    expect(html).toContain("md:grid-cols-3");
+    expect(html).toContain("lg:grid-cols-4");
     expect(html).toContain("Total de Leads nas concessionárias");
-    expect(html).toContain("Leads em qualificação / sem cobertura de PDV");
+    expect(html).toContain("Leads em qualificação");
     expect(html.indexOf("Total de Leads nas concessionárias")).toBeLessThan(html.indexOf("Leads em qualificação"));
     expect(html).toContain("7.041");
     expect(html).toContain("1.039");
@@ -122,7 +122,6 @@ describe("interface de Leads", () => {
     expect(html).not.toContain("1.039 em qualificação");
     expect(html).not.toContain("Canal principal");
     expect(html).not.toContain("Canais ativos");
-    expect(html).not.toContain("Média diária");
   });
 
   it("mantém o novo card integralmente em inglês para o locale en-US do usuário mgmotor", () => {
@@ -148,7 +147,7 @@ describe("interface de Leads", () => {
     );
 
     expect(html).toContain("Total Leads in dealerships");
-    expect(html).toContain("Leads in qualification / no POS coverage");
+    expect(html).toContain("Leads in qualification");
     expect(html).toContain("7,041");
     expect(html).toContain("1,039");
     expect(html).toContain("87.14% of total");
@@ -157,7 +156,6 @@ describe("interface de Leads", () => {
     expect(html).not.toContain("do total");
     expect(html).not.toContain("Top channel");
     expect(html).not.toContain("Active channels");
-    expect(html).not.toContain("Daily average");
   });
 
   it("formata o total reconciliado exibido acima de cada barra diária", () => {
@@ -183,19 +181,6 @@ describe("interface de Leads", () => {
     expect(en).toContain("Export database");
     expect(pending).toContain("Gerando Excel...");
     expect(pending).toContain("disabled");
-  });
-
-  it("oculta todas as ações mutáveis no modo somente leitura de mgsales", () => {
-    expect(resolveLeadsActionVisibility({ readOnly: true, canImportLeads: true })).toEqual({
-      canExport: false,
-      canImport: false,
-      canEditGoal: false,
-    });
-    expect(resolveLeadsActionVisibility({ readOnly: false, canImportLeads: false })).toEqual({
-      canExport: true,
-      canImport: false,
-      canEditGoal: true,
-    });
   });
 
   it("identifica o período filtrado pelo campo Data Corrigida", () => {
@@ -260,15 +245,53 @@ describe("interface de Leads", () => {
   });
 
   it("expõe progresso e resultados do fluxo CSV sem depender de persistência", () => {
+    const result = {
+      fileName: "leads-julho.csv",
+      fileHash: "abc123",
+      fileSizeBytes: 4096,
+      rowsTotal: 100,
+      validRows: 98,
+      invalidRows: 2,
+      fallbackDateUsed: "2026-07-20",
+      fallbackDateCount: 2,
+      uniqueValidRows: 95,
+      duplicateRowsWithinFile: 3,
+      duplicateRowsByChannel: [
+        { channel: "META", withinFile: 2, alreadyStored: 1, total: 3 },
+        { channel: "SITE", withinFile: 1, alreadyStored: 2, total: 3 },
+      ],
+      rowsAlreadyStored: 3,
+      rowsReadyToInsert: 92,
+      dateFrom: "2026-07-01",
+      dateTo: "2026-07-20",
+      channels: [],
+      models: [],
+      regions: [],
+      errors: [],
+      alreadyImported: false,
+      existingImport: null,
+      importId: 7,
+      status: "COMPLETED" as const,
+      rowsInserted: 92,
+      rowsSkipped: 6,
+      rowsInvalid: 2,
+      idempotent: false,
+      fileUrl: "https://storage.example/leads-julho.csv",
+      importedAt: 1_700_000_000_000,
+    };
     const previewing = renderToStaticMarkup(<CsvImportFeedback isPreviewing isImporting={false} success={null} error={null} />);
     const importing = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting success={null} error={null} />);
-    const success = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success="Arquivo já processado: nenhuma linha foi inserida novamente." error={null} />);
+    const success = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success="92 linhas de Leads inseridas com sucesso." result={result} error={null} />);
     const failure = renderToStaticMarkup(<CsvImportFeedback isPreviewing={false} isImporting={false} success={null} error="Arquivo inválido." />);
 
     expect(previewing).toContain("Pré-validando o arquivo CSV");
     expect(importing).toContain("Importando Leads únicos e descartando duplicidades exatas");
-    expect(success).toContain("Arquivo já processado");
-    expect(success).toContain("nenhuma linha foi inserida novamente");
+    expect(success).toContain("92 linhas de Leads inseridas com sucesso");
+    expect(success).toContain("Duplicações por canal");
+    expect(success).toContain("No CSV");
+    expect(success).toContain("Já na base");
+    expect(success).toContain("META");
+    expect(success).toContain("SITE");
     expect(failure).toContain("Arquivo inválido");
   });
 
@@ -282,8 +305,12 @@ describe("interface de Leads", () => {
       invalidRows: 2,
       uniqueValidRows: 95,
       duplicateRowsWithinFile: 3,
-      rowsAlreadyStored: 0,
-      rowsReadyToInsert: 95,
+      duplicateRowsByChannel: [
+        { channel: "META", withinFile: 2, alreadyStored: 1, total: 3 },
+        { channel: "SITE", withinFile: 1, alreadyStored: 2, total: 3 },
+      ],
+      rowsAlreadyStored: 3,
+      rowsReadyToInsert: 92,
       dateFrom: "2026-07-01",
       dateTo: "2026-07-20",
       fallbackDateUsed: "2026-07-20",
@@ -304,7 +331,12 @@ describe("interface de Leads", () => {
     expect(html).toContain("Linhas válidas");
     expect(html).toContain("98");
     expect(html).toContain("Duplicadas (descartadas)");
-    expect(html).toContain("3");
+    expect(html).toContain("6");
+    expect(html).toContain("Duplicações por canal");
+    expect(html).toContain("No CSV");
+    expect(html).toContain("Já na base");
+    expect(html).toContain("META");
+    expect(html).toContain("SITE");
     expect(html).toContain("Duplicidades exatas serão descartadas automaticamente");
     expect(html).toContain("primeira ocorrência válida");
     expect(html).toContain("Inválidas");
@@ -315,5 +347,18 @@ describe("interface de Leads", () => {
     expect(html).toContain("valor original vazio continuará preservado");
     expect(english).toContain("2 row(s) without Corrected Date");
     expect(english).toContain("original blank value will remain preserved");
+    expect(english).toContain("Duplicates by channel");
+  });
+
+  it("classifica canal não reconhecido sem ocultar duplicações", () => {
+    const html = renderToStaticMarkup(
+      <CsvDuplicateChannelBreakdown
+        items={[{ channel: "INDISPONIVEL", withinFile: 1, alreadyStored: 2, total: 3 }]}
+      />,
+    );
+
+    expect(html).toContain("Duplicações por canal");
+    expect(html).toContain("Indisponível");
+    expect(html).toContain("3 duplicada(s)");
   });
 });

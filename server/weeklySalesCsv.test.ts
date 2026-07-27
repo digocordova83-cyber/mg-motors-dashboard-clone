@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseWeeklySalesCsv, type WeeklySalesWeek } from "./weeklySalesCsv";
+import { parseWeeklySalesCsv } from "./weeklySalesCsv";
 
 const HEADER = [
   "REGION",
@@ -21,25 +21,26 @@ const HEADER = [
   "%W5",
 ].join(",");
 
-const TARGETS = [10, 20, 30, 40, 50];
-const RETAILS = [2, 6, 9, 12, 15];
-
-function row(name: string, retails: Array<number | null>) {
+function row(name: string, week4Retail: number | null, week4Target = 40) {
+  const achievement = week4Retail === null ? "" : `${(week4Retail / week4Target) * 100}%`;
   return [
     name,
-    ...TARGETS.flatMap((target, index) => {
-      const retail = retails[index] ?? null;
-      return [
-        String(target),
-        retail === null ? "" : String(retail),
-        retail === null ? "" : `${(retail / target) * 100}%`,
-      ];
-    }),
+    "10",
+    "2",
+    "20%",
+    "20",
+    "6",
+    "30%",
+    "30",
+    "9",
+    "30%",
+    String(week4Target),
+    week4Retail === null ? "" : String(week4Retail),
+    achievement,
+    "",
+    "",
+    "",
   ].join(",");
-}
-
-function retailsThrough(referenceWeek: WeeklySalesWeek) {
-  return RETAILS.map((retail, index) => (index + 1 <= referenceWeek ? retail : null));
 }
 
 function csv(...rows: string[]) {
@@ -47,104 +48,48 @@ function csv(...rows: string[]) {
 }
 
 describe("Weekly Target Achievement CSV", () => {
-  it.each([1, 2, 3, 4, 5] as WeeklySalesWeek[])(
-    "usa a Semana %s como referência quando ela é a última com Retail no TOTAL",
-    referenceWeek => {
-      const weeklyRetail = retailsThrough(referenceWeek);
-      const preview = parseWeeklySalesCsv(
-        csv(
-          row("BALTIC BARUERI", weeklyRetail),
-          row("R1", weeklyRetail),
-          row("TOTAL", weeklyRetail),
-        ),
-      );
-
-      expect(preview.errors).toEqual([]);
-      expect(preview.summary).toMatchObject({
-        dealerRows: 1,
-        regionRows: 1,
-        totalRows: 1,
-        referenceWeek,
-        dealersWithoutReferenceSales: 0,
-        referenceDealerSalesTotal: RETAILS[referenceWeek - 1],
-        referenceRegionSalesTotal: RETAILS[referenceWeek - 1],
-        referenceReportedSalesTotal: RETAILS[referenceWeek - 1],
-        reconciliationPassed: true,
-      });
-      expect(preview.rows[0]).toMatchObject({
-        sourceName: "BALTIC BARUERI",
-        rowType: "DEALER",
-        canonicalDealer: "Baltic Shopping Tamboré",
-        explicitMapping: true,
-      });
-      for (let week = referenceWeek + 1; week <= 5; week += 1) {
-        expect(preview.rows[0]?.weeks[String(week)]).toMatchObject({
-          target: TARGETS[week - 1],
-          retail: null,
-          achievementPercent: null,
-        });
-      }
-    },
-  );
-
-  it("mantém venda ausente como null e avisa na semana de referência sem dividir por zero", () => {
+  it("reconcilia a Semana 4 e aplica o de/para confirmado", () => {
     const preview = parseWeeklySalesCsv(
-      csv(
-        row("HG ARACAJU", [2, 6, 9, null, null]),
-        row("R1", [2, 6, 9, 0, null]),
-        row("TOTAL", [2, 6, 9, 0, null]),
-      ),
+      csv(row("BALTIC BARUERI", 12), row("R1", 12), row("TOTAL", 12)),
     );
 
     expect(preview.errors).toEqual([]);
-    expect(preview.summary.referenceWeek).toBe(4);
-    expect(preview.summary.dealersWithoutReferenceSales).toBe(1);
+    expect(preview.summary).toMatchObject({
+      dealerRows: 1,
+      regionRows: 1,
+      totalRows: 1,
+      week4DealerSalesTotal: 12,
+      week4RegionSalesTotal: 12,
+      week4ReportedSalesTotal: 12,
+      reconciliationPassed: true,
+    });
+    expect(preview.rows[0]).toMatchObject({
+      sourceName: "BALTIC BARUERI",
+      rowType: "DEALER",
+      canonicalDealer: "Baltic Shopping Tamboré",
+      explicitMapping: true,
+    });
+  });
+
+  it("mantém venda ausente como null e emite aviso sem dividir por zero", () => {
+    const preview = parseWeeklySalesCsv(
+      csv(row("HG ARACAJU", null), row("R1", 0), row("TOTAL", 0)),
+    );
+
+    expect(preview.errors).toEqual([]);
     expect(preview.summary.dealersWithoutWeek4Sales).toBe(1);
     expect(preview.rows[0]?.weeks["4"]?.retail).toBeNull();
     expect(preview.warnings).toContain("HG ARACAJU: Semana 4 sem vendas informadas.");
   });
 
-  it("rejeita arquivo cujo total da última semana preenchida não reconcilia", () => {
+  it("rejeita arquivo cujo total da Semana 4 não reconcilia", () => {
     const preview = parseWeeklySalesCsv(
-      csv(
-        row("BALTIC BARUERI", [2, 6, 9, 12, 15]),
-        row("R1", [2, 6, 9, 12, 15]),
-        row("TOTAL", [2, 6, 9, 12, 16]),
-      ),
+      csv(row("BALTIC BARUERI", 12), row("R1", 12), row("TOTAL", 13)),
     );
 
-    expect(preview.summary.referenceWeek).toBe(5);
     expect(preview.summary.reconciliationPassed).toBe(false);
     expect(preview.errors).toContain(
-      "A soma das vendas da Semana 5 não reconcilia entre concessionárias, regiões e TOTAL.",
-    );
-  });
-
-  it("rejeita semana parcial quando dealers têm Retail e o TOTAL está vazio", () => {
-    const preview = parseWeeklySalesCsv(
-      csv(
-        row("BALTIC BARUERI", [2, 6, 9, 12, 1]),
-        row("R1", [2, 6, 9, 12, 1]),
-        row("TOTAL", [2, 6, 9, 12, null]),
-      ),
-    );
-
-    expect(preview.summary.referenceWeek).toBe(4);
-    expect(preview.errors).toContain(
-      "A Semana 5 possui vendas em concessionárias ou regiões, mas o Retail do TOTAL está vazio.",
-    );
-  });
-
-  it("rejeita arquivo sem nenhum Retail preenchido no TOTAL", () => {
-    const emptyRetail = [null, null, null, null, null];
-    const preview = parseWeeklySalesCsv(
-      csv(row("BALTIC BARUERI", emptyRetail), row("R1", emptyRetail), row("TOTAL", emptyRetail)),
-    );
-
-    expect(preview.summary.referenceWeek).toBeNull();
-    expect(preview.summary.reconciliationPassed).toBe(false);
-    expect(preview.errors).toContain(
-      "A linha TOTAL não possui vendas Retail preenchidas em nenhuma semana.",
+      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
     );
   });
 

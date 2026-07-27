@@ -115,6 +115,7 @@ describe("parseLeadCsv", () => {
     expect(result.validRows).toBe(3);
     expect(result.uniqueValidRows).toBe(2);
     expect(result.duplicateRowsWithinFile).toBe(1);
+    expect(result.duplicateRowsByChannel).toEqual([{ value: "Site", count: 1 }]);
     expect(result.records.map(record => record.dealerName)).toEqual(["Dealer A", "Dealer B"]);
     expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 2);
     expect(result.records.every(record => record.recordHash === record.contentHash)).toBe(true);
@@ -130,6 +131,8 @@ describe("parseLeadCsv", () => {
     expect(result.invalidRows).toBe(0);
     expect(result.uniqueValidRows).toBe(1);
     expect(result.duplicateRowsWithinFile).toBe(99);
+    expect(result.duplicateRowsByChannel).toEqual([{ value: "Site", count: 99 }]);
+    expect(result.rowsTotal).toBe(result.uniqueValidRows + result.duplicateRowsWithinFile + result.invalidRows);
     expect(result.records).toHaveLength(1);
     expect(new Set(result.records.map(record => record.recordHash))).toHaveProperty("size", 1);
     expect(new Set(result.records.map(record => record.contentHash))).toHaveProperty("size", 1);

@@ -25,13 +25,6 @@ type HistoryData = RouterOutputs["dashboard"]["optimizationHistory"];
 type HistoryRow = HistoryData["rows"][number];
 type ResultFilter = "ALL" | HistoryRow["result"];
 type StatusFilter = "ALL" | HistoryRow["taskStatus"];
-type NegativeKeywordRow = RouterOutputs["dashboard"]["negativeKeywordHistory"][number];
-
-const MATCH_TYPE_LABELS: Record<NegativeKeywordRow["matchType"], string> = {
-  BROAD: "Ampla",
-  PHRASE: "Frase",
-  EXACT: "Exata",
-};
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const NUMBER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
@@ -163,18 +156,6 @@ export function OptimizationHistoryTab({ dateFrom, dateTo }: { dateFrom: string;
   const history = trpc.dashboard.optimizationHistory.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
-  const [negativeSearch, setNegativeSearch] = useState("");
-  const [negativeDateFrom, setNegativeDateFrom] = useState(dateFrom);
-  const [negativeDateTo, setNegativeDateTo] = useState(dateTo);
-  const negativeHistoryInput = useMemo(() => ({
-    search: negativeSearch.trim() || undefined,
-    dateFrom: negativeDateFrom || undefined,
-    dateTo: negativeDateTo || undefined,
-    limit: 500,
-  }), [negativeDateFrom, negativeDateTo, negativeSearch]);
-  const negativeHistory = trpc.dashboard.negativeKeywordHistory.useQuery(negativeHistoryInput, {
-    refetchOnWindowFocus: false,
-  });
   const captureFollowUps = trpc.dashboard.captureOptimizationFollowUps.useMutation({
     onSuccess: () => utils.dashboard.optimizationHistory.invalidate(),
   });
@@ -219,12 +200,6 @@ export function OptimizationHistoryTab({ dateFrom, dateTo }: { dateFrom: string;
     setActionType("ALL");
     setCampaignSearch("");
     setUserSearch("");
-  }
-
-  function clearNegativeFilters() {
-    setNegativeSearch("");
-    setNegativeDateFrom(dateFrom);
-    setNegativeDateTo(dateTo);
   }
 
   if (history.isLoading) {
@@ -351,63 +326,6 @@ export function OptimizationHistoryTab({ dateFrom, dateTo }: { dateFrom: string;
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="overflow-hidden rounded-xl border border-violet-500/15 bg-[#0d1421]">
-        <div className="flex flex-col gap-3 border-b border-[#1b2535] p-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-300">
-              <History className="h-3.5 w-3.5" /> Histórico de palavras-chave negativas
-            </div>
-            <h2 className="mt-1 text-sm font-semibold text-white">Negativas efetivamente aplicadas</h2>
-            <p className="mt-1 max-w-3xl text-[10px] leading-5 text-slate-500">O registro é criado na conclusão da tarefa. Não é necessário gerar um relatório manual separado.</p>
-          </div>
-          <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto xl:grid-cols-[minmax(240px,1fr)_145px_145px_auto]">
-            <label className="relative block">
-              <Search className="pointer-events-none absolute bottom-2.5 left-3 h-3.5 w-3.5 text-slate-600" />
-              <span className="text-[9px] font-medium text-slate-600">Termo, campanha ou responsável</span>
-              <Input value={negativeSearch} onChange={event => setNegativeSearch(event.target.value)} placeholder="Buscar no histórico..." className="mt-1 h-9 border-[#273247] bg-[#101827] pl-9 text-[10px] text-white placeholder:text-slate-700" />
-            </label>
-            <label className="text-[9px] font-medium text-slate-600">De
-              <Input type="date" value={negativeDateFrom} onChange={event => setNegativeDateFrom(event.target.value)} className="mt-1 h-9 border-[#273247] bg-[#101827] text-[10px] text-slate-300" />
-            </label>
-            <label className="text-[9px] font-medium text-slate-600">Até
-              <Input type="date" value={negativeDateTo} onChange={event => setNegativeDateTo(event.target.value)} className="mt-1 h-9 border-[#273247] bg-[#101827] text-[10px] text-slate-300" />
-            </label>
-            <Button type="button" size="sm" variant="outline" onClick={clearNegativeFilters} className="h-9 self-end border-[#2b374b] bg-[#111a29] text-[10px] text-slate-400 hover:bg-[#182338] hover:text-white">Limpar</Button>
-          </div>
-        </div>
-        {negativeHistory.isLoading ? (
-          <div className="grid min-h-[160px] place-items-center"><Loader2 className="h-5 w-5 animate-spin text-violet-300" /></div>
-        ) : negativeHistory.error ? (
-          <div className="border-b border-red-500/15 bg-red-500/[0.04] px-4 py-3 text-[10px] text-red-300">{negativeHistory.error.message}</div>
-        ) : negativeHistory.data?.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-[10px]">
-              <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[8px] uppercase tracking-[0.12em] text-slate-600">
-                <tr><th className="px-4 py-3">Termo</th><th className="px-3 py-3">Campanha</th><th className="px-3 py-3">Conta</th><th className="px-3 py-3">Data</th><th className="px-3 py-3">Origem</th><th className="px-4 py-3">Responsável</th></tr>
-              </thead>
-              <tbody className="divide-y divide-[#182231]">
-                {negativeHistory.data.map(item => {
-                  const formattedTerm = item.matchType === "EXACT" ? `[${item.term}]` : item.matchType === "PHRASE" ? `“${item.term}”` : item.term;
-                  return (
-                    <tr key={item.id} className="hover:bg-white/[0.02]">
-                      <td className="px-4 py-3"><p className="max-w-[280px] break-words font-mono text-[10px] font-semibold text-violet-200">{formattedTerm}</p><span className="mt-1 inline-block rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[8px] text-violet-300">{MATCH_TYPE_LABELS[item.matchType]}</span></td>
-                      <td className="px-3 py-3"><CampaignIdentity name={item.campaignName} campaignId={item.campaignId} nameClassName="max-w-[260px] text-[10px] font-medium text-slate-300" idClassName="mt-0.5" /></td>
-                      <td className="px-3 py-3 font-mono text-[9px] text-slate-600">{item.accountId}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-slate-400">{formatDateTime(item.appliedAt)}</td>
-                      <td className="px-3 py-3 text-slate-400">{item.origin === "TASK_COMPLETION" ? `Conclusão da tarefa #${item.taskId}` : "Registro manual"}</td>
-                      <td className="px-4 py-3 text-slate-300">{item.appliedBy}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="grid min-h-[160px] place-items-center p-6 text-center"><div><Search className="mx-auto h-6 w-6 text-slate-700" /><h3 className="mt-3 text-xs font-semibold text-white">Nenhuma negativa neste filtro</h3><p className="mt-1 text-[10px] text-slate-600">Conclua uma tarefa registrando os termos aplicados ou ajuste o período e a busca.</p></div></div>
-        )}
-        <div className="border-t border-[#1b2535] px-4 py-2 text-[9px] text-slate-700">{negativeHistory.data?.length ?? 0} registro(s) encontrado(s), limitados aos 500 mais recentes.</div>
       </section>
 
       <section className="overflow-hidden rounded-xl border border-[#1e293b] bg-[#0d1421]">
