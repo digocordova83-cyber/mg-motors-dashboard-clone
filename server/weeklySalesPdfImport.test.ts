@@ -104,7 +104,7 @@ describe("importação semanal por PDF", () => {
     storagePutMock.mockReset();
   });
 
-  it("grava o PDF uma vez e retorna o mesmo lote sem reenviar nem duplicar linhas", async () => {
+  it("preserva o PDF 260731 em julho mesmo quando enviado na tela de agosto e evita duplicidade", async () => {
     const bytes = Buffer.from("%PDF-1.7\nweekly retail", "utf8");
     const processingImport = { id: 77, status: "PROCESSING" as const };
     const completedImport = {
@@ -152,16 +152,16 @@ describe("importação semanal por PDF", () => {
     });
 
     const first = await importWeeklySalesCsv({
-      fileName: "Daily Sales Planning Report.PDF",
+      fileName: "260731_Daily Sales Planning Report.PDF",
       bytes,
-      competence: "2026-07",
+      competence: "2026-08",
       actor: "admin@mgmotors.com.br",
       expectedFileHash: parsedPdf.fileHash,
     });
     const repeated = await importWeeklySalesCsv({
-      fileName: "Daily Sales Planning Report.PDF",
+      fileName: "260731_Daily Sales Planning Report.PDF",
       bytes,
-      competence: "2026-07",
+      competence: "2026-08",
       actor: "admin@mgmotors.com.br",
       expectedFileHash: parsedPdf.fileHash,
     });
@@ -172,7 +172,8 @@ describe("importação semanal por PDF", () => {
         status: "COMPLETED",
         idempotent: false,
         rowsInserted: 3,
-        fileName: "Daily_Sales_Planning_Report.PDF",
+        fileName: "260731_Daily_Sales_Planning_Report.PDF",
+        competence: "2026-07",
       }),
     );
     expect(repeated).toEqual(
@@ -185,8 +186,12 @@ describe("importação semanal por PDF", () => {
     );
     expect(recordValues).toHaveBeenCalledOnce();
     expect(recordValues.mock.calls[0]?.[0]).toHaveLength(3);
+    expect(recordValues.mock.calls[0]?.[0]).toEqual(
+      expect.arrayContaining([expect.objectContaining({ competence: "2026-07" })]),
+    );
     expect(importValues).toHaveBeenCalledWith(
       expect.objectContaining({
+        competence: "2026-07",
         referenceWeek: 5,
         referenceDealerSalesTotal: 2,
         referenceRegionSalesTotal: 2,
@@ -197,6 +202,11 @@ describe("importação semanal por PDF", () => {
       expect.objectContaining({ status: "COMPLETED", rowsInserted: 3 }),
     );
     expect(storagePutMock).toHaveBeenCalledOnce();
+    expect(storagePutMock).toHaveBeenCalledWith(
+      "weekly-sales/2026-07/pdf-retail-h/260731_Daily_Sales_Planning_Report.PDF",
+      bytes,
+      "application/pdf",
+    );
     expect(transaction).toHaveBeenCalledOnce();
     expect(parseWeeklySalesPdfMock).toHaveBeenCalledTimes(2);
   });

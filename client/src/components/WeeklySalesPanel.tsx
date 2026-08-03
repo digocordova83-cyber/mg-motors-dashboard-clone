@@ -826,7 +826,7 @@ export function WeeklySalesPanel({
       setPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await Promise.all([
-        utils.leads.weeklySalesMetrics.invalidate({ competence }),
+        utils.leads.weeklySalesMetrics.invalidate(),
         utils.leads.weeklySalesImportHistory.invalidate(),
       ]);
     },

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { decodeWeeklySalesBase64, describeWeeklySalesFile } from "./weeklySalesUpload";
+import {
+  decodeWeeklySalesBase64,
+  describeWeeklySalesFile,
+  inferWeeklySalesReportDate,
+  resolveWeeklySalesCompetence,
+} from "./weeklySalesUpload";
 
 const PDF_BYTES = Buffer.from("%PDF-1.7\nretail-table");
 const CSV_BYTES = Buffer.from("Dealer;W1 TGT;W1 Retail\nDealer A;10;8\n", "utf8");
@@ -36,6 +41,35 @@ describe("upload de vendas semanais CSV/PDF", () => {
       kind: "PDF",
       contentType: "application/pdf",
     });
+  });
+
+  it("classifica o relatório fechado em 31/07 como histórico de julho mesmo na tela de agosto", () => {
+    expect(inferWeeklySalesReportDate("260731_Daily_Sales_Planning_Report.pdf")).toBe(
+      "2026-07-31",
+    );
+    expect(
+      resolveWeeklySalesCompetence(
+        "260731_Daily_Sales_Planning_Report.pdf",
+        "2026-08",
+      ),
+    ).toBe("2026-07");
+  });
+
+  it.each([
+    "260801_Daily_Sales_Planning_Report.pdf",
+    "260815_Daily_Sales_Planning_Report.pdf",
+    "20260831_Daily_Sales_Planning_Report.pdf",
+  ])("classifica os próximos relatórios datados como agosto: %s", fileName => {
+    expect(resolveWeeklySalesCompetence(fileName, "2026-07")).toBe("2026-08");
+  });
+
+  it("mantém a competência da tela quando o arquivo não possui uma data válida", () => {
+    expect(resolveWeeklySalesCompetence("Daily_Sales_Planning_Report.pdf", "2026-08")).toBe(
+      "2026-08",
+    );
+    expect(resolveWeeklySalesCompetence("260231_Daily_Sales_Planning_Report.pdf", "2026-08")).toBe(
+      "2026-08",
+    );
   });
 
   it("aceita MIME genérico quando extensão e assinatura PDF são coerentes", () => {

@@ -19,7 +19,11 @@ import {
   type WeeklySalesWeekMetrics,
 } from "./weeklySalesCsv";
 import { parseWeeklySalesPdf } from "./weeklySalesPdf";
-import { describeWeeklySalesFile, type WeeklySalesFileDescriptor } from "./weeklySalesUpload";
+import {
+  describeWeeklySalesFile,
+  resolveWeeklySalesCompetence,
+  type WeeklySalesFileDescriptor,
+} from "./weeklySalesUpload";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_HISTORY_LIMIT = 100;
@@ -337,12 +341,14 @@ export async function previewWeeklySalesCsv(input: {
   });
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
+  const competence = resolveWeeklySalesCompetence(file.fileName, input.competence);
+  assertCompetence(competence);
   const [parsed, knownDealerKeys] = await Promise.all([
     parseWeeklySalesFile(input.bytes, file.kind),
     getKnownDealerKeys(),
   ]);
   const rows = enrichRows(parsed, knownDealerKeys);
-  return buildPreview({ fileName: file.fileName, competence: input.competence, parsed, rows });
+  return buildPreview({ fileName: file.fileName, competence, parsed, rows });
 }
 
 async function findImportByIdentity(fileHash: string, competence: string): Promise<WeeklySalesImport | null> {
@@ -450,6 +456,8 @@ export async function importWeeklySalesCsv(input: {
   const fileName = file.fileName;
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
+  const competence = resolveWeeklySalesCompetence(fileName, input.competence);
+  assertCompetence(competence);
 
   const [parsed, knownDealerKeys] = await Promise.all([
     parseWeeklySalesFile(input.bytes, file.kind),
@@ -459,14 +467,14 @@ export async function importWeeklySalesCsv(input: {
     throw new Error("O arquivo mudou após a prévia. Gere uma nova prévia antes de confirmar.");
   }
   const rows = enrichRows(parsed, knownDealerKeys);
-  const preview = buildPreview({ fileName, competence: input.competence, parsed, rows });
+  const preview = buildPreview({ fileName, competence, parsed, rows });
   if (!preview.valid) {
     throw new Error(
       preview.errors[0] ?? "O arquivo de vendas não passou na reconciliação da semana de referência.",
     );
   }
 
-  const existing = await findImportByIdentity(parsed.fileHash, input.competence);
+  const existing = await findImportByIdentity(parsed.fileHash, competence);
   if (existing?.status === "COMPLETED") {
     return {
       ...preview,
@@ -482,7 +490,7 @@ export async function importWeeklySalesCsv(input: {
   const importId = await createOrResetImport({
     fileName,
     bytes: input.bytes,
-    competence: input.competence,
+    competence,
     actor,
     parsed,
     preview,
@@ -491,7 +499,7 @@ export async function importWeeklySalesCsv(input: {
 
   try {
     const stored = await storagePut(
-      `weekly-sales/${input.competence}/${parsed.fileHash.slice(0, 12)}/${fileName}`,
+      `weekly-sales/${competence}/${parsed.fileHash.slice(0, 12)}/${fileName}`,
       input.bytes,
       file.contentType,
     );
@@ -505,7 +513,7 @@ export async function importWeeklySalesCsv(input: {
         await tx.insert(weeklySalesRecords).values(
           rowsChunk.map(row => ({
             importId,
-            competence: input.competence,
+            competence,
             sourceRowNumber: row.sourceRowNumber,
             rowType: row.rowType,
             sourceName: row.sourceName,

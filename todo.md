@@ -1083,3 +1083,13 @@
 - [x] Atualizar a meta mensal de investimento do Google Ads para R$ 412.800
 - [x] Validar pacing, percentuais, projeções e formatação monetária após a alteração
 - [x] Executar testes automatizados e conferir visualmente o dashboard atualizado
+
+## Histórico de vendas de julho e regra de agosto — 03/08/2026
+
+- [x] Auditar o último arquivo/lote de vendas e a competência atualmente atribuída
+- [x] Preservar o arquivo enviado em 03/08/2026 como histórico de julho/2026 com fechamento em 31/07
+- [x] Corrigir os registros e indicadores que exibem esse lote incorretamente como agosto
+- [x] Implementar regra determinística para classificar os próximos arquivos de vendas como agosto/2026
+- [x] Garantir que consultas por julho e agosto usem os respectivos históricos sem sobrescrita
+- [x] Adicionar testes de regressão para competência, histórico e novos uploads
+- [x] Validar banco, interface, tipagem e testes antes do checkpoint

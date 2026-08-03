@@ -36,6 +36,34 @@ function sanitizeFileName(fileName: string): string {
     .slice(0, 180);
 }
 
+function isValidUtcDate(year: number, month: number, day: number): boolean {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+export function inferWeeklySalesReportDate(fileName: string): string | null {
+  const sanitized = sanitizeFileName(fileName);
+  const match = sanitized.match(
+    /(?:^|[^0-9])(?:(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])|(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01]))(?=[^0-9]|$)/,
+  );
+  if (!match) return null;
+
+  const year = match[1] ? Number(match[1]) : 2000 + Number(match[4]);
+  const month = Number(match[2] ?? match[5]);
+  const day = Number(match[3] ?? match[6]);
+  if (!isValidUtcDate(year, month, day)) return null;
+
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+export function resolveWeeklySalesCompetence(fileName: string, fallbackCompetence: string): string {
+  return inferWeeklySalesReportDate(fileName)?.slice(0, 7) ?? fallbackCompetence;
+}
+
 function hasPdfSignature(bytes: Buffer): boolean {
   return bytes.length >= 5 && bytes.subarray(0, 5).toString("ascii") === "%PDF-";
 }
