@@ -941,3 +941,145 @@
 - [x] Cobrir classificação, reconciliação, contrato e interface com Vitest
 - [x] Validar o fluxo autenticado em desktop e mobile com uma fixture determinística
 - [x] Executar suíte completa, TypeScript e build; revisar todo.md e salvar checkpoint consolidado
+
+## Apresentação de resultados para reunião do cliente — Julho de 2026
+
+- [x] Consolidar o recorte D-1 até 27/07/2026 e o período de 27 dias de entrega
+- [x] Extrair o plano de mídia e calcular o orçamento projetado proporcional aos 27 dias
+- [x] Extrair investimento realizado por canal via Windsor.ai
+- [x] Reconciliar Leads da base com os canais de mídia e calcular CPL realizado
+- [x] Comparar projetado versus realizado para UOL, Webmotors e Mercado Livre (MELI)
+- [x] Preparar visão consolidada por canal, incluindo Meta Ads, Google Ads e demais canais disponíveis
+- [x] Preparar quebras de Leads por modelo e concessionária
+- [x] Preparar visão de vendas, conversão e eficiência por concessionária
+- [x] Escrever narrativa executiva e recomendações para aproximadamente 10 slides
+- [x] Gerar apresentação com visual clean, gráficos legíveis e identificação clara do período
+- [x] Validar todas as reconciliações, fontes e arredondamentos antes da entrega
+- [x] Consolidar PMAX, Search, Demand Gen e YouTube em um único canal principal `Google Ads` em todos os comparativos projetado × realizado
+- [x] Tratar `Proxy` como canal não veiculado, com investimento realizado de R$ 0,00 e CPL não aplicável; separar eventuais Leads registrados sem mídia no período
+- [x] Incluir investimento realizado informado de `Publya Display` em R$ 79.717,57 como mídia programática separada
+- [x] Somar investimento realizado informado de `Publya Meta` em R$ 95.698,73 ao canal consolidado `Meta Ads`, mantendo a origem explícita e sem dupla contagem
+- [x] Usar a nomenclatura final `Publya Programática/Display` para o investimento realizado de R$ 79.717,57, sem criar linhas separadas de Programática e Display
+- [x] Usar planejamento acumulado de 27 dias de R$ 94.499,58 para `Publya Programática/Display`
+- [x] Usar planejamento acumulado de 27 dias de R$ 126.300,42 para `Meta Ads`
+
+## Complemento da apresentação — correção de tags Google Ads
+
+- [x] Localizar a data exata e o contexto operacional da correção das tags de conversão
+- [x] Extrair investimento, conversões reportadas e CPA do Google Ads por dia antes e depois da correção
+- [x] Extrair Leads reais da base por dia no mesmo recorte para comparação de mensuração
+- [x] Separar conversões de plataforma de Leads efetivamente registrados, evitando tratar eventos incorretos como demanda real
+- [x] Quantificar o impacto da correção em CPA, volume reportado e aderência entre Google Ads e a base
+- [x] Escrever uma narrativa executiva cronológica sobre problema, correção e efeito observado
+- [x] Adicionar novos slides mantendo o padrão visual aprovado da apresentação
+- [x] Validar números, fontes, arredondamentos e legibilidade da versão ampliada
+
+## Correção da apresentação — CPL planejado da planilha oficial
+
+- [x] Auditar todas as abas, fórmulas e células preenchidas do arquivo `MGBrazil-DigitalMediaPlanJul26(EN)08-07.xlsx`
+- [x] Identificar os valores oficiais de investimento, Leads e CPL planejado por canal
+- [x] Reconciliar a nomenclatura da planilha com Google Ads, Meta Ads, Publya Programática/Display, UOL, Webmotors, Mercado Livre e Proxy
+- [x] Substituir na apresentação qualquer CPL planejado derivado de fonte diferente da planilha oficial
+- [x] Atualizar os deltas de eficiência e as mensagens executivas afetadas
+- [x] Regenerar gráficos ou tabelas que dependam dos CPLs planejados corrigidos
+- [x] Validar os números corrigidos contra as fórmulas e células da planilha
+- [x] Revisar visualmente os slides alterados e entregar a versão final atualizada
+
+## Ajuste final da apresentação — CPLs e encerramento
+
+- [x] Definir CPL planejado de R$ 130,00 para Mercado Livre, UOL e Webmotors
+- [x] Recalcular os deltas de CPL e atualizar todas as ocorrências afetadas
+- [x] Confirmar se o CPL consolidado permanece inalterado ou precisa de nova referência
+- [x] Substituir o slide final de recomendações por um encerramento institucional sem recomendações
+- [x] Preservar o padrão visual aprovado no novo slide final
+- [x] Validar números, textos, ordem e legibilidade da apresentação atualizada
+
+## Ajuste final da apresentação — logotipo MG
+
+- [x] Incorporar o arquivo oficial `logo-mg-horizontal.svg` aos ativos permanentes da apresentação
+- [x] Localizar todos os slides que utilizam o logotipo anterior
+- [x] Substituir e redimensionar o logotipo na capa e no encerramento
+- [x] Validar contraste, proporção e legibilidade do novo logotipo no canvas 16:9
+- [x] Apresentar a versão final com CPLs corrigidos e encerramento sem recomendações
+
+## Plano de mídia digital — Agosto de 2026
+
+- [ ] Auditar abas, dimensões, fórmulas, estilos, validações e células mescladas do modelo de julho
+- [ ] Identificar todas as premissas editáveis de investimento, período, canais, modelos, Leads e CPL
+- [ ] Confirmar orçamento total, período de veiculação, canais e prioridades comerciais de agosto
+- [ ] Replicar a estrutura visual e funcional no arquivo de agosto sem quebrar fórmulas
+- [ ] Atualizar nomenclaturas, datas, títulos e referências de julho para agosto
+- [ ] Distribuir orçamento e projeção de Leads por canal e modelo conforme premissas aprovadas
+- [ ] Preservar fórmulas interligadas para atualização dinâmica dos totais e indicadores
+- [ ] Validar reconciliação de orçamento, percentuais, Leads, CPL e totais por aba
+- [ ] Revisar visualmente o arquivo final e entregar a planilha de agosto com premissas documentadas
+- [ ] Limitar a primeira entrega de agosto ao plano digital de R$ 1.050.000: R$ 850.000 para line-up e R$ 200.000 para MG4 Urban
+- [ ] Remover UOL e Proxy de todas as linhas, totais e projeções de agosto
+- [ ] Incluir TikTok com R$ 30.000 e CPL planejado igual ao Meta Ads
+- [ ] Atualizar CPLs de Google, Meta e Publya Programática/Display conforme o realizado de julho
+- [ ] Manter CPL planejado de R$ 130,00 para Webmotors e Mercado Livre
+- [ ] Classificar Mercado Livre como canal de conversão e projetar Leads diretamente
+- [ ] Ponderar a geração de Leads pelas participações de vendas dos 31 dealers enviados
+- [ ] Ponderar o mix de Leads por modelo: MG4 22,5%, MGS5 15,6%, MG4U 58,5% e Cyberster 3,5%
+- [ ] Normalizar separadamente os percentuais de dealer e modelo devido à diferença entre totais brutos de 548 e 578 vendas
+- [ ] Preservar fórmulas dinâmicas para que alterações de verba ou CPL atualizem Leads, shares e totais automaticamente
+- [ ] Extrair do PDF o preço, as entregas, a vigência e as condições comerciais da Cobertura G do Festival de Interlagos
+- [ ] Incluir a Cobertura G do Festival de Interlagos em uma aba exclusiva no plano de agosto
+- [ ] Rebalancear as demais verbas digitais para absorver integralmente o Festival de Interlagos sem ultrapassar R$ 1.050.000
+- [ ] Vincular o valor da aba do Festival de Interlagos ao resumo e ao orçamento total por fórmula dinâmica
+- [ ] Validar que a inclusão do Festival não altera o teto total nem duplica investimento em outras abas
+- [ ] Extrair do PDF Quatro Rodas as duas opções comerciais e usar os preços específicos para não clientes Abril
+- [ ] Apresentar as duas opções na aba Magazine como alternativas não cumulativas
+- [ ] Relacionar cada opção de Magazine à verba de revista e exibir diferença para o orçamento disponível
+- [ ] Excluir a aba Media Plan - Pay TV do arquivo de agosto
+- [ ] Revisar fórmulas e referências após a remoção da aba Pay TV para evitar vínculos quebrados
+
+## Atualização do deck — pagamentos e digital line-up
+
+- [x] Atualizar o slide de digital line-up com os valores completos da nova tabela fornecida pelo usuário
+- [x] Inserir um slide em inglês com o resumo de pagamentos: Google Ads já pago, veículos/sites pendentes de BRL 378,750.00, agency fee de BRL 64,552.00 e total payable to BBRO de BRL 443,302.00
+- [x] Inserir o segundo slide solicitado em inglês e posicionar os dois novos slides de forma coerente no deck
+- [x] Auditar os novos slides em 1280×720, reconciliar totais e reapresentar o deck atualizado
+
+## Atualização do deck — leads e vendas do dashboard
+
+- [x] Extrair do dashboard recém-atualizado os totais atuais de leads e vendas, com o período efetivo de cobertura
+- [x] Validar a reconciliação por canal, modelo e concessionária sem inventar dados ausentes
+- [x] Recalcular CPL, pacing, participação por modelo, conversão e atingimento de meta com os novos totais
+- [x] Atualizar em inglês todos os slides afetados de resumo, leads, mix, dealers e vendas
+- [x] Renderizar e auditar os slides atualizados em 1280×720 antes de apresentar a nova versão
+
+## Tradução — MG Brasil Marketing Budget 2027 Draft BBRO
+
+- [ ] Extrair e revisar todas as páginas, tabelas, números e observações do PDF original
+- [ ] Traduzir integralmente o conteúdo para inglês com terminologia financeira e de marketing consistente
+- [ ] Recriar o documento traduzido preservando estrutura, tabelas, valores e hierarquia visual
+- [ ] Auditar todas as páginas para eliminar texto em português e verificar paginação e legibilidade
+- [ ] Entregar o PDF final traduzido para inglês
+
+## MKTBUDGET2027 — reestruturação executiva e tática
+
+- [x] Auditar todas as abas, fórmulas, totais, nomes definidos, gráficos e dependências do arquivo MKTBUDGET2027_v1.xlsx
+- [x] Criar uma aba SUMMARY executiva como primeira aba, com orçamento total, mix por canal, phasing, modelos, eventos e principais controles
+- [x] Organizar as visões táticas por modelo e preservar os detalhamentos existentes em ordem lógica após o SUMMARY
+- [x] Incluir CHINA PASSPORT 2027 — Shanghai Auto Show em Eventos com BRL 1.2M
+- [x] Realocar BRL 1.2M de Free-to-Air TV e Pay TV sem alterar o orçamento total e documentar a origem da verba
+- [x] Atualizar fórmulas, percentuais, subtotais, gráficos e referências após a realocação
+- [x] Validar abertura do workbook, ausência de fórmulas quebradas e consistência visual antes da entrega
+
+## MKTBUDGET2027 — correção de formatação mobile e desktop
+
+- [ ] Identificar todos os formatos numéricos personalizados que aparecem como texto ou números brutos no Excel mobile
+- [ ] Substituir formatos monetários por padrões universais compatíveis com Excel iOS, Android, desktop e LibreOffice
+- [ ] Eliminar todas as células `########` ajustando formatos, escalas, larguras e mesclagens
+- [ ] Corrigir cartões executivos, tabelas, ponte de funding e eixos dos gráficos no SUMMARY
+- [ ] Aplicar as mesmas correções de compatibilidade às fichas por modelo, eventos e cenários financeiros
+- [ ] Recalcular o workbook, verificar fórmulas e renderizar todas as abas para validação final
+- [ ] Entregar uma nova versão corrigida do arquivo XLSX
+
+## Atualização da meta mensal — Google Ads
+
+- [x] Localizar a fonte da meta mensal de investimento do Google Ads e todos os indicadores dependentes
+- [x] Atualizar a meta mensal de investimento do Google Ads para R$ 412.800
+- [x] Validar pacing, percentuais, projeções e formatação monetária após a alteração
+- [x] Executar testes automatizados e conferir visualmente o dashboard atualizado

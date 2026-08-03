@@ -104,6 +104,34 @@ describe("pacing mensal", () => {
     expect(pacing?.series[2].real).toBe(200);
     expect(pacing?.series[3].real).toBeNull();
   });
+
+  it("calcula agosto de 2026 com a meta mensal de R$ 412.800", () => {
+    const pacing = buildPacing(
+      [
+        row({ date: "2026-08-01", spend: 10_000 }),
+        row({ date: "2026-08-02", spend: 10_000 }),
+      ],
+      412_800,
+    );
+
+    expect(pacing).toMatchObject({
+      competencia: "2026-08",
+      monthlyGoal: 412_800,
+      invested: 20_000,
+      remaining: 392_800,
+      projected: 310_000,
+      totalDays: 31,
+      closedDays: 2,
+      remainingDays: 29,
+      idealDaily: 13_316.13,
+      idealDailyRemaining: 13_544.83,
+      pacePercent: 75.1,
+      achievedPercent: 4.8,
+      projectedPercent: 75.1,
+    });
+    expect(pacing?.series).toHaveLength(31);
+    expect(pacing?.series.at(-1)?.monthlyGoal).toBe(412_800);
+  });
 });
 
 describe("comparativos diários", () => {
