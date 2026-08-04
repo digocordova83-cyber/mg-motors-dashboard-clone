@@ -1093,3 +1093,40 @@
 - [x] Garantir que consultas por julho e agosto usem os respectivos históricos sem sobrescrita
 - [x] Adicionar testes de regressão para competência, histórico e novos uploads
 - [x] Validar banco, interface, tipagem e testes antes do checkpoint
+
+## Recalculo da meta de Leads para 958 — 03/08/2026
+
+- [x] Auditar todas as abas, fórmulas, estilos e a lógica de distribuição da planilha enviada
+- [x] Identificar o total atual e as proporções usadas em cada dimensão da meta
+- [x] Recalcular a distribuição com números inteiros e soma exata de 958 Leads
+- [x] Atualizar as células de entrada e manter fórmulas, estilos e estrutura do arquivo
+- [x] Validar subtotais, percentuais, arredondamentos e ausência de fórmulas quebradas
+- [x] Conferir visualmente todas as abas e entregar a versão final pronta para o cliente
+
+## Projeção por modelo com MG4 Urban — 03/08/2026
+
+- [x] Auditar abas, modelos, total geral, CPLs, fórmulas e estilos do novo arquivo enviado
+- [x] Identificar a lógica proporcional atual de divisão entre modelos
+- [x] Reservar R$ 14.000 exclusivamente para MG4 Urban sem alterar o total geral
+- [x] Redistribuir proporcionalmente o saldo entre os demais modelos e reconciliar arredondamentos
+- [x] Atualizar a planilha por modelo preservando fórmulas, estilos e estrutura
+- [x] Validar total de verba, total de Leads, subtotais e ausência de fórmulas quebradas
+- [x] Conferir visualmente todas as abas e entregar a versão pronta para o cliente
+
+## Correção de CPL para metas iguais por cidade — 03/08/2026
+
+- [x] Auditar todas as ocorrências em que metas iguais têm investimentos ou CPLs diferentes
+- [x] Padronizar o investimento para metas iguais dentro de cada modelo
+- [x] Garantir CPL idêntico para cidades com a mesma meta de Leads no mesmo modelo
+- [x] Preservar 958 Leads, R$ 114.960 totais e R$ 14.000 exclusivos do MG4 Urban
+- [x] Validar fórmulas, caches, totais por modelo e compatibilidade com o sistema do cliente
+- [x] Conferir visualmente e entregar a nova versão corrigida
+
+## Atualização do fechamento de vendas de julho — relatório 260803
+
+- [x] Auditar o PDF 260803 e confirmar os totais e a estrutura da tabela de vendas
+- [x] Consultar o lote atual de julho e preservar o histórico anterior antes da nova importação
+- [x] Importar o relatório 260803 com competência explícita de julho/2026
+- [x] Garantir que o nome 260803 não altere a regra automática dos próximos uploads de agosto
+- [x] Validar vendas por concessionária, correspondências, conversão e indicadores consolidados de julho
+- [x] Executar testes, conferir a interface e salvar um checkpoint restaurável

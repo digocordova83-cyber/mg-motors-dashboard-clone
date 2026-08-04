@@ -1,4 +1,6 @@
 import { getDashboardCutoffDate, resolveDashboardPeriod } from "@shared/dashboardDates";
+import { createHash } from "node:crypto";
+
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 import {
@@ -21,7 +23,8 @@ import {
 import { parseWeeklySalesPdf } from "./weeklySalesPdf";
 import {
   describeWeeklySalesFile,
-  resolveWeeklySalesCompetence,
+  resolveWeeklySalesCompetenceWithPolicy,
+  type WeeklySalesCompetencePolicy,
   type WeeklySalesFileDescriptor,
 } from "./weeklySalesUpload";
 
@@ -341,7 +344,7 @@ export async function previewWeeklySalesCsv(input: {
   });
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
-  const competence = resolveWeeklySalesCompetence(file.fileName, input.competence);
+  const competence = resolveWeeklySalesCompetenceWithPolicy(file.fileName, input.competence);
   assertCompetence(competence);
   const [parsed, knownDealerKeys] = await Promise.all([
     parseWeeklySalesFile(input.bytes, file.kind),
@@ -445,6 +448,10 @@ export async function importWeeklySalesCsv(input: {
   actor: string;
   expectedFileHash?: string;
   declaredMimeType?: string | null;
+  /** Uso interno: mantém a competência informada mesmo quando o nome contém outra data. */
+  competencePolicy?: WeeklySalesCompetencePolicy;
+  /** Uso interno: prévia reconciliada cujo hash deve ser idêntico ao arquivo original. */
+  parsedOverride?: WeeklySalesCsvPreview;
 }): Promise<WeeklySalesImportResult> {
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
@@ -456,13 +463,21 @@ export async function importWeeklySalesCsv(input: {
   const fileName = file.fileName;
   assertFileSize(input.bytes);
   assertCompetence(input.competence);
-  const competence = resolveWeeklySalesCompetence(fileName, input.competence);
+  const competence = resolveWeeklySalesCompetenceWithPolicy(
+    fileName,
+    input.competence,
+    input.competencePolicy,
+  );
   assertCompetence(competence);
 
-  const [parsed, knownDealerKeys] = await Promise.all([
-    parseWeeklySalesFile(input.bytes, file.kind),
-    getKnownDealerKeys(),
-  ]);
+  const parsed = input.parsedOverride ?? (await parseWeeklySalesFile(input.bytes, file.kind));
+  if (input.parsedOverride) {
+    const actualFileHash = createHash("sha256").update(input.bytes).digest("hex");
+    if (parsed.fileHash !== actualFileHash) {
+      throw new Error("A prévia validada não pertence ao arquivo original informado.");
+    }
+  }
+  const knownDealerKeys = await getKnownDealerKeys();
   if (input.expectedFileHash && input.expectedFileHash !== parsed.fileHash) {
     throw new Error("O arquivo mudou após a prévia. Gere uma nova prévia antes de confirmar.");
   }

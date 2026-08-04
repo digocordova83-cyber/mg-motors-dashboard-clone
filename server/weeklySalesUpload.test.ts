@@ -5,6 +5,7 @@ import {
   describeWeeklySalesFile,
   inferWeeklySalesReportDate,
   resolveWeeklySalesCompetence,
+  resolveWeeklySalesCompetenceWithPolicy,
 } from "./weeklySalesUpload";
 
 const PDF_BYTES = Buffer.from("%PDF-1.7\nretail-table");
@@ -57,10 +58,27 @@ describe("upload de vendas semanais CSV/PDF", () => {
 
   it.each([
     "260801_Daily_Sales_Planning_Report.pdf",
+    "260803_Daily_Sales_Planning_Report.pdf",
     "260815_Daily_Sales_Planning_Report.pdf",
     "20260831_Daily_Sales_Planning_Report.pdf",
   ])("classifica os próximos relatórios datados como agosto: %s", fileName => {
     expect(resolveWeeklySalesCompetence(fileName, "2026-07")).toBe("2026-08");
+  });
+
+  it("mantém o relatório 260803 em julho somente quando a política interna é explícita", () => {
+    expect(
+      resolveWeeklySalesCompetenceWithPolicy(
+        "260803_Daily_Sales_Planning_Report.pdf",
+        "2026-07",
+        "EXPLICIT",
+      ),
+    ).toBe("2026-07");
+    expect(
+      resolveWeeklySalesCompetenceWithPolicy(
+        "260803_Daily_Sales_Planning_Report.pdf",
+        "2026-07",
+      ),
+    ).toBe("2026-08");
   });
 
   it("mantém a competência da tela quando o arquivo não possui uma data válida", () => {

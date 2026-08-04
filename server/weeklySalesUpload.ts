@@ -64,6 +64,18 @@ export function resolveWeeklySalesCompetence(fileName: string, fallbackCompetenc
   return inferWeeklySalesReportDate(fileName)?.slice(0, 7) ?? fallbackCompetence;
 }
 
+export type WeeklySalesCompetencePolicy = "AUTO" | "EXPLICIT";
+
+export function resolveWeeklySalesCompetenceWithPolicy(
+  fileName: string,
+  fallbackCompetence: string,
+  policy: WeeklySalesCompetencePolicy = "AUTO",
+): string {
+  return policy === "EXPLICIT"
+    ? fallbackCompetence
+    : resolveWeeklySalesCompetence(fileName, fallbackCompetence);
+}
+
 function hasPdfSignature(bytes: Buffer): boolean {
   return bytes.length >= 5 && bytes.subarray(0, 5).toString("ascii") === "%PDF-";
 }
