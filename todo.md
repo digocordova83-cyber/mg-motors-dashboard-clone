@@ -1130,3 +1130,14 @@
 - [x] Garantir que o nome 260803 não altere a regra automática dos próximos uploads de agosto
 - [x] Validar vendas por concessionária, correspondências, conversão e indicadores consolidados de julho
 - [x] Executar testes, conferir a interface e salvar um checkpoint restaurável
+
+## Plano de Mídia — Competência Agosto de 2026
+
+- [x] Auditar a planilha `controle-financeiro.xlsx` e identificar as abas, fórmulas e valores aplicáveis a agosto.
+- [x] Mapear a implementação atual do Plano de Mídia, o schema e a carga de julho usada como referência.
+- [x] Reconciliar investimento total, produtos, canais, etapas do funil, leads projetados, CPL e impressões de agosto.
+- [x] Persistir agosto como nova competência, preservando integralmente julho e o histórico mensal.
+- [x] Atualizar a interface apenas se necessário para suportar ou exibir corretamente os dados de agosto.
+- [x] Criar ou atualizar testes Vitest para validar agosto, julho e a alternância pelo seletor de competência.
+- [x] Conferir visualmente os cards, gráficos e totais de agosto e comparar julho após a alteração.
+- [x] Executar testes e TypeScript, revisar o todo.md e salvar um checkpoint restaurável.
