@@ -146,9 +146,13 @@ const DEALER_QUALIFICATION_LABELS = new Set([
   "a confirmar",
 ]);
 
-export function formatDealerLabel(value: string | null | undefined) {
+export function isQualificationDealerValue(value: string | null | undefined) {
   const normalized = value?.trim().toLocaleLowerCase("pt-BR");
-  if (!normalized || DEALER_QUALIFICATION_LABELS.has(normalized)) {
+  return !normalized || DEALER_QUALIFICATION_LABELS.has(normalized);
+}
+
+export function formatDealerLabel(value: string | null | undefined) {
+  if (isQualificationDealerValue(value)) {
     return "Leads em qualificação";
   }
   return value!.trim();
@@ -1155,7 +1159,7 @@ export function LeadsTab({
       <div className="grid gap-4 lg:grid-cols-3">
         <BreakdownList title={ui(locale, "Leads por modelo", "Leads by model")} subtitle={ui(locale, "Classificação preservada do CSV.", "Classification preserved from CSV.")} items={data.models} accent="#e2212d" locale={locale} />
         <BreakdownList title={ui(locale, "Leads por região", "Leads by region")} subtitle={ui(locale, "Ausências permanecem como Indisponível.", "Missing values remain Unavailable.")} items={data.regions} accent="#38bdf8" locale={locale} />
-        <BreakdownList title={ui(locale, "Top concessionárias", "Top dealers")} subtitle={ui(locale, "Prévia por volume no período selecionado.", "Volume preview for the selected period.")} items={data.dealers} accent="#10b981" locale={locale} formatItemLabel={formatDealerLabel} />
+        <BreakdownList title={ui(locale, "Top concessionárias", "Top dealers")} subtitle={ui(locale, "Prévia por volume no período selecionado.", "Volume preview for the selected period.")} items={data.dealers.filter(item => !isQualificationDealerValue(item.value))} accent="#10b981" locale={locale} formatItemLabel={formatDealerLabel} />
       </div>
 
       <WeeklySalesPanel

@@ -15,6 +15,7 @@ import {
   formatDailyBarTotal,
   formatDealerLabel,
   invalidateLeadImportCaches,
+  isQualificationDealerValue,
   LeadsLoading,
   resolveCsvImportPhase,
   resolveLeadsActionVisibility,
@@ -24,8 +25,16 @@ describe("interface de Leads", () => {
   it("exibe Leads em qualificação para concessionárias sem identificação e placeholders", () => {
     for (const value of ["Indisponível", "Unavailable", "Outros", "Outro", "N/A", "Não informado", "Sem concessionária", "  "]) {
       expect(formatDealerLabel(value)).toBe("Leads em qualificação");
+      expect(isQualificationDealerValue(value)).toBe(true);
     }
     expect(formatDealerLabel("BARIGUI - CURITIBA")).toBe("BARIGUI - CURITIBA");
+    expect(isQualificationDealerValue("BARIGUI - CURITIBA")).toBe(false);
+  });
+
+  it("filtra categorias de qualificação antes de renderizar o Top Dealers", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain("data.dealers.filter(item => !isQualificationDealerValue(item.value))");
   });
 
   it("expõe ações acessíveis para abrir os Leads por canal de cada concessionária", () => {

@@ -3,8 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDealerConversionRanking,
   isSupportedWeeklySalesFileName,
+  sortDealerConversionRanking,
   WEEKLY_SALES_FILE_ACCEPT,
+  WeeklySalesBottomConversion,
   WeeklySalesMetricsTable,
   WeeklySalesPeriodIdentity,
   WeeklySalesPreviewSummary,
@@ -71,6 +74,36 @@ const metrics = {
   ],
 } as never;
 
+function metricsWithDealers(dealers: unknown[]) {
+  return {
+    competence: "2026-07",
+    dateFrom: "2026-07-01",
+    dateTo: "2026-07-31",
+    referenceWeek: 5,
+    import: {
+      id: 1,
+      fileName: "weekly-sales.csv",
+      importedBy: "rodrigo",
+      importedAt: Date.UTC(2026, 6, 22, 12, 0),
+    },
+    summary: {
+      dealers: dealers.length,
+      matchedDealers: dealers.length,
+      unmatchedDealers: 0,
+      dealersWithoutReferenceSales: 0,
+      dealersWithoutWeek4Sales: 0,
+      totalLeads: 0,
+      totalSales: 0,
+      matchedSales: 0,
+      unmatchedSales: 0,
+      conversionRatePercent: null,
+      leadsPerSale: null,
+      estimatedLeadsNeeded: null,
+    },
+    dealers,
+  } as never;
+}
+
 describe("vendas semanais na experiência de concessionárias", () => {
   it("aceita CSV e PDF no seletor semanal e rejeita outros formatos", () => {
     expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".csv");
@@ -119,9 +152,9 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(cards).toContain("Leads estimados necessários");
     expect(cards).toContain("4%");
     expect(cards).toContain("25");
-    expect(table).toContain("A Semana 5 é a última com Retail preenchido");
-    expect(table).toContain("semanas não são somadas");
-    expect(table).toContain("Vendas S5");
+    expect(table).toContain("Semana 5: ranking acumulado");
+    expect(table).toContain("Retail Sales");
+    expect(table).toContain("Leads recebidos");
     expect(table).toContain("Origem");
     expect(table).not.toContain("CSV:");
   });
@@ -162,9 +195,81 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(cards).toContain("Estimated Leads needed");
     expect(table).toContain("Sales efficiency by dealer");
     expect(table).toContain("1 unmatched dealer(s)");
-    expect(table).toContain("Matched");
-    expect(table).toContain("Unmatched");
+    expect(table).toContain("Week 5: cumulative ranking");
+    expect(table).toContain("Leads received");
     expect(table).not.toContain("Sem correspondência");
+  });
+
+  it("exclui qualificação e dealers sem correspondência dos rankings de conversão", () => {
+    const eligibilityMetrics = metricsWithDealers([
+      dealerWithHistory,
+      {
+        sourceName: "Leads em qualificação",
+        dealerName: "Leads em qualificação",
+        matchStatus: "MATCHED",
+        leads: 876,
+        sales: 0,
+        conversionRatePercent: 0,
+        leadsPerSale: null,
+        estimatedLeadsNeeded: null,
+        weeks: { 5: { target: null, leads: 876, retail: 0, achievementPercent: null } },
+      },
+      {
+        sourceName: "DEALER SEM MAPA",
+        dealerName: "DEALER SEM MAPA",
+        matchStatus: "UNMATCHED",
+        leads: 0,
+        sales: 3,
+        conversionRatePercent: null,
+        leadsPerSale: null,
+        estimatedLeadsNeeded: null,
+        weeks: { 5: { target: null, leads: null, retail: 3, achievementPercent: null } },
+      },
+    ]);
+
+    const rows = buildDealerConversionRanking(eligibilityMetrics, 5);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ dealerName: "Baltic Shopping Tamboré", sales: 5, leads: 125, conversionRatePercent: 4 });
+
+    const bottom = renderToStaticMarkup(<WeeklySalesBottomConversion metrics={eligibilityMetrics} selectedWeek={5} />);
+    expect(bottom).toContain("Bottom 10 — Conversão");
+    expect(bottom).toContain("Baltic Shopping Tamboré");
+    expect(bottom).not.toContain("Leads em qualificação");
+    expect(bottom).not.toContain("DEALER SEM MAPA");
+  });
+
+  it("recalcula a conversão por semana e ordena por conversão, vendas ou Leads", () => {
+    const secondDealer = {
+      sourceName: "TECAR BRASILIA",
+      dealerName: "Tecar — SIA Brasília",
+      matchStatus: "MATCHED",
+      leads: 200,
+      sales: 20,
+      conversionRatePercent: 10,
+      leadsPerSale: 10,
+      estimatedLeadsNeeded: 10,
+      weeks: {
+        1: { target: 2, leads: 50, retail: 2, achievementPercent: 100 },
+        2: { target: 6, leads: 90, retail: 6, achievementPercent: 100 },
+        3: { target: 10, leads: 120, retail: 10, achievementPercent: 100 },
+        4: { target: 15, leads: 160, retail: 15, achievementPercent: 100 },
+        5: { target: 20, leads: 200, retail: 20, achievementPercent: 100 },
+      },
+    } as never;
+    const rankingMetrics = metricsWithDealers([dealerWithHistory, secondDealer]);
+
+    const week1 = buildDealerConversionRanking(rankingMetrics, 1);
+    const week5 = buildDealerConversionRanking(rankingMetrics, 5);
+    expect(week1.find(row => row.dealerName === "Baltic Shopping Tamboré")?.conversionRatePercent).toBe(5);
+    expect(week5.find(row => row.dealerName === "Tecar — SIA Brasília")?.conversionRatePercent).toBe(10);
+    expect(sortDealerConversionRanking(week5, "conversion", "desc").map(row => row.dealerName)).toEqual([
+      "Tecar — SIA Brasília",
+      "Baltic Shopping Tamboré",
+    ]);
+    expect(sortDealerConversionRanking(week5, "leads", "asc").map(row => row.dealerName)).toEqual([
+      "Baltic Shopping Tamboré",
+      "Tecar — SIA Brasília",
+    ]);
   });
 
   it("oferece histórico dos canais somente para dealers correspondentes com dados no período", () => {

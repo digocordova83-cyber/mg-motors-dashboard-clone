@@ -1141,3 +1141,17 @@
 - [x] Criar ou atualizar testes Vitest para validar agosto, julho e a alternância pelo seletor de competência.
 - [x] Conferir visualmente os cards, gráficos e totais de agosto e comparar julho após a alteração.
 - [x] Executar testes e TypeScript, revisar o todo.md e salvar um checkpoint restaurável.
+
+## Rankings de Dealers — Visões MG MOTORS e VENDAS
+
+- [x] Auditar os componentes e serviços atuais de Top Dealers, períodos, semanas e conversão nas visões MG MOTORS e VENDAS.
+- [x] Excluir “Leads em qualificação” e qualquer categoria sem dealer dos rankings Top e Bottom, mantendo-a apenas nos indicadores próprios de qualificação.
+- [x] Definir um critério único de elegibilidade para ranking de conversão e documentar como empates e bases mínimas são tratados.
+- [x] Adicionar um quadro Bottom 10 ordenado da menor para a maior conversão, exibindo dealer, leads, Retail Sales e taxa.
+- [x] Criar uma tabela completa de ranking com posição, dealer, Retail Sales, leads recebidos e conversão.
+- [x] Permitir ordenar a tabela por conversão, Retail Sales e leads recebidos, com ordenação inicial por maior conversão.
+- [x] Garantir que Top Dealers, Bottom 10 e tabela respeitem os filtros de data e Week 1, Week 2 e demais recortes semanais.
+- [x] Aplicar os novos componentes nas visões de usuário MG MOTORS e VENDAS sem alterar permissões ou outras experiências.
+- [x] Criar ou atualizar testes Vitest para exclusão de qualificação, ordenação, elegibilidade e filtros de período.
+- [x] Validar visualmente Top, Bottom e tabela nas duas visões e em pelo menos dois recortes semanais.
+- [x] Executar testes, TypeScript, revisar todo.md e salvar um checkpoint restaurável.

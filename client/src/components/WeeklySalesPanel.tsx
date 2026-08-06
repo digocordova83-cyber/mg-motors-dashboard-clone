@@ -12,6 +12,7 @@ import { trpc } from "@/lib/trpc";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
+  ArrowUpDown,
   BarChart3,
   Building2,
   CheckCircle2,
@@ -24,6 +25,7 @@ import {
   Search,
   ShoppingCart,
   Target,
+  TrendingDown,
 } from "lucide-react";
 import React, { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import type { AppRouter } from "../../../server/routers";
@@ -34,6 +36,18 @@ type WeeklySalesDealer = WeeklySalesMetrics["dealers"][number];
 type WeeklySalesPreview = RouterOutputs["leads"]["previewWeeklySalesCsv"];
 type WeeklySalesHistory = RouterOutputs["leads"]["weeklySalesImportHistory"];
 type Locale = "pt-BR" | "en-US";
+export type WeeklySalesWeek = 1 | 2 | 3 | 4 | 5;
+export type DealerRankingSortKey = "conversion" | "sales" | "leads";
+export type DealerRankingSortDirection = "asc" | "desc";
+
+export type DealerConversionRankingRow = {
+  dealer: WeeklySalesDealer;
+  dealerName: string;
+  sourceName: string;
+  sales: number;
+  leads: number;
+  conversionRatePercent: number;
+};
 
 type WeeklySalesPanelProps = {
   competence: string;
@@ -47,6 +61,86 @@ type WeeklySalesPanelProps = {
 
 const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 export const WEEKLY_SALES_FILE_ACCEPT = ".csv,text/csv,.pdf,application/pdf";
+const DEALER_RANKING_EXCLUDED_LABELS = new Set([
+  "leads em qualificacao",
+  "indisponivel",
+  "unavailable",
+  "outro",
+  "outros",
+  "other",
+  "others",
+  "na",
+  "n a",
+  "nao informado",
+  "sem concessionaria",
+  "sem dealer",
+  "nenhum",
+  "none",
+  "a definir",
+  "a confirmar",
+]);
+
+function foldDealerName(value: string) {
+  return value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function isDealerRankingNameEligible(value: string) {
+  const normalized = foldDealerName(value);
+  return Boolean(normalized) && !DEALER_RANKING_EXCLUDED_LABELS.has(normalized);
+}
+
+export function buildDealerConversionRanking(
+  metrics: WeeklySalesMetrics,
+  week: WeeklySalesWeek,
+): DealerConversionRankingRow[] {
+  return metrics.dealers.flatMap(dealer => {
+    const values = dealer.weeks[week];
+    const leads = values?.leads ?? 0;
+    const sales = values?.retail ?? null;
+    if (
+      dealer.matchStatus !== "MATCHED" ||
+      !isDealerRankingNameEligible(dealer.dealerName) ||
+      sales === null ||
+      leads <= 0
+    ) {
+      return [];
+    }
+    return [{
+      dealer,
+      dealerName: dealer.dealerName,
+      sourceName: dealer.sourceName,
+      sales,
+      leads,
+      conversionRatePercent: Math.round((sales / leads) * 10_000) / 100,
+    }];
+  });
+}
+
+export function sortDealerConversionRanking(
+  rows: DealerConversionRankingRow[],
+  sortKey: DealerRankingSortKey,
+  direction: DealerRankingSortDirection,
+) {
+  const multiplier = direction === "asc" ? 1 : -1;
+  const valueFor = (row: DealerConversionRankingRow) =>
+    sortKey === "conversion"
+      ? row.conversionRatePercent
+      : sortKey === "sales"
+        ? row.sales
+        : row.leads;
+  return [...rows].sort((left, right) =>
+    (valueFor(left) - valueFor(right)) * multiplier ||
+    right.sales - left.sales ||
+    right.leads - left.leads ||
+    left.dealerName.localeCompare(right.dealerName, "pt-BR"),
+  );
+}
 
 export function isSupportedWeeklySalesFileName(fileName: string): boolean {
   const lowerName = fileName.toLocaleLowerCase("pt-BR");
@@ -255,6 +349,109 @@ export function WeeklySalesSummaryCards({
   );
 }
 
+export function WeeklySalesWeekSelector({
+  metrics,
+  value,
+  onChange,
+  locale = "pt-BR",
+}: {
+  metrics: WeeklySalesMetrics;
+  value: WeeklySalesWeek;
+  onChange: (week: WeeklySalesWeek) => void;
+  locale?: Locale;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-[#1e293b] bg-[#0d1421] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-[10px] font-semibold text-slate-300">
+          {ui(locale, "Período acumulado do ranking", "Ranking cumulative period")}
+        </p>
+        <p className="mt-0.5 text-[9px] text-slate-600">
+          {ui(locale, "Selecione a semana para recalcular Leads, Retail Sales e conversão.", "Select a week to recalculate Leads, Retail Sales, and conversion.")}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-1 rounded-lg border border-[#242f42] bg-[#080e18] p-1" role="group" aria-label={ui(locale, "Semana do ranking", "Ranking week")}>
+        {([1, 2, 3, 4, 5] as const).map(week => {
+          const available = metrics.dealers.some(dealer => dealer.weeks[week]?.retail !== null);
+          return (
+            <button
+              key={week}
+              type="button"
+              onClick={() => onChange(week)}
+              disabled={!available}
+              aria-pressed={value === week}
+              className={`rounded-md px-3 py-1.5 text-[9px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                value === week
+                  ? "bg-[#e2212d] text-white"
+                  : "text-slate-500 hover:bg-white/5 hover:text-slate-200"
+              }`}
+            >
+              {ui(locale, `Semana ${week}`, `Week ${week}`)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function WeeklySalesBottomConversion({
+  metrics,
+  selectedWeek,
+  locale = "pt-BR",
+}: {
+  metrics: WeeklySalesMetrics;
+  selectedWeek: WeeklySalesWeek;
+  locale?: Locale;
+}) {
+  const rows = sortDealerConversionRanking(
+    buildDealerConversionRanking(metrics, selectedWeek),
+    "conversion",
+    "asc",
+  ).slice(0, 10);
+  const maxConversion = Math.max(...rows.map(row => row.conversionRatePercent), 1);
+
+  return (
+    <Panel
+      title={ui(locale, "Bottom 10 — Conversão", "Bottom 10 — Conversion")}
+      subtitle={ui(
+        locale,
+        `Menores taxas entre dealers elegíveis na Semana ${selectedWeek}.`,
+        `Lowest rates among eligible dealers in Week ${selectedWeek}.`,
+      )}
+      action={<TrendingDown className="h-4 w-4 text-[#ff6670]" aria-hidden="true" />}
+    >
+      {rows.length ? (
+        <div className="divide-y divide-[#172131] px-4">
+          {rows.map((row, index) => (
+            <div key={`${row.sourceName}-${row.dealerName}`} className="py-3">
+              <div className="flex items-center justify-between gap-4 text-[10px]">
+                <p className="min-w-0 truncate font-semibold text-slate-200" title={row.dealerName}>
+                  <span className="mr-2 text-[9px] tabular-nums text-red-400">{String(index + 1).padStart(2, "0")}</span>
+                  {row.dealerName}
+                </p>
+                <p className="shrink-0 text-right tabular-nums text-slate-500">
+                  {formatInteger(row.sales, locale)} {ui(locale, "vendas", "sales")} • {formatInteger(row.leads, locale)} Leads • <span className="font-semibold text-red-300">{formatNumber(row.conversionRatePercent, locale)}%</span>
+                </p>
+              </div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#172131]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-red-500 to-amber-400"
+                  style={{ width: `${Math.max(3, (row.conversionRatePercent / maxConversion) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid min-h-36 place-items-center px-5 text-center text-[10px] text-slate-600">
+          {ui(locale, "Não há dealers elegíveis nesta semana.", "No eligible dealers for this week.")}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 export function WeeklySalesWeekHistory({
   dealer,
   referenceWeek,
@@ -337,41 +534,54 @@ export function WeeklySalesWeekHistory({
 
 export function WeeklySalesMetricsTable({
   metrics,
+  selectedWeek = metrics.referenceWeek ?? 5,
   locale = "pt-BR",
   channelHistoryDealerNames,
   onViewChannelHistory,
 }: {
   metrics: WeeklySalesMetrics;
+  selectedWeek?: WeeklySalesWeek;
   locale?: Locale;
   channelHistoryDealerNames?: ReadonlySet<string>;
   onViewChannelHistory?: (dealerName: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const [expandedDealerKey, setExpandedDealerKey] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<DealerRankingSortKey>("conversion");
+  const [sortDirection, setSortDirection] = useState<DealerRankingSortDirection>("desc");
+  const rankedDealers = useMemo(
+    () => sortDealerConversionRanking(buildDealerConversionRanking(metrics, selectedWeek), sortKey, sortDirection),
+    [metrics, selectedWeek, sortDirection, sortKey],
+  );
   const dealers = useMemo(() => {
     const query = search.trim().toLocaleLowerCase(locale);
-    return metrics.dealers.filter(dealer =>
+    return rankedDealers.filter(row =>
       !query
         ? true
-        : `${dealer.dealerName} ${dealer.sourceName}`.toLocaleLowerCase(locale).includes(query),
+        : `${row.dealerName} ${row.sourceName}`.toLocaleLowerCase(locale).includes(query),
     );
-  }, [locale, metrics.dealers, search]);
+  }, [locale, rankedDealers, search]);
+
+  function changeSort(nextKey: DealerRankingSortKey) {
+    if (sortKey === nextKey) {
+      setSortDirection(current => current === "desc" ? "asc" : "desc");
+      return;
+    }
+    setSortKey(nextKey);
+    setSortDirection("desc");
+  }
 
   return (
     <Panel
       title={ui(locale, "Eficiência de vendas por concessionária", "Sales efficiency by dealer")}
       subtitle={ui(
         locale,
-            metrics.referenceWeek
-              ? `A Semana ${metrics.referenceWeek} é a última com Retail preenchido; semanas não são somadas. Conversão usa apenas correspondências confirmadas com a base de Leads.`
-              : "A última semana com Retail preenchido será a referência; semanas não são somadas.",
-            metrics.referenceWeek
-              ? `Week ${metrics.referenceWeek} is the latest with Retail filled; weeks are not summed. Conversion uses only confirmed matches with the Leads database.`
-              : "The latest week with Retail filled will be the reference; weeks are not summed.",
+        `Semana ${selectedWeek}: ranking acumulado com correspondências confirmadas. Use os cabeçalhos para reordenar.`,
+        `Week ${selectedWeek}: cumulative ranking with confirmed matches. Use the headers to reorder.`,
       )}
       action={
         <span className="text-[9px] font-medium text-slate-600">
-          {dealers.length} {ui(locale, "de", "of")} {metrics.summary.dealers}
+          {dealers.length} {ui(locale, "de", "of")} {rankedDealers.length} {ui(locale, "elegíveis", "eligible")}
         </span>
       }
     >
@@ -412,51 +622,51 @@ export function WeeklySalesMetricsTable({
       ) : null}
 
       <div className="max-w-full overflow-x-auto">
-        <table className="w-full min-w-[940px] text-left">
+        <table className="w-full min-w-[760px] text-left">
           <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600">
             <tr>
-              <th className="px-4 py-3 font-semibold">{ui(locale, "Concessionária", "Dealer")}</th>
-              <th className="px-3 py-3 text-right font-semibold">
-                {ui(
-                  locale,
-                  `Vendas S${metrics.referenceWeek ?? "—"}`,
-                  `W${metrics.referenceWeek ?? "—"} sales`,
-                )}
-              </th>
-              <th className="px-3 py-3 text-right font-semibold">Leads</th>
-              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th>
-              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Leads/venda", "Leads/sale")}</th>
-              <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Leads estimados", "Estimated Leads")}</th>
-              <th className="px-4 py-3 font-semibold">{ui(locale, "Correspondência", "Match")}</th>
+              <th className="w-14 px-4 py-3 text-center font-semibold">#</th>
+              <th className="px-3 py-3 font-semibold">Dealer</th>
+              {(["sales", "leads", "conversion"] as const).map(key => (
+                <th key={key} className="px-3 py-3 text-right font-semibold" aria-sort={sortKey === key ? (sortDirection === "desc" ? "descending" : "ascending") : "none"}>
+                  <button type="button" onClick={() => changeSort(key)} className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 outline-none hover:text-slate-300 focus-visible:ring-2 focus-visible:ring-[#e2212d]/60">
+                    {key === "sales" ? "Retail Sales" : key === "leads" ? ui(locale, "Leads recebidos", "Leads received") : ui(locale, "Conversão", "Conversion")}
+                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </th>
+              ))}
+              <th className="px-4 py-3 text-right font-semibold">{ui(locale, "Detalhes", "Details")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#172131]">
-            {dealers.map(dealer => {
-              const matched = dealer.matchStatus === "MATCHED";
-              const dealerKey = `${dealer.sourceName}-${dealer.dealerName}`;
+            {dealers.map(row => {
+              const dealer = row.dealer;
+              const dealerKey = `${row.sourceName}-${row.dealerName}`;
               const isExpanded = expandedDealerKey === dealerKey;
               const detailId = `weekly-history-${dealerKey.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+              const position = rankedDealers.indexOf(row) + 1;
 
               return (
                 <React.Fragment key={dealerKey}>
                   <tr className="text-[10px] transition-colors hover:bg-white/[0.025]">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center font-semibold tabular-nums text-slate-600">{position}</td>
+                    <td className="px-3 py-3">
                       <button
                         type="button"
                         aria-expanded={isExpanded}
                         aria-controls={detailId}
                         aria-label={ui(
                           locale,
-                          `Ver histórico semanal de ${dealer.dealerName}`,
-                          `View weekly history for ${dealer.dealerName}`,
+                          `Ver histórico semanal de ${row.dealerName}`,
+                          `View weekly history for ${row.dealerName}`,
                         )}
                         onClick={() => setExpandedDealerKey(current => current === dealerKey ? null : dealerKey)}
                         className="flex w-full items-center justify-between gap-3 rounded-md text-left outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-[#e2212d]/60"
                       >
                         <span className="min-w-0">
-                          <span className="block font-medium text-slate-200">{dealer.dealerName}</span>
-                          {dealer.sourceName !== dealer.dealerName ? (
-                            <span className="mt-0.5 block text-[8px] text-slate-600">{ui(locale, "Origem", "Source")}: {dealer.sourceName}</span>
+                          <span className="block font-medium text-slate-200">{row.dealerName}</span>
+                          {row.sourceName !== row.dealerName ? (
+                            <span className="mt-0.5 block text-[8px] text-slate-600">{ui(locale, "Origem", "Source")}: {row.sourceName}</span>
                           ) : null}
                         </span>
                         <ChevronDown
@@ -464,39 +674,21 @@ export function WeeklySalesMetricsTable({
                         />
                       </button>
                     </td>
-                    <td className="px-3 py-3 text-right font-semibold text-white">
-                      {dealer.sales === null ? "—" : formatInteger(dealer.sales, locale)}
-                    </td>
-                    <td className="px-3 py-3 text-right text-slate-300">{formatInteger(dealer.leads, locale)}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-white">{formatInteger(row.sales, locale)}</td>
+                    <td className="px-3 py-3 text-right text-slate-300">{formatInteger(row.leads, locale)}</td>
                     <td className="px-3 py-3 text-right font-medium text-sky-300">
-                      {formatMetric(dealer.conversionRatePercent, locale, "%")}
+                      {formatNumber(row.conversionRatePercent, locale)}%
                     </td>
-                    <td className="px-3 py-3 text-right text-slate-400">
-                      {formatMetric(dealer.leadsPerSale, locale)}
-                    </td>
-                    <td className="px-3 py-3 text-right text-amber-300">
-                      {formatMetric(dealer.estimatedLeadsNeeded, locale)}
-                    </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-right">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-medium ${
-                            matched
-                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                              : "border-amber-500/20 bg-amber-500/10 text-amber-300"
-                          }`}
-                        >
-                          <span className={`h-1.5 w-1.5 rounded-full ${matched ? "bg-emerald-400" : "bg-amber-300"}`} />
-                          {matched ? ui(locale, "Correspondente", "Matched") : ui(locale, "Sem correspondência", "Unmatched")}
-                        </span>
-                        {matched && channelHistoryDealerNames?.has(dealer.dealerName) && onViewChannelHistory ? (
+                        {channelHistoryDealerNames?.has(row.dealerName) && onViewChannelHistory ? (
                           <button
                             type="button"
-                            onClick={() => onViewChannelHistory(dealer.dealerName)}
+                            onClick={() => onViewChannelHistory(row.dealerName)}
                             aria-label={ui(
                               locale,
-                              `Abrir histórico dos canais de ${dealer.dealerName}`,
-                              `Open channel history for ${dealer.dealerName}`,
+                              `Abrir histórico dos canais de ${row.dealerName}`,
+                              `Open channel history for ${row.dealerName}`,
                             )}
                             className="inline-flex items-center gap-1.5 rounded-md border border-sky-400/20 bg-sky-400/[0.07] px-2 py-1 font-medium text-sky-300 outline-none transition-colors hover:border-sky-400/35 hover:bg-sky-400/[0.12] hover:text-sky-200 focus-visible:ring-2 focus-visible:ring-sky-400/70"
                           >
@@ -509,7 +701,7 @@ export function WeeklySalesMetricsTable({
                   </tr>
                   {isExpanded ? (
                     <tr id={detailId} className="bg-[#0a111d]">
-                      <td colSpan={7} className="px-4 py-4">
+                      <td colSpan={6} className="px-4 py-4">
                         <WeeklySalesWeekHistory
                           dealer={dealer}
                           referenceWeek={metrics.referenceWeek}
@@ -784,6 +976,7 @@ export function WeeklySalesPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
+  const [rankingWeek, setRankingWeek] = useState<WeeklySalesWeek>(5);
 
   const metrics = trpc.leads.weeklySalesMetrics.useQuery(
     { competence, dateFrom, dateTo },
@@ -802,6 +995,12 @@ export function WeeklySalesPanel({
     setClientError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [competence]);
+
+  useEffect(() => {
+    if (metrics.data?.referenceWeek) {
+      setRankingWeek(metrics.data.referenceWeek as WeeklySalesWeek);
+    }
+  }, [metrics.data?.referenceWeek]);
 
   const previewMutation = trpc.leads.previewWeeklySalesCsv.useMutation({
     onSuccess: data => {
@@ -987,8 +1186,20 @@ export function WeeklySalesPanel({
       ) : metrics.data?.import ? (
         <>
           <WeeklySalesSummaryCards metrics={metrics.data} locale={locale} />
+          <WeeklySalesWeekSelector
+            metrics={metrics.data}
+            value={rankingWeek}
+            onChange={setRankingWeek}
+            locale={locale}
+          />
+          <WeeklySalesBottomConversion
+            metrics={metrics.data}
+            selectedWeek={rankingWeek}
+            locale={locale}
+          />
           <WeeklySalesMetricsTable
             metrics={metrics.data}
+            selectedWeek={rankingWeek}
             locale={locale}
             channelHistoryDealerNames={channelHistoryDealerNames}
             onViewChannelHistory={onViewChannelHistory}
