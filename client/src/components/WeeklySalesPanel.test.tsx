@@ -12,6 +12,7 @@ import {
   WeeklySalesPeriodIdentity,
   WeeklySalesPreviewSummary,
   WeeklySalesSummaryCards,
+  WeeklySalesTopConversion,
   WeeklySalesWeekHistory,
 } from "./WeeklySalesPanel";
 
@@ -232,10 +233,15 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(rows[0]).toMatchObject({ dealerName: "Baltic Shopping Tamboré", sales: 5, leads: 125, conversionRatePercent: 4 });
 
     const bottom = renderToStaticMarkup(<WeeklySalesBottomConversion metrics={eligibilityMetrics} selectedWeek={5} />);
+    const top = renderToStaticMarkup(<WeeklySalesTopConversion metrics={eligibilityMetrics} selectedWeek={5} />);
     expect(bottom).toContain("Bottom 10 — Conversão");
+    expect(top).toContain("Top 10 — Conversão");
     expect(bottom).toContain("Baltic Shopping Tamboré");
+    expect(top).toContain("Baltic Shopping Tamboré");
     expect(bottom).not.toContain("Leads em qualificação");
+    expect(top).not.toContain("Leads em qualificação");
     expect(bottom).not.toContain("DEALER SEM MAPA");
+    expect(top).not.toContain("DEALER SEM MAPA");
   });
 
   it("recalcula a conversão por semana e ordena por conversão, vendas ou Leads", () => {
@@ -270,6 +276,13 @@ describe("vendas semanais na experiência de concessionárias", () => {
       "Baltic Shopping Tamboré",
       "Tecar — SIA Brasília",
     ]);
+
+    const top = renderToStaticMarkup(<WeeklySalesTopConversion metrics={rankingMetrics} selectedWeek={5} locale="en-US" />);
+    const bottom = renderToStaticMarkup(<WeeklySalesBottomConversion metrics={rankingMetrics} selectedWeek={5} locale="en-US" />);
+    expect(top).toContain("Top 10 — Conversion");
+    expect(bottom).toContain("Bottom 10 — Conversion");
+    expect(top.indexOf("Tecar — SIA Brasília")).toBeLessThan(top.indexOf("Baltic Shopping Tamboré"));
+    expect(bottom.indexOf("Baltic Shopping Tamboré")).toBeLessThan(bottom.indexOf("Tecar — SIA Brasília"));
   });
 
   it("oferece histórico dos canais somente para dealers correspondentes com dados no período", () => {

@@ -1155,3 +1155,13 @@
 - [x] Criar ou atualizar testes Vitest para exclusão de qualificação, ordenação, elegibilidade e filtros de período.
 - [x] Validar visualmente Top, Bottom e tabela nas duas visões e em pelo menos dois recortes semanais.
 - [x] Executar testes, TypeScript, revisar todo.md e salvar um checkpoint restaurável.
+
+## Top 10 e Bottom 10 de Conversão — Lado a lado
+
+- [x] Revisar o componente atual de Bottom 10 e reutilizar a mesma população elegível e a semana selecionada.
+- [x] Adicionar um box Top 10 ordenado da maior para a menor conversão com dealer, Retail Sales, Leads e taxa.
+- [x] Manter o box Bottom 10 ordenado da menor para a maior conversão com os mesmos campos.
+- [x] Exibir Top 10 e Bottom 10 lado a lado em desktop e empilhados em telas menores.
+- [x] Aplicar rótulos e cores bilíngues consistentes nas visões MG MOTORS e VENDAS.
+- [x] Atualizar testes Vitest para Top 10, Bottom 10, semana selecionada e layout responsivo.
+- [x] Validar visualmente as duas visões, executar testes e TypeScript e salvar checkpoint restaurável.

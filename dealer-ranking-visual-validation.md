@@ -31,3 +31,11 @@ O ciclo de renderização confirmou Week 1 no título do Bottom 10 e da tabela n
 A tabela foi confirmada visualmente em ordem decrescente de Leads received: BARIGUI - CURITIBA apareceu primeiro com 144 Leads, seguida por DRSUL com 80. O cabeçalho Conversion também permaneceu habilitado e foi acionado para restaurar a ordenação padrão.
 
 As sessões temporárias de validação foram encerradas pelo fluxo de Sign out, e o navegador retornou à tela de acesso protegido.
+
+## Top 10 e Bottom 10 lado a lado
+
+A visão MG MOTORS carregou os dois rankings na mesma Semana 2 e com a mesma população de 14 dealers elegíveis. Top 10 está ordenado da maior para a menor conversão; Bottom 10 permanece da menor para a maior. Ambos mostram posição, Retail Sales, Leads e taxa, sem `Leads em qualificação`.
+
+A visão VENDAS exibiu o mesmo Top 10 e Bottom 10 em modo somente leitura, com Week 2, os mesmos 14 dealers elegíveis e os mesmos valores. Os controles administrativos continuam ocultos para esse perfil.
+
+Os dois boxes ficaram lado a lado no desktop e compartilham o mesmo seletor semanal. A sessão temporária VENDAS foi encerrada pelo fluxo de Sign out, retornando à tela de acesso protegido.

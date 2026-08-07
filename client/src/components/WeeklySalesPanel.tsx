@@ -26,6 +26,7 @@ import {
   ShoppingCart,
   Target,
   TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import React, { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import type { AppRouter } from "../../../server/routers";
@@ -437,6 +438,63 @@ export function WeeklySalesBottomConversion({
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#172131]">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-red-500 to-amber-400"
+                  style={{ width: `${Math.max(3, (row.conversionRatePercent / maxConversion) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid min-h-36 place-items-center px-5 text-center text-[10px] text-slate-600">
+          {ui(locale, "Não há dealers elegíveis nesta semana.", "No eligible dealers for this week.")}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+export function WeeklySalesTopConversion({
+  metrics,
+  selectedWeek,
+  locale = "pt-BR",
+}: {
+  metrics: WeeklySalesMetrics;
+  selectedWeek: WeeklySalesWeek;
+  locale?: Locale;
+}) {
+  const rows = sortDealerConversionRanking(
+    buildDealerConversionRanking(metrics, selectedWeek),
+    "conversion",
+    "desc",
+  ).slice(0, 10);
+  const maxConversion = Math.max(...rows.map(row => row.conversionRatePercent), 1);
+
+  return (
+    <Panel
+      title={ui(locale, "Top 10 — Conversão", "Top 10 — Conversion")}
+      subtitle={ui(
+        locale,
+        `Maiores taxas entre dealers elegíveis na Semana ${selectedWeek}.`,
+        `Highest rates among eligible dealers in Week ${selectedWeek}.`,
+      )}
+      action={<TrendingUp className="h-4 w-4 text-emerald-400" aria-hidden="true" />}
+    >
+      {rows.length ? (
+        <div className="divide-y divide-[#172131] px-4">
+          {rows.map((row, index) => (
+            <div key={`${row.sourceName}-${row.dealerName}`} className="py-3">
+              <div className="flex items-center justify-between gap-4 text-[10px]">
+                <p className="min-w-0 truncate font-semibold text-slate-200" title={row.dealerName}>
+                  <span className="mr-2 text-[9px] tabular-nums text-emerald-400">{String(index + 1).padStart(2, "0")}</span>
+                  {row.dealerName}
+                </p>
+                <p className="shrink-0 text-right tabular-nums text-slate-500">
+                  {formatInteger(row.sales, locale)} {ui(locale, "vendas", "sales")} • {formatInteger(row.leads, locale)} Leads • <span className="font-semibold text-emerald-300">{formatNumber(row.conversionRatePercent, locale)}%</span>
+                </p>
+              </div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#172131]">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400"
                   style={{ width: `${Math.max(3, (row.conversionRatePercent / maxConversion) * 100)}%` }}
                 />
               </div>
@@ -1192,11 +1250,22 @@ export function WeeklySalesPanel({
             onChange={setRankingWeek}
             locale={locale}
           />
-          <WeeklySalesBottomConversion
-            metrics={metrics.data}
-            selectedWeek={rankingWeek}
-            locale={locale}
-          />
+          <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+            <div className="min-w-0">
+              <WeeklySalesTopConversion
+                metrics={metrics.data}
+                selectedWeek={rankingWeek}
+                locale={locale}
+              />
+            </div>
+            <div className="min-w-0">
+              <WeeklySalesBottomConversion
+                metrics={metrics.data}
+                selectedWeek={rankingWeek}
+                locale={locale}
+              />
+            </div>
+          </div>
           <WeeklySalesMetricsTable
             metrics={metrics.data}
             selectedWeek={rankingWeek}
