@@ -1201,6 +1201,6 @@
 - [x] Auditar consultas, cache persistente, recorte D-1 e credenciais/conectores usados por cada fonte sem modificar dados.
 - [x] Corrigir a causa encontrada preservando métricas, permissões, snapshots válidos e o comportamento dos demais módulos.
 - [x] Adicionar ou atualizar testes Vitest de sucesso, indisponibilidade e erro para evitar regressão.
-- [ ] Validar os dois módulos autenticados no navegador com uma sessão de usuário válida e salvar um checkpoint restaurável.
+- [x] Validar os dois módulos autenticados no navegador com uma sessão de usuário válida e salvar um checkpoint restaurável.
 
 > Diagnóstico em 07/08/2026: Google Ads e Meta Ads responderam HTTP 200 ao recorte D-1; o bloqueio vinha de respostas 401 da sessão local do dashboard. A recuperação agora recarrega a aplicação e exibe o login local, em vez de manter dados analíticos em estado de erro.
