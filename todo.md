@@ -1165,3 +1165,23 @@
 - [x] Aplicar rótulos e cores bilíngues consistentes nas visões MG MOTORS e VENDAS.
 - [x] Atualizar testes Vitest para Top 10, Bottom 10, semana selecionada e layout responsivo.
 - [x] Validar visualmente as duas visões, executar testes e TypeScript e salvar checkpoint restaurável.
+
+## Automação diária da consolidação e importação de Leads
+
+- [x] Definir a arquitetura como tarefa agendada no Manus, com um cron diário às 09:20 e 10:20 no horário de Brasília.
+- [x] Auditar as abas e cabeçalhos reais da planilha Google informada, incluindo variações e campos opcionais.
+- [x] Auditar o fluxo manual atual de pré-validação, duplicatas, inválidos, confirmação e recálculo do dashboard.
+- [x] Consolidar Site, Meta, Webmotors, Mercado Livre e UOL em Data, Modelo, Região ou Estado, Cidade, Concessionaria, Nome, Email, Telefone e Canal.
+- [x] Classificar Site como Campanha Urban quando Canal/Campanha contiver Urban e como Site nos demais casos.
+- [x] Mapear Meta, Webmotors, Mercado Livre e UOL exatamente conforme o briefing, preservando o vínculo linha a linha.
+- [x] Padronizar Modelo somente como MG4 URBAN, MG4, MGS5 ou CYBERSTER e limpar telefone removendo `p:` e `+`.
+- [x] Preservar o nome da Concessionaria exatamente como vem da aba original, sem padronização.
+- [x] Gerar arquivos XLSX e CSV consolidados a cada execução.
+- [x] Reutilizar o mesmo serviço de importação manual para validação, deduplicação, inválidos, reconciliação e inserção.
+- [x] Importar automaticamente somente quando houver mudança e manter o processo idempotente em reexecuções.
+- [x] Produzir relatório completo por execução com linhas, inseridos, duplicatas internas, duplicatas da base, inválidos e detalhamento por canal.
+- [x] Cobrir mapeamentos, telefones, modelos, duplicatas, arquivos e atualização da base com Vitest e testes Python.
+- [x] Executar uma consolidação e importação controlada com a planilha real e validar uma reexecução sem mudanças.
+- [ ] Criar os agendamentos diários de 09:20 e 10:20 no horário de Brasília.
+- [ ] Enviar no Manus o relatório de cada execução, inclusive quando não houver novos Leads.
+- [x] Revisar todo.md, executar testes e TypeScript e salvar checkpoint restaurável.

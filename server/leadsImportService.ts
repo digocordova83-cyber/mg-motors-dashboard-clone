@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { leadImports, leads, type LeadImport } from "../drizzle/schema";
 import { getDb } from "./db";
 import {
@@ -57,6 +57,12 @@ export type LeadCsvImportResult = LeadCsvPreview & {
   importedAt: number;
 };
 
+export type LeadCsvCurrentBaseAnalysis = LeadCsvPreview & {
+  currentBaseRows: number;
+  rowsRemovedFromSource: number;
+  hasChanges: boolean;
+};
+
 function chunk<T>(values: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let index = 0; index < values.length; index += size) {
@@ -101,6 +107,18 @@ async function findImportByHash(fileHash: string): Promise<LeadImport | null> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const [record] = await db.select().from(leadImports).where(eq(leadImports.fileHash, fileHash)).limit(1);
+  return record ?? null;
+}
+
+async function findLatestCompletedImport(): Promise<LeadImport | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const [record] = await db
+    .select()
+    .from(leadImports)
+    .where(eq(leadImports.status, "COMPLETED"))
+    .orderBy(desc(leadImports.completedAt), desc(leadImports.id))
+    .limit(1);
   return record ?? null;
 }
 
@@ -214,6 +232,45 @@ export async function previewLeadCsv(input: {
   return buildPreview(parsed, fileName, existingContentHashes, existingImport);
 }
 
+export async function analyzeLeadCsvAgainstCurrentBase(input: {
+  fileName: string;
+  bytes: Buffer;
+  fallbackDate?: string;
+}): Promise<LeadCsvCurrentBaseAnalysis> {
+  const fileName = sanitizeLeadCsvFileName(input.fileName);
+  const fallbackDate = input.fallbackDate ?? getYesterdayInSaoPaulo();
+  const parsed = parseLeadCsv(input.bytes, fallbackDate);
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível");
+  const latestCompletedImport = await findLatestCompletedImport();
+  if (latestCompletedImport?.fileHash === parsed.fileHash) {
+    const currentHashes = new Set(parsed.records.map(record => record.contentHash));
+    const preview = buildPreview(parsed, fileName, currentHashes, latestCompletedImport);
+    return {
+      ...preview,
+      currentBaseRows: latestCompletedImport.rowsInserted,
+      rowsRemovedFromSource: 0,
+      hasChanges: false,
+    };
+  }
+  const currentRows = await db.select({ contentHash: leads.contentHash }).from(leads);
+  const currentBaseRows = currentRows.length;
+  const candidateHashes = new Set(parsed.records.map(record => record.contentHash));
+  const existingContentHashes = new Set(
+    currentRows
+      .map(row => row.contentHash)
+      .filter(contentHash => candidateHashes.has(contentHash)),
+  );
+  const preview = buildPreview(parsed, fileName, existingContentHashes, null);
+  const rowsRemovedFromSource = Math.max(0, currentBaseRows - preview.rowsAlreadyStored);
+  return {
+    ...preview,
+    currentBaseRows,
+    rowsRemovedFromSource,
+    hasChanges: preview.rowsReadyToInsert > 0 || rowsRemovedFromSource > 0,
+  };
+}
+
 async function markImportFailed(importId: number, error: unknown): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -296,6 +353,7 @@ export async function importLeadCsv(input: {
   bytes: Buffer;
   actor: string;
   fallbackDate?: string;
+  forceReplace?: boolean;
 }): Promise<LeadCsvImportResult> {
   const fileName = sanitizeLeadCsvFileName(input.fileName);
   const existingImport = await findImportByHash(getLeadCsvFileHash(input.bytes));
@@ -312,6 +370,7 @@ export async function importLeadCsv(input: {
   const preview = buildPreview(parsed, fileName, existingContentHashes, existingImport);
 
   if (
+    !input.forceReplace &&
     existingImport?.status === "COMPLETED" &&
     rowsAlreadyStored === parsed.uniqueValidRows
   ) {
