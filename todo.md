@@ -1182,6 +1182,25 @@
 - [x] Produzir relatório completo por execução com linhas, inseridos, duplicatas internas, duplicatas da base, inválidos e detalhamento por canal.
 - [x] Cobrir mapeamentos, telefones, modelos, duplicatas, arquivos e atualização da base com Vitest e testes Python.
 - [x] Executar uma consolidação e importação controlada com a planilha real e validar uma reexecução sem mudanças.
-- [ ] Criar os agendamentos diários de 09:20 e 10:20 no horário de Brasília.
-- [ ] Enviar no Manus o relatório de cada execução, inclusive quando não houver novos Leads.
+- [x] Criar os agendamentos diários de 09:20 e 10:20 no horário de Brasília.
+- [x] Enviar no Manus o relatório de cada execução, inclusive quando não houver novos Leads.
 - [x] Revisar todo.md, executar testes e TypeScript e salvar checkpoint restaurável.
+
+## Reprogramação da automação de Leads — 09:00 e 10:00
+
+- [x] Substituir os disparos de 09:20 e 10:20 por 09:00 e 10:00 no horário de Brasília.
+- [x] Preservar no agendamento o comando atual, a consolidação, a importação idempotente e os relatórios com anexos no Manus.
+- [x] Validar o cron, o fuso `America/Sao_Paulo`, o status ativo e os próximos disparos da rotina.
+- [x] Atualizar o histórico do projeto e informar ao usuário a nova cadência diária confirmada.
+
+> Agendamento anterior de 09:20/10:20 substituído em 07/08/2026 pelo cron `0 0 9,10 * * *`, com fuso `America/Sao_Paulo` e status ativo.
+
+## Correção — carregamento de Google Ads e Meta Ads
+
+- [x] Reproduzir a falha de carregamento das abas Google Ads e Meta Ads e registrar erros de interface, rede e servidor.
+- [x] Auditar consultas, cache persistente, recorte D-1 e credenciais/conectores usados por cada fonte sem modificar dados.
+- [x] Corrigir a causa encontrada preservando métricas, permissões, snapshots válidos e o comportamento dos demais módulos.
+- [x] Adicionar ou atualizar testes Vitest de sucesso, indisponibilidade e erro para evitar regressão.
+- [ ] Validar os dois módulos autenticados no navegador com uma sessão de usuário válida e salvar um checkpoint restaurável.
+
+> Diagnóstico em 07/08/2026: Google Ads e Meta Ads responderam HTTP 200 ao recorte D-1; o bloqueio vinha de respostas 401 da sessão local do dashboard. A recuperação agora recarrega a aplicação e exibe o login local, em vez de manter dados analíticos em estado de erro.

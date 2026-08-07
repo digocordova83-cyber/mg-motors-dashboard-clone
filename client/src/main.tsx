@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { isDashboardSessionExpiredError } from "@/lib/dashboardSession";
 import { COOKIE_NAME, UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
@@ -9,8 +10,19 @@ import { startLogin } from "./const";
 import "./index.css";
 
 const queryClient = new QueryClient();
+let dashboardSessionRecoveryScheduled = false;
+
+const recoverDashboardSession = (error: unknown) => {
+  if (!isDashboardSessionExpiredError(error) || typeof window === "undefined") return false;
+  if (dashboardSessionRecoveryScheduled) return true;
+
+  dashboardSessionRecoveryScheduled = true;
+  window.setTimeout(() => window.location.reload(), 0);
+  return true;
+};
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
+  if (recoverDashboardSession(error)) return;
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
