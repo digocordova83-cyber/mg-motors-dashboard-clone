@@ -3,6 +3,8 @@ import {
   canonicalizeDealerForAnalytics,
   canonicalizeDealerName,
   getDealerMappingStats,
+  getOfficialDealerDirectoryStats,
+  getOfficialDealers,
   isDealerQualificationPlaceholder,
   isExplicitDealerAlias,
   normalizeDealerLookupKey,
@@ -45,6 +47,22 @@ describe("dealer normalization", () => {
       canonicalCount: 25,
     });
     expect(stats.sourceModifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("expõe o cadastro oficial atualizado com os 31 dealers e os quatro nomes antes não correspondidos", () => {
+    const stats = getOfficialDealerDirectoryStats();
+    expect(stats).toMatchObject({
+      sourceWorkbook: "Dealers_atualizado.xlsx",
+      sourceSheet: "Página1",
+      dealerCount: 31,
+    });
+    expect(stats.sourceSha256).toMatch(/^[a-f0-9]{64}$/);
+
+    const byName = new Map(getOfficialDealers().map(dealer => [dealer.name, dealer]));
+    expect(byName.get("HG ARACAJU")).toMatchObject({ code: "271959", operationalArea: "ARACAJU/SE" });
+    expect(byName.get("LA FONTAINE JOINVILLE")).toMatchObject({ code: "272046", operationalArea: "JOINVILLE/SC" });
+    expect(byName.get("AUTOBRAND RECIFE")).toMatchObject({ code: "272056", operationalArea: "RECIFE/PE" });
+    expect(byName.get("SINAL AV EUROPA")).toMatchObject({ code: "271958", operationalArea: "SAO PAULO/SP" });
   });
 
   it("consolida placeholders e aliases antes da auditoria sem alterar o total geral ou os dados de origem", () => {

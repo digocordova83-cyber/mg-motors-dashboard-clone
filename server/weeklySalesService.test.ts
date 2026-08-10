@@ -1,11 +1,37 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildOfficialWeeklyDealerKeys,
   buildCumulativeWeeklyLeadCounts,
   calculateWeeklySalesEfficiency,
   getWeeklyLeadCutoffDates,
+  resolveOfficialWeeklyDealerMatchStatus,
   selectWeeklySalesReference,
 } from "./weeklySalesService";
+import { getOfficialDealers, normalizeDealerLookupKey } from "./dealerNormalization";
+
+describe("cadastro oficial de dealers nas Vendas Semanais", () => {
+  it("reconhece os 31 dealers oficiais usando o mesmo de-para do parser semanal", () => {
+    const keys = buildOfficialWeeklyDealerKeys(getOfficialDealers());
+
+    expect(keys.size).toBe(31);
+    for (const dealer of [
+      "HG ARACAJU",
+      "LA FONTAINE JOINVILLE",
+      "AUTOBRAND RECIFE",
+      "SINAL AV EUROPA",
+    ]) {
+      expect(keys.has(normalizeDealerLookupKey(dealer))).toBe(true);
+    }
+
+    expect(keys.has(normalizeDealerLookupKey("Baltic Shopping Tamboré"))).toBe(true);
+    expect(keys.has(normalizeDealerLookupKey("TECAR - SIA BRASILIA"))).toBe(true);
+
+    expect(resolveOfficialWeeklyDealerMatchStatus("HG ARACAJU", keys)).toBe("MATCHED");
+    expect(resolveOfficialWeeklyDealerMatchStatus("DEALER FORA DO CADASTRO", keys)).toBe("UNMATCHED");
+    expect(resolveOfficialWeeklyDealerMatchStatus(null, keys)).toBe("UNMATCHED");
+  });
+});
 
 describe("Leads acumulados por semana", () => {
   it("define os cortes acumulados W1–W5, com W4 no dia 28 e W5 no fim do período", () => {

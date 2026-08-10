@@ -1237,3 +1237,18 @@
 - [x] Apresentar a versão final atualizada e registrar o resultado no histórico do projeto.
 
 > Versão apresentada em 10/08/2026 com seis slides ativos: capa, visão geral, Leads por canal, campanhas Google/Meta, Retail & Network e encerramento. Período 01–09/08/2026; slides de concorrentes e Instagram excluídos.
+
+## Cadastro oficial de dealers — Dealers_atualizado.xlsx
+
+- [x] Auditar a estrutura e os nomes da planilha oficial enviada pelo usuário.
+- [x] Comparar o cadastro com HG ARACAJU, LA FONTAINE JOINVILLE, AUTOBRAND RECIFE e SINAL AV EUROPA.
+- [x] Implementar o de-para necessário sem alterar os nomes originais dos Leads.
+- [x] Reprocessar o relatório semanal de agosto e reconciliar as 85 Retail Sales.
+- [x] Atualizar métricas de conversão e o Summary caso os totais correspondidos mudem.
+- [x] Executar testes, validar o dashboard e salvar checkpoint restaurável.
+
+> Auditoria inicial: a planilha contém 31 dealers oficiais e inclui os quatro nomes não correspondidos do relatório semanal. Nenhum dos quatro possui Leads na base de agosto; a correção deve reconhecê-los como dealers válidos sem atribuir Leads inexistentes.
+
+> Conciliação aplicada aos dois lotes de agosto: oito linhas atualizadas de `UNMATCHED` para `MATCHED`, correspondentes aos quatro dealers oficiais em cada lote. Os nomes originais e os volumes foram preservados.
+
+> Resultado recalculado: 25 de 25 dealers correspondidos, 85 de 85 Retail Sales correspondidas, zero vendas não correspondidas, conversão de rede de 4,78% e 20,91 Leads por venda. A segunda execução atualizou zero linhas.

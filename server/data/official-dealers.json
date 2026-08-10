@@ -1,0 +1,169 @@
+{
+  "sourceWorkbook": "Dealers_atualizado.xlsx",
+  "sourceSheet": "Página1",
+  "sourceHeaders": [
+    "DEALER",
+    "DEALER CODE",
+    "OPERATIONAL AREA"
+  ],
+  "sourceSha256": "8caadde4654347779cd49a4e5970c0298d0f89925d3ac826fb703c976e428374",
+  "generatedAt": "2026-08-10T23:45:42.201089+00:00",
+  "dealerCount": 31,
+  "dealers": [
+    {
+      "name": "SAVOL SÃO CAETANO",
+      "code": "271790",
+      "operationalArea": "SAO PAULO/SP"
+    },
+    {
+      "name": "BALTIC BARUERI",
+      "code": "271871",
+      "operationalArea": "SAO PAULO/SP"
+    },
+    {
+      "name": "TORIBA SÃO PAULO",
+      "code": "271783",
+      "operationalArea": "SAO PAULO/SP"
+    },
+    {
+      "name": "STEFANINI CAMPINAS",
+      "code": "291081",
+      "operationalArea": "CAMPINAS/SP"
+    },
+    {
+      "name": "STEFANINI PIRACICABA",
+      "code": "271777",
+      "operationalArea": "PIRACICABA/SP"
+    },
+    {
+      "name": "ONNE RIBEIRAO",
+      "code": "271728",
+      "operationalArea": "RIBEIRAO PRETO/SP"
+    },
+    {
+      "name": "ONNE RIO PRETO",
+      "code": "291083",
+      "operationalArea": "SAO JOSE DO RIO PRETO/SP"
+    },
+    {
+      "name": "EUROVILLE BELO HORIZONTE",
+      "code": "271780",
+      "operationalArea": "BELO HORIZONTE/MG"
+    },
+    {
+      "name": "INDIANA SALVADOR",
+      "code": "271918",
+      "operationalArea": "SALVADOR/BA"
+    },
+    {
+      "name": "IGUAUTO FORTALEZA",
+      "code": "271921",
+      "operationalArea": "FORTALEZA/CE"
+    },
+    {
+      "name": "HG ARACAJU",
+      "code": "271959",
+      "operationalArea": "ARACAJU/SE"
+    },
+    {
+      "name": "DAO SILVEIRA NATAL",
+      "code": "271916",
+      "operationalArea": "NATAL/RN"
+    },
+    {
+      "name": "JRCA MACEIÓ",
+      "code": "271917",
+      "operationalArea": "MACEIO/AL"
+    },
+    {
+      "name": "NISCAR JOAO PESSOA",
+      "code": "272033",
+      "operationalArea": "JOAO PESSOA/PB"
+    },
+    {
+      "name": "AUTOBRAND RECIFE",
+      "code": "272056",
+      "operationalArea": "RECIFE/PE"
+    },
+    {
+      "name": "SINAL AV EUROPA",
+      "code": "271958",
+      "operationalArea": "SAO PAULO/SP"
+    },
+    {
+      "name": "EUROVILLE JUIZ DE FORA",
+      "code": "272166",
+      "operationalArea": "JUIZ DE FORA/MG"
+    },
+    {
+      "name": "EUROVILLE UBERLANDIA",
+      "code": "272165",
+      "operationalArea": "UBERLANDIA/MG"
+    },
+    {
+      "name": "AUTOMEC SOROCABA",
+      "code": "272086",
+      "operationalArea": "SOROCABA/SP"
+    },
+    {
+      "name": "JAVEP/SP",
+      "code": null,
+      "operationalArea": "BAURU/SP"
+    },
+    {
+      "name": "SAVOL ZL/SP",
+      "code": null,
+      "operationalArea": "SAO PAULO/SP"
+    },
+    {
+      "name": "BALTIC GUARULHOS",
+      "code": "291084",
+      "operationalArea": "SAO PAULO/SP"
+    },
+    {
+      "name": "POTENZA RIO DE JANEIRO",
+      "code": "271781",
+      "operationalArea": "RIO DE JANEIRO/RJ"
+    },
+    {
+      "name": "BARIGUI CURITIBA",
+      "code": "271778",
+      "operationalArea": "CURITIBA/PR"
+    },
+    {
+      "name": "BARIGUI FLORIANOPOLIS",
+      "code": "291082",
+      "operationalArea": "FLORIANOPOLIS/SC"
+    },
+    {
+      "name": "DRSUL PORTO ALEGRE",
+      "code": "271779",
+      "operationalArea": "PORTO ALEGRE/RS"
+    },
+    {
+      "name": "ORVEL VITÓRIA",
+      "code": "271776",
+      "operationalArea": "VITORIA/ES"
+    },
+    {
+      "name": "TECAR BRASÍLIA",
+      "code": "271782",
+      "operationalArea": "BRASILIA/DF"
+    },
+    {
+      "name": "VEGA BELÉM",
+      "code": "271919",
+      "operationalArea": "BELEM/PA"
+    },
+    {
+      "name": "TECAR GOIÂNIA",
+      "code": "271926",
+      "operationalArea": "GOIANIA/GO"
+    },
+    {
+      "name": "LA FONTAINE JOINVILLE",
+      "code": "272046",
+      "operationalArea": "JOINVILLE/SC"
+    }
+  ]
+}

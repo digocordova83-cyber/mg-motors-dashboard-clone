@@ -9,12 +9,18 @@ import {
   weeklySalesRecords,
   type WeeklySalesImport,
 } from "../drizzle/schema";
-import { canonicalizeDealerName, normalizeDealerLookupKey } from "./dealerNormalization";
+import {
+  canonicalizeDealerName,
+  getOfficialDealers,
+  normalizeDealerLookupKey,
+  type OfficialDealer,
+} from "./dealerNormalization";
 import { getDb } from "./db";
 import { LEADS_UNAVAILABLE } from "./leadsAnalytics";
 import { storagePut } from "./storage";
 import {
   parseWeeklySalesCsv,
+  resolveWeeklySalesCanonicalDealer,
   type WeeklySalesCsvPreview,
   type WeeklySalesRow,
   type WeeklySalesWeek,
@@ -171,17 +177,29 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-async function getKnownDealerKeys(): Promise<Set<string>> {
-  const db = await getDb();
-  if (!db) throw new Error("Banco de dados indisponível");
-  const rows = await db.selectDistinct({ dealerName: leads.dealerName }).from(leads);
+export function buildOfficialWeeklyDealerKeys(
+  dealers: readonly Pick<OfficialDealer, "name">[],
+): Set<string> {
   const unavailableKey = normalizeDealerLookupKey(LEADS_UNAVAILABLE);
   return new Set(
-    rows
-      .map(row => canonicalizeDealerName(row.dealerName ?? ""))
+    dealers
+      .map(dealer => resolveWeeklySalesCanonicalDealer(dealer.name).canonicalDealer)
       .map(normalizeDealerLookupKey)
       .filter(key => Boolean(key) && key !== unavailableKey),
   );
+}
+
+export function resolveOfficialWeeklyDealerMatchStatus(
+  canonicalDealerKey: string | null,
+  officialDealerKeys: ReadonlySet<string>,
+): "MATCHED" | "UNMATCHED" {
+  return canonicalDealerKey && officialDealerKeys.has(canonicalDealerKey)
+    ? "MATCHED"
+    : "UNMATCHED";
+}
+
+async function getKnownDealerKeys(): Promise<Set<string>> {
+  return buildOfficialWeeklyDealerKeys(getOfficialDealers());
 }
 
 export function getWeeklyLeadCutoffDates(
@@ -274,10 +292,10 @@ async function getLeadCountsByDealerAndWeek(
 function enrichRows(parsed: WeeklySalesCsvPreview, knownDealerKeys: Set<string>): EnrichedSalesRow[] {
   return parsed.rows.map(row => {
     if (row.rowType !== "DEALER") return { ...row, matchStatus: "AGGREGATE" as const };
-    const matchStatus =
-      row.canonicalDealerKey && knownDealerKeys.has(row.canonicalDealerKey)
-        ? ("MATCHED" as const)
-        : ("UNMATCHED" as const);
+    const matchStatus = resolveOfficialWeeklyDealerMatchStatus(
+      row.canonicalDealerKey,
+      knownDealerKeys,
+    );
     return { ...row, matchStatus };
   });
 }
@@ -727,11 +745,16 @@ export async function getWeeklySalesMetrics(
     latestImport.referenceWeek >= 1 && latestImport.referenceWeek <= 5
       ? (latestImport.referenceWeek as WeeklySalesWeek)
       : 4;
+  const officialDealerKeys = buildOfficialWeeklyDealerKeys(getOfficialDealers());
   const dealers = records
     .map(record => {
       const key = record.canonicalDealerKey ?? "";
+      const matchStatus = resolveOfficialWeeklyDealerMatchStatus(
+        record.canonicalDealerKey,
+        officialDealerKeys,
+      );
       const weeklyLeads =
-        record.matchStatus === "MATCHED"
+        matchStatus === "MATCHED"
           ? (leadCountsByWeek.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 })
           : null;
       const weeks = toWeekMetrics(record, weeklyLeads);
@@ -740,7 +763,7 @@ export async function getWeeklySalesMetrics(
       return {
         sourceName: record.sourceName,
         dealerName: record.canonicalDealer ?? record.sourceName,
-        matchStatus: record.matchStatus as "MATCHED" | "UNMATCHED",
+        matchStatus,
         leads: leadsCount,
         sales,
         ...efficiency,

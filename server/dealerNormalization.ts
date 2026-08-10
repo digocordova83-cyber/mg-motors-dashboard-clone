@@ -1,4 +1,5 @@
 import dealerMappingSource from "./data/dealer-aliases.json";
+import officialDealerSource from "./data/official-dealers.json";
 
 type DealerMappingRow = {
   source: string;
@@ -19,7 +20,24 @@ type DealerMappingSource = {
   mappings: DealerMappingRow[];
 };
 
+export type OfficialDealer = {
+  name: string;
+  code: string | null;
+  operationalArea: string | null;
+};
+
+type OfficialDealerSource = {
+  sourceWorkbook: string;
+  sourceSheet: string;
+  sourceHeaders: string[];
+  sourceSha256: string;
+  generatedAt: string;
+  dealerCount: number;
+  dealers: OfficialDealer[];
+};
+
 const mappingSource = dealerMappingSource as DealerMappingSource;
+const officialDirectory = officialDealerSource as OfficialDealerSource;
 
 export function normalizeDealerLookupKey(value: string): string {
   return value
@@ -94,5 +112,25 @@ export function getDealerMappingStats(): {
     mappingCount: mappingSource.mappingCount,
     uniqueAliasCount: mappingSource.uniqueAliasCount,
     canonicalCount: mappingSource.canonicalCount,
+  };
+}
+
+export function getOfficialDealers(): readonly OfficialDealer[] {
+  return officialDirectory.dealers;
+}
+
+export function getOfficialDealerDirectoryStats(): {
+  sourceWorkbook: string;
+  sourceSheet: string;
+  sourceSha256: string;
+  generatedAt: string;
+  dealerCount: number;
+} {
+  return {
+    sourceWorkbook: officialDirectory.sourceWorkbook,
+    sourceSheet: officialDirectory.sourceSheet,
+    sourceSha256: officialDirectory.sourceSha256,
+    generatedAt: officialDirectory.generatedAt,
+    dealerCount: officialDirectory.dealerCount,
   };
 }
