@@ -1215,3 +1215,14 @@
 - [x] Validar a reconciliação, a distribuição por canal, a idempotência e salvar checkpoint restaurável.
 
 > Validação em 10/08/2026: o arquivo mestre contém 1.395 linhas MG4 URBAN, todas em Campanha Urban; após deduplicação, o banco contém 1.362 Leads MG4 URBAN e todos estão exclusivamente em Campanha Urban. A base total permaneceu em 13.994 registros e a segunda execução retornou `NO_CHANGES`.
+
+## Corte temporal do canal UOL — julho preservado, agosto removido
+
+- [x] Auditar as datas dos Leads UOL e os pontos que montam os canais no consolidador, importador e dashboard.
+- [x] Preservar todos os registros UOL com competência até julho de 2026.
+- [x] Excluir da base e das opções de canal os registros UOL com data a partir de 01/08/2026.
+- [x] Adicionar testes de fronteira para 31/07/2026 e 01/08/2026 sem afetar as demais origens.
+- [x] Reprocessar a fonte real, validar julho versus agosto e confirmar idempotência.
+- [x] Revisar o acompanhamento, executar testes e salvar checkpoint restaurável.
+
+> Validação real em 10/08/2026: julho preserva 292 Leads UOL entre 11.664 Leads; agosto contém 2.400 Leads, zero UOL, nenhuma série diária UOL e nenhuma opção/aviso UOL. O reprocessamento retornou `NO_CHANGES`, mantendo 14.064 registros na base.

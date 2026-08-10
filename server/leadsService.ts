@@ -14,6 +14,21 @@ import {
 } from "./leadsAnalytics";
 
 const MAX_ANALYTICS_RANGE_DAYS = 370;
+export const UOL_LEAD_CHANNEL_LAST_ACTIVE_DATE = "2026-07-31";
+
+export function isLeadChannelActiveOnDate(channel: string, date: string): boolean {
+  return channel.trim().toLocaleUpperCase("pt-BR") !== "UOL" || date <= UOL_LEAD_CHANNEL_LAST_ACTIVE_DATE;
+}
+
+export function filterLeadRowsByChannelLifecycle<T extends Pick<LeadAnalyticsRow, "channel" | "correctedDate">>(
+  rows: T[],
+): T[] {
+  return rows.filter(row => isLeadChannelActiveOnDate(row.channel, row.correctedDate));
+}
+
+export function filterExpectedLeadChannelsByDate(channels: string[], date: string): string[] {
+  return channels.filter(channel => isLeadChannelActiveOnDate(channel, date));
+}
 
 function assertDateRange(dateFrom: string, dateTo: string): void {
   const from = new Date(`${dateFrom}T00:00:00.000Z`);
@@ -112,7 +127,7 @@ export async function upsertLeadMonthlyGoal(input: {
 async function getLeadRows(dateFrom: string, dateTo: string): Promise<LeadAnalyticsRow[]> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
-  return db
+  const rows = await db
     .select({
       correctedDate: leads.correctedDate,
       channel: leads.channel,
@@ -123,6 +138,7 @@ async function getLeadRows(dateFrom: string, dateTo: string): Promise<LeadAnalyt
     .from(leads)
     .where(and(gte(leads.correctedDate, dateFrom), lte(leads.correctedDate, dateTo)))
     .orderBy(asc(leads.correctedDate), asc(leads.id));
+  return filterLeadRowsByChannelLifecycle(rows);
 }
 
 async function getExpectedLeadChannels(dateTo: string): Promise<string[]> {
@@ -133,7 +149,10 @@ async function getExpectedLeadChannels(dateTo: string): Promise<string[]> {
     .from(leads)
     .where(lte(leads.correctedDate, dateTo))
     .orderBy(asc(leads.channel));
-  return rows.map(row => row.channel.trim()).filter(Boolean);
+  return filterExpectedLeadChannelsByDate(
+    rows.map(row => row.channel.trim()).filter(Boolean),
+    dateTo,
+  );
 }
 
 async function getLatestLeadImportAt(): Promise<string | null> {
