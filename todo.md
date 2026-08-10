@@ -1204,3 +1204,14 @@
 - [x] Validar os dois módulos autenticados no navegador com uma sessão de usuário válida e salvar um checkpoint restaurável.
 
 > Diagnóstico em 07/08/2026: Google Ads e Meta Ads responderam HTTP 200 ao recorte D-1; o bloqueio vinha de respostas 401 da sessão local do dashboard. A recuperação agora recarrega a aplicação e exibe o login local, em vez de manter dados analíticos em estado de erro.
+
+## Classificação global — MG4 URBAN em Campanha Urban
+
+- [x] Auditar a classificação atual de canal no consolidador e identificar todas as origens que podem trazer MG4 URBAN.
+- [x] Classificar como `Campanha Urban` todo Lead cujo modelo padronizado seja `MG4 URBAN`, independentemente da aba ou canal original.
+- [x] Preservar as regras existentes para os demais modelos, a concessionária de origem, telefones, duplicatas e inválidos.
+- [x] Adicionar testes para MG4 URBAN em Site, Meta, Webmotors, Mercado Livre e UOL, incluindo variações de escrita do modelo.
+- [x] Reprocessar a planilha real e atualizar a base do dashboard com a nova classificação.
+- [x] Validar a reconciliação, a distribuição por canal, a idempotência e salvar checkpoint restaurável.
+
+> Validação em 10/08/2026: o arquivo mestre contém 1.395 linhas MG4 URBAN, todas em Campanha Urban; após deduplicação, o banco contém 1.362 Leads MG4 URBAN e todos estão exclusivamente em Campanha Urban. A base total permaneceu em 13.994 registros e a segunda execução retornou `NO_CHANGES`.

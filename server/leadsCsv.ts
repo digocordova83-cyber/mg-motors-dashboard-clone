@@ -192,6 +192,10 @@ export function normalizeLeadChannel(value: string): string {
   return CHANNEL_BY_KEY.get(key) ?? normalized;
 }
 
+export function isMg4UrbanLeadModel(value: string): boolean {
+  return foldKey(value).includes("URBAN");
+}
+
 export function correctKnownLeadDateAnomaly(input: {
   correctedDate: string;
   correctedDateRaw: string;
@@ -373,12 +377,13 @@ function normalizeRow(
   const contactName = normalizeWhitespace(contactNameRaw);
   const email = normalizeEmail(emailRaw);
   const phone = normalizePhone(phoneRaw);
-  const channel = normalizeLeadChannel(channelRaw);
+  const sourceChannel = normalizeLeadChannel(channelRaw);
+  const channel = isMg4UrbanLeadModel(model) ? "Campanha Urban" : sourceChannel;
   const correctedDate = correctKnownLeadDateAnomaly({
     correctedDate: parsedCorrectedDate,
     correctedDateRaw,
     sourceDateRaw,
-    channel,
+    channel: sourceChannel,
   });
 
   const contentHash = sha256(

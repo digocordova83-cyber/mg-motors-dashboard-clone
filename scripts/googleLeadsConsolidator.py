@@ -172,6 +172,7 @@ def build_record(
 ) -> tuple[dict[str, str], dict[str, str]]:
     model = normalize_model(model_source)
     cleaned_phone = clean_phone(phone)
+    resolved_channel = "Campanha Urban" if model == "MG4 URBAN" else channel
     master = {
         "Data": source_date,
         "Modelo": model,
@@ -181,7 +182,7 @@ def build_record(
         "Nome": name,
         "Email": email,
         "Telefone": cleaned_phone,
-        "Canal": channel,
+        "Canal": resolved_channel,
     }
     import_row = {
         "Data": source_date,
@@ -192,7 +193,7 @@ def build_record(
         "Nome": name,
         "Email": email,
         "Telefone": cleaned_phone,
-        "Canal": channel,
+        "Canal": resolved_channel,
         "Data Corrigida": corrected_date,
         "Concessionarias corrijida": dealer,
     }

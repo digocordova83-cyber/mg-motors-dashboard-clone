@@ -52,6 +52,27 @@ describe("parseLeadCsv", () => {
     expect(result.records[0].rawPayload.correctedDealer).toBe("MG SUL - MATRIZ");
   });
 
+  it("classifica MG4 URBAN como Campanha Urban em qualquer canal de origem", () => {
+    const result = parseLeadCsv(
+      csv(
+        "2026-08-09T10:00:00,MG 4 - Urban,SP,São Paulo,Dealer Original,Cliente Urban,urban@example.com,11999990001,Meta,09/08/2026,Dealer A",
+        "2026-08-09T10:01:00,MGS5,SP,São Paulo,Dealer Original,Cliente MGS5,mgs5@example.com,11999990002,Meta,09/08/2026,Dealer A",
+      ),
+    );
+
+    expect(result.records[0]).toMatchObject({
+      model: "MG 4 - Urban",
+      channel: "Campanha Urban",
+      channelRaw: "Meta",
+    });
+    expect(result.records[0].rawPayload.channel).toBe("Meta");
+    expect(result.records[1]).toMatchObject({ model: "MGS5", channel: "Meta" });
+    expect(result.channels).toEqual(expect.arrayContaining([
+      { value: "Campanha Urban", count: 1 },
+      { value: "Meta", count: 1 },
+    ]));
+  });
+
   it("corrige para 01/07 somente a assinatura exata dos 18 Leads do Mercado Livre", () => {
     const exactKnownOccurrence = [
       "Tue Jun 01 2026 00:00:00 GMT-0400 (Chile Standard Time)",
