@@ -1226,3 +1226,14 @@
 - [x] Revisar o acompanhamento, executar testes e salvar checkpoint restaurável.
 
 > Validação real em 10/08/2026: julho preserva 292 Leads UOL entre 11.664 Leads; agosto contém 2.400 Leads, zero UOL, nenhuma série diária UOL e nenhuma opção/aviso UOL. O reprocessamento retornou `NO_CHANGES`, mantendo 14.064 registros na base.
+
+## Executive Summary — resultados de 01 a 09/08/2026
+
+- [x] Auditar a estrutura atual do deck executivo e identificar os slides de concorrentes e Instagram.
+- [x] Consolidar no dashboard os resultados reais de Leads e Vendas entre 01 e 09/08/2026.
+- [x] Atualizar títulos, período, métricas, rankings e mensagens executivas para agosto.
+- [x] Remover integralmente a projeção de mídia dos concorrentes e a parte de Instagram.
+- [x] Revisar consistência visual, fontes, cálculos e texto em inglês do Summary.
+- [x] Apresentar a versão final atualizada e registrar o resultado no histórico do projeto.
+
+> Versão apresentada em 10/08/2026 com seis slides ativos: capa, visão geral, Leads por canal, campanhas Google/Meta, Retail & Network e encerramento. Período 01–09/08/2026; slides de concorrentes e Instagram excluídos.
