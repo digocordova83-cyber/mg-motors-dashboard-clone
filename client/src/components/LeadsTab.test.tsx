@@ -31,10 +31,12 @@ describe("interface de Leads", () => {
     expect(isQualificationDealerValue("BARIGUI - CURITIBA")).toBe(false);
   });
 
-  it("filtra categorias de qualificação antes de renderizar o Top Dealers", () => {
+  it("remove os blocos geográficos duplicados e preserva a visão cruzada semanal", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
-    expect(source).toContain("data.dealers.filter(item => !isQualificationDealerValue(item.value))");
+    expect(source).not.toContain('"Leads por região"');
+    expect(source).not.toContain('"Top concessionárias"');
+    expect(source).toContain("<WeeklySalesPanel");
   });
 
   it("expõe ações acessíveis para abrir os Leads por canal de cada concessionária", () => {

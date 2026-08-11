@@ -243,7 +243,7 @@ describe("vendas semanais na experiência de concessionárias", () => {
       <WeeklySalesStateDealerTable state={(stateMetrics as any).states[0]} selectedWeek={5} />,
     );
 
-    expect(ranking).toContain("Performance por estado e concessionárias");
+    expect(ranking).toContain("Leads e vendas por estado e concessionária");
     expect(ranking).toContain("São Paulo");
     expect(ranking).toContain("50 de 90 Leads");
     expect(ranking).toContain("55,56%");

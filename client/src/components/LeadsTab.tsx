@@ -1156,10 +1156,8 @@ export function LeadsTab({
         </LeadPanel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="max-w-xl">
         <BreakdownList title={ui(locale, "Leads por modelo", "Leads by model")} subtitle={ui(locale, "Classificação preservada do CSV.", "Classification preserved from CSV.")} items={data.models} accent="#e2212d" locale={locale} />
-        <BreakdownList title={ui(locale, "Leads por região", "Leads by region")} subtitle={ui(locale, "Ausências permanecem como Indisponível.", "Missing values remain Unavailable.")} items={data.regions} accent="#38bdf8" locale={locale} />
-        <BreakdownList title={ui(locale, "Top concessionárias", "Top dealers")} subtitle={ui(locale, "Prévia por volume no período selecionado.", "Volume preview for the selected period.")} items={data.dealers.filter(item => !isQualificationDealerValue(item.value))} accent="#10b981" locale={locale} formatItemLabel={formatDealerLabel} />
       </div>
 
       <WeeklySalesPanel

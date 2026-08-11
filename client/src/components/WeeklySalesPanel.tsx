@@ -478,7 +478,24 @@ export function WeeklySalesStateDealerTable({
           {dealers.length} {ui(locale, "com movimento no período", "with activity in the period")}
         </p>
       </div>
-      <div className="max-w-full overflow-x-auto rounded-lg border border-[#1c2738]">
+      <div className="grid gap-2 md:hidden">
+        {dealers.map(({ dealer, values }) => (
+          <div key={dealer.dealerName} className="rounded-lg border border-[#1c2738] bg-[#0d1522] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <p className="min-w-0 break-words text-[10px] font-semibold text-slate-200">{dealer.dealerName}</p>
+              <span className={`shrink-0 rounded-full border px-2 py-1 text-[8px] font-medium ${values.sales === null ? "border-amber-500/20 bg-amber-500/10 text-amber-300" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"}`}>
+                {values.sales === null ? ui(locale, "Sem venda", "No sales row") : ui(locale, "Venda reportada", "Sales reported")}
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[#1c2738] pt-3">
+              <div><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">Leads</p><p className="mt-1 text-sm font-semibold text-white">{formatInteger(values.leads, locale)}</p></div>
+              <div><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">Retail</p><p className="mt-1 text-sm font-semibold text-slate-300">{values.sales === null ? "—" : formatInteger(values.sales, locale)}</p></div>
+              <div><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "Conversão", "Conversion")}</p><p className="mt-1 text-sm font-semibold text-sky-300">{formatMetric(values.conversionRatePercent, locale, "%")}</p></div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="hidden max-w-full overflow-x-auto rounded-lg border border-[#1c2738] md:block">
         <table className="w-full min-w-[650px] text-left">
           <thead className="border-b border-[#1d2737] bg-[#080e18] text-[8px] uppercase tracking-[0.1em] text-slate-600">
             <tr>
@@ -538,11 +555,11 @@ export function WeeklySalesStateRanking({
 
   return (
     <Panel
-      title={ui(locale, "Performance por estado e concessionárias", "Performance by state and dealers")}
+      title={ui(locale, "Leads e vendas por estado e concessionária", "Leads and sales by state and dealer")}
       subtitle={ui(
         locale,
-        `Semana ${selectedWeek}: ranking por Leads recebidos, Retail Sales e conversão. Expanda um estado para ver os dealers.`,
-        `Week ${selectedWeek}: ranking by Leads received, Retail Sales, and conversion. Expand a state to view dealers.`,
+        `Semana ${selectedWeek}: uma única visão de Leads, Retail Sales e conversão. Expanda o estado para ver os dealers.`,
+        `Week ${selectedWeek}: one view of Leads, Retail Sales, and conversion. Expand a state to view dealers.`,
       )}
       action={<span className="text-[9px] font-medium text-slate-600">{rows.length} {ui(locale, "estado(s)", "state(s)")}</span>}
     >
@@ -554,8 +571,63 @@ export function WeeklySalesStateRanking({
         )}
       </div>
       {rows.length ? (
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left">
+        <div className="max-w-full">
+          <div className="border-b border-[#172131] p-3 md:hidden">
+            <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Ordenar por", "Sort by")}</p>
+            <div className="grid grid-cols-3 gap-1 rounded-lg border border-[#242f42] bg-[#080e18] p-1">
+              {(["leads", "sales", "conversion"] as const).map(key => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => changeSort(key)}
+                  className={`inline-flex items-center justify-center gap-1 rounded-md px-2 py-2 text-[9px] font-semibold ${sortKey === key ? "bg-[#e2212d] text-white" : "text-slate-500"}`}
+                >
+                  {key === "leads" ? "Leads" : key === "sales" ? "Retail" : ui(locale, "Conversão", "Conversion")}
+                  <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-2 p-3 md:hidden">
+            {rows.map((row, index) => {
+              const isExpanded = expandedStateCode === row.stateCode;
+              const detailId = `state-dealers-mobile-${row.stateCode.toLocaleLowerCase("pt-BR")}`;
+              return (
+                <div key={row.stateCode} className="rounded-xl border border-[#1c2738] bg-[#0d1421]">
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={detailId}
+                    onClick={() => setExpandedStateCode(current => current === row.stateCode ? null : row.stateCode)}
+                    className="w-full p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#e2212d]/60"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#273348] bg-[#080e18] text-[9px] font-semibold text-slate-500">{index + 1}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[11px] font-semibold text-slate-100">{row.stateName} <span className="text-slate-500">({row.stateCode})</span></span>
+                        <span className={`mt-0.5 block text-[8px] ${row.salesCoveragePercent !== null && row.salesCoveragePercent < 100 ? "text-amber-300/80" : "text-slate-600"}`}>
+                          {ui(locale, "Cobertura", "Coverage")}: {formatInteger(row.salesCoverageLeads, locale)} {ui(locale, "de", "of")} {formatInteger(row.leads, locale)} Leads ({formatMetric(row.salesCoveragePercent, locale, "%")})
+                        </span>
+                      </span>
+                      <ChevronDown className={`h-4 w-4 shrink-0 text-slate-600 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                    </div>
+                    <div className="mt-3 grid grid-cols-4 gap-2 border-t border-[#1c2738] pt-3">
+                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Leads</p><p className="mt-1 text-sm font-semibold text-white">{formatInteger(row.leads, locale)}</p></div>
+                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Retail</p><p className="mt-1 text-sm font-semibold text-slate-300">{formatInteger(row.sales, locale)}</p></div>
+                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "Conversão", "Conversion")}</p><p className="mt-1 text-sm font-semibold text-sky-300">{formatMetric(row.conversionRatePercent, locale, "%")}</p></div>
+                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Dealers</p><p className="mt-1 text-sm font-semibold text-slate-300">{row.recipientDealers}/{row.officialDealers}</p></div>
+                    </div>
+                  </button>
+                  {isExpanded ? (
+                    <div id={detailId} className="border-t border-[#1c2738] p-3">
+                      <WeeklySalesStateDealerTable state={row.state} selectedWeek={selectedWeek} locale={locale} />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          <table className="hidden w-full min-w-[820px] text-left md:table">
             <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600">
               <tr>
                 <th className="w-14 px-4 py-3 text-center font-semibold">#</th>

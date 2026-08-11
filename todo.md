@@ -1351,3 +1351,19 @@
 - [x] Validar em desktop e mobile, revisar todo.md e salvar checkpoint restaurável.
 
 > Validação em 11/08/2026: 16 estados exibidos no recorte 01–10/08; São Paulo 668 Leads / 43 Retail / 6,44%; Paraná 285 / 2 / 0,70%. A expansão de SP mostrou oito dealers. Foram aprovados 249 testes, TypeScript e build. A visualização mobile usa tabela horizontal; a captura automatizada isolada permaneceu no login.
+
+## Dashboard — visualização geográfica unificada
+
+- [x] Auditar os blocos atuais de Leads por região, Top concessionárias e Performance por estado para preservar todos os indicadores úteis.
+- [x] Exibir uma única visualização expansível estado → dealers com Leads, Retail Sales, conversão e cobertura do snapshot.
+- [x] Posicionar a visualização consolidada no resumo principal de Leads, respeitando o período selecionado e o corte D-1.
+- [x] Remover os blocos redundantes de Leads por região e Top concessionárias sem alterar os dados ou rankings comerciais.
+- [x] Refinar o layout mobile para leitura direta, sem exigir navegar entre blocos separados.
+- [x] Atualizar testes de renderização e regressão para garantir que não existam visualizações geográficas duplicadas.
+- [x] Validar dados reais, desktop, mobile, TypeScript, suíte completa e build; salvar checkpoint restaurável.
+
+> Implementação: a visualização “Leads e vendas por estado e concessionária” passou a ser o único cruzamento geográfico. No mobile, estados e dealers usam cards expansíveis com Leads, Retail, conversão e cobertura; no desktop, a tabela ordenável foi preservada.
+
+> Validação final em 11/08/2026: os textos “Leads por região” e “Top concessionárias” não aparecem mais no painel autenticado. A única visão geográfica preservou São Paulo em 668 Leads / 43 Retail / 6,44% e Paraná em 285 / 2 / 0,70%. Foram aprovados 249 testes, TypeScript e build de produção.
+
+> Auditoria em 11/08/2026: Leads por região e Top concessionárias repetem volumes já cobertos pela tabela Performance por estado e concessionárias. A tabela consolidada preserva Leads, Retail Sales, conversão, cobertura do arquivo, total de dealers e abertura individual por dealer.
