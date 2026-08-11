@@ -1287,3 +1287,13 @@
 > Auditoria final: 14.064 Leads; 13.279 com dealer atribuído e 100% desses conciliados; 785 em qualificação/sem dealer; zero nomes de dealer fora da rede validada. Assim, 94,4184% da base total possui dealer atribuído e conciliado. Vendas Semanais permanecem em 25/25 dealers e 85/85 Retail Sales conciliadas, sem alerta de correspondência.
 
 > Validação técnica: 44 arquivos e 244 testes aprovados, TypeScript sem erros, build de produção concluído e auditoria final reproduzível. A prévia visual abriu no login por ausência de sessão, portanto a ausência do aviso foi comprovada pelo serviço atual e pelo teste de regressão do componente.
+
+## Executive Summary — versão em português
+
+- [x] Auditar os seis slides atuais e mapear todos os textos em inglês.
+- [x] Traduzir títulos, rótulos, notas, fontes e mensagens executivas para português.
+- [x] Preservar integralmente os dados, cálculos, ranking Top 5 e período de 01 a 09/08/2026.
+- [x] Revisar quebras de linha, hierarquia e espaçamento após a tradução.
+- [x] Validar que não restaram textos em inglês e reapresentar o Summary em português.
+
+> Versão em português apresentada em 11/08/2026 com seis slides ativos e os mesmos dados aprovados do período de 01 a 09/08/2026.
