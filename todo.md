@@ -1327,3 +1327,14 @@
 - [x] Explicar a diferença entre aba de origem, canal original e canal normalizado.
 
 > Confirmação: Clara Keli e Dos Santos Damico vieram da aba Site, com `Canal / Campanha = site`. Ambos foram classificados como Campanha Urban porque o modelo bruto era `mg4_urban`. Clara possui ainda um segundo ticket Site/MG4 criado 46 segundos depois.
+
+## Auditoria de distribuição — Barigui Curitiba versus São Paulo
+
+- [x] Definir o recorte mais recente de agosto e identificar os dealers oficiais do estado de São Paulo.
+- [x] Comparar volume de Leads por dealer, canal, modelo e origem geográfica.
+- [x] Medir quanto cada dealer recebe dentro e fora de sua área operacional.
+- [x] Comparar Leads recebidos, metas disponíveis e Retail Sales por dealer.
+- [x] Identificar se o desequilíbrio vem de Site, Meta, Campanha Urban ou regras de roteamento.
+- [x] Entregar diagnóstico objetivo e proposta de redistribuição sem alterar o dashboard.
+
+> Resultado de 01 a 10/08/2026: Barigui Curitiba recebeu 285 Leads versus 683 nos 12 dealers de SP. A Barigui supera qualquer dealer paulista individual, mas apenas 10 Leads originados em SP foram enviados a ela. O excesso é explicado por 172 Leads do PR concentrados na Barigui e 113 Leads de outros estados, gerados por Site (80), Campanha Urban (27) e Mercado Livre (6). Nenhuma alteração foi aplicada ao dashboard.
