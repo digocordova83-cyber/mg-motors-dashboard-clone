@@ -1318,3 +1318,12 @@
 - [x] Entregar uma tabela com emails mascarados, correspondências e exceções.
 
 > Resultado: dez contatos localizados em doze registros — dez de Site e dois de Campanha Urban. Clara Keli aparece em Site e Campanha Urban; Maily Kalapalo aparece duas vezes no Site, atribuída a Barigui Florianópolis e DRSul Porto Alegre. Amanda, descrita no dossiê como canal não localizado, consta na base como Site.
+
+## Dossiê Barigui — origem bruta dos dois Leads Urban
+
+- [x] Identificar os dois registros Campanha Urban pelo email, data e telefone.
+- [x] Localizar cada registro na aba original da planilha Google fonte.
+- [x] Confirmar os campos brutos que provocaram a classificação Campanha Urban.
+- [x] Explicar a diferença entre aba de origem, canal original e canal normalizado.
+
+> Confirmação: Clara Keli e Dos Santos Damico vieram da aba Site, com `Canal / Campanha = site`. Ambos foram classificados como Campanha Urban porque o modelo bruto era `mg4_urban`. Clara possui ainda um segundo ticket Site/MG4 criado 46 segundos depois.
