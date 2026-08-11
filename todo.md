@@ -1297,3 +1297,14 @@
 - [x] Validar que não restaram textos em inglês e reapresentar o Summary em português.
 
 > Versão em português apresentada em 11/08/2026 com seis slides ativos e os mesmos dados aprovados do período de 01 a 09/08/2026.
+
+## Dossiê de qualidade de Leads — MG Barigui
+
+- [x] Extrair e revisar integralmente o dossiê recebido da concessionária MG Barigui.
+- [x] Identificar período, amostra, critérios de qualidade, evidências e conclusões apresentadas.
+- [x] Verificar consistência matemática, limitações metodológicas e possíveis vieses do documento.
+- [x] Comparar os achados com Leads, canais, vendas e conversão da MG Barigui no dashboard.
+- [x] Separar problemas comprovados, hipóteses e pontos que exigem dados adicionais.
+- [x] Entregar resumo executivo com recomendações operacionais e próximos passos.
+
+> Conclusão em 11/08/2026: os casos são rastreáveis e comprovam ocorrências reais, mas o dossiê é casuístico e não permite estimar taxa sistêmica. O dashboard contém 2.221 Leads Barigui no período; 11 registros Barigui estão ligados aos exemplos apresentados. O principal risco quantitativo a investigar é a distribuição geográfica: 33,09% dos Leads Barigui estão fora de PR/SC.
