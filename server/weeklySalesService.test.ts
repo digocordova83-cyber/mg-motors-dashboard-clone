@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildOfficialWeeklyDealerKeys,
   buildCumulativeWeeklyLeadCounts,
+  buildWeeklySalesStateMetrics,
   calculateWeeklySalesEfficiency,
   getWeeklyLeadCutoffDates,
+  resolveDealerStateCode,
   resolveOfficialWeeklyDealerMatchStatus,
   selectWeeklySalesReference,
 } from "./weeklySalesService";
@@ -30,6 +32,13 @@ describe("cadastro oficial de dealers nas Vendas Semanais", () => {
     expect(resolveOfficialWeeklyDealerMatchStatus("HG ARACAJU", keys)).toBe("MATCHED");
     expect(resolveOfficialWeeklyDealerMatchStatus("DEALER FORA DO CADASTRO", keys)).toBe("UNMATCHED");
     expect(resolveOfficialWeeklyDealerMatchStatus(null, keys)).toBe("UNMATCHED");
+  });
+
+  it("extrai a UF da área operacional sem inferir quando o cadastro está incompleto", () => {
+    expect(resolveDealerStateCode("CURITIBA/PR")).toBe("PR");
+    expect(resolveDealerStateCode("SAO PAULO/SP")).toBe("SP");
+    expect(resolveDealerStateCode(null)).toBeNull();
+    expect(resolveDealerStateCode("SEM UF")).toBeNull();
   });
 });
 
@@ -130,5 +139,68 @@ describe("eficiência semanal de vendas", () => {
       leadsPerSale: null,
       estimatedLeadsNeeded: null,
     });
+  });
+
+  it("agrupa Leads e vendas por estado e explicita a cobertura parcial do arquivo de vendas", () => {
+    const zero = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+    const leadCountsByWeek = new Map([
+      [normalizeDealerLookupKey("BARIGUI - CURITIBA"), { ...zero, "2": 30 }],
+      [normalizeDealerLookupKey("SAVOL - SÃO CAETANO"), { ...zero, "2": 50 }],
+      [normalizeDealerLookupKey("SINAL AV EUROPA"), { ...zero, "2": 40 }],
+    ]);
+    const dealerMetrics = [
+      {
+        sourceName: "BARIGUI - CURITIBA",
+        dealerName: "BARIGUI - CURITIBA",
+        matchStatus: "MATCHED",
+        leads: 30,
+        sales: 2,
+        conversionRatePercent: 6.67,
+        leadsPerSale: 15,
+        estimatedLeadsNeeded: 15,
+        weeks: { "2": { target: 2, retail: 2, achievementPercent: 100, leads: 30 } },
+      },
+      {
+        sourceName: "SAVOL - SÃO CAETANO",
+        dealerName: "SAVOL - SÃO CAETANO",
+        matchStatus: "MATCHED",
+        leads: 50,
+        sales: 5,
+        conversionRatePercent: 10,
+        leadsPerSale: 10,
+        estimatedLeadsNeeded: 10,
+        weeks: { "2": { target: 5, retail: 5, achievementPercent: 100, leads: 50 } },
+      },
+    ];
+
+    const states = buildWeeklySalesStateMetrics({
+      officialDealers: [
+        { name: "BARIGUI - CURITIBA", operationalArea: "CURITIBA/PR" },
+        { name: "SAVOL - SÃO CAETANO", operationalArea: "SAO CAETANO/SP" },
+        { name: "SINAL AV EUROPA", operationalArea: "SAO PAULO/SP" },
+      ],
+      leadCountsByWeek,
+      dealerMetrics: dealerMetrics as never,
+      referenceWeek: 2,
+    });
+
+    expect(states.map(state => state.stateCode)).toEqual(["SP", "PR"]);
+    expect(states[0]).toMatchObject({
+      stateCode: "SP",
+      stateName: "São Paulo",
+      leads: 90,
+      sales: 5,
+      conversionRatePercent: 10,
+      salesCoverageLeads: 50,
+      salesCoveragePercent: 55.56,
+      officialDealers: 2,
+      recipientDealers: 2,
+      salesReportedDealers: 1,
+    });
+    expect(states[0].dealers).toEqual([
+      expect.objectContaining({ dealerName: "SAVOL - SÃO CAETANO", leads: 50, sales: 5 }),
+      expect.objectContaining({ dealerName: "SINAL AV EUROPA", leads: 40, sales: null }),
+    ]);
+    expect(states[1]).toMatchObject({ stateCode: "PR", leads: 30, sales: 2, conversionRatePercent: 6.67 });
   });
 });

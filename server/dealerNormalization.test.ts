@@ -4,6 +4,7 @@ import {
   canonicalizeDealerName,
   getDealerMappingStats,
   getOfficialDealerDirectoryStats,
+  getOfficialLeadDealers,
   getOfficialDealers,
   isDealerQualificationPlaceholder,
   isExplicitDealerAlias,
@@ -67,6 +68,17 @@ describe("dealer normalization", () => {
     expect(byName.get("LA FONTAINE JOINVILLE")).toMatchObject({ code: "272046", operationalArea: "JOINVILLE/SC" });
     expect(byName.get("AUTOBRAND RECIFE")).toMatchObject({ code: "272056", operationalArea: "RECIFE/PE" });
     expect(byName.get("SINAL AV EUROPA")).toMatchObject({ code: "271958", operationalArea: "SAO PAULO/SP" });
+  });
+
+  it("combina o cadastro oficial e a unidade pública auditada com área operacional para análises geográficas", () => {
+    const byName = new Map(getOfficialLeadDealers().map(dealer => [dealer.name, dealer]));
+
+    expect(byName.size).toBe(32);
+    expect(byName.get("CANOPUS PANTANAL SHOPPING")).toMatchObject({
+      code: null,
+      operationalArea: "CUIABA/MT",
+    });
+    expect(byName.get("BARIGUI CURITIBA")).toMatchObject({ operationalArea: "CURITIBA/PR" });
   });
 
   it("consolida placeholders e aliases antes da auditoria sem alterar o total geral ou os dados de origem", () => {

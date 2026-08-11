@@ -1338,3 +1338,16 @@
 - [x] Entregar diagnóstico objetivo e proposta de redistribuição sem alterar o dashboard.
 
 > Resultado de 01 a 10/08/2026: Barigui Curitiba recebeu 285 Leads versus 683 nos 12 dealers de SP. A Barigui supera qualquer dealer paulista individual, mas apenas 10 Leads originados em SP foram enviados a ela. O excesso é explicado por 172 Leads do PR concentrados na Barigui e 113 Leads de outros estados, gerados por Site (80), Campanha Urban (27) e Mercado Livre (6). Nenhuma alteração foi aplicada ao dashboard.
+
+## Dashboard — performance por estado e dealers
+
+- [x] Auditar os contratos atuais de Leads, Vendas Semanais, período selecionado e de-para de dealers.
+- [x] Definir a reconciliação entre estado operacional do dealer, Leads recebidos e Vendas no Varejo.
+- [x] Criar agregação por estado com Leads, Vendas no Varejo e taxa de conversão.
+- [x] Incluir abertura expansível dos dealers de cada estado com os mesmos indicadores.
+- [x] Garantir que o cálculo respeite o período selecionado e o último snapshot de vendas disponível.
+- [x] Adicionar estados de carregamento, vazio e erro, além de ordenação clara do ranking.
+- [x] Criar testes de backend e frontend para totais, conversão, aliases e expansão.
+- [x] Validar em desktop e mobile, revisar todo.md e salvar checkpoint restaurável.
+
+> Validação em 11/08/2026: 16 estados exibidos no recorte 01–10/08; São Paulo 668 Leads / 43 Retail / 6,44%; Paraná 285 / 2 / 0,70%. A expansão de SP mostrou oito dealers. Foram aprovados 249 testes, TypeScript e build. A visualização mobile usa tabela horizontal; a captura automatizada isolada permaneceu no login.

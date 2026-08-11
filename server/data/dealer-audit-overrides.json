@@ -39,6 +39,9 @@
     "FB",
     "TEST LEAD DUMMY DATA FOR EM QUAL CONCESSIONARIA GOSTARIA DE SER ATENDIDO"
   ],
+  "additionalOfficialLeadDealerLocations": [
+    { "name": "CANOPUS PANTANAL SHOPPING", "operationalArea": "CUIABA/MT" }
+  ],
   "additionalOfficialLeadDealerKeys": [
     "CANOPUS PANTANAL SHOPPING"
   ]

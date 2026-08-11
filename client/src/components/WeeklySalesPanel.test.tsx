@@ -4,13 +4,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDealerConversionRanking,
+  buildStatePerformanceRanking,
   isSupportedWeeklySalesFileName,
   sortDealerConversionRanking,
+  sortStatePerformanceRanking,
   WEEKLY_SALES_FILE_ACCEPT,
   WeeklySalesBottomConversion,
   WeeklySalesMetricsTable,
   WeeklySalesPeriodIdentity,
   WeeklySalesPreviewSummary,
+  WeeklySalesStateDealerTable,
+  WeeklySalesStateRanking,
   WeeklySalesSummaryCards,
   WeeklySalesTopConversion,
   WeeklySalesWeekHistory,
@@ -71,6 +75,63 @@ const metrics = {
       leadsPerSale: null,
       estimatedLeadsNeeded: null,
       weeks: {},
+    },
+  ],
+} as never;
+
+const stateMetrics = {
+  ...(metrics as any),
+  states: [
+    {
+      stateCode: "SP",
+      stateName: "São Paulo",
+      leads: 90,
+      sales: 5,
+      conversionRatePercent: 10,
+      salesCoverageLeads: 50,
+      salesCoveragePercent: 55.56,
+      officialDealers: 2,
+      recipientDealers: 2,
+      salesReportedDealers: 1,
+      weeks: {
+        5: { leads: 90, sales: 5, conversionRatePercent: 10, salesCoverageLeads: 50, salesCoveragePercent: 55.56, recipientDealers: 2, salesReportedDealers: 1 },
+      },
+      dealers: [
+        {
+          dealerName: "SAVOL - SÃO CAETANO",
+          stateCode: "SP",
+          leads: 50,
+          sales: 5,
+          salesReported: true,
+          conversionRatePercent: 10,
+          weeks: { 5: { leads: 50, sales: 5, conversionRatePercent: 10 } },
+        },
+        {
+          dealerName: "SINAL AV EUROPA",
+          stateCode: "SP",
+          leads: 40,
+          sales: null,
+          salesReported: false,
+          conversionRatePercent: null,
+          weeks: { 5: { leads: 40, sales: null, conversionRatePercent: null } },
+        },
+      ],
+    },
+    {
+      stateCode: "PR",
+      stateName: "Paraná",
+      leads: 30,
+      sales: 2,
+      conversionRatePercent: 6.67,
+      salesCoverageLeads: 30,
+      salesCoveragePercent: 100,
+      officialDealers: 1,
+      recipientDealers: 1,
+      salesReportedDealers: 1,
+      weeks: {
+        5: { leads: 30, sales: 2, conversionRatePercent: 6.67, salesCoverageLeads: 30, salesCoveragePercent: 100, recipientDealers: 1, salesReportedDealers: 1 },
+      },
+      dealers: [],
     },
   ],
 } as never;
@@ -158,6 +219,37 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(table).toContain("Leads recebidos");
     expect(table).toContain("Origem");
     expect(table).not.toContain("CSV:");
+  });
+
+  it("ordena estados por Leads e preserva conversão baseada somente na cobertura reportada", () => {
+    const rows = buildStatePerformanceRanking(stateMetrics, 5);
+
+    expect(sortStatePerformanceRanking(rows, "leads", "desc").map(row => row.stateCode)).toEqual(["SP", "PR"]);
+    expect(rows[0]).toMatchObject({
+      stateCode: "SP",
+      leads: 90,
+      sales: 5,
+      conversionRatePercent: 10,
+      salesCoverageLeads: 50,
+      salesCoveragePercent: 55.56,
+    });
+  });
+
+  it("renderiza o ranking estadual e a abertura dos dealers com status de cobertura", () => {
+    const ranking = renderToStaticMarkup(
+      <WeeklySalesStateRanking metrics={stateMetrics} selectedWeek={5} />,
+    );
+    const dealers = renderToStaticMarkup(
+      <WeeklySalesStateDealerTable state={(stateMetrics as any).states[0]} selectedWeek={5} />,
+    );
+
+    expect(ranking).toContain("Performance por estado e concessionárias");
+    expect(ranking).toContain("São Paulo");
+    expect(ranking).toContain("50 de 90 Leads");
+    expect(ranking).toContain("55,56%");
+    expect(dealers).toContain("SAVOL - SÃO CAETANO");
+    expect(dealers).toContain("SINAL AV EUROPA");
+    expect(dealers).toContain("Sem linha no arquivo");
   });
 
   it("exibe o histórico acumulado W1–W5 e marca a última semana como referência", () => {

@@ -42,6 +42,10 @@ type DealerAuditOverridesSource = {
   sources: string[];
   mappings: Array<{ sourceKey: string; canonical: string }>;
   qualificationKeys: string[];
+  additionalOfficialLeadDealerLocations?: Array<{
+    name: string;
+    operationalArea: string;
+  }>;
   additionalOfficialLeadDealerKeys: string[];
 };
 
@@ -142,6 +146,15 @@ export function getDealerMappingStats(): {
 
 export function getOfficialDealers(): readonly OfficialDealer[] {
   return officialDirectory.dealers;
+}
+
+export function getOfficialLeadDealers(): readonly OfficialDealer[] {
+  const additional = (dealerAuditOverrides.additionalOfficialLeadDealerLocations ?? []).map(dealer => ({
+    name: dealer.name,
+    code: null,
+    operationalArea: dealer.operationalArea,
+  }));
+  return [...officialDirectory.dealers, ...additional];
 }
 
 export function getAdditionalOfficialLeadDealerKeys(): ReadonlySet<string> {

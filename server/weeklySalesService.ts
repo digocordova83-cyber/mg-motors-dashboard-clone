@@ -11,6 +11,7 @@ import {
 } from "../drizzle/schema";
 import {
   canonicalizeDealerName,
+  getOfficialLeadDealers,
   getOfficialDealers,
   normalizeDealerLookupKey,
   type OfficialDealer,
@@ -92,6 +93,43 @@ export type WeeklySalesDealerMetric = {
   weeks: Record<string, WeeklySalesDealerWeekMetric>;
 };
 
+export type WeeklySalesStateDealerMetric = {
+  dealerName: string;
+  stateCode: string;
+  leads: number;
+  sales: number | null;
+  salesReported: boolean;
+  conversionRatePercent: number | null;
+  weeks: Record<string, {
+    leads: number;
+    sales: number | null;
+    conversionRatePercent: number | null;
+  }>;
+};
+
+export type WeeklySalesStateMetric = {
+  stateCode: string;
+  stateName: string;
+  leads: number;
+  sales: number;
+  conversionRatePercent: number | null;
+  salesCoverageLeads: number;
+  salesCoveragePercent: number | null;
+  officialDealers: number;
+  recipientDealers: number;
+  salesReportedDealers: number;
+  weeks: Record<string, {
+    leads: number;
+    sales: number;
+    conversionRatePercent: number | null;
+    salesCoverageLeads: number;
+    salesCoveragePercent: number | null;
+    recipientDealers: number;
+    salesReportedDealers: number;
+  }>;
+  dealers: WeeklySalesStateDealerMetric[];
+};
+
 export type WeeklySalesMetrics = {
   competence: string;
   dateFrom: string;
@@ -118,6 +156,7 @@ export type WeeklySalesMetrics = {
     estimatedLeadsNeeded: number | null;
   };
   dealers: WeeklySalesDealerMetric[];
+  states: WeeklySalesStateMetric[];
 };
 
 type EnrichedSalesRow = WeeklySalesRow & {
@@ -196,6 +235,114 @@ export function resolveOfficialWeeklyDealerMatchStatus(
   return canonicalDealerKey && officialDealerKeys.has(canonicalDealerKey)
     ? "MATCHED"
     : "UNMATCHED";
+}
+
+const BRAZILIAN_STATE_NAMES: Record<string, string> = {
+  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia",
+  CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás",
+  MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais",
+  PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí",
+  RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul",
+  RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo",
+  SE: "Sergipe", TO: "Tocantins",
+};
+
+export function resolveDealerStateCode(operationalArea: string | null): string | null {
+  const match = operationalArea?.trim().toUpperCase().match(/\/([A-Z]{2})$/);
+  return match?.[1] ?? null;
+}
+
+export function buildWeeklySalesStateMetrics(input: {
+  officialDealers: readonly Pick<OfficialDealer, "name" | "operationalArea">[];
+  leadCountsByWeek: ReadonlyMap<string, WeeklyLeadCounts>;
+  dealerMetrics: readonly WeeklySalesDealerMetric[];
+  referenceWeek: WeeklySalesWeek;
+}): WeeklySalesStateMetric[] {
+  const weeks: Array<keyof WeeklyLeadCounts> = ["1", "2", "3", "4", "5"];
+  const dealerMetricByKey = new Map(
+    input.dealerMetrics
+      .filter(dealer => dealer.matchStatus === "MATCHED")
+      .map(dealer => [normalizeDealerLookupKey(dealer.dealerName), dealer] as const),
+  );
+  const uniqueOfficialDealers = new Map<string, Pick<OfficialDealer, "name" | "operationalArea">>();
+
+  for (const dealer of input.officialDealers) {
+    const canonical = resolveWeeklySalesCanonicalDealer(dealer.name).canonicalDealer;
+    const key = normalizeDealerLookupKey(canonical);
+    if (key && !uniqueOfficialDealers.has(key)) {
+      uniqueOfficialDealers.set(key, { name: canonical, operationalArea: dealer.operationalArea });
+    }
+  }
+
+  const byState = new Map<string, WeeklySalesStateDealerMetric[]>();
+  for (const [key, dealer] of Array.from(uniqueOfficialDealers.entries())) {
+    const stateCode = resolveDealerStateCode(dealer.operationalArea);
+    if (!stateCode) continue;
+    const leadCounts = input.leadCountsByWeek.get(key) ?? { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+    const salesMetric = dealerMetricByKey.get(key);
+    const dealerWeeks = Object.fromEntries(
+      weeks.map(week => {
+        const leadsCount = leadCounts[week];
+        const sales = salesMetric?.weeks[week]?.retail ?? null;
+        return [week, {
+          leads: leadsCount,
+          sales,
+          conversionRatePercent: calculateWeeklySalesEfficiency(leadsCount, sales).conversionRatePercent,
+        }];
+      }),
+    ) as WeeklySalesStateDealerMetric["weeks"];
+    const reference = dealerWeeks[String(input.referenceWeek)];
+    const row: WeeklySalesStateDealerMetric = {
+      dealerName: dealer.name,
+      stateCode,
+      leads: reference.leads,
+      sales: reference.sales,
+      salesReported: reference.sales !== null,
+      conversionRatePercent: reference.conversionRatePercent,
+      weeks: dealerWeeks,
+    };
+    byState.set(stateCode, [...(byState.get(stateCode) ?? []), row]);
+  }
+
+  return Array.from(byState.entries())
+    .map(([stateCode, dealers]: [string, WeeklySalesStateDealerMetric[]]) => {
+      const stateWeeks = Object.fromEntries(
+        weeks.map((week: keyof WeeklyLeadCounts) => {
+          const leadsCount = dealers.reduce((total: number, dealer: WeeklySalesStateDealerMetric) => total + dealer.weeks[week].leads, 0);
+          const reported = dealers.filter((dealer: WeeklySalesStateDealerMetric) => dealer.weeks[week].sales !== null);
+          const sales = reported.reduce((total: number, dealer: WeeklySalesStateDealerMetric) => total + (dealer.weeks[week].sales ?? 0), 0);
+          const salesCoverageLeads = reported.reduce((total: number, dealer: WeeklySalesStateDealerMetric) => total + dealer.weeks[week].leads, 0);
+          return [week, {
+            leads: leadsCount,
+            sales,
+            conversionRatePercent: reported.length
+              ? calculateWeeklySalesEfficiency(salesCoverageLeads, sales).conversionRatePercent
+              : null,
+            salesCoverageLeads,
+            salesCoveragePercent: leadsCount > 0 ? round((salesCoverageLeads / leadsCount) * 100) : null,
+            recipientDealers: dealers.filter((dealer: WeeklySalesStateDealerMetric) => dealer.weeks[week].leads > 0).length,
+            salesReportedDealers: reported.length,
+          }];
+        }),
+      ) as WeeklySalesStateMetric["weeks"];
+      const reference = stateWeeks[String(input.referenceWeek)];
+      return {
+        stateCode,
+        stateName: BRAZILIAN_STATE_NAMES[stateCode] ?? stateCode,
+        leads: reference.leads,
+        sales: reference.sales,
+        conversionRatePercent: reference.conversionRatePercent,
+        salesCoverageLeads: reference.salesCoverageLeads,
+        salesCoveragePercent: reference.salesCoveragePercent,
+        officialDealers: dealers.length,
+        recipientDealers: reference.recipientDealers,
+        salesReportedDealers: reference.salesReportedDealers,
+        weeks: stateWeeks,
+        dealers: [...dealers].sort((left, right) => right.leads - left.leads || left.dealerName.localeCompare(right.dealerName, "pt-BR")),
+      };
+    })
+    .filter(state => state.leads > 0 || state.sales > 0)
+    .sort((left, right) => right.leads - left.leads || right.sales - left.sales || left.stateName.localeCompare(right.stateName, "pt-BR"));
 }
 
 async function getKnownDealerKeys(): Promise<Set<string>> {
@@ -725,6 +872,7 @@ export async function getWeeklySalesMetrics(
         estimatedLeadsNeeded: null,
       },
       dealers: [],
+      states: [],
     };
   }
 
@@ -783,6 +931,12 @@ export async function getWeeklySalesMetrics(
   const unmatchedSales = unmatchedDealers.reduce((total, dealer) => total + (dealer.sales ?? 0), 0);
   const totalSales = matchedSales + unmatchedSales;
   const overallEfficiency = calculateWeeklySalesEfficiency(totalLeads, matchedSales);
+  const states = buildWeeklySalesStateMetrics({
+    officialDealers: getOfficialLeadDealers(),
+    leadCountsByWeek,
+    dealerMetrics: dealers,
+    referenceWeek,
+  });
 
   return {
     competence,
@@ -808,5 +962,6 @@ export async function getWeeklySalesMetrics(
       ...overallEfficiency,
     },
     dealers,
+    states,
   };
 }

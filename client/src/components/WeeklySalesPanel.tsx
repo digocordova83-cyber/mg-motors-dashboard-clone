@@ -34,12 +34,14 @@ import type { AppRouter } from "../../../server/routers";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
 type WeeklySalesDealer = WeeklySalesMetrics["dealers"][number];
+type WeeklySalesState = WeeklySalesMetrics["states"][number];
 type WeeklySalesPreview = RouterOutputs["leads"]["previewWeeklySalesCsv"];
 type WeeklySalesHistory = RouterOutputs["leads"]["weeklySalesImportHistory"];
 type Locale = "pt-BR" | "en-US";
 export type WeeklySalesWeek = 1 | 2 | 3 | 4 | 5;
 export type DealerRankingSortKey = "conversion" | "sales" | "leads";
 export type DealerRankingSortDirection = "asc" | "desc";
+export type StateRankingSortKey = "conversion" | "sales" | "leads";
 
 export type DealerConversionRankingRow = {
   dealer: WeeklySalesDealer;
@@ -48,6 +50,19 @@ export type DealerConversionRankingRow = {
   sales: number;
   leads: number;
   conversionRatePercent: number;
+};
+
+export type StatePerformanceRankingRow = {
+  state: WeeklySalesState;
+  stateCode: string;
+  stateName: string;
+  leads: number;
+  sales: number;
+  conversionRatePercent: number | null;
+  salesCoverageLeads: number;
+  salesCoveragePercent: number | null;
+  recipientDealers: number;
+  officialDealers: number;
 };
 
 type WeeklySalesPanelProps = {
@@ -140,6 +155,46 @@ export function sortDealerConversionRanking(
     right.sales - left.sales ||
     right.leads - left.leads ||
     left.dealerName.localeCompare(right.dealerName, "pt-BR"),
+  );
+}
+
+export function buildStatePerformanceRanking(
+  metrics: WeeklySalesMetrics,
+  week: WeeklySalesWeek,
+): StatePerformanceRankingRow[] {
+  return (metrics.states ?? []).flatMap(state => {
+    const values = state.weeks[week];
+    if (!values || (values.leads <= 0 && values.sales <= 0)) return [];
+    return [{
+      state,
+      stateCode: state.stateCode,
+      stateName: state.stateName,
+      leads: values.leads,
+      sales: values.sales,
+      conversionRatePercent: values.conversionRatePercent,
+      salesCoverageLeads: values.salesCoverageLeads,
+      salesCoveragePercent: values.salesCoveragePercent,
+      recipientDealers: values.recipientDealers,
+      officialDealers: state.officialDealers,
+    }];
+  });
+}
+
+export function sortStatePerformanceRanking(
+  rows: StatePerformanceRankingRow[],
+  sortKey: StateRankingSortKey,
+  direction: DealerRankingSortDirection,
+) {
+  const multiplier = direction === "asc" ? 1 : -1;
+  const valueFor = (row: StatePerformanceRankingRow) => {
+    if (sortKey === "conversion") return row.conversionRatePercent ?? -1;
+    return sortKey === "sales" ? row.sales : row.leads;
+  };
+  return [...rows].sort((left, right) =>
+    (valueFor(left) - valueFor(right)) * multiplier ||
+    right.leads - left.leads ||
+    right.sales - left.sales ||
+    left.stateName.localeCompare(right.stateName, "pt-BR"),
   );
 }
 
@@ -393,6 +448,182 @@ export function WeeklySalesWeekSelector({
         })}
       </div>
     </div>
+  );
+}
+
+export function WeeklySalesStateDealerTable({
+  state,
+  selectedWeek,
+  locale = "pt-BR",
+}: {
+  state: WeeklySalesState;
+  selectedWeek: WeeklySalesWeek;
+  locale?: Locale;
+}) {
+  const dealers = [...state.dealers]
+    .map(dealer => ({ dealer, values: dealer.weeks[selectedWeek] }))
+    .filter(row => (row.values?.leads ?? 0) > 0 || (row.values?.sales ?? 0) > 0)
+    .sort((left, right) =>
+      (right.values?.leads ?? 0) - (left.values?.leads ?? 0) ||
+      left.dealer.dealerName.localeCompare(right.dealer.dealerName, "pt-BR"),
+    );
+
+  return (
+    <div className="min-w-0">
+      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[10px] font-semibold text-slate-300">
+          {ui(locale, `Concessionárias com Leads ou vendas em ${state.stateName}`, `Dealers with Leads or sales in ${state.stateName}`)}
+        </p>
+        <p className="text-[9px] text-slate-600">
+          {dealers.length} {ui(locale, "com movimento no período", "with activity in the period")}
+        </p>
+      </div>
+      <div className="max-w-full overflow-x-auto rounded-lg border border-[#1c2738]">
+        <table className="w-full min-w-[650px] text-left">
+          <thead className="border-b border-[#1d2737] bg-[#080e18] text-[8px] uppercase tracking-[0.1em] text-slate-600">
+            <tr>
+              <th className="px-3 py-2 font-semibold">Dealer</th>
+              <th className="px-3 py-2 text-right font-semibold">Leads</th>
+              <th className="px-3 py-2 text-right font-semibold">Retail Sales</th>
+              <th className="px-3 py-2 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th>
+              <th className="px-3 py-2 text-right font-semibold">{ui(locale, "Cobertura de vendas", "Sales coverage")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#172131] bg-[#0d1522]">
+            {dealers.map(({ dealer, values }) => (
+              <tr key={dealer.dealerName} className="text-[10px]">
+                <td className="px-3 py-2.5 font-medium text-slate-200">{dealer.dealerName}</td>
+                <td className="px-3 py-2.5 text-right font-semibold text-white">{formatInteger(values.leads, locale)}</td>
+                <td className="px-3 py-2.5 text-right text-slate-300">{values.sales === null ? "—" : formatInteger(values.sales, locale)}</td>
+                <td className="px-3 py-2.5 text-right font-medium text-sky-300">{formatMetric(values.conversionRatePercent, locale, "%")}</td>
+                <td className="px-3 py-2.5 text-right">
+                  <span className={`inline-flex rounded-full border px-2 py-1 text-[8px] font-medium ${values.sales === null ? "border-amber-500/20 bg-amber-500/10 text-amber-300" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"}`}>
+                    {values.sales === null ? ui(locale, "Sem linha no arquivo", "Not in sales file") : ui(locale, "Venda reportada", "Sales reported")}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export function WeeklySalesStateRanking({
+  metrics,
+  selectedWeek,
+  locale = "pt-BR",
+}: {
+  metrics: WeeklySalesMetrics;
+  selectedWeek: WeeklySalesWeek;
+  locale?: Locale;
+}) {
+  const [expandedStateCode, setExpandedStateCode] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<StateRankingSortKey>("leads");
+  const [sortDirection, setSortDirection] = useState<DealerRankingSortDirection>("desc");
+  const rows = useMemo(
+    () => sortStatePerformanceRanking(buildStatePerformanceRanking(metrics, selectedWeek), sortKey, sortDirection),
+    [metrics, selectedWeek, sortDirection, sortKey],
+  );
+
+  function changeSort(nextKey: StateRankingSortKey) {
+    if (sortKey === nextKey) {
+      setSortDirection(current => current === "desc" ? "asc" : "desc");
+      return;
+    }
+    setSortKey(nextKey);
+    setSortDirection("desc");
+  }
+
+  return (
+    <Panel
+      title={ui(locale, "Performance por estado e concessionárias", "Performance by state and dealers")}
+      subtitle={ui(
+        locale,
+        `Semana ${selectedWeek}: ranking por Leads recebidos, Retail Sales e conversão. Expanda um estado para ver os dealers.`,
+        `Week ${selectedWeek}: ranking by Leads received, Retail Sales, and conversion. Expand a state to view dealers.`,
+      )}
+      action={<span className="text-[9px] font-medium text-slate-600">{rows.length} {ui(locale, "estado(s)", "state(s)")}</span>}
+    >
+      <div className="border-b border-sky-400/10 bg-sky-400/[0.035] px-4 py-3 text-[9px] leading-4 text-slate-500">
+        {ui(
+          locale,
+          "A conversão usa as vendas do último arquivo disponível e somente os Leads dos dealers presentes nesse arquivo. A cobertura é exibida em cada estado para evitar leitura distorcida.",
+          "Conversion uses the latest available sales file and only Leads from dealers present in that file. Coverage is shown for each state to avoid distorted readings.",
+        )}
+      </div>
+      {rows.length ? (
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full min-w-[820px] text-left">
+            <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600">
+              <tr>
+                <th className="w-14 px-4 py-3 text-center font-semibold">#</th>
+                <th className="px-3 py-3 font-semibold">{ui(locale, "Estado", "State")}</th>
+                {(["leads", "sales", "conversion"] as const).map(key => (
+                  <th key={key} className="px-3 py-3 text-right font-semibold" aria-sort={sortKey === key ? (sortDirection === "desc" ? "descending" : "ascending") : "none"}>
+                    <button type="button" onClick={() => changeSort(key)} className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 outline-none hover:text-slate-300 focus-visible:ring-2 focus-visible:ring-[#e2212d]/60">
+                      {key === "leads" ? "Leads" : key === "sales" ? "Retail Sales" : ui(locale, "Conversão", "Conversion")}
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </th>
+                ))}
+                <th className="px-3 py-3 text-right font-semibold">Dealers</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#172131]">
+              {rows.map((row, index) => {
+                const isExpanded = expandedStateCode === row.stateCode;
+                const detailId = `state-dealers-${row.stateCode.toLocaleLowerCase("pt-BR")}`;
+                return (
+                  <React.Fragment key={row.stateCode}>
+                    <tr className="text-[10px] transition-colors hover:bg-white/[0.025]">
+                      <td className="px-4 py-3 text-center font-semibold tabular-nums text-slate-600">{index + 1}</td>
+                      <td className="px-3 py-3">
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          aria-controls={detailId}
+                          onClick={() => setExpandedStateCode(current => current === row.stateCode ? null : row.stateCode)}
+                          className="flex w-full items-center justify-between gap-3 rounded-md text-left outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-[#e2212d]/60"
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-medium text-slate-200">{row.stateName} <span className="text-slate-600">({row.stateCode})</span></span>
+                            <span className={`mt-0.5 block text-[8px] ${row.salesCoveragePercent !== null && row.salesCoveragePercent < 100 ? "text-amber-300/80" : "text-slate-600"}`}>
+                              {ui(locale, "Cobertura do arquivo", "File coverage")}: {formatInteger(row.salesCoverageLeads, locale)} {ui(locale, "de", "of")} {formatInteger(row.leads, locale)} Leads ({formatMetric(row.salesCoveragePercent, locale, "%")})
+                            </span>
+                          </span>
+                          <ChevronDown className={`h-4 w-4 shrink-0 text-slate-600 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                        </button>
+                      </td>
+                      <td className="px-3 py-3 text-right font-semibold text-white">{formatInteger(row.leads, locale)}</td>
+                      <td className="px-3 py-3 text-right text-slate-300">{formatInteger(row.sales, locale)}</td>
+                      <td className="px-3 py-3 text-right font-medium text-sky-300">{formatMetric(row.conversionRatePercent, locale, "%")}</td>
+                      <td className="px-3 py-3 text-right text-slate-400">{row.recipientDealers} {ui(locale, "de", "of")} {row.officialDealers}</td>
+                    </tr>
+                    {isExpanded ? (
+                      <tr id={detailId} className="bg-[#0a111d]">
+                        <td colSpan={6} className="px-4 py-4">
+                          <WeeklySalesStateDealerTable state={row.state} selectedWeek={selectedWeek} locale={locale} />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid min-h-40 place-items-center px-5 text-center">
+          <div>
+            <Building2 className="mx-auto h-5 w-5 text-slate-700" />
+            <p className="mt-2 text-xs font-medium text-slate-300">{ui(locale, "Nenhum estado com Leads no período", "No state with Leads in this period")}</p>
+            <p className="mt-1 text-[10px] text-slate-600">{ui(locale, "Ajuste o filtro de datas ou aguarde a próxima atualização.", "Adjust the date filter or wait for the next update.")}</p>
+          </div>
+        </div>
+      )}
+    </Panel>
   );
 }
 
@@ -1251,6 +1482,11 @@ export function WeeklySalesPanel({
             metrics={metrics.data}
             value={rankingWeek}
             onChange={setRankingWeek}
+            locale={locale}
+          />
+          <WeeklySalesStateRanking
+            metrics={metrics.data}
+            selectedWeek={rankingWeek}
             locale={locale}
           />
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">
