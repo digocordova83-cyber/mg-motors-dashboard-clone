@@ -1308,3 +1308,13 @@
 - [x] Entregar resumo executivo com recomendações operacionais e próximos passos.
 
 > Conclusão em 11/08/2026: os casos são rastreáveis e comprovam ocorrências reais, mas o dossiê é casuístico e não permite estimar taxa sistêmica. O dashboard contém 2.221 Leads Barigui no período; 11 registros Barigui estão ligados aos exemplos apresentados. O principal risco quantitativo a investigar é a distribuição geográfica: 33,09% dos Leads Barigui estão fora de PR/SC.
+
+## Dossiê Barigui — cruzamento de emails com origem
+
+- [x] Consolidar os emails visíveis no dossiê e o telefone do caso sem email legível.
+- [x] Localizar cada contato na base de Leads por email exato, usando telefone somente como chave auxiliar.
+- [x] Confirmar data, canal normalizado, canal original, modelo, cidade/UF e dealer atribuído.
+- [x] Identificar contatos com mais de uma origem ou mais de um registro.
+- [x] Entregar uma tabela com emails mascarados, correspondências e exceções.
+
+> Resultado: dez contatos localizados em doze registros — dez de Site e dois de Campanha Urban. Clara Keli aparece em Site e Campanha Urban; Maily Kalapalo aparece duas vezes no Site, atribuída a Barigui Florianópolis e DRSul Porto Alegre. Amanda, descrita no dossiê como canal não localizado, consta na base como Site.
