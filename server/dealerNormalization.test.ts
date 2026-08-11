@@ -19,6 +19,10 @@ describe("dealer normalization", () => {
     expect(canonicalizeDealerName("Barigui Curitiba - 3964357")).toBe("BARIGUI - CURITIBA");
     expect(isExplicitDealerAlias("orvel_shopping_vitória_-_vitória/es_")).toBe(true);
     expect(canonicalizeDealerName("orvel_shopping_vitória_-_vitória/es_")).toBe("ORVEL - VITÓRIA");
+    expect(canonicalizeDealerName("mg_inglaterra_salvador_shopping_-_salvador/ba_")).toBe("Indiana Salvador - 3966031");
+    expect(canonicalizeDealerName("MEGAMIT - ALPHAVILLE")).toBe("Baltic Shopping Tamboré");
+    expect(canonicalizeDealerName("DS AUTOMOTOR")).toBe("DÃO SILVEIRA NATAL");
+    expect(canonicalizeDealerName("Baltic — Alphaville/SP")).toBe("Baltic Shopping Tamboré");
     expect(isExplicitDealerAlias("ligação_")).toBe(false);
   });
 
@@ -28,7 +32,7 @@ describe("dealer normalization", () => {
   });
 
   it("agrupa Outros, vazios e placeholders como Leads em qualificação sem alterar nomes válidos", () => {
-    for (const value of ["Outros", "Outro", "Unavailable", "Indisponível", "N/A", "Não informado", "Sem concessionária", "  "]) {
+    for (const value of ["Outros", "Outro", "Unavailable", "Indisponível", "N/A", "Não informado", "Sem concessionária", "ig", "fb", "<test lead: dummy data for em_qual_concessionária_gostaria_de_ser_atendido?_>", "  "]) {
       expect(isDealerQualificationPlaceholder(value)).toBe(true);
       expect(canonicalizeDealerForAnalytics(value)).toBe("Indisponível");
     }

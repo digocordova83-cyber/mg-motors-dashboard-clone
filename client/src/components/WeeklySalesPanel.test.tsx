@@ -201,6 +201,25 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(table).not.toContain("Sem correspondência");
   });
 
+  it("oculta um resumo antigo quando a lista atual está integralmente conciliada", () => {
+    const currentMetrics = metricsWithDealers([dealerWithHistory]) as any;
+    const staleSummaryMetrics = {
+      ...currentMetrics,
+      summary: {
+        ...currentMetrics.summary,
+        matchedDealers: 0,
+        unmatchedDealers: 4,
+      },
+    } as never;
+
+    const table = renderToStaticMarkup(
+      <WeeklySalesMetricsTable metrics={staleSummaryMetrics} locale="pt-BR" />,
+    );
+
+    expect(table).not.toContain("4 concessionária(s) sem correspondência");
+    expect(table).not.toContain("As vendas permanecem auditáveis");
+  });
+
   it("exclui qualificação e dealers sem correspondência dos rankings de conversão", () => {
     const eligibilityMetrics = metricsWithDealers([
       dealerWithHistory,

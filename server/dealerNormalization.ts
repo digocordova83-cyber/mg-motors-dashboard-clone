@@ -1,5 +1,6 @@
 import dealerMappingSource from "./data/dealer-aliases.json";
 import officialDealerSource from "./data/official-dealers.json";
+import dealerAuditOverridesSource from "./data/dealer-audit-overrides.json";
 
 type DealerMappingRow = {
   source: string;
@@ -36,8 +37,17 @@ type OfficialDealerSource = {
   dealers: OfficialDealer[];
 };
 
+type DealerAuditOverridesSource = {
+  generatedAt: string;
+  sources: string[];
+  mappings: Array<{ sourceKey: string; canonical: string }>;
+  qualificationKeys: string[];
+  additionalOfficialLeadDealerKeys: string[];
+};
+
 const mappingSource = dealerMappingSource as DealerMappingSource;
 const officialDirectory = officialDealerSource as OfficialDealerSource;
+const dealerAuditOverrides = dealerAuditOverridesSource as DealerAuditOverridesSource;
 
 export function normalizeDealerLookupKey(value: string): string {
   return value
@@ -50,6 +60,9 @@ export function normalizeDealerLookupKey(value: string): string {
 
 const canonicalByAlias = new Map<string, string>();
 for (const mapping of mappingSource.mappings) {
+  canonicalByAlias.set(mapping.sourceKey, mapping.canonical);
+}
+for (const mapping of dealerAuditOverrides.mappings) {
   canonicalByAlias.set(mapping.sourceKey, mapping.canonical);
 }
 
@@ -72,6 +85,7 @@ const DEALER_QUALIFICATION_KEYS = new Set([
   "NONE",
   "A DEFINIR",
   "A CONFIRMAR",
+  ...dealerAuditOverrides.qualificationKeys,
 ]);
 
 export function isDealerQualificationPlaceholder(value: string): boolean {
@@ -82,7 +96,18 @@ export function isDealerQualificationPlaceholder(value: string): boolean {
 export function canonicalizeDealerName(value: string): string {
   const original = value.trim();
   if (!original) return original;
-  return canonicalByAlias.get(normalizeDealerLookupKey(original)) ?? original;
+  let canonical = original;
+  const visited = new Set<string>();
+  for (let index = 0; index < 4; index += 1) {
+    const key = normalizeDealerLookupKey(canonical);
+    if (!key || visited.has(key)) break;
+    visited.add(key);
+    const next = canonicalByAlias.get(key);
+    if (!next) break;
+    canonical = next;
+    if (normalizeDealerLookupKey(next) === key) break;
+  }
+  return canonical;
 }
 
 export function canonicalizeDealerForAnalytics(value: string): string {
@@ -117,6 +142,10 @@ export function getDealerMappingStats(): {
 
 export function getOfficialDealers(): readonly OfficialDealer[] {
   return officialDirectory.dealers;
+}
+
+export function getAdditionalOfficialLeadDealerKeys(): ReadonlySet<string> {
+  return new Set(dealerAuditOverrides.additionalOfficialLeadDealerKeys);
 }
 
 export function getOfficialDealerDirectoryStats(): {

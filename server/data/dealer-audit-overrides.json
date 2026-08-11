@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-08-11T00:40:00.000Z",
+  "sources": [
+    "Dealers_atualizado.xlsx",
+    "https://mgmotoroficial.com.br/mg-care/concessionarias",
+    "Auditoria de cidade, estado e período da base de Leads"
+  ],
+  "mappings": [
+    { "sourceKey": "MEGAMIT ALPHAVILLE", "canonical": "Baltic Shopping Tamboré" },
+    { "sourceKey": "BALTIC ALPHAVILLE SP", "canonical": "Baltic Shopping Tamboré" },
+    { "sourceKey": "INGLATERRA SHOPPING SALVADOR BA", "canonical": "Indiana Salvador - 3966031" },
+    { "sourceKey": "INGLATERRA SALVADOR SHOPPING", "canonical": "Indiana Salvador - 3966031" },
+    { "sourceKey": "INGLATERRA IGUATEMI", "canonical": "Indiana Salvador - 3966031" },
+    { "sourceKey": "DS AUTOMOTOR", "canonical": "DÃO SILVEIRA NATAL" },
+    { "sourceKey": "DAO SILVEIRA NATAL MIDWAY MALL", "canonical": "DÃO SILVEIRA NATAL" },
+    { "sourceKey": "BARIGUI FLORIANOPOLIS SC", "canonical": "BARIGUI - FLORIPA" },
+    { "sourceKey": "DRSUL PORTO ALEGRE RS", "canonical": "DRSUL - PORTO ALEGRE" },
+    { "sourceKey": "IGUAUTO SHOPPING FORTALEZA CE", "canonical": "IGUALTO - MG FORTALEZA" },
+    { "sourceKey": "IGUAUTO FORTALEZA CE", "canonical": "IGUALTO - MG FORTALEZA" },
+    { "sourceKey": "SINAL SAO PAULO SP", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "SINAL SAO PAULO", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "EUROVILLE BH BARAO MG", "canonical": "EUROVILLE - BH BARÃO" },
+    { "sourceKey": "EUROVILLE BH SHOPPING MG", "canonical": "EUROVILLE - BH BARÃO" },
+    { "sourceKey": "POTENZA RECREIO RJ", "canonical": "POTENZA - RECREIO" },
+    { "sourceKey": "TECAR BOUGAINVILLE SHOPPING", "canonical": "TECAR SHOPPING - GOIÂNIA" },
+    { "sourceKey": "TECAR GOIANIA 3966943", "canonical": "TECAR SHOPPING - GOIÂNIA" },
+    { "sourceKey": "STEFANINI CAMPINAS SP", "canonical": "STEFANINI - CAMPINAS" },
+    { "sourceKey": "TORIBA CEASA SP", "canonical": "TORIBA - CEASA" },
+    { "sourceKey": "TORIBA SAO PAULO", "canonical": "TORIBA - CEASA" },
+    { "sourceKey": "JRCA MACEIO", "canonical": "JRCA" },
+    { "sourceKey": "SAVOL SAO CAETANO SP", "canonical": "SAVOL - SÃO CAETANO" },
+    { "sourceKey": "VEGA LONGWALL AUTOMOTORES", "canonical": "VEGA LONGWALL" },
+    { "sourceKey": "ONNE SAO JOSE DO RIO PRETO SP", "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO" },
+    { "sourceKey": "ONNE RIBEIRAO PRETO SP", "canonical": "ONNE - RIBEIRÃO PRETO" },
+    { "sourceKey": "ORVEL SHOPPING VITORIA", "canonical": "ORVEL - VITÓRIA" }
+  ],
+  "qualificationKeys": [
+    "IG",
+    "FB",
+    "TEST LEAD DUMMY DATA FOR EM QUAL CONCESSIONARIA GOSTARIA DE SER ATENDIDO"
+  ],
+  "additionalOfficialLeadDealerKeys": [
+    "CANOPUS PANTANAL SHOPPING"
+  ]
+}

@@ -1252,3 +1252,38 @@
 > Conciliação aplicada aos dois lotes de agosto: oito linhas atualizadas de `UNMATCHED` para `MATCHED`, correspondentes aos quatro dealers oficiais em cada lote. Os nomes originais e os volumes foram preservados.
 
 > Resultado recalculado: 25 de 25 dealers correspondidos, 85 de 85 Retail Sales correspondidas, zero vendas não correspondidas, conversão de rede de 4,78% e 20,91 Leads por venda. A segunda execução atualizou zero linhas.
+
+## Summary — reorganização do slide Overall Results
+
+- [x] Remover todas as referências visuais e textuais a `unmatched` do slide Overall Results.
+- [x] Reorganizar o bloco de Retail Sales para destacar 85 vendas, 100% de cobertura e conversão de 4,78%.
+- [x] Reequilibrar espaçamento, hierarquia e alinhamento entre os blocos de Leads e Retail.
+- [x] Incluir no slide Retail & Network os 1.777 Leads atribuídos e a taxa de conversão de 4,78% em posição de destaque.
+- [x] Retirar também do slide Retail & Network todo o bloco e as referências a `unmatched`.
+- [x] Validar o slide renderizado e reapresentar o Summary atualizado.
+
+> Layout final: Overall Results reorganizado em demanda e funil comercial; Retail & Network destaca 85 Retail Sales, 1.777 Leads atribuídos, conversão de 4,78%, 20,91 Leads por venda e 100% de cobertura oficial, sem qualquer referência a `unmatched`.
+
+## Summary — Leads e conversão por dealer no Top 5
+
+- [x] Remover do slide Retail & Network o destaque do total geral de 1.777 Leads.
+- [x] Adicionar ao ranking Top 5 o total de Leads recebido por cada dealer.
+- [x] Adicionar ao ranking Top 5 a taxa de conversão individual de cada dealer.
+- [x] Validar os cálculos Retail ÷ Leads e reapresentar o Summary atualizado.
+
+> Ranking final: Tecar 145 Leads / 12 Retail / 8,28%; DRSUL 149 / 11 / 7,38%; Savol 54 / 11 / 20,37%; Barigui 114 / 10 / 8,77%; Dão Silveira 85 / 6 / 7,06%. O total geral de Leads e a conversão agregada foram removidos desse slide.
+
+## Auditoria integral — concessionárias da base de Leads
+
+- [x] Reconciliar todos os nomes de concessionária da base de Leads com o cadastro oficial de 31 dealers.
+- [x] Separar Leads conciliados, Leads em qualificação/sem dealer e nomes realmente fora do cadastro.
+- [x] Confirmar novamente os 25 dealers e as 85 Retail Sales do relatório semanal de agosto.
+- [x] Corrigir aliases ou regras caso existam nomes oficiais ainda não reconhecidos.
+- [x] Remover o aviso de quatro concessionárias sem correspondência somente se a auditoria comprovar cobertura correta.
+- [x] Validar percentuais, testes, dashboard e salvar checkpoint restaurável.
+
+> Auditoria inicial: 14.064 Leads; 770 em qualificação/sem dealer; 13.294 com dealer informado; 10.998 conciliados; 2.296 em 39 nomes fora do cadastro oficial; cobertura atribuída de 82,7291%. Vendas Semanais: 25/25 dealers, 85/85 Retail Sales e zero não correspondidas.
+
+> Auditoria final: 14.064 Leads; 13.279 com dealer atribuído e 100% desses conciliados; 785 em qualificação/sem dealer; zero nomes de dealer fora da rede validada. Assim, 94,4184% da base total possui dealer atribuído e conciliado. Vendas Semanais permanecem em 25/25 dealers e 85/85 Retail Sales conciliadas, sem alerta de correspondência.
+
+> Validação técnica: 44 arquivos e 244 testes aprovados, TypeScript sem erros, build de produção concluído e auditoria final reproduzível. A prévia visual abriu no login por ausência de sessão, portanto a ausência do aviso foi comprovada pelo serviço atual e pelo teste de regressão do componente.

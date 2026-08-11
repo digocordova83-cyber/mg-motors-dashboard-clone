@@ -619,6 +619,9 @@ export function WeeklySalesMetricsTable({
         : `${row.dealerName} ${row.sourceName}`.toLocaleLowerCase(locale).includes(query),
     );
   }, [locale, rankedDealers, search]);
+  const actualUnmatchedDealerCount = metrics.dealers.filter(
+    dealer => dealer.matchStatus === "UNMATCHED",
+  ).length;
 
   function changeSort(nextKey: DealerRankingSortKey) {
     if (sortKey === nextKey) {
@@ -663,12 +666,12 @@ export function WeeklySalesMetricsTable({
         ) : null}
       </div>
 
-      {metrics.summary.unmatchedDealers > 0 ? (
+      {actualUnmatchedDealerCount > 0 ? (
         <div className="flex items-start gap-3 border-b border-amber-500/15 bg-amber-500/[0.05] px-4 py-3 text-[10px] leading-5 text-amber-200/80">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
           <p>
             <strong className="text-amber-300">
-              {formatInteger(metrics.summary.unmatchedDealers, locale)} {ui(locale, "concessionária(s) sem correspondência", "unmatched dealer(s)")}.
+              {formatInteger(actualUnmatchedDealerCount, locale)} {ui(locale, "concessionária(s) sem correspondência", "unmatched dealer(s)")}.
             </strong>{" "}
             {ui(
               locale,
