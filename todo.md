@@ -1408,3 +1408,27 @@
 - [x] Atualizar testes bilíngues, executar TypeScript/build e salvar checkpoint restaurável.
 
 > Validação em 12/08/2026: 13 testes do painel semanal, TypeScript e build de produção aprovados após a renomeação.
+
+## Dashboard — metas Total Dealer e Sales por concessionária
+
+- [x] Auditar a estrutura, competência, totais e fórmulas de `metas.xlsx` sem presumir campos ausentes.
+- [x] Conciliar cada nome da planilha com o cadastro oficial e os aliases atuais, listando matches, ambiguidades e ausências.
+- [x] Modelar metas por competência e concessionária, preservando histórico e origem do arquivo.
+- [x] Criar importação idempotente com preview, validação de totais e proteção de permissões.
+- [x] Calcular meta, realizado, atingimento, gap e status por dealer usando o snapshot semanal vigente.
+- [x] Exibir resumo Total Dealer e tabela por concessionária com ordenação, filtros e layout responsivo.
+- [x] Permitir atualizar a planilha de metas sem alterar Leads ou vendas já importados.
+- [x] Adicionar testes de match, persistência, cálculos, interface, permissões e idempotência.
+- [x] Validar com dados reais, TypeScript, suíte completa, build e checkpoint restaurável.
+
+> Auditoria em 12/08/2026: 31 linhas; TOTAL DEALER 11.996; SALES 548; WEIGHT 100,02%; investimento R$ 916.000,02. O arquivo não possui fórmulas nem competência explícita. As metas por canal somam 12.008, 12 acima do TOTAL DEALER por arredondamento; o acompanhamento usará TOTAL DEALER e SALES como metas oficiais.
+
+> Match validado em 12/08/2026: 31/31 linhas conciliadas, zero ambiguidades, zero ausências e zero chaves canônicas duplicadas. O de-para explícito cobre abreviações e nomes históricos como BDG, Inglaterra, Genial, Orletti, Baltic GUA e Tecar/GO, sempre apontando para o cadastro oficial e para a mesma chave usada no realizado semanal.
+
+> Persistência concluída: tabela `dealer_monthly_targets` criada pela migração 0013; `metas.xlsx` importada para 2026-08 com 31 registros, meta de 11.996 Leads e 548 vendas. Arquivo arquivado no storage e segunda execução confirmada como `NO_CHANGES`, sem linhas duplicadas.
+
+> Cálculos validados: Leads realizados seguem o período D-1 selecionado; vendas realizadas usam a última semana do PDF vigente. Dealers sem linha de vendas permanecem como não reportados, não como zero. Resumo e tabela calculam atingimento e gap separados para Leads e Sales, além de conversão meta versus real. Foram aprovados 15 testes direcionados e TypeScript.
+
+> Interface concluída: resumo de Leads, Sales, conversão e cobertura; tabela desktop e cards mobile por concessionária; busca e ordenação por atingimento/gap. O botão “Atualizar metas” possui prévia auditável e só aparece para usuários com permissão de importação. Foram aprovados 36 testes direcionados e TypeScript.
+
+> Validação final em 12/08/2026: 3.255 Leads atribuídos de meta 11.996 (27,13%); 178 Sales de meta 548 (32,48%); conversão real 5,47% versus meta 4,57%; 31/31 metas conciliadas e 24/31 dealers com Retail reportado na Semana 3. Desktop e mobile validados com dados reais. Foram aprovados 261 testes, TypeScript e build.

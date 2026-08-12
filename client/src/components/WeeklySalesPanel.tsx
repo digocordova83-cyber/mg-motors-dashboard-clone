@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import { DealerTargetTrackingPanel } from "./DealerTargetTrackingPanel";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
@@ -37,6 +38,7 @@ type WeeklySalesDealer = WeeklySalesMetrics["dealers"][number];
 type WeeklySalesState = WeeklySalesMetrics["states"][number];
 type WeeklySalesPreview = RouterOutputs["leads"]["previewWeeklySalesCsv"];
 type WeeklySalesHistory = RouterOutputs["leads"]["weeklySalesImportHistory"];
+type DealerTargetsPreview = RouterOutputs["leads"]["previewDealerTargets"];
 type Locale = "pt-BR" | "en-US";
 export type WeeklySalesWeek = 1 | 2 | 3 | 4 | 5;
 export type DealerRankingSortKey = "conversion" | "sales" | "leads";
@@ -77,6 +79,7 @@ type WeeklySalesPanelProps = {
 
 const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 export const WEEKLY_SALES_FILE_ACCEPT = ".csv,text/csv,.pdf,application/pdf";
+export const DEALER_TARGETS_FILE_ACCEPT = ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const DEALER_RANKING_EXCLUDED_LABELS = new Set([
   "leads em qualificacao",
   "indisponivel",
@@ -194,7 +197,7 @@ export function sortStatePerformanceRanking(
     (valueFor(left) - valueFor(right)) * multiplier ||
     right.leads - left.leads ||
     right.sales - left.sales ||
-    left.stateName.localeCompare(right.stateName, "pt-BR"),
+      left.stateName.localeCompare(right.stateName, "pt-BR"),
   );
 }
 
@@ -1331,6 +1334,7 @@ export function WeeklySalesPanel({
 }: WeeklySalesPanelProps) {
   const utils = trpc.useUtils();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const targetsFileInputRef = useRef<HTMLInputElement>(null);
   const [upload, setUpload] = useState<{
     fileName: string;
     base64: string;
@@ -1340,6 +1344,15 @@ export function WeeklySalesPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
+  const [targetsUpload, setTargetsUpload] = useState<{
+    fileName: string;
+    base64: string;
+    competence: string;
+  } | null>(null);
+  const [targetsPreview, setTargetsPreview] = useState<DealerTargetsPreview | null>(null);
+  const [targetsPreviewOpen, setTargetsPreviewOpen] = useState(false);
+  const [targetsMessage, setTargetsMessage] = useState<string | null>(null);
+  const [targetsClientError, setTargetsClientError] = useState<string | null>(null);
   const [rankingWeek, setRankingWeek] = useState<WeeklySalesWeek>(5);
 
   const metrics = trpc.leads.weeklySalesMetrics.useQuery(
@@ -1357,7 +1370,13 @@ export function WeeklySalesPanel({
     setPreviewOpen(false);
     setMessage(null);
     setClientError(null);
+    setTargetsUpload(null);
+    setTargetsPreview(null);
+    setTargetsPreviewOpen(false);
+    setTargetsMessage(null);
+    setTargetsClientError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (targetsFileInputRef.current) targetsFileInputRef.current.value = "";
   }, [competence]);
 
   useEffect(() => {
@@ -1392,6 +1411,27 @@ export function WeeklySalesPanel({
         utils.leads.weeklySalesMetrics.invalidate(),
         utils.leads.weeklySalesImportHistory.invalidate(),
       ]);
+    },
+  });
+  const previewTargetsMutation = trpc.leads.previewDealerTargets.useMutation({
+    onSuccess: data => {
+      setTargetsPreview(data);
+      setTargetsPreviewOpen(true);
+      setTargetsClientError(null);
+    },
+  });
+  const importTargetsMutation = trpc.leads.importDealerTargets.useMutation({
+    onSuccess: async result => {
+      setTargetsPreviewOpen(false);
+      setTargetsMessage(
+        result.idempotent
+          ? ui(locale, "Esta planilha de metas já está ativa para a competência; nenhuma linha foi duplicada.", "This target workbook is already active for the period; no rows were duplicated.")
+          : ui(locale, `${formatInteger(result.rowsInserted, locale)} metas por concessionária importadas com sucesso.`, `${formatInteger(result.rowsInserted, locale)} dealer targets imported successfully.`),
+      );
+      setTargetsUpload(null);
+      setTargetsPreview(null);
+      if (targetsFileInputRef.current) targetsFileInputRef.current.value = "";
+      await utils.leads.weeklySalesMetrics.invalidate();
     },
   });
 
@@ -1434,7 +1474,41 @@ export function WeeklySalesPanel({
     importMutation.mutate({ ...upload, expectedFileHash: preview.fileHash });
   }
 
+  async function handleTargetsFile(event: ChangeEvent<HTMLInputElement>) {
+    if (!canImportLeads) return;
+    const file = event.target.files?.[0];
+    setTargetsMessage(null);
+    setTargetsClientError(null);
+    previewTargetsMutation.reset();
+    importTargetsMutation.reset();
+    if (!file) return;
+    if (!file.name.toLocaleLowerCase("pt-BR").endsWith(".xlsx")) {
+      setTargetsClientError(ui(locale, "Selecione uma planilha com extensão .xlsx.", "Select an .xlsx workbook."));
+      event.target.value = "";
+      return;
+    }
+    if (file.size > MAX_WEEKLY_SALES_FILE_SIZE_BYTES) {
+      setTargetsClientError(ui(locale, "A planilha excede o limite de 5 MB.", "The workbook exceeds the 5 MB limit."));
+      event.target.value = "";
+      return;
+    }
+    try {
+      const base64 = await readFileAsDataUrl(file);
+      const nextUpload = { fileName: file.name, base64, competence };
+      setTargetsUpload(nextUpload);
+      previewTargetsMutation.mutate(nextUpload);
+    } catch (error) {
+      setTargetsClientError(error instanceof Error ? error.message : ui(locale, "Não foi possível ler a planilha.", "The workbook could not be read."));
+    }
+  }
+
+  function confirmTargetsImport() {
+    if (!canImportLeads || !targetsUpload || !targetsPreview?.valid) return;
+    importTargetsMutation.mutate({ ...targetsUpload, expectedFileHash: targetsPreview.fileHash });
+  }
+
   const error = clientError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
+  const targetsError = targetsClientError ?? previewTargetsMutation.error?.message ?? importTargetsMutation.error?.message ?? null;
 
   return (
     <section id="weekly-sales-panel" className="space-y-4" aria-labelledby="weekly-sales-title">
@@ -1489,6 +1563,24 @@ export function WeeklySalesPanel({
                   : ui(locale, "Validando...", "Validating...")
                 : ui(locale, "Importar vendas", "Import sales")}
             </Button>
+            <input
+              ref={targetsFileInputRef}
+              type="file"
+              accept={DEALER_TARGETS_FILE_ACCEPT}
+              onChange={handleTargetsFile}
+              className="hidden"
+              aria-label={ui(locale, "Selecionar planilha de metas por concessionária", "Select dealer target workbook")}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => targetsFileInputRef.current?.click()}
+              disabled={previewTargetsMutation.isPending || importTargetsMutation.isPending}
+              className="border-sky-400/30 bg-sky-400/[0.08] text-sky-300 hover:bg-sky-400/[0.13] hover:text-white"
+            >
+              {previewTargetsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Target className="mr-2 h-4 w-4" />}
+              {previewTargetsMutation.isPending ? ui(locale, "Validando metas...", "Validating targets...") : ui(locale, "Atualizar metas", "Update targets")}
+            </Button>
           </div>
         ) : null}
       </div>
@@ -1529,6 +1621,29 @@ export function WeeklySalesPanel({
         </div>
       ) : null}
 
+      {previewTargetsMutation.isPending || importTargetsMutation.isPending || targetsMessage || targetsError ? (
+        <div
+          role={targetsError ? "alert" : "status"}
+          className={`rounded-xl border px-4 py-3 text-xs ${
+            targetsError
+              ? "border-red-500/20 bg-red-500/[0.06] text-red-300"
+              : targetsMessage
+                ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300"
+                : "border-sky-500/20 bg-sky-500/[0.06] text-sky-200"
+          }`}
+        >
+          {previewTargetsMutation.isPending ? (
+            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Validando metas, totais e correspondências...", "Validating targets, totals, and dealer matches...")}</>
+          ) : importTargetsMutation.isPending ? (
+            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Arquivando e importando metas...", "Archiving and importing targets...")}</>
+          ) : targetsError ? (
+            <><AlertTriangle className="mr-2 inline h-4 w-4" />{targetsError}</>
+          ) : (
+            <><CheckCircle2 className="mr-2 inline h-4 w-4" />{targetsMessage}</>
+          )}
+        </div>
+      ) : null}
+
       {metrics.isLoading ? (
         <div className="grid min-h-52 place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
           <div className="text-center">
@@ -1550,6 +1665,17 @@ export function WeeklySalesPanel({
       ) : metrics.data?.import ? (
         <>
           <WeeklySalesSummaryCards metrics={metrics.data} locale={locale} />
+          {metrics.data.targets ? (
+            <DealerTargetTrackingPanel tracking={metrics.data.targets} locale={locale} />
+          ) : (
+            <div className="grid min-h-32 place-items-center rounded-xl border border-dashed border-[#263247] bg-[#0d1421] px-5 text-center">
+              <div>
+                <Target className="mx-auto h-5 w-5 text-slate-700" />
+                <p className="mt-2 text-xs font-medium text-slate-300">{ui(locale, "Metas mensais ainda não importadas", "Monthly targets not imported yet")}</p>
+                <p className="mt-1 text-[10px] text-slate-600">{ui(locale, "Use Atualizar metas para carregar TOTAL DEALER e SALES por concessionária.", "Use Update targets to load TOTAL DEALER and SALES by dealer.")}</p>
+              </div>
+            </div>
+          )}
           <WeeklySalesWeekSelector
             metrics={metrics.data}
             value={rankingWeek}
@@ -1661,6 +1787,47 @@ export function WeeklySalesPanel({
               )}
               {ui(locale, "Confirmar importação", "Confirm import")}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={targetsPreviewOpen} onOpenChange={setTargetsPreviewOpen}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden border-[#263247] bg-[#0d1522] p-0 text-white shadow-2xl">
+          <DialogHeader className="border-b border-[#1b2535] px-5 pb-4 pt-5 text-left">
+            <div className="mb-2 inline-flex w-fit items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/[0.08] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-sky-300">
+              <Target className="h-3.5 w-3.5" />
+              {ui(locale, "Prévia auditável", "Auditable preview")}
+            </div>
+            <DialogTitle className="pr-8 text-lg text-white">{ui(locale, "Confirmar metas por concessionária", "Confirm dealer targets")}</DialogTitle>
+            <DialogDescription className="text-[11px] leading-5 text-slate-500">
+              {targetsPreview ? `${targetsPreview.fileName} • ${formatCompetence(targetsPreview.competence, locale)}` : ui(locale, "Revise os totais e correspondências antes de confirmar.", "Review totals and matches before confirming.")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[62vh] space-y-4 overflow-y-auto p-5">
+            {targetsPreview ? (
+              <>
+                <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-[10px] leading-5 ${targetsPreview.valid ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-200/80" : "border-red-500/20 bg-red-500/[0.06] text-red-200/80"}`}>
+                  {targetsPreview.valid ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />}
+                  <p><strong className={targetsPreview.valid ? "text-emerald-300" : "text-red-300"}>{targetsPreview.valid ? ui(locale, "Planilha pronta para importação.", "Workbook ready to import.") : ui(locale, "A planilha possui bloqueios.", "The workbook has blocking issues.")}</strong> {ui(locale, "TOTAL DEALER e SALES serão gravados na competência selecionada.", "TOTAL DEALER and SALES will be stored for the selected period.")}</p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    [ui(locale, "Concessionárias", "Dealers"), targetsPreview.summary.rows],
+                    [ui(locale, "Correspondências", "Matched"), targetsPreview.summary.matchedRows],
+                    [ui(locale, "Meta de Leads", "Lead target"), targetsPreview.summary.totalLeadTarget],
+                    [ui(locale, "Meta de Sales", "Sales target"), targetsPreview.summary.totalSalesTarget],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-lg border border-[#1f2b3e] bg-[#0a111d] p-3"><p className="text-[9px] uppercase tracking-[0.1em] text-slate-600">{label}</p><p className="mt-2 text-lg font-semibold text-white">{formatInteger(Number(value), locale)}</p></div>
+                  ))}
+                </div>
+                {targetsPreview.warnings.length ? <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] leading-5 text-amber-200/80"><p className="font-semibold text-amber-300">{ui(locale, "Atenções", "Warnings")}</p><ul className="mt-1 list-disc space-y-1 pl-4">{targetsPreview.warnings.map(item => <li key={item}>{item}</li>)}</ul></div> : null}
+                {targetsPreview.errors.length ? <div className="rounded-lg border border-red-500/20 bg-red-500/[0.05] p-3 text-[10px] leading-5 text-red-200/80"><p className="font-semibold text-red-300">{ui(locale, "Erros", "Errors")}</p><ul className="mt-1 list-disc space-y-1 pl-4">{targetsPreview.errors.map(item => <li key={item}>{item}</li>)}</ul></div> : null}
+              </>
+            ) : null}
+          </div>
+          <DialogFooter className="border-t border-[#1b2535] bg-[#0a111d]/70 px-5 py-4">
+            <Button type="button" variant="outline" onClick={() => setTargetsPreviewOpen(false)} disabled={importTargetsMutation.isPending} className="border-[#2b374b] bg-[#111a29] text-slate-300 hover:bg-[#182338] hover:text-white">{ui(locale, "Cancelar", "Cancel")}</Button>
+            <Button type="button" onClick={confirmTargetsImport} disabled={!targetsPreview?.valid || importTargetsMutation.isPending} className="bg-sky-600 text-white hover:bg-sky-500">{importTargetsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}{ui(locale, "Confirmar metas", "Confirm targets")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

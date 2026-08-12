@@ -17,6 +17,7 @@ import {
   type OfficialDealer,
 } from "./dealerNormalization";
 import { getDb } from "./db";
+import { getDealerTargetsForCompetence } from "./dealerTargetsService";
 import { LEADS_UNAVAILABLE } from "./leadsAnalytics";
 import { storagePut } from "./storage";
 import {
@@ -157,6 +158,57 @@ export type WeeklySalesMetrics = {
   };
   dealers: WeeklySalesDealerMetric[];
   states: WeeklySalesStateMetric[];
+  targets: DealerTargetTracking | null;
+};
+
+export type DealerTargetProgress = {
+  dealerName: string;
+  dealerKey: string;
+  stateCode: string;
+  leadTarget: number;
+  leadsActual: number;
+  leadAchievementPercent: number;
+  leadGap: number;
+  salesTarget: number;
+  salesActual: number | null;
+  salesReported: boolean;
+  salesAchievementPercent: number | null;
+  salesGap: number | null;
+  targetConversionRatePercent: number;
+  actualConversionRatePercent: number | null;
+  channelTargets: {
+    google: number;
+    meta: number;
+    publya: number;
+    webmotors: number;
+    mercadoLivre: number;
+    tiktok: number;
+  };
+};
+
+export type DealerTargetTracking = {
+  competence: string;
+  source: {
+    fileName: string;
+    fileHash: string;
+    importedBy: string;
+    importedAt: number;
+  };
+  summary: {
+    dealers: number;
+    salesReportedDealers: number;
+    leadTarget: number;
+    leadsActual: number;
+    leadAchievementPercent: number;
+    leadGap: number;
+    salesTarget: number;
+    salesActual: number;
+    salesAchievementPercent: number;
+    salesGap: number;
+    targetConversionRatePercent: number;
+    actualConversionRatePercent: number | null;
+  };
+  dealers: DealerTargetProgress[];
 };
 
 type EnrichedSalesRow = WeeklySalesRow & {
@@ -830,6 +882,84 @@ export function calculateWeeklySalesEfficiency(leadsCount: number, sales: number
   };
 }
 
+type DealerMonthlyTargetRow = Awaited<ReturnType<typeof getDealerTargetsForCompetence>>[number];
+
+export function buildDealerTargetTracking(input: {
+  competence: string;
+  targets: readonly DealerMonthlyTargetRow[];
+  leadCountsByWeek: ReadonlyMap<string, WeeklyLeadCounts>;
+  dealerMetrics: readonly WeeklySalesDealerMetric[];
+  referenceWeek: WeeklySalesWeek;
+}): DealerTargetTracking | null {
+  if (input.targets.length === 0) return null;
+  const dealerMetricsByKey = new Map(
+    input.dealerMetrics
+      .filter(dealer => dealer.matchStatus === "MATCHED")
+      .map(dealer => [normalizeDealerLookupKey(dealer.dealerName), dealer] as const),
+  );
+  const dealers = input.targets.map(target => {
+    const leadsActual = input.leadCountsByWeek.get(target.canonicalDealerKey)?.[String(input.referenceWeek) as keyof WeeklyLeadCounts] ?? 0;
+    const salesMetric = dealerMetricsByKey.get(target.canonicalDealerKey);
+    const salesActual = salesMetric?.sales ?? null;
+    const salesReported = salesActual !== null;
+    return {
+      dealerName: target.canonicalDealer,
+      dealerKey: target.canonicalDealerKey,
+      stateCode: target.stateCode,
+      leadTarget: target.leadTarget,
+      leadsActual,
+      leadAchievementPercent: target.leadTarget > 0 ? round((leadsActual / target.leadTarget) * 100) : 0,
+      leadGap: target.leadTarget - leadsActual,
+      salesTarget: target.salesTarget,
+      salesActual,
+      salesReported,
+      salesAchievementPercent: salesReported && target.salesTarget > 0
+        ? round((salesActual / target.salesTarget) * 100)
+        : null,
+      salesGap: salesReported ? target.salesTarget - salesActual : null,
+      targetConversionRatePercent: target.leadTarget > 0
+        ? round((target.salesTarget / target.leadTarget) * 100)
+        : 0,
+      actualConversionRatePercent: calculateWeeklySalesEfficiency(leadsActual, salesActual).conversionRatePercent,
+      channelTargets: target.channelTargets,
+    } satisfies DealerTargetProgress;
+  });
+  const leadTarget = dealers.reduce((sum, dealer) => sum + dealer.leadTarget, 0);
+  const leadsActual = dealers.reduce((sum, dealer) => sum + dealer.leadsActual, 0);
+  const salesTarget = dealers.reduce((sum, dealer) => sum + dealer.salesTarget, 0);
+  const salesActual = dealers.reduce((sum, dealer) => sum + (dealer.salesActual ?? 0), 0);
+  const first = input.targets[0];
+  return {
+    competence: input.competence,
+    source: {
+      fileName: first.sourceFileName,
+      fileHash: first.sourceFileHash,
+      importedBy: first.importedBy,
+      importedAt: Math.max(...input.targets.map(target => target.updatedAt)),
+    },
+    summary: {
+      dealers: dealers.length,
+      salesReportedDealers: dealers.filter(dealer => dealer.salesReported).length,
+      leadTarget,
+      leadsActual,
+      leadAchievementPercent: leadTarget > 0 ? round((leadsActual / leadTarget) * 100) : 0,
+      leadGap: leadTarget - leadsActual,
+      salesTarget,
+      salesActual,
+      salesAchievementPercent: salesTarget > 0 ? round((salesActual / salesTarget) * 100) : 0,
+      salesGap: salesTarget - salesActual,
+      targetConversionRatePercent: leadTarget > 0 ? round((salesTarget / leadTarget) * 100) : 0,
+      actualConversionRatePercent: calculateWeeklySalesEfficiency(leadsActual, salesActual).conversionRatePercent,
+    },
+    dealers: dealers.sort(
+      (left, right) =>
+        right.leadAchievementPercent - left.leadAchievementPercent ||
+        right.leadsActual - left.leadsActual ||
+        left.dealerName.localeCompare(right.dealerName, "pt-BR"),
+    ),
+  };
+}
+
 export async function getWeeklySalesMetrics(
   competence: string,
   options: WeeklySalesMetricsOptions = {},
@@ -873,10 +1003,11 @@ export async function getWeeklySalesMetrics(
       },
       dealers: [],
       states: [],
+      targets: null,
     };
   }
 
-  const [records, leadCountsByWeek] = await Promise.all([
+  const [records, leadCountsByWeek, targetRows] = await Promise.all([
     db
       .select()
       .from(weeklySalesRecords)
@@ -887,6 +1018,7 @@ export async function getWeeklySalesMetrics(
         ),
       ),
     getLeadCountsByDealerAndWeek(competence, { dateFrom, dateTo }),
+    getDealerTargetsForCompetence(competence),
   ]);
 
   const referenceWeek =
@@ -937,6 +1069,13 @@ export async function getWeeklySalesMetrics(
     dealerMetrics: dealers,
     referenceWeek,
   });
+  const targets = buildDealerTargetTracking({
+    competence,
+    targets: targetRows,
+    leadCountsByWeek,
+    dealerMetrics: dealers,
+    referenceWeek,
+  });
 
   return {
     competence,
@@ -963,5 +1102,6 @@ export async function getWeeklySalesMetrics(
     },
     dealers,
     states,
+    targets,
   };
 }

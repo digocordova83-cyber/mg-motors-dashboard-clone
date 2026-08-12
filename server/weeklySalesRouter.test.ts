@@ -6,8 +6,14 @@ const serviceMocks = vi.hoisted(() => ({
   previewWeeklySalesCsv: vi.fn(),
   importWeeklySalesCsv: vi.fn(),
 }));
+const targetServiceMocks = vi.hoisted(() => ({
+  decodeDealerTargetsBase64: vi.fn(),
+  previewDealerTargets: vi.fn(),
+  importDealerTargets: vi.fn(),
+}));
 
 vi.mock("./weeklySalesService", () => serviceMocks);
+vi.mock("./dealerTargetsService", () => targetServiceMocks);
 
 import type { TrpcContext } from "./_core/context";
 import {
@@ -48,10 +54,14 @@ async function createToken(identity: DashboardIdentity) {
 beforeEach(() => {
   process.env.JWT_SECRET ||= "test-secret-with-at-least-32-characters";
   Object.values(serviceMocks).forEach(mock => mock.mockReset());
+  Object.values(targetServiceMocks).forEach(mock => mock.mockReset());
   serviceMocks.getWeeklySalesMetrics.mockResolvedValue({ competence: "2026-07" });
   serviceMocks.getWeeklySalesImportHistory.mockResolvedValue([]);
   serviceMocks.previewWeeklySalesCsv.mockResolvedValue({ fileHash: PREVIEW_HASH });
   serviceMocks.importWeeklySalesCsv.mockResolvedValue({ idempotent: false, importId: 1 });
+  targetServiceMocks.decodeDealerTargetsBase64.mockImplementation(value => Buffer.from(value, "base64"));
+  targetServiceMocks.previewDealerTargets.mockResolvedValue({ fileHash: PREVIEW_HASH });
+  targetServiceMocks.importDealerTargets.mockResolvedValue({ idempotent: false, rowsInserted: 31 });
 });
 
 describe("rotas de vendas semanais", () => {
@@ -94,6 +104,20 @@ describe("rotas de vendas semanais", () => {
         base64: "JVBERi0=",
       }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller.leads.previewDealerTargets({
+        competence: "2026-07",
+        fileName: "metas.xlsx",
+        base64: "YQ==",
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller.leads.importDealerTargets({
+        competence: "2026-07",
+        fileName: "metas.xlsx",
+        base64: "YQ==",
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
     expect(serviceMocks.getWeeklySalesMetrics).toHaveBeenCalledWith("2026-07", {
       dateFrom: undefined,
@@ -101,6 +125,8 @@ describe("rotas de vendas semanais", () => {
     });
     expect(serviceMocks.previewWeeklySalesCsv).not.toHaveBeenCalled();
     expect(serviceMocks.importWeeklySalesCsv).not.toHaveBeenCalled();
+    expect(targetServiceMocks.previewDealerTargets).not.toHaveBeenCalled();
+    expect(targetServiceMocks.importDealerTargets).not.toHaveBeenCalled();
   });
 
   it("repassa o período filtrado de Leads ao serviço semanal", async () => {
@@ -151,6 +177,21 @@ describe("rotas de vendas semanais", () => {
       }),
     ).resolves.toEqual({ idempotent: false, importId: 1 });
     await expect(caller.leads.weeklySalesImportHistory({ limit: 25 })).resolves.toEqual([]);
+    await expect(
+      caller.leads.previewDealerTargets({
+        competence: "2026-07",
+        fileName: "metas.xlsx",
+        base64: "YQ==",
+      }),
+    ).resolves.toEqual({ fileHash: PREVIEW_HASH });
+    await expect(
+      caller.leads.importDealerTargets({
+        competence: "2026-07",
+        fileName: "metas.xlsx",
+        base64: "YQ==",
+        expectedFileHash: PREVIEW_HASH,
+      }),
+    ).resolves.toEqual({ idempotent: false, rowsInserted: 31 });
 
     expect(serviceMocks.previewWeeklySalesCsv).toHaveBeenCalledWith({
       fileName: "sales.csv",
@@ -167,6 +208,18 @@ describe("rotas de vendas semanais", () => {
       actor: "rodrigo",
     });
     expect(serviceMocks.getWeeklySalesImportHistory).toHaveBeenCalledWith(25);
+    expect(targetServiceMocks.previewDealerTargets).toHaveBeenCalledWith({
+      fileName: "metas.xlsx",
+      bytes: Buffer.from("a"),
+      competence: "2026-07",
+    });
+    expect(targetServiceMocks.importDealerTargets).toHaveBeenCalledWith({
+      fileName: "metas.xlsx",
+      bytes: Buffer.from("a"),
+      competence: "2026-07",
+      expectedFileHash: PREVIEW_HASH,
+      actor: "rodrigo",
+    });
   });
 
   it("aceita PDF e repassa seus bytes sem alterar o contrato de prévia e confirmação", async () => {

@@ -31,6 +31,11 @@ import { buildOptimizationHistory } from "./optimizationHistory";
 import { evaluateRecommendationCadence } from "./optimizationPolicy";
 import { LeadCsvValidationError } from "./leadsCsv";
 import {
+  decodeDealerTargetsBase64,
+  importDealerTargets,
+  previewDealerTargets,
+} from "./dealerTargetsService";
+import {
   decodeLeadCsvBase64,
   getLeadImportHistory,
   importLeadCsv,
@@ -158,6 +163,12 @@ const weeklySalesMetricsSchema = z
 const weeklySalesUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
   base64: z.string().min(4).max(7_100_000, "O arquivo de vendas excede o limite de 5 MB"),
+  competence: competenceSchema,
+  expectedFileHash: z.string().length(64).optional(),
+});
+const dealerTargetsUploadSchema = z.object({
+  fileName: z.string().trim().min(1).max(255),
+  base64: z.string().min(4).max(7_100_000, "A planilha de metas excede o limite de 5 MB"),
   competence: competenceSchema,
   expectedFileHash: z.string().length(64).optional(),
 });
@@ -395,6 +406,30 @@ export const appRouter = router({
             actor: ctx.dashboardSession.username,
           });
         }),
+      ),
+    previewDealerTargets: importLeadsProcedure
+      .input(dealerTargetsUploadSchema.omit({ expectedFileHash: true }))
+      .mutation(({ input }) =>
+        mapWeeklySalesError(() =>
+          previewDealerTargets({
+            fileName: input.fileName,
+            bytes: decodeDealerTargetsBase64(input.base64),
+            competence: input.competence,
+          }),
+        ),
+      ),
+    importDealerTargets: importLeadsProcedure
+      .input(dealerTargetsUploadSchema)
+      .mutation(({ ctx, input }) =>
+        mapWeeklySalesError(() =>
+          importDealerTargets({
+            fileName: input.fileName,
+            bytes: decodeDealerTargetsBase64(input.base64),
+            competence: input.competence,
+            expectedFileHash: input.expectedFileHash,
+            actor: ctx.dashboardSession.username,
+          }),
+        ),
       ),
   }),
   metaAds: router({

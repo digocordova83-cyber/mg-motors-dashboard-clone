@@ -555,6 +555,51 @@ export const weeklySalesRecords = mysqlTable(
   ],
 );
 
+export const dealerMonthlyTargets = mysqlTable(
+  "dealer_monthly_targets",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    competence: varchar("competence", { length: 7 }).notNull(),
+    sourceRowNumber: int("sourceRowNumber").notNull(),
+    sourceDealerName: varchar("sourceDealerName", { length: 255 }).notNull(),
+    officialDealerName: varchar("officialDealerName", { length: 255 }).notNull(),
+    canonicalDealer: varchar("canonicalDealer", { length: 255 }).notNull(),
+    canonicalDealerKey: varchar("canonicalDealerKey", { length: 255 }).notNull(),
+    stateCode: varchar("stateCode", { length: 2 }).notNull(),
+    leadTarget: int("leadTarget").notNull(),
+    salesTarget: int("salesTarget").notNull(),
+    channelTargets: json("channelTargets")
+      .$type<{
+        google: number;
+        meta: number;
+        publya: number;
+        webmotors: number;
+        mercadoLivre: number;
+        tiktok: number;
+      }>()
+      .notNull(),
+    weightPercent: decimal("weightPercent", { precision: 8, scale: 4 }).notNull(),
+    conversionInvestment: decimal("conversionInvestment", { precision: 14, scale: 2 }).notNull(),
+    sourceFileName: varchar("sourceFileName", { length: 255 }).notNull(),
+    sourceFileHash: varchar("sourceFileHash", { length: 64 }).notNull(),
+    recordHash: varchar("recordHash", { length: 64 }).notNull(),
+    importedBy: varchar("importedBy", { length: 120 }).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("dealer_monthly_targets_competence_dealer_unique").on(
+      table.competence,
+      table.canonicalDealerKey,
+    ),
+    index("dealer_monthly_targets_competence_state_idx").on(
+      table.competence,
+      table.stateCode,
+    ),
+    index("dealer_monthly_targets_source_hash_idx").on(table.sourceFileHash),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type DashboardAccount = typeof dashboardAccounts.$inferSelect;

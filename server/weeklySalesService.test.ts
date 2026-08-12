@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDealerTargetTracking,
   buildOfficialWeeklyDealerKeys,
   buildCumulativeWeeklyLeadCounts,
   buildWeeklySalesStateMetrics,
@@ -202,5 +203,88 @@ describe("eficiência semanal de vendas", () => {
       expect.objectContaining({ dealerName: "SINAL AV EUROPA", leads: 40, sales: null }),
     ]);
     expect(states[1]).toMatchObject({ stateCode: "PR", leads: 30, sales: 2, conversionRatePercent: 6.67 });
+  });
+
+  it("calcula meta, realizado, atingimento e gap sem tratar dealer sem venda reportada como zero", () => {
+    const zero = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+    const targets = [
+      {
+        canonicalDealer: "DEALER A",
+        canonicalDealerKey: "DEALER A",
+        stateCode: "SP",
+        leadTarget: 100,
+        salesTarget: 10,
+        channelTargets: { google: 50, meta: 30, publya: 5, webmotors: 5, mercadoLivre: 5, tiktok: 5 },
+        sourceFileName: "metas.xlsx",
+        sourceFileHash: "hash",
+        importedBy: "manus",
+        updatedAt: 100,
+      },
+      {
+        canonicalDealer: "DEALER B",
+        canonicalDealerKey: "DEALER B",
+        stateCode: "RJ",
+        leadTarget: 50,
+        salesTarget: 5,
+        channelTargets: { google: 25, meta: 15, publya: 2, webmotors: 3, mercadoLivre: 2, tiktok: 3 },
+        sourceFileName: "metas.xlsx",
+        sourceFileHash: "hash",
+        importedBy: "manus",
+        updatedAt: 100,
+      },
+    ];
+    const result = buildDealerTargetTracking({
+      competence: "2026-08",
+      targets: targets as never,
+      leadCountsByWeek: new Map([
+        ["DEALER A", { ...zero, "3": 80 }],
+        ["DEALER B", { ...zero, "3": 20 }],
+      ]),
+      dealerMetrics: [
+        {
+          sourceName: "DEALER A",
+          dealerName: "DEALER A",
+          matchStatus: "MATCHED",
+          leads: 80,
+          sales: 5,
+          conversionRatePercent: 6.25,
+          leadsPerSale: 16,
+          estimatedLeadsNeeded: 16,
+          weeks: { "3": { target: 10, retail: 5, achievementPercent: 50, leads: 80 } },
+        },
+      ] as never,
+      referenceWeek: 3,
+    });
+
+    expect(result?.summary).toEqual({
+      dealers: 2,
+      salesReportedDealers: 1,
+      leadTarget: 150,
+      leadsActual: 100,
+      leadAchievementPercent: 66.67,
+      leadGap: 50,
+      salesTarget: 15,
+      salesActual: 5,
+      salesAchievementPercent: 33.33,
+      salesGap: 10,
+      targetConversionRatePercent: 10,
+      actualConversionRatePercent: 5,
+    });
+    expect(result?.dealers).toEqual([
+      expect.objectContaining({
+        dealerName: "DEALER A",
+        leadAchievementPercent: 80,
+        leadGap: 20,
+        salesAchievementPercent: 50,
+        salesGap: 5,
+      }),
+      expect.objectContaining({
+        dealerName: "DEALER B",
+        leadAchievementPercent: 40,
+        salesActual: null,
+        salesAchievementPercent: null,
+        salesGap: null,
+      }),
+    ]);
   });
 });
