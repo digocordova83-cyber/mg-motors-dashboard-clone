@@ -1436,14 +1436,22 @@
 ## Auditoria — Google Ads, Meta Ads e conexão Windsor
 
 - [x] Revisar configuração, período D-1, contratos e políticas de cache/snapshot das duas fontes.
-- [ ] Testar a conexão Windsor de Google Ads e Meta Ads sem expor credenciais.
-- [ ] Confirmar data máxima disponível e detectar atraso, ausência ou duplicidade de dias.
-- [ ] Reconciliar investimento, impressões, cliques, Leads/conversões e KPIs derivados entre fonte e dashboard.
-- [ ] Confirmar se cada aba está em dados ao vivo, cache de processo ou snapshot persistente.
-- [ ] Corrigir inconsistências e adicionar observabilidade explícita se necessário.
-- [ ] Executar regressões, TypeScript/build, validar as duas abas e registrar diagnóstico auditável.
+- [x] Testar a conexão Windsor de Google Ads e Meta Ads sem expor credenciais.
+- [x] Confirmar data máxima disponível e detectar atraso, ausência ou duplicidade de dias.
+- [x] Reconciliar investimento, impressões, cliques, Leads/conversões e KPIs derivados entre fonte e dashboard.
+- [x] Confirmar se cada aba está em dados ao vivo, cache de processo ou snapshot persistente.
+- [x] Corrigir inconsistências e adicionar observabilidade explícita se necessário.
+- [x] Executar regressões, TypeScript/build, validar as duas abas e registrar diagnóstico auditável.
 
 > Configuração revisada em 12/08/2026: conector Windsor.ai ativo. Google usa cache de processo de 10 min, snapshot persistente e fallback validado de julho; Meta usa cache de 15 min, snapshot persistente e fallback somente para o recorte exato do snapshot. As duas fontes aplicam o corte D-1 pelo resolvedor compartilhado.
+
+> Auditoria ao vivo em 12/08/2026: Google e Meta responderam pela fonte `windsor-live` até D-1 11/08. Google retornou 758 linhas, 70 campanhas e todos os 11 dias de agosto; Meta retornou nove dias, de 03 a 11/08, sem lacunas internas ou finais — 01 e 02/08 são ausência inicial de atividade, não atraso de carga.
+
+> KPIs reconciliados: Google R$ 133.013,75, 2.245,1 conversões, 155.854 cliques e 1.992.972 impressões; Meta R$ 13.298,72, 1.820 Leads, 21.405 cliques e 659.782 impressões. As diferenças entre total e detalhamento foram apenas arredondamentos de R$ 0,01/0,1 no Google e R$ 0,20/5 impressões na quebra de campanhas Meta, dentro das tolerâncias explícitas; os totais diários Meta conciliam exatamente.
+
+> Observabilidade validada no dashboard autenticado: ambas as abas mostram corte D-1 e atualização de 12/08 às 18:48; Meta informa dados disponíveis até 11/08 e `Snapshot validado`, pois o acesso da interface reutiliza o snapshot persistente recém-gravado pela consulta Windsor ao vivo. A tentativa automática de Meta às 08:32 falhou por timeout, mas o refresh manual posterior concluiu ao vivo e atualizou o snapshot até D-1.
+
+> Diagnóstico reproduzível: `scripts/auditWindsorAdsConnections.ts` agora classifica ausências iniciais versus lacunas internas/finais e compara total versus detalhamento com tolerâncias explícitas de arredondamento. Foram aprovados 264 testes em 47 arquivos, TypeScript sem erros e build de produção concluído.
 
 ## Dashboard — conciliação dos dealers com Leads zerados
 
