@@ -252,6 +252,16 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(dealers).toContain("Sem linha no arquivo");
   });
 
+  it("localiza o título e o subtítulo da visão estadual em inglês", () => {
+    const ranking = renderToStaticMarkup(
+      <WeeklySalesStateRanking metrics={stateMetrics} selectedWeek={5} locale="en-US" />,
+    );
+
+    expect(ranking).toContain("Leads and Retail Sales by state and dealer");
+    expect(ranking).toContain("Week 5: one view of Leads, Retail Sales, and conversion");
+    expect(ranking).not.toContain("Leads e vendas por estado e concessionária");
+  });
+
   it("exibe o histórico acumulado W1–W5 e marca a última semana como referência", () => {
     const historyPt = renderToStaticMarkup(
       <WeeklySalesWeekHistory dealer={dealerWithHistory} referenceWeek={5} />,

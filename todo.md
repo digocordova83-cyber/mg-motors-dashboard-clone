@@ -1391,3 +1391,12 @@
 > Quadro implementado: “MG4 URBAN por canal de origem” aparece ao lado de “Leads por modelo” em desktop e abaixo em mobile. O subtítulo esclarece que a origem antecede a classificação Campanha Urban. Foram aprovados 47 testes direcionados e TypeScript.
 
 > Validação final em 12/08/2026: 737 MG4 URBAN reconciliados em 397 Site (53,87%) e 340 Meta (46,13%), sem origem vazia. Foram aprovados 251 testes determinísticos, TypeScript e build. O teste externo Windsor permaneceu bloqueado por `ECONNRESET`, sem relação com Leads ou com o novo quadro.
+
+## Dashboard — tradução do título estadual
+
+- [x] Exibir “Leads e vendas por estado e concessionária” para usuários em português.
+- [x] Exibir “Leads and Retail Sales by state and dealer” para usuários em inglês.
+- [x] Localizar também o subtítulo e preservar os indicadores, a expansão e o layout existentes.
+- [x] Atualizar testes bilíngues, executar TypeScript/build e salvar checkpoint restaurável.
+
+> Validação em 12/08/2026: 13 testes do painel semanal aprovados, incluindo título e subtítulo em inglês; TypeScript e build de produção concluídos sem erros.
