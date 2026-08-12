@@ -1004,35 +1004,39 @@
 
 ## Plano de mídia digital — Agosto de 2026
 
-- [ ] Auditar abas, dimensões, fórmulas, estilos, validações e células mescladas do modelo de julho
-- [ ] Identificar todas as premissas editáveis de investimento, período, canais, modelos, Leads e CPL
-- [ ] Confirmar orçamento total, período de veiculação, canais e prioridades comerciais de agosto
-- [ ] Replicar a estrutura visual e funcional no arquivo de agosto sem quebrar fórmulas
-- [ ] Atualizar nomenclaturas, datas, títulos e referências de julho para agosto
-- [ ] Distribuir orçamento e projeção de Leads por canal e modelo conforme premissas aprovadas
-- [ ] Preservar fórmulas interligadas para atualização dinâmica dos totais e indicadores
-- [ ] Validar reconciliação de orçamento, percentuais, Leads, CPL e totais por aba
-- [ ] Revisar visualmente o arquivo final e entregar a planilha de agosto com premissas documentadas
-- [ ] Limitar a primeira entrega de agosto ao plano digital de R$ 1.050.000: R$ 850.000 para line-up e R$ 200.000 para MG4 Urban
-- [ ] Remover UOL e Proxy de todas as linhas, totais e projeções de agosto
-- [ ] Incluir TikTok com R$ 30.000 e CPL planejado igual ao Meta Ads
-- [ ] Atualizar CPLs de Google, Meta e Publya Programática/Display conforme o realizado de julho
-- [ ] Manter CPL planejado de R$ 130,00 para Webmotors e Mercado Livre
-- [ ] Classificar Mercado Livre como canal de conversão e projetar Leads diretamente
-- [ ] Ponderar a geração de Leads pelas participações de vendas dos 31 dealers enviados
-- [ ] Ponderar o mix de Leads por modelo: MG4 22,5%, MGS5 15,6%, MG4U 58,5% e Cyberster 3,5%
-- [ ] Normalizar separadamente os percentuais de dealer e modelo devido à diferença entre totais brutos de 548 e 578 vendas
-- [ ] Preservar fórmulas dinâmicas para que alterações de verba ou CPL atualizem Leads, shares e totais automaticamente
-- [ ] Extrair do PDF o preço, as entregas, a vigência e as condições comerciais da Cobertura G do Festival de Interlagos
-- [ ] Incluir a Cobertura G do Festival de Interlagos em uma aba exclusiva no plano de agosto
-- [ ] Rebalancear as demais verbas digitais para absorver integralmente o Festival de Interlagos sem ultrapassar R$ 1.050.000
-- [ ] Vincular o valor da aba do Festival de Interlagos ao resumo e ao orçamento total por fórmula dinâmica
-- [ ] Validar que a inclusão do Festival não altera o teto total nem duplica investimento em outras abas
-- [ ] Extrair do PDF Quatro Rodas as duas opções comerciais e usar os preços específicos para não clientes Abril
-- [ ] Apresentar as duas opções na aba Magazine como alternativas não cumulativas
-- [ ] Relacionar cada opção de Magazine à verba de revista e exibir diferença para o orçamento disponível
-- [ ] Excluir a aba Media Plan - Pay TV do arquivo de agosto
-- [ ] Revisar fórmulas e referências após a remoção da aba Pay TV para evitar vínculos quebrados
+- [x] Auditar abas, dimensões, fórmulas, estilos, validações e células mescladas do modelo de julho
+- [x] Identificar todas as premissas editáveis de investimento, período, canais, modelos, Leads e CPL
+- [x] Confirmar orçamento total, período de veiculação, canais e prioridades comerciais de agosto
+- [x] Replicar a estrutura visual e funcional no arquivo de agosto sem quebrar fórmulas
+- [x] Atualizar nomenclaturas, datas, títulos e referências de julho para agosto
+- [x] Distribuir orçamento e projeção de Leads por canal e modelo conforme premissas aprovadas
+- [x] Preservar fórmulas interligadas para atualização dinâmica dos totais e indicadores
+- [x] Validar reconciliação de orçamento, percentuais, Leads, CPL e totais por aba
+- [x] Revisar visualmente o arquivo final e entregar a planilha de agosto com premissas documentadas
+- [x] Limitar a primeira entrega de agosto ao plano digital de R$ 1.050.000: R$ 850.000 para line-up e R$ 200.000 para MG4 Urban
+- [x] Remover UOL e Proxy de todas as linhas, totais e projeções de agosto
+- [x] Incluir TikTok com R$ 30.000 e CPL planejado igual ao Meta Ads
+- [x] Atualizar CPLs de Google, Meta e Publya Programática/Display conforme o realizado de julho
+- [x] Resolver a premissa intermediária de CPL de R$ 130,00 para Webmotors e Mercado Livre — substituída pelos CPLs recalculados da versão final de 12.000 Leads
+- [x] Classificar Mercado Livre como canal de conversão e projetar Leads diretamente
+- [x] Ponderar a geração de Leads pelas participações de vendas dos 31 dealers enviados
+- [x] Ponderar o mix de Leads por modelo: MG4 22,5%, MGS5 15,6%, MG4U 58,5% e Cyberster 3,5%
+- [x] Normalizar separadamente os percentuais de dealer e modelo devido à diferença entre totais brutos de 548 e 578 vendas
+- [x] Preservar fórmulas dinâmicas para que alterações de verba ou CPL atualizem Leads, shares e totais automaticamente
+- [x] Resolver a etapa intermediária de extração da Cobertura G — posteriormente removida por orientação final do usuário
+- [x] Resolver a aba exclusiva do Festival — transformada em `Media SAVE` por orientação final do usuário
+- [x] Resolver o rebalanceamento do Festival — os R$ 99.000 foram integralmente reclassificados como Media SAVE
+- [x] Substituir o vínculo do Festival por fórmula dinâmica de saldo da aba Media SAVE
+- [x] Validar que o Media SAVE preserva o teto digital e não duplica investimento
+- [x] Resolver a etapa intermediária das opções Quatro Rodas — Abril e suas propostas foram removidas por orientação final do usuário
+- [x] Resolver a apresentação de alternativas Magazine — substituída por reserva mensal única de R$ 50.000
+- [x] Relacionar Magazine de R$ 50.000 ao orçamento total de R$ 1.100.000
+- [x] Excluir a aba Media Plan - Pay TV do arquivo de agosto
+- [x] Revisar fórmulas e referências após a remoção da aba Pay TV para evitar vínculos quebrados
+
+> Versão canônica concluída em 12/08/2026: seis abas, R$ 1.050.000 de digital, R$ 99.000 de Media SAVE, R$ 50.000 de Magazine, R$ 1.100.000 no total e 12.000 Leads. Festival/Cobertura G, Abril/Quatro Rodas, UOL, Proxy e Pay TV foram removidos conforme as orientações finais, que substituem as etapas intermediárias acima.
+
+> Validação: 118/118 controles aprovados nas versões PT e EN; fórmulas sem `#REF!`, zero ocorrências de “envelope”, zero risco de `####`, seis abas sem painéis congelados e equivalência numérica célula a célula. As duas versões foram renderizadas em nove páginas e revisadas visualmente.
 
 ## Atualização do deck — pagamentos e digital line-up
 
@@ -1051,11 +1055,15 @@
 
 ## Tradução — MG Brasil Marketing Budget 2027 Draft BBRO
 
-- [ ] Extrair e revisar todas as páginas, tabelas, números e observações do PDF original
-- [ ] Traduzir integralmente o conteúdo para inglês com terminologia financeira e de marketing consistente
-- [ ] Recriar o documento traduzido preservando estrutura, tabelas, valores e hierarquia visual
-- [ ] Auditar todas as páginas para eliminar texto em português e verificar paginação e legibilidade
-- [ ] Entregar o PDF final traduzido para inglês
+- [x] Extrair e revisar todas as páginas, tabelas, números e observações do PDF original
+- [x] Traduzir integralmente o conteúdo para inglês com terminologia financeira e de marketing consistente
+- [x] Recriar o documento traduzido preservando estrutura, tabelas, valores e hierarquia visual
+- [x] Auditar todas as páginas para eliminar texto em português e verificar paginação e legibilidade
+- [x] Entregar o PDF final traduzido para inglês
+
+> Validação final em 12/08/2026: 22 páginas e 379 blocos traduzidos, com zero ocorrências na auditoria de português residual, números semanticamente preservados e separadores localizados para o inglês. A correção final ajustou `2,9m` para `2.9m` na página 19.
+
+> O PDF `MG_Brasil_Marketing_Budget_2027_EN_final.pdf` passou na verificação determinística com 6 controles aprovados, zero warnings, zero falhas e zero verificações desconhecidas. A revisão visual padrão cobriu 13 páginas, incluindo todas as sete páginas com overlays de gráficos e textos rasterizados, sem clipping ou sobreposição visível.
 
 ## MKTBUDGET2027 — reestruturação executiva e tática
 
@@ -1069,13 +1077,19 @@
 
 ## MKTBUDGET2027 — correção de formatação mobile e desktop
 
-- [ ] Identificar todos os formatos numéricos personalizados que aparecem como texto ou números brutos no Excel mobile
-- [ ] Substituir formatos monetários por padrões universais compatíveis com Excel iOS, Android, desktop e LibreOffice
-- [ ] Eliminar todas as células `########` ajustando formatos, escalas, larguras e mesclagens
-- [ ] Corrigir cartões executivos, tabelas, ponte de funding e eixos dos gráficos no SUMMARY
-- [ ] Aplicar as mesmas correções de compatibilidade às fichas por modelo, eventos e cenários financeiros
-- [ ] Recalcular o workbook, verificar fórmulas e renderizar todas as abas para validação final
-- [ ] Entregar uma nova versão corrigida do arquivo XLSX
+- [x] Identificar todos os formatos numéricos personalizados que aparecem como texto ou números brutos no Excel mobile
+- [x] Substituir formatos monetários por padrões universais compatíveis com Excel iOS, Android, desktop e LibreOffice
+- [x] Eliminar todas as células `########` ajustando formatos, escalas, larguras e mesclagens
+- [x] Corrigir cartões executivos, tabelas, ponte de funding e eixos dos gráficos no SUMMARY
+- [x] Aplicar as mesmas correções de compatibilidade às fichas por modelo, eventos e cenários financeiros
+- [x] Recalcular o workbook, verificar fórmulas e renderizar todas as abas para validação final
+- [x] Entregar uma nova versão corrigida do arquivo XLSX
+
+> Validação concluída em 12/08/2026: o arquivo `MG_Brasil_Marketing_Budget_2027_Mobile_Desktop_Corrected.xlsx` preserva 19 abas e 1.074 fórmulas, sem erros de fórmula e sem marcadores monetários incompatíveis (`BRL`, `R$`, `[$R$` ou escala `\\M`) nos formatos de célula.
+
+> Totais preservados: BRL 224.080.000 e BRL 154.480.000; eventos de BRL 20.900.000 e BRL 15.400.000; Shanghai Auto Show de BRL 1.200.000, com BRL 400.000 em abril e BRL 800.000 em maio. Todas as reconciliações do SUMMARY, MODEL TACTICS, fichas de modelo e EVENTS & GOVERNANCE passaram.
+
+> Auditoria visual: as 11 abas executivas/táticas ativas foram renderizadas em A3 paisagem e revisadas em contact sheet e resolução completa. SUMMARY, matrizes, seis fichas de modelo, eventos e dois cenários cabem em uma página de largura, sem `########`, truncamento da coluna TTL ou quebras horizontais inesperadas.
 
 ## Atualização da meta mensal — Google Ads
 
