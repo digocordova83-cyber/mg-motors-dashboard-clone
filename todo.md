@@ -1400,3 +1400,11 @@
 - [x] Atualizar testes bilíngues, executar TypeScript/build e salvar checkpoint restaurável.
 
 > Validação em 12/08/2026: 13 testes do painel semanal aprovados, incluindo título e subtítulo em inglês; TypeScript e build de produção concluídos sem erros.
+
+## Dashboard — título Top Dealers por estado
+
+- [x] Exibir “Principais concessionárias, Leads e vendas por estado” em português.
+- [x] Exibir “Top Dealers, Leads and Sales by State” em inglês.
+- [x] Atualizar testes bilíngues, executar TypeScript/build e salvar checkpoint restaurável.
+
+> Validação em 12/08/2026: 13 testes do painel semanal, TypeScript e build de produção aprovados após a renomeação.

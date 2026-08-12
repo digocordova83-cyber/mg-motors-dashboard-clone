@@ -555,7 +555,7 @@ export function WeeklySalesStateRanking({
 
   return (
     <Panel
-      title={ui(locale, "Leads e vendas por estado e concessionária", "Leads and Retail Sales by state and dealer")}
+      title={ui(locale, "Principais concessionárias, Leads e vendas por estado", "Top Dealers, Leads and Sales by State")}
       subtitle={ui(
         locale,
         `Semana ${selectedWeek}: uma única visão de Leads, Retail Sales e conversão. Expanda o estado para ver os dealers.`,

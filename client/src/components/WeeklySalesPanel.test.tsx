@@ -243,7 +243,7 @@ describe("vendas semanais na experiência de concessionárias", () => {
       <WeeklySalesStateDealerTable state={(stateMetrics as any).states[0]} selectedWeek={5} />,
     );
 
-    expect(ranking).toContain("Leads e vendas por estado e concessionária");
+    expect(ranking).toContain("Principais concessionárias, Leads e vendas por estado");
     expect(ranking).toContain("São Paulo");
     expect(ranking).toContain("50 de 90 Leads");
     expect(ranking).toContain("55,56%");
@@ -257,9 +257,9 @@ describe("vendas semanais na experiência de concessionárias", () => {
       <WeeklySalesStateRanking metrics={stateMetrics} selectedWeek={5} locale="en-US" />,
     );
 
-    expect(ranking).toContain("Leads and Retail Sales by state and dealer");
+    expect(ranking).toContain("Top Dealers, Leads and Sales by State");
     expect(ranking).toContain("Week 5: one view of Leads, Retail Sales, and conversion");
-    expect(ranking).not.toContain("Leads e vendas por estado e concessionária");
+    expect(ranking).not.toContain("Principais concessionárias, Leads e vendas por estado");
   });
 
   it("exibe o histórico acumulado W1–W5 e marca a última semana como referência", () => {
