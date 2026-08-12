@@ -393,6 +393,7 @@ export const leads = mysqlTable(
     sourceDateRaw: text("sourceDateRaw").notNull(),
     channel: varchar("channel", { length: 120 }).notNull(),
     channelRaw: varchar("channelRaw", { length: 255 }).notNull(),
+    sourceChannel: varchar("sourceChannel", { length: 120 }).default("").notNull(),
     model: varchar("model", { length: 120 }).notNull(),
     modelRaw: varchar("modelRaw", { length: 255 }).notNull(),
     region: varchar("region", { length: 32 }).notNull(),
@@ -416,6 +417,7 @@ export const leads = mysqlTable(
         email: string;
         phone: string;
         channel: string;
+        sourceChannel?: string;
         correctedDate: string;
       }>()
       .notNull(),

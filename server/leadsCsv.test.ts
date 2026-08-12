@@ -2,16 +2,21 @@ import { describe, expect, it } from "vitest";
 import {
   getYesterdayInSaoPaulo,
   LEAD_CSV_HEADERS,
+  LEGACY_LEAD_CSV_HEADERS,
   LeadCsvValidationError,
   parseLeadCsv,
   parseCorrectedLeadDate,
 } from "./leadsCsv";
 import { decodeLeadCsvBase64, sanitizeLeadCsvFileName } from "./leadsImportService";
 
-const header = LEAD_CSV_HEADERS.join(",");
+const header = LEGACY_LEAD_CSV_HEADERS.join(",");
 
 function csv(...rows: string[]): Buffer {
   return Buffer.from(`\ufeff${header}\n${rows.join("\n")}\n`, "utf-8");
+}
+
+function csvWithSourceChannel(...rows: string[]): Buffer {
+  return Buffer.from(`\ufeff${LEAD_CSV_HEADERS.join(",")}\n${rows.join("\n")}\n`, "utf-8");
 }
 
 describe("parseLeadCsv", () => {
@@ -64,6 +69,7 @@ describe("parseLeadCsv", () => {
       model: "MG 4 - Urban",
       channel: "Campanha Urban",
       channelRaw: "Meta",
+      sourceChannel: "Meta",
     });
     expect(result.records[0].rawPayload.channel).toBe("Meta");
     expect(result.records[1]).toMatchObject({ model: "MGS5", channel: "Meta" });
@@ -71,6 +77,22 @@ describe("parseLeadCsv", () => {
       { value: "Campanha Urban", count: 1 },
       { value: "Meta", count: 1 },
     ]));
+  });
+
+  it("preserva Canal de Origem sem alterar a identidade ou o canal normalizado", () => {
+    const result = parseLeadCsv(
+      csvWithSourceChannel(
+        "2026-08-09T10:00:00,MG4 URBAN,SP,São Paulo,Dealer Original,Cliente Urban,urban@example.com,11999990001,Campanha Urban,09/08/2026,Dealer A,Site",
+      ),
+    );
+
+    expect(result.records[0]).toMatchObject({
+      model: "MG4 URBAN",
+      channel: "Campanha Urban",
+      channelRaw: "Campanha Urban",
+      sourceChannel: "Site",
+    });
+    expect(result.records[0].rawPayload.sourceChannel).toBe("Site");
   });
 
   it("corrige para 01/07 somente a assinatura exata dos 18 Leads do Mercado Livre", () => {

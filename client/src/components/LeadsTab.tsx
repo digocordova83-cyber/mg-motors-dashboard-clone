@@ -1156,8 +1156,19 @@ export function LeadsTab({
         </LeadPanel>
       </div>
 
-      <div className="max-w-xl">
+      <div className="grid gap-4 lg:grid-cols-2">
         <BreakdownList title={ui(locale, "Leads por modelo", "Leads by model")} subtitle={ui(locale, "Classificação preservada do CSV.", "Classification preserved from CSV.")} items={data.models} accent="#e2212d" locale={locale} />
+        <BreakdownList
+          title={ui(locale, "MG4 URBAN por canal de origem", "MG4 URBAN by source channel")}
+          subtitle={ui(
+            locale,
+            "Origem preservada antes da classificação como Campanha Urban.",
+            "Source preserved before classification as Urban Campaign.",
+          )}
+          items={data.mg4UrbanSourceChannels}
+          accent="#38bdf8"
+          locale={locale}
+        />
       </div>
 
       <WeeklySalesPanel

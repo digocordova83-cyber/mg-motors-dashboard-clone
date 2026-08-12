@@ -5,7 +5,7 @@ import {
 } from "@shared/dashboardDates";
 import { parse } from "csv-parse/sync";
 
-export const LEAD_CSV_HEADERS = [
+export const LEGACY_LEAD_CSV_HEADERS = [
   "Data",
   "Modelo",
   "Região/Estado",
@@ -17,6 +17,11 @@ export const LEAD_CSV_HEADERS = [
   "Canal",
   "Data Corrigida",
   "Concessionarias corrijida",
+] as const;
+
+export const LEAD_CSV_HEADERS = [
+  ...LEGACY_LEAD_CSV_HEADERS,
+  "Canal de Origem",
 ] as const;
 
 export const UNAVAILABLE_LEAD_VALUE = "Indisponível";
@@ -32,13 +37,15 @@ export const MERCADO_LIVRE_JULY_DATE_CORRECTION = {
 } as const;
 
 export type LeadCsvHeader = (typeof LEAD_CSV_HEADERS)[number];
+type LegacyLeadCsvHeader = (typeof LEGACY_LEAD_CSV_HEADERS)[number];
 
 export const REQUIRED_LEAD_ROW_FIELDS = [
   "Modelo",
   "Canal",
   "Concessionarias corrijida",
-] as const satisfies readonly LeadCsvHeader[];
-export type LeadRawRow = Record<LeadCsvHeader, string>;
+] as const satisfies readonly LegacyLeadCsvHeader[];
+export type LeadRawRow = Record<LegacyLeadCsvHeader, string> &
+  Partial<Record<LeadCsvHeader, string>>;
 
 export type NormalizedLeadRecord = {
   sourceRowNumber: number;
@@ -49,6 +56,7 @@ export type NormalizedLeadRecord = {
   sourceDateRaw: string;
   channel: string;
   channelRaw: string;
+  sourceChannel: string;
   model: string;
   modelRaw: string;
   region: string;
@@ -71,6 +79,7 @@ export type NormalizedLeadRecord = {
     email: string;
     phone: string;
     channel: string;
+    sourceChannel: string;
     correctedDate: string;
   };
 };
@@ -312,15 +321,18 @@ function parseRows(text: string): LeadRawRow[] {
       bom: true,
       columns: (headers: string[]) => {
         const normalizedHeaders = headers.map(header => normalizeWhitespace(header));
-        const exactMatch =
+        const currentMatch =
           normalizedHeaders.length === LEAD_CSV_HEADERS.length &&
           normalizedHeaders.every((header, index) => header === LEAD_CSV_HEADERS[index]);
-        if (!exactMatch) {
+        const legacyMatch =
+          normalizedHeaders.length === LEGACY_LEAD_CSV_HEADERS.length &&
+          normalizedHeaders.every((header, index) => header === LEGACY_LEAD_CSV_HEADERS[index]);
+        if (!currentMatch && !legacyMatch) {
           throw new LeadCsvValidationError(
-            `Cabeçalhos inválidos. Use exatamente: ${LEAD_CSV_HEADERS.join(", ")}.`,
+            `Cabeçalhos inválidos. Use: ${LEGACY_LEAD_CSV_HEADERS.join(", ")} e, opcionalmente, Canal de Origem como última coluna.`,
           );
         }
-        return [...LEAD_CSV_HEADERS];
+        return normalizedHeaders;
       },
       skip_empty_lines: true,
       relax_column_count: false,
@@ -369,6 +381,7 @@ function normalizeRow(
   const emailRaw = row.Email ?? "";
   const phoneRaw = row.Telefone ?? "";
   const channelRaw = row.Canal ?? "";
+  const sourceChannelRaw = row["Canal de Origem"] ?? channelRaw;
 
   const model = normalizeOptionalDimension(modelRaw);
   const region = normalizeLeadRegion(regionRaw);
@@ -379,6 +392,7 @@ function normalizeRow(
   const phone = normalizePhone(phoneRaw);
   const sourceChannel = normalizeLeadChannel(channelRaw);
   const channel = isMg4UrbanLeadModel(model) ? "Campanha Urban" : sourceChannel;
+  const normalizedSourceChannel = normalizeLeadChannel(sourceChannelRaw);
   const correctedDate = correctKnownLeadDateAnomaly({
     correctedDate: parsedCorrectedDate,
     correctedDateRaw,
@@ -411,6 +425,7 @@ function normalizeRow(
     sourceDateRaw,
     channel,
     channelRaw,
+    sourceChannel: normalizedSourceChannel,
     model,
     modelRaw,
     region,
@@ -433,6 +448,7 @@ function normalizeRow(
       email: emailRaw,
       phone: phoneRaw,
       channel: channelRaw,
+      sourceChannel: sourceChannelRaw,
       correctedDate: correctedDateRaw,
     },
   };

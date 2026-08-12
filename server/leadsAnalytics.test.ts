@@ -11,11 +11,38 @@ function row(
   dealerName: string,
   model = "MG4",
   region = "SP",
+  sourceChannel = channel,
 ): LeadAnalyticsRow {
-  return { correctedDate, channel, dealerName, model, region };
+  return { correctedDate, channel, sourceChannel, dealerName, model, region };
 }
 
 describe("buildLeadAnalytics", () => {
+  it("reconcilia MG4 URBAN por canal original sem alterar Campanha Urban", () => {
+    const rows = [
+      row("2026-08-01", "Campanha Urban", "Dealer A", "MG4 URBAN", "SP", "Site"),
+      row("2026-08-01", "Campanha Urban", "Dealer B", "MG4 URBAN", "SP", "Meta"),
+      row("2026-08-02", "Campanha Urban", "Dealer C", "MG4 URBAN", "RJ", "Site"),
+      row("2026-08-02", "Site", "Dealer C", "MG4", "RJ", "Site"),
+    ];
+    const result = buildLeadAnalytics({
+      rows,
+      pacingRows: rows,
+      dateFrom: "2026-08-01",
+      dateTo: "2026-08-02",
+      competence: "2026-08",
+      goal: 100,
+    });
+
+    expect(result.channels).toEqual(expect.arrayContaining([
+      expect.objectContaining({ value: "Campanha Urban", leads: 3 }),
+    ]));
+    expect(result.mg4UrbanSourceChannels).toEqual([
+      { value: "Site", leads: 2, dailyAverage: 1, sharePercent: 66.67 },
+      { value: "Meta", leads: 1, dailyAverage: 0.5, sharePercent: 33.33 },
+    ]);
+    expect(result.mg4UrbanSourceChannels.reduce((sum, item) => sum + item.leads, 0)).toBe(3);
+  });
+
   it("calcula totais e série empilhada sem dupla contagem, incluindo dias zerados", () => {
     const rows = [
       row("2026-07-01", "Site", "Dealer A"),

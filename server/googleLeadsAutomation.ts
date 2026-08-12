@@ -82,6 +82,7 @@ type ExecuteGoogleLeadsAutomationInput = {
   projectRoot?: string;
   outputRoot?: string;
   sourceUrl?: string;
+  sourceFile?: string;
   actor?: string;
   now?: Date;
   dryRun?: boolean;
@@ -144,17 +145,20 @@ function runProcess(
 export async function runPythonConsolidator(input: {
   projectRoot: string;
   sourceUrl: string;
+  sourceFile?: string;
   outputDirectory: string;
   runLabel: string;
   reportPath: string;
 }): Promise<GoogleLeadsConsolidationReport> {
   const scriptPath = path.join(input.projectRoot, "scripts", "googleLeadsConsolidator.py");
+  const sourceArgs = input.sourceFile
+    ? ["--source-file", input.sourceFile]
+    : ["--source-url", input.sourceUrl];
   await runProcess(
     "python3",
     [
       scriptPath,
-      "--source-url",
-      input.sourceUrl,
+      ...sourceArgs,
       "--output-dir",
       input.outputDirectory,
       "--run-label",
@@ -239,6 +243,7 @@ export async function executeGoogleLeadsAutomation(
   const consolidation = await dependencies.runPython({
     projectRoot,
     sourceUrl: input.sourceUrl ?? GOOGLE_LEADS_SOURCE_URL,
+    sourceFile: input.sourceFile,
     outputDirectory: runDirectory,
     runLabel,
     reportPath: reportJson,

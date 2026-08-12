@@ -43,6 +43,7 @@ IMPORT_COLUMNS = (
     "Canal",
     "Data Corrigida",
     "Concessionarias corrijida",
+    "Canal de Origem",
 )
 
 
@@ -169,6 +170,7 @@ def build_record(
     email: str,
     phone: str,
     channel: str,
+    source_channel: str,
 ) -> tuple[dict[str, str], dict[str, str]]:
     model = normalize_model(model_source)
     cleaned_phone = clean_phone(phone)
@@ -196,6 +198,7 @@ def build_record(
         "Canal": resolved_channel,
         "Data Corrigida": corrected_date,
         "Concessionarias corrijida": dealer,
+        "Canal de Origem": source_channel,
     }
     return master, import_row
 
@@ -228,6 +231,7 @@ def map_site(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, 
             email=row_value(row, email),
             phone=row_value(row, phone),
             channel="Campanha Urban" if "URBAN" in folded(row_value(row, campaign)) else "Site",
+            source_channel="Site",
         ),
         model_source=lambda row: row_value(row, model),
         corrected_date_source=lambda row: row_value(row, source_date) or row_value(row, timestamp),
@@ -262,6 +266,7 @@ def map_meta(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, 
             email=row_value(row, email),
             phone=row_value(row, phone),
             channel="Meta",
+            source_channel="Meta",
         ),
         model_source=lambda row: row_value(row, form_name),
         corrected_date_source=lambda row: row_value(row, source_date),
@@ -292,6 +297,7 @@ def map_weebmotors(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict
             email=row_value(row, email),
             phone=row_value(row, phone),
             channel="Webmotors",
+            source_channel="Webmotors",
         ),
         model_source=lambda row: row_value(row, model),
         corrected_date_source=lambda row: row_value(row, source_date),
@@ -322,6 +328,7 @@ def map_mercado_livre(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[d
             email=row_value(row, email),
             phone=row_value(row, phone),
             channel="Mercado Livre",
+            source_channel="Mercado Livre",
         ),
         model_source=lambda row: row_value(row, model),
         corrected_date_source=lambda row: row_value(row, source_date),
@@ -352,6 +359,7 @@ def map_uol(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, s
             email=row_value(row, email),
             phone=row_value(row, phone),
             channel="UOL",
+            source_channel="UOL",
         ),
         model_source=lambda row: row_value(row, model),
         corrected_date_source=lambda row: row_value(row, source_date),

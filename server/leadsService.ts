@@ -131,6 +131,7 @@ async function getLeadRows(dateFrom: string, dateTo: string): Promise<LeadAnalyt
     .select({
       correctedDate: leads.correctedDate,
       channel: leads.channel,
+      sourceChannel: leads.sourceChannel,
       model: leads.model,
       region: leads.region,
       dealerName: leads.dealerName,

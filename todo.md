@@ -1367,3 +1367,27 @@
 > Validação final em 11/08/2026: os textos “Leads por região” e “Top concessionárias” não aparecem mais no painel autenticado. A única visão geográfica preservou São Paulo em 668 Leads / 43 Retail / 6,44% e Paraná em 285 / 2 / 0,70%. Foram aprovados 249 testes, TypeScript e build de produção.
 
 > Auditoria em 11/08/2026: Leads por região e Top concessionárias repetem volumes já cobertos pela tabela Performance por estado e concessionárias. A tabela consolidada preserva Leads, Retail Sales, conversão, cobertura do arquivo, total de dealers e abertura individual por dealer.
+
+## Dashboard — MG4 URBAN por canal de origem
+
+- [x] Auditar onde o canal bruto/original de cada Lead é persistido e como ele entra no analytics filtrado por Data Corrigida.
+- [x] Preservar a aba/canal original de captação no arquivo de importação e no banco sem alterar o canal normalizado Campanha Urban.
+- [x] Reprocessar a base atual para preencher a procedência histórica de MG4 URBAN a partir das abas reais da planilha-fonte.
+- [x] Agregar somente MG4 URBAN por canal original, com volume, média diária e participação no período selecionado.
+- [x] Diferenciar claramente canal de origem de canal normalizado Campanha Urban para evitar interpretação incorreta.
+- [x] Exibir o novo quadro ao lado de Leads por modelo no desktop e empilhado no mobile, eliminando o espaço vazio.
+- [x] Adicionar estados vazio/indisponível e manter português/inglês conforme o perfil.
+- [x] Criar testes de backend e frontend para total reconciliado, ordenação, rótulos e layout responsivo.
+- [x] Validar com dados reais, TypeScript, suíte completa, build e checkpoint restaurável.
+
+> Auditoria em 12/08/2026: o banco atual possui 737 Leads MG4 URBAN no recorte 01–11/08, mas `channel` e `channelRaw` estão ambos como Campanha Urban porque o consolidador substitui o canal antes da importação. Para exibir Site, Meta e outras origens sem inventar dados, a aba original precisa ser preservada e a base reprocessada pela automação oficial.
+
+> Desenho aprovado: o Excel/CSV mestre mantém as nove colunas entregáveis. Somente o CSV canônico interno recebe `Canal de Origem`; uploads manuais antigos de 11 colunas continuam compatíveis por fallback. A identidade/deduplicação do Lead não muda. Uma nova coluna `sourceChannel` persiste Site, Meta, Webmotors, Mercado Livre ou UOL e diferenças nesse metadado forçam substituição idempotente da base.
+
+> Implementação validada: migração `0012_marvelous_malcolm_colcord.sql` aplicada; seis testes Python e 20 testes direcionados Vitest aprovados; TypeScript sem erros. O hash de identidade permanece inalterado e apenas a procedência passa a ser comparada para decidir a substituição idempotente.
+
+> Reprocessamento em 12/08/2026: a automação oficial substituiu 15.083 registros sem criar ou remover Leads e preencheu `sourceChannel` em 100% da base. No recorte 01–11/08, os 737 MG4 URBAN reconciliaram em 397 Site e 340 Meta. A segunda execução retornou `NO_CHANGES`.
+
+> Quadro implementado: “MG4 URBAN por canal de origem” aparece ao lado de “Leads por modelo” em desktop e abaixo em mobile. O subtítulo esclarece que a origem antecede a classificação Campanha Urban. Foram aprovados 47 testes direcionados e TypeScript.
+
+> Validação final em 12/08/2026: 737 MG4 URBAN reconciliados em 397 Site (53,87%) e 340 Meta (46,13%), sem origem vazia. Foram aprovados 251 testes determinísticos, TypeScript e build. O teste externo Windsor permaneceu bloqueado por `ECONNRESET`, sem relação com Leads ou com o novo quadro.

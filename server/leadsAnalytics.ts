@@ -1,4 +1,5 @@
 import { canonicalizeDealerForAnalytics } from "./dealerNormalization";
+import { isMg4UrbanLeadModel } from "./leadsCsv";
 
 export const LEADS_UNAVAILABLE = "Indisponível";
 export const LEAD_CHANNEL_UPDATE_EXCLUSIONS = ["Campanha Urban"] as const;
@@ -6,6 +7,7 @@ export const LEAD_CHANNEL_UPDATE_EXCLUSIONS = ["Campanha Urban"] as const;
 export type LeadAnalyticsRow = {
   correctedDate: string;
   channel: string;
+  sourceChannel?: string;
   model: string;
   region: string;
   dealerName: string;
@@ -96,6 +98,7 @@ export type LeadAnalytics = {
   pacing: LeadPacing;
   channels: LeadBreakdownItem[];
   models: LeadBreakdownItem[];
+  mg4UrbanSourceChannels: LeadBreakdownItem[];
   regions: LeadBreakdownItem[];
   dealers: LeadBreakdownItem[];
   dealerAudit: LeadDealerAudit;
@@ -413,6 +416,12 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
       dealerName: canonicalizeDealerForAnalytics(row.dealerName),
     }));
   const channels = buildBreakdown(rows, row => row.channel, calendarDays);
+  const mg4UrbanRows = rows.filter(row => isMg4UrbanLeadModel(row.model));
+  const mg4UrbanSourceChannels = buildBreakdown(
+    mg4UrbanRows,
+    row => row.sourceChannel ?? row.channel,
+    calendarDays,
+  );
   const dealers = buildBreakdown(rows, row => row.dealerName, calendarDays);
   const dealerAudit = buildDealerAudit(rows, input.dateFrom, input.dateTo, calendarDays);
   const activeChannelOrder = channels.map(item => item.value);
@@ -460,6 +469,7 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
     ),
     channels,
     models: buildBreakdown(rows, row => row.model, calendarDays),
+    mg4UrbanSourceChannels,
     regions: buildBreakdown(rows, row => row.region, calendarDays),
     dealers,
     dealerAudit,

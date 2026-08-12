@@ -1,0 +1,1 @@
+ALTER TABLE `leads` ADD `sourceChannel` varchar(120) DEFAULT '' NOT NULL;

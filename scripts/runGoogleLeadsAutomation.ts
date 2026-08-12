@@ -14,6 +14,7 @@ async function main() {
     dryRun: hasFlag("--dry-run"),
     outputRoot: valueAfter("--output-root"),
     sourceUrl: valueAfter("--source-url"),
+    sourceFile: valueAfter("--source-file"),
     actor: valueAfter("--actor"),
   });
   console.log(JSON.stringify(result));

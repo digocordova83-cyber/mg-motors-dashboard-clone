@@ -47,6 +47,7 @@ class GoogleLeadsConsolidatorTest(unittest.TestCase):
         self.assertEqual(master[0]["Canal"], "Campanha Urban")
         self.assertEqual(master[0]["Concessionaria"], "  Dealer fiel à origem  ")
         self.assertEqual(import_rows[0]["Concessionarias corrijida"], "  Dealer fiel à origem  ")
+        self.assertEqual(import_rows[0]["Canal de Origem"], "Site")
 
     def test_all_sources_route_mg4_urban_to_campaign_urban(self):
         cases = [
@@ -141,6 +142,7 @@ class GoogleLeadsConsolidatorTest(unittest.TestCase):
                 self.assertEqual(master[0]["Modelo"], "MG4 URBAN")
                 self.assertEqual(master[0]["Canal"], "Campanha Urban")
                 self.assertEqual(import_rows[0]["Canal"], "Campanha Urban")
+                self.assertEqual(import_rows[0]["Canal de Origem"], source)
 
     def test_non_urban_model_keeps_original_source_channel(self):
         frame = pd.DataFrame(
@@ -159,6 +161,7 @@ class GoogleLeadsConsolidatorTest(unittest.TestCase):
         self.assertEqual(issues, [])
         self.assertEqual(master[0]["Canal"], "Meta")
         self.assertEqual(import_rows[0]["Canal"], "Meta")
+        self.assertEqual(import_rows[0]["Canal de Origem"], "Meta")
 
     def test_meta_uses_form_name_and_excludes_invalid_model(self):
         frame = pd.DataFrame(

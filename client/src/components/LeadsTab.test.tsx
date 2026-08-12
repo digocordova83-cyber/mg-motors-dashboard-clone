@@ -39,6 +39,15 @@ describe("interface de Leads", () => {
     expect(source).toContain("<WeeklySalesPanel");
   });
 
+  it("preenche o espaço ao lado de Leads por modelo com MG4 URBAN por origem", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain('className="grid gap-4 lg:grid-cols-2"');
+    expect(source).toContain('"MG4 URBAN por canal de origem"');
+    expect(source).toContain("data.mg4UrbanSourceChannels");
+    expect(source).toContain('accent="#38bdf8"');
+  });
+
   it("expõe ações acessíveis para abrir os Leads por canal de cada concessionária", () => {
     const dealer = {
       dealerName: "Dealer A",

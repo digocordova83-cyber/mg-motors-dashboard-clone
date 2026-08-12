@@ -253,7 +253,9 @@ export async function analyzeLeadCsvAgainstCurrentBase(input: {
       hasChanges: false,
     };
   }
-  const currentRows = await db.select({ contentHash: leads.contentHash }).from(leads);
+  const currentRows = await db
+    .select({ contentHash: leads.contentHash, sourceChannel: leads.sourceChannel })
+    .from(leads);
   const currentBaseRows = currentRows.length;
   const candidateHashes = new Set(parsed.records.map(record => record.contentHash));
   const existingContentHashes = new Set(
@@ -263,11 +265,19 @@ export async function analyzeLeadCsvAgainstCurrentBase(input: {
   );
   const preview = buildPreview(parsed, fileName, existingContentHashes, null);
   const rowsRemovedFromSource = Math.max(0, currentBaseRows - preview.rowsAlreadyStored);
+  const candidateSourceChannels = new Map(
+    parsed.records.map(record => [record.contentHash, record.sourceChannel]),
+  );
+  const sourceChannelChanges = currentRows.filter(row => {
+    const candidate = candidateSourceChannels.get(row.contentHash);
+    return candidate !== undefined && row.sourceChannel !== candidate;
+  }).length;
   return {
     ...preview,
     currentBaseRows,
     rowsRemovedFromSource,
-    hasChanges: preview.rowsReadyToInsert > 0 || rowsRemovedFromSource > 0,
+    hasChanges:
+      preview.rowsReadyToInsert > 0 || rowsRemovedFromSource > 0 || sourceChannelChanges > 0,
   };
 }
 
@@ -429,6 +439,7 @@ export async function importLeadCsv(input: {
               sourceDateRaw: record.sourceDateRaw,
               channel: record.channel,
               channelRaw: record.channelRaw,
+              sourceChannel: record.sourceChannel,
               model: record.model,
               modelRaw: record.modelRaw,
               region: record.region,
