@@ -11,13 +11,17 @@ async function main() {
   const dealerSalesTarget = targets.dealers.reduce((total, row) => total + row.salesTarget, 0);
   const dealerLeadsActual = targets.dealers.reduce((total, row) => total + row.leadsActual, 0);
   const reportedSalesActual = targets.dealers.reduce((total, row) => total + (row.salesActual ?? 0), 0);
-  if (targets.dealers.length !== 31) throw new Error(`Esperados 31 dealers; encontrados ${targets.dealers.length}`);
+  if (targets.dealers.length !== 30) throw new Error(`Esperados 30 dealers canônicos; encontrados ${targets.dealers.length}`);
   if (dealerLeadTarget !== targets.summary.leadTarget) throw new Error("Meta de Leads não reconciliada");
   if (dealerSalesTarget !== targets.summary.salesTarget) throw new Error("Meta de Sales não reconciliada");
   if (dealerLeadsActual !== targets.summary.leadsActual) throw new Error("Leads realizados não reconciliados");
   if (reportedSalesActual !== targets.summary.salesActual) throw new Error("Sales realizadas não reconciliadas");
   if (targets.summary.leadTarget !== 11_996 || targets.summary.salesTarget !== 548) {
     throw new Error("Totais oficiais da planilha divergentes");
+  }
+  const savol = targets.dealers.find(row => row.dealerKey === "SAVOL ZL SP");
+  if (!savol || savol.leadTarget !== 679 || savol.salesTarget !== 31) {
+    throw new Error("Consolidação canônica Savol divergente");
   }
 
   const output = {
@@ -28,6 +32,15 @@ async function main() {
     summary: targets.summary,
     dealers: targets.dealers.length,
     salesUnreportedDealers: targets.dealers.filter(row => row.salesActual === null).map(row => row.dealerName),
+    zeroLeadDealers: targets.dealers
+      .filter(row => row.leadsActual === 0)
+      .map(row => ({
+        dealer: row.dealerName,
+        dealerKey: row.dealerKey,
+        stateCode: row.stateCode,
+        leadTarget: row.leadTarget,
+        salesActual: row.salesActual,
+      })),
     lowestLeadAchievement: [...targets.dealers]
       .sort((a, b) => a.leadAchievementPercent - b.leadAchievementPercent)
       .slice(0, 5)

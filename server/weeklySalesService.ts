@@ -882,6 +882,52 @@ export function calculateWeeklySalesEfficiency(leadsCount: number, sales: number
   };
 }
 
+function sumNullable(values: readonly (number | null)[]): number | null {
+  const available = values.filter((value): value is number => value !== null);
+  return available.length ? available.reduce((sum, value) => sum + value, 0) : null;
+}
+
+export function mergeCanonicalDealerMetrics(
+  metrics: readonly WeeklySalesDealerMetric[],
+): WeeklySalesDealerMetric[] {
+  const grouped = new Map<string, WeeklySalesDealerMetric[]>();
+  for (const metric of metrics) {
+    const key = normalizeDealerLookupKey(metric.dealerName);
+    const group = grouped.get(key) ?? [];
+    group.push(metric);
+    grouped.set(key, group);
+  }
+  return Array.from(grouped.values()).map(group => {
+    if (group.length === 1) return group[0];
+    const weeks: Record<string, WeeklySalesDealerWeekMetric> = {};
+    for (const week of ["1", "2", "3", "4", "5"] as const) {
+      const target = sumNullable(group.map(metric => metric.weeks[week]?.target ?? null));
+      const retail = sumNullable(group.map(metric => metric.weeks[week]?.retail ?? null));
+      const leads = Math.max(0, ...group.map(metric => metric.weeks[week]?.leads ?? 0));
+      weeks[week] = {
+        target,
+        retail,
+        achievementPercent:
+          target === null || retail === null || target <= 0
+            ? target === 0 && retail === 0 ? 0 : null
+            : round((retail / target) * 100),
+        leads,
+      };
+    }
+    const leads = Math.max(...group.map(metric => metric.leads));
+    const sales = sumNullable(group.map(metric => metric.sales));
+    return {
+      sourceName: Array.from(new Set(group.map(metric => metric.sourceName))).join(" + "),
+      dealerName: group[0].dealerName,
+      matchStatus: group.every(metric => metric.matchStatus === "MATCHED") ? "MATCHED" : "UNMATCHED",
+      leads,
+      sales,
+      ...calculateWeeklySalesEfficiency(leads, sales),
+      weeks,
+    };
+  });
+}
+
 type DealerMonthlyTargetRow = Awaited<ReturnType<typeof getDealerTargetsForCompetence>>[number];
 
 export function buildDealerTargetTracking(input: {
@@ -1026,11 +1072,12 @@ export async function getWeeklySalesMetrics(
       ? (latestImport.referenceWeek as WeeklySalesWeek)
       : 4;
   const officialDealerKeys = buildOfficialWeeklyDealerKeys(getOfficialDealers());
-  const dealers = records
+  const dealerRows = records
     .map(record => {
-      const key = record.canonicalDealerKey ?? "";
+      const currentCanonicalDealer = resolveWeeklySalesCanonicalDealer(record.sourceName).canonicalDealer;
+      const key = normalizeDealerLookupKey(currentCanonicalDealer);
       const matchStatus = resolveOfficialWeeklyDealerMatchStatus(
-        record.canonicalDealerKey,
+        key,
         officialDealerKeys,
       );
       const weeklyLeads =
@@ -1042,14 +1089,15 @@ export async function getWeeklySalesMetrics(
       const efficiency = calculateWeeklySalesEfficiency(leadsCount, sales);
       return {
         sourceName: record.sourceName,
-        dealerName: record.canonicalDealer ?? record.sourceName,
+        dealerName: currentCanonicalDealer,
         matchStatus,
         leads: leadsCount,
         sales,
         ...efficiency,
         weeks,
       } satisfies WeeklySalesDealerMetric;
-    })
+    });
+  const dealers = mergeCanonicalDealerMetrics(dealerRows)
     .sort(
       (left, right) =>
         (right.sales ?? -1) - (left.sales ?? -1) ||
@@ -1093,7 +1141,7 @@ export async function getWeeklySalesMetrics(
       matchedDealers: matchedDealers.length,
       unmatchedDealers: unmatchedDealers.length,
       dealersWithoutReferenceSales: dealers.filter(dealer => dealer.sales === null).length,
-      dealersWithoutWeek4Sales: records.filter(record => record.week4Retail === null).length,
+      dealersWithoutWeek4Sales: dealers.filter(dealer => dealer.weeks["4"]?.retail === null).length,
       totalLeads,
       totalSales,
       matchedSales,

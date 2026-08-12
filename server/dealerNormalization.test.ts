@@ -15,7 +15,7 @@ import { buildLeadAnalytics, type LeadAnalyticsRow } from "./leadsAnalytics";
 describe("dealer normalization", () => {
   it("normaliza caixa, acentos e pontuação somente para localizar aliases explícitos", () => {
     expect(normalizeDealerLookupKey("  Savol — São Caetano  ")).toBe("SAVOL SAO CAETANO");
-    expect(canonicalizeDealerName("Savol São Caetano - 3966183")).toBe("SAVOL - SÃO CAETANO");
+    expect(canonicalizeDealerName("Savol São Caetano - 3966183")).toBe("SAVOL ZL/SP");
     expect(canonicalizeDealerName("DRSUL POA")).toBe("DRSUL - PORTO ALEGRE");
     expect(canonicalizeDealerName("Barigui Curitiba - 3964357")).toBe("BARIGUI - CURITIBA");
     expect(isExplicitDealerAlias("orvel_shopping_vitória_-_vitória/es_")).toBe(true);

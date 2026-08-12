@@ -172,6 +172,41 @@ function createRecordHash(row: Omit<DealerTargetParsedRow, "recordHash">): strin
   return createHash("sha256").update(JSON.stringify(row)).digest("hex");
 }
 
+function aggregateCanonicalTargetRows(rows: readonly DealerTargetParsedRow[]): DealerTargetParsedRow[] {
+  const byCanonicalKey = new Map<string, DealerTargetParsedRow[]>();
+  for (const row of rows) {
+    const group = byCanonicalKey.get(row.canonicalDealerKey) ?? [];
+    group.push(row);
+    byCanonicalKey.set(row.canonicalDealerKey, group);
+  }
+  return Array.from(byCanonicalKey.values()).map(group => {
+    if (group.length === 1) return group[0];
+    const first = group[0];
+    const withoutHash = {
+      sourceRowNumber: Math.min(...group.map(row => row.sourceRowNumber)),
+      sourceDealerName: group.map(row => row.sourceDealerName).join(" + "),
+      officialDealerName: first.officialDealerName,
+      canonicalDealer: first.canonicalDealer,
+      canonicalDealerKey: first.canonicalDealerKey,
+      stateCode: first.stateCode,
+      leadTarget: group.reduce((sum, row) => sum + row.leadTarget, 0),
+      salesTarget: group.reduce((sum, row) => sum + row.salesTarget, 0),
+      channelTargets: {
+        google: group.reduce((sum, row) => sum + row.channelTargets.google, 0),
+        meta: group.reduce((sum, row) => sum + row.channelTargets.meta, 0),
+        publya: group.reduce((sum, row) => sum + row.channelTargets.publya, 0),
+        webmotors: group.reduce((sum, row) => sum + row.channelTargets.webmotors, 0),
+        mercadoLivre: group.reduce((sum, row) => sum + row.channelTargets.mercadoLivre, 0),
+        tiktok: group.reduce((sum, row) => sum + row.channelTargets.tiktok, 0),
+      },
+      channelTotal: group.reduce((sum, row) => sum + row.channelTotal, 0),
+      weightPercent: group.reduce((sum, row) => sum + row.weightPercent, 0),
+      conversionInvestment: group.reduce((sum, row) => sum + row.conversionInvestment, 0),
+    } satisfies Omit<DealerTargetParsedRow, "recordHash">;
+    return { ...withoutHash, recordHash: createRecordHash(withoutHash) };
+  });
+}
+
 export async function parseDealerTargetsWorkbook(input: {
   fileName: string;
   bytes: Buffer;
@@ -265,20 +300,28 @@ export async function parseDealerTargetsWorkbook(input: {
       .map(row => row.canonicalDealerKey)
       .filter((key, index, keys) => keys.indexOf(key) !== index),
   ));
-  if (duplicateKeys.length) {
-    errors.push(`Há concessionárias duplicadas após o de-para: ${duplicateKeys.join(", ")}.`);
+  const duplicateSourceKeys = Array.from(new Set(
+    rows
+      .map(row => normalizeDealerLookupKey(row.sourceDealerName))
+      .filter((key, index, keys) => keys.indexOf(key) !== index),
+  ));
+  const sourceRows = rows.length;
+  const aggregatedRows = aggregateCanonicalTargetRows(rows);
+  if (duplicateKeys.length) warnings.push(`Linhas consolidadas no mesmo dealer ativo: ${duplicateKeys.join(", ")}.`);
+  if (duplicateSourceKeys.length) {
+    errors.push(`Há linhas duplicadas para dealers da planilha: ${duplicateSourceKeys.join(", ")}.`);
   }
-  const importedOfficialKeys = new Set(rows.map(row => normalizeDealerLookupKey(row.officialDealerName)));
-  const missingOfficialDealers = getOfficialDealers().filter(
-    dealer => !importedOfficialKeys.has(normalizeDealerLookupKey(dealer.name)),
+  const importedSourceKeys = new Set(rows.map(row => normalizeDealerLookupKey(row.sourceDealerName)));
+  const missingExpectedSources = dealerTargetAliases.mappings.filter(
+    mapping => !importedSourceKeys.has(normalizeDealerLookupKey(mapping.source)),
   );
-  if (missingOfficialDealers.length) {
-    errors.push(`Metas ausentes para: ${missingOfficialDealers.map(dealer => dealer.name).join(", ")}.`);
+  if (missingExpectedSources.length) {
+    errors.push(`Metas ausentes para: ${missingExpectedSources.map(mapping => mapping.source).join(", ")}.`);
   }
 
-  const totalLeadTarget = rows.reduce((sum, row) => sum + row.leadTarget, 0);
-  const totalSalesTarget = rows.reduce((sum, row) => sum + row.salesTarget, 0);
-  const channelTotal = rows.reduce((sum, row) => sum + row.channelTotal, 0);
+  const totalLeadTarget = aggregatedRows.reduce((sum, row) => sum + row.leadTarget, 0);
+  const totalSalesTarget = aggregatedRows.reduce((sum, row) => sum + row.salesTarget, 0);
+  const channelTotal = aggregatedRows.reduce((sum, row) => sum + row.channelTotal, 0);
   const channelDifference = channelTotal - totalLeadTarget;
   if (channelDifference !== 0) {
     warnings.push(
@@ -295,17 +338,17 @@ export async function parseDealerTargetsWorkbook(input: {
     errors,
     warnings,
     summary: {
-      rows: rows.length + unmatchedRows,
-      matchedRows: rows.length,
+      rows: sourceRows + unmatchedRows,
+      matchedRows: sourceRows,
       unmatchedRows,
-      duplicateDealerKeys: duplicateKeys.length,
-      missingOfficialDealers: missingOfficialDealers.length,
+      duplicateDealerKeys: duplicateSourceKeys.length,
+      missingOfficialDealers: missingExpectedSources.length,
       totalLeadTarget,
       totalSalesTarget,
       channelTotal,
       channelDifference,
     },
-    rows,
+    rows: aggregatedRows,
   };
 }
 

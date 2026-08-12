@@ -84,6 +84,8 @@ describe("DealerTargetTrackingPanel", () => {
     const html = renderToStaticMarkup(<DealerTargetTrackingPanel tracking={tracking as never} locale="pt-BR" />);
 
     expect(html).toContain("Acompanhamento das metas por concessionária");
+    expect(html).toContain("Leads atribuídos às 2 concessionárias");
+    expect(html).not.toContain("31 concessionárias");
     expect(html).toContain("Leads atribuídos / meta");
     expect(html).toContain("100 / 150");
     expect(html).toContain("5 / 15");
@@ -97,6 +99,8 @@ describe("DealerTargetTrackingPanel", () => {
     const html = renderToStaticMarkup(<DealerTargetTrackingPanel tracking={tracking as never} locale="en-US" />);
 
     expect(html).toContain("Dealer target tracking");
+    expect(html).toContain("D-1 Leads assigned to the 2 dealers");
+    expect(html).not.toContain("31 dealers");
     expect(html).toContain("Lead achievement");
     expect(html).toContain("Search dealer or state");
     expect(html).toContain("dealers reported");

@@ -143,7 +143,11 @@ export function DealerTargetTrackingPanel({
             <h2 className="text-sm font-semibold text-slate-100">{ui(locale, "Acompanhamento das metas por concessionária", "Dealer target tracking")}</h2>
           </div>
           <p className="mt-1 max-w-3xl text-[11px] leading-5 text-slate-600">
-            {ui(locale, "TOTAL DEALER e SALES do plano mensal versus Leads atribuídos às 31 concessionárias no período D-1 e Retail da última semana reportada.", "Monthly TOTAL DEALER and SALES targets versus D-1 Leads assigned to the 31 dealers and Retail from the latest reported week.")}
+            {ui(
+              locale,
+              `TOTAL DEALER e SALES do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1 e Retail da última semana reportada.`,
+              `Monthly TOTAL DEALER and SALES targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers and Retail from the latest reported week.`,
+            )}
           </p>
         </div>
         <div className="shrink-0 text-left text-[9px] leading-4 text-slate-600 sm:text-right">

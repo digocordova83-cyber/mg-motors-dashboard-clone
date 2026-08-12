@@ -38,7 +38,7 @@ async function createWorkbook(options: { omitLast?: boolean; duplicateFirst?: bo
 }
 
 describe("metas mensais por concessionária", () => {
-  it("concilia as 31 abreviações com dealers oficiais únicos", async () => {
+  it("concilia as 31 linhas em 30 dealers ativos únicos", async () => {
     const preview = await parseDealerTargetsWorkbook({
       fileName: "metas.xlsx",
       bytes: await createWorkbook(),
@@ -56,7 +56,14 @@ describe("metas mensais por concessionária", () => {
       totalSalesTarget: 31,
       channelDifference: 0,
     });
-    expect(new Set(preview.rows.map(row => row.canonicalDealerKey)).size).toBe(31);
+    expect(new Set(preview.rows.map(row => row.canonicalDealerKey)).size).toBe(30);
+    expect(preview.rows).toHaveLength(30);
+    expect(preview.rows.find(row => row.canonicalDealerKey === "SAVOL ZL SP")).toMatchObject({
+      sourceDealerName: "SAVOL/SP + SAVOL ZL/SP",
+      leadTarget: 12,
+      salesTarget: 2,
+    });
+    expect(preview.warnings).toContain("Linhas consolidadas no mesmo dealer ativo: SAVOL ZL SP.");
     expect(preview.warnings).toContain(
       "O arquivo não informa competência; foi utilizada a competência selecionada no dashboard.",
     );
@@ -74,7 +81,7 @@ describe("metas mensais por concessionária", () => {
     expect(preview.errors.join(" ")).toContain("Metas ausentes para");
   });
 
-  it("rejeita chaves canônicas duplicadas", async () => {
+  it("rejeita linhas fonte duplicadas mesmo quando o dealer canônico é consolidável", async () => {
     const preview = await parseDealerTargetsWorkbook({
       fileName: "metas.xlsx",
       bytes: await createWorkbook({ duplicateFirst: true }),

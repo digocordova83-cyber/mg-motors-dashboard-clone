@@ -1432,3 +1432,57 @@
 > Interface concluída: resumo de Leads, Sales, conversão e cobertura; tabela desktop e cards mobile por concessionária; busca e ordenação por atingimento/gap. O botão “Atualizar metas” possui prévia auditável e só aparece para usuários com permissão de importação. Foram aprovados 36 testes direcionados e TypeScript.
 
 > Validação final em 12/08/2026: 3.255 Leads atribuídos de meta 11.996 (27,13%); 178 Sales de meta 548 (32,48%); conversão real 5,47% versus meta 4,57%; 31/31 metas conciliadas e 24/31 dealers com Retail reportado na Semana 3. Desktop e mobile validados com dados reais. Foram aprovados 261 testes, TypeScript e build.
+
+## Auditoria — Google Ads, Meta Ads e conexão Windsor
+
+- [x] Revisar configuração, período D-1, contratos e políticas de cache/snapshot das duas fontes.
+- [ ] Testar a conexão Windsor de Google Ads e Meta Ads sem expor credenciais.
+- [ ] Confirmar data máxima disponível e detectar atraso, ausência ou duplicidade de dias.
+- [ ] Reconciliar investimento, impressões, cliques, Leads/conversões e KPIs derivados entre fonte e dashboard.
+- [ ] Confirmar se cada aba está em dados ao vivo, cache de processo ou snapshot persistente.
+- [ ] Corrigir inconsistências e adicionar observabilidade explícita se necessário.
+- [ ] Executar regressões, TypeScript/build, validar as duas abas e registrar diagnóstico auditável.
+
+> Configuração revisada em 12/08/2026: conector Windsor.ai ativo. Google usa cache de processo de 10 min, snapshot persistente e fallback validado de julho; Meta usa cache de 15 min, snapshot persistente e fallback somente para o recorte exato do snapshot. As duas fontes aplicam o corte D-1 pelo resolvedor compartilhado.
+
+## Dashboard — conciliação dos dealers com Leads zerados
+
+- [x] Listar todas as metas com Leads realizados iguais a zero no período atual.
+- [x] Cruzar cada zero com nomes brutos, aliases, cidade, UF e chave canônica da base de Leads.
+- [x] Diferenciar ausência real de Leads de falha de alias ou chave divergente.
+- [x] Aplicar somente de-paras comprovados, preservando o nome original de cada Lead.
+- [x] Recalcular meta, realizado, atingimento, gap e conversão após a conciliação.
+- [x] Manter zero apenas quando a consulta integral confirmar ausência real no período.
+- [x] Adicionar regressões e validar dados reais, TypeScript, suíte completa, build e checkpoint.
+
+> Restrição inicial substituída pela orientação posterior do usuário: a planilha de metas define os dealers ativos e todos os aliases comprováveis devem convergir para uma linha única por dealer.
+
+> Proposta preparada: os nove zeros são falhas de alias, não ausência de Leads. Foram identificadas dez variações brutas com 168 Leads no período, todas com correspondência explícita de unidade e cidade/UF. Nenhum alias foi aplicado.
+
+## Dashboard — cadastro canônico pelos dealers ativos da meta
+
+- [x] Tratar as 31 linhas de `metas.xlsx` como o conjunto canônico de dealers ativos para agosto.
+- [x] Inventariar 100% dos nomes brutos de dealer em Leads e Sales no período e atribuir cada alias comprovável a uma única linha da meta.
+- [x] Detectar e eliminar colisões em que dois nomes canônicos representam a mesma concessionária.
+- [x] Consolidar `SAVOL - SÃO CAETANO` e suas variações em `SAVOL ZL/SP`, conforme orientação do usuário.
+- [x] Preservar `dealerRaw` e nomes de origem; alterar somente a camada analítica de conciliação.
+- [x] Reconciliar o total de Leads antes/depois para garantir zero perda e zero dupla contagem.
+- [x] Reconciliar Sales do PDF com as mesmas 31 linhas canônicas e diferenciar não reportado de zero.
+- [x] Exibir uma única linha por dealer ativo com meta, Leads, Sales, atingimento, gap e conversão.
+- [x] Fazer futuras planilhas de metas atualizarem o cadastro canônico da competência sem criar aliases duplicados.
+- [x] Adicionar regressões de colisão, idempotência e totais; validar dados reais, TypeScript, suíte completa e build.
+- [x] Substituir o texto residual fixo de 31 concessionárias pela contagem canônica dinâmica em português e inglês.
+
+> Auditoria integral em 12/08/2026: 3.452 Leads no período, sendo 3.255 conciliados, 19 em qualificação e 178 distribuídos em 12 variações de nomes ainda sem alias. Todas as 12 variações correspondem explicitamente a dealers ativos da meta; após o de-para, a expectativa é 3.433 conciliados, 19 em qualificação e zero nomes de dealer não conciliados.
+
+> Colisão confirmada pelo usuário: `SAVOL/SP` e `SAVOL ZL/SP` representam o mesmo dealer. A linha única `SAVOL ZL/SP` deverá consolidar meta de 679 Leads e 31 Sales, além de todas as variações atuais de “Savol São Caetano” e “Savol ZL”.
+
+> Canonicalização aplicada em 12/08/2026: 30 dealers únicos, zero linhas de meta sem Leads, zero nomes de dealer fora da meta e 3.433 Leads conciliados; os 19 restantes são Leads em qualificação. A meta total permaneceu em 11.996 Leads e 548 Sales. A linha única SAVOL ZL/SP soma meta 679/31 e realizado 77 Leads/14 Sales.
+
+> Sales preservadas: as linhas do PDF que convergem ao mesmo dealer agora são somadas por semana sem duplicar Leads. O total permaneceu em 178 Sales, com 24 dealers reportados e seis corretamente marcados como não reportados.
+
+> Validação visual autenticada em desktop: o painel mostra 30/30 concessionárias conciliadas, 3.433/11.996 Leads, 178/548 Sales, conversão real de 5,18% e uma única linha `SAVOL ZL/SP` com 77 Leads e 14 Sales. A lista semanal também exibe Savol apenas uma vez e mantém 178 Sales no total.
+
+> Idempotência confirmada: a reimportação de `metas.xlsx` retornou `NO_CHANGES`, `idempotent: true` e `rowsInserted: 0`; a prévia manteve 31/31 linhas-fonte conciliadas, zero duplicidades canônicas e a consolidação Savol em uma única chave.
+
+> Validação técnica final: auditoria reconciliada com 3.452 = 3.433 conciliados + 19 em qualificação + 0 fora da meta; 30 dealers canônicos, 24 com Sales reportadas, 178 Sales preservadas, 262 testes aprovados, TypeScript sem erros e build de produção concluído.

@@ -2,7 +2,7 @@
   "sourceWorkbook": "metas.xlsx",
   "sourceSheet": "Página1",
   "mappings": [
-    { "source": "SAVOL/SP", "officialName": "SAVOL SÃO CAETANO" },
+    { "source": "SAVOL/SP", "officialName": "SAVOL ZL/SP" },
     { "source": "BALTIC/SP", "officialName": "BALTIC BARUERI" },
     { "source": "TORIBA/SP", "officialName": "TORIBA SÃO PAULO" },
     { "source": "STEFANINI CAMP/SP", "officialName": "STEFANINI CAMPINAS" },

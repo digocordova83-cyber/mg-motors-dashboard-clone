@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-11T00:40:00.000Z",
+  "generatedAt": "2026-08-12T15:30:00.000Z",
   "sources": [
     "Dealers_atualizado.xlsx",
     "https://mgmotoroficial.com.br/mg-care/concessionarias",
@@ -28,11 +28,23 @@
     { "sourceKey": "TORIBA CEASA SP", "canonical": "TORIBA - CEASA" },
     { "sourceKey": "TORIBA SAO PAULO", "canonical": "TORIBA - CEASA" },
     { "sourceKey": "JRCA MACEIO", "canonical": "JRCA" },
-    { "sourceKey": "SAVOL SAO CAETANO SP", "canonical": "SAVOL - SÃO CAETANO" },
+    { "sourceKey": "SAVOL SAO CAETANO", "canonical": "SAVOL ZL/SP" },
+    { "sourceKey": "SAVOL SAO CAETANO SP", "canonical": "SAVOL ZL/SP" },
+    { "sourceKey": "SAVOL ZL SAO PAULO SP", "canonical": "SAVOL ZL/SP" },
     { "sourceKey": "VEGA LONGWALL AUTOMOTORES", "canonical": "VEGA LONGWALL" },
     { "sourceKey": "ONNE SAO JOSE DO RIO PRETO SP", "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO" },
     { "sourceKey": "ONNE RIBEIRAO PRETO SP", "canonical": "ONNE - RIBEIRÃO PRETO" },
-    { "sourceKey": "ORVEL SHOPPING VITORIA", "canonical": "ORVEL - VITÓRIA" }
+    { "sourceKey": "ORVEL SHOPPING VITORIA", "canonical": "ORVEL - VITÓRIA" },
+    { "sourceKey": "AUTOBRAND RECIFE RECIFE PE", "canonical": "AUTOBRAND RECIFE" },
+    { "sourceKey": "AUTOMEC SOROCABA SOROCABA SP", "canonical": "AUTOMEC SOROCABA" },
+    { "sourceKey": "BALTIC GUARULHOS GUARULHOS SP", "canonical": "BALTIC GUARULHOS" },
+    { "sourceKey": "EUROVILLE JUIZ DE FORA JUIZ DE FORA MG", "canonical": "EUROVILLE JUIZ DE FORA" },
+    { "sourceKey": "EUROVILLE UBERLANDIA UBERLANDIA MG", "canonical": "EUROVILLE UBERLANDIA" },
+    { "sourceKey": "HG ARACAJU ARACAJU SE", "canonical": "HG ARACAJU" },
+    { "sourceKey": "JAVEP BAURU SP", "canonical": "JAVEP/SP" },
+    { "sourceKey": "LA FONTAINE JOINVILLE JOINVILLE SC", "canonical": "LA FONTAINE JOINVILLE" },
+    { "sourceKey": "SINAL AV EUROPA SAO PAULO SP", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "STEFANINI PIRACICABA SP", "canonical": "STEFANINI - PIRACICABA" }
   ],
   "qualificationKeys": [
     "IG",

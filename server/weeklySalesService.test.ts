@@ -7,6 +7,7 @@ import {
   buildWeeklySalesStateMetrics,
   calculateWeeklySalesEfficiency,
   getWeeklyLeadCutoffDates,
+  mergeCanonicalDealerMetrics,
   resolveDealerStateCode,
   resolveOfficialWeeklyDealerMatchStatus,
   selectWeeklySalesReference,
@@ -14,10 +15,10 @@ import {
 import { getOfficialDealers, normalizeDealerLookupKey } from "./dealerNormalization";
 
 describe("cadastro oficial de dealers nas Vendas Semanais", () => {
-  it("reconhece os 31 dealers oficiais usando o mesmo de-para do parser semanal", () => {
+  it("reconhece 30 dealers ativos após consolidar as duas linhas Savol", () => {
     const keys = buildOfficialWeeklyDealerKeys(getOfficialDealers());
 
-    expect(keys.size).toBe(31);
+    expect(keys.size).toBe(30);
     for (const dealer of [
       "HG ARACAJU",
       "LA FONTAINE JOINVILLE",
@@ -146,7 +147,7 @@ describe("eficiência semanal de vendas", () => {
     const zero = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
     const leadCountsByWeek = new Map([
       [normalizeDealerLookupKey("BARIGUI - CURITIBA"), { ...zero, "2": 30 }],
-      [normalizeDealerLookupKey("SAVOL - SÃO CAETANO"), { ...zero, "2": 50 }],
+      [normalizeDealerLookupKey("SAVOL ZL/SP"), { ...zero, "2": 50 }],
       [normalizeDealerLookupKey("SINAL AV EUROPA"), { ...zero, "2": 40 }],
     ]);
     const dealerMetrics = [
@@ -163,7 +164,7 @@ describe("eficiência semanal de vendas", () => {
       },
       {
         sourceName: "SAVOL - SÃO CAETANO",
-        dealerName: "SAVOL - SÃO CAETANO",
+        dealerName: "SAVOL ZL/SP",
         matchStatus: "MATCHED",
         leads: 50,
         sales: 5,
@@ -199,7 +200,7 @@ describe("eficiência semanal de vendas", () => {
       salesReportedDealers: 1,
     });
     expect(states[0].dealers).toEqual([
-      expect.objectContaining({ dealerName: "SAVOL - SÃO CAETANO", leads: 50, sales: 5 }),
+      expect.objectContaining({ dealerName: "SAVOL ZL/SP", leads: 50, sales: 5 }),
       expect.objectContaining({ dealerName: "SINAL AV EUROPA", leads: 40, sales: null }),
     ]);
     expect(states[1]).toMatchObject({ stateCode: "PR", leads: 30, sales: 2, conversionRatePercent: 6.67 });
@@ -286,5 +287,44 @@ describe("eficiência semanal de vendas", () => {
         salesGap: null,
       }),
     ]);
+  });
+
+  it("consolida aliases do mesmo dealer somando Sales sem duplicar Leads", () => {
+    const makeWeeks = (retail: number | null, leads: number) => ({
+      "1": { target: 10, retail, achievementPercent: retail === null ? null : retail * 10, leads },
+      "2": { target: 20, retail, achievementPercent: retail === null ? null : retail * 5, leads },
+      "3": { target: 30, retail, achievementPercent: retail === null ? null : Number(((retail / 30) * 100).toFixed(2)), leads },
+      "4": { target: 40, retail: null, achievementPercent: null, leads },
+      "5": { target: 50, retail: null, achievementPercent: null, leads },
+    });
+    const merged = mergeCanonicalDealerMetrics([
+      {
+        sourceName: "SAVOL - SÃO CAETANO",
+        dealerName: "SAVOL ZL/SP",
+        matchStatus: "MATCHED",
+        leads: 77,
+        sales: 14,
+        ...calculateWeeklySalesEfficiency(77, 14),
+        weeks: makeWeeks(14, 77),
+      },
+      {
+        sourceName: "SAVOL ZL/SP",
+        dealerName: "SAVOL ZL/SP",
+        matchStatus: "MATCHED",
+        leads: 77,
+        sales: null,
+        ...calculateWeeklySalesEfficiency(77, null),
+        weeks: makeWeeks(null, 77),
+      },
+    ]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({
+      dealerName: "SAVOL ZL/SP",
+      leads: 77,
+      sales: 14,
+      conversionRatePercent: 18.18,
+    });
+    expect(merged[0].weeks["3"]).toMatchObject({ target: 60, retail: 14, leads: 77 });
   });
 });
