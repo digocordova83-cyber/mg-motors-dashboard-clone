@@ -17,12 +17,12 @@ function row(
 }
 
 describe("buildLeadAnalytics", () => {
-  it("reconcilia MG4 URBAN por canal original sem alterar Campanha Urban", () => {
+  it("reconcilia MG4 URBAN com TikTok separado em canais, total e série diária", () => {
     const rows = [
       row("2026-08-01", "Campanha Urban", "Dealer A", "MG4 URBAN", "SP", "Site"),
       row("2026-08-01", "Campanha Urban", "Dealer B", "MG4 URBAN", "SP", "Meta"),
       row("2026-08-02", "Campanha Urban", "Dealer C", "MG4 URBAN", "RJ", "Site"),
-      row("2026-08-02", "Campanha Urban", "Dealer D", "MG4 URBAN", "PE", "TikTok"),
+      row("2026-08-02", "TikTok", "Dealer D", "MG4 URBAN", "PE", "TikTok"),
       row("2026-08-02", "Site", "Dealer C", "MG4", "RJ", "Site"),
     ];
     const result = buildLeadAnalytics({
@@ -35,7 +35,8 @@ describe("buildLeadAnalytics", () => {
     });
 
     expect(result.channels).toEqual(expect.arrayContaining([
-      expect.objectContaining({ value: "Campanha Urban", leads: 4 }),
+      expect.objectContaining({ value: "Campanha Urban", leads: 3 }),
+      expect.objectContaining({ value: "TikTok", leads: 1 }),
     ]));
     expect(result.mg4UrbanSourceChannels).toEqual([
       { value: "Site", leads: 2, dailyAverage: 1, sharePercent: 50 },
@@ -43,6 +44,20 @@ describe("buildLeadAnalytics", () => {
       { value: "TikTok", leads: 1, dailyAverage: 0.5, sharePercent: 25 },
     ]);
     expect(result.mg4UrbanSourceChannels.reduce((sum, item) => sum + item.leads, 0)).toBe(4);
+    expect(result.summary.totalLeads).toBe(5);
+    expect(result.channels.reduce((sum, item) => sum + item.leads, 0)).toBe(5);
+    expect(result.daily.reduce((sum, point) => sum + point.total, 0)).toBe(5);
+    expect(result.channelOrder).toContain("TikTok");
+    expect(result.daily[0]).toMatchObject({
+      date: "2026-08-01",
+      total: 2,
+      values: { "Campanha Urban": 2, TikTok: 0, Site: 0 },
+    });
+    expect(result.daily[1]).toMatchObject({
+      date: "2026-08-02",
+      total: 3,
+      values: { "Campanha Urban": 1, TikTok: 1, Site: 1 },
+    });
   });
 
   it("calcula totais e série empilhada sem dupla contagem, incluindo dias zerados", () => {

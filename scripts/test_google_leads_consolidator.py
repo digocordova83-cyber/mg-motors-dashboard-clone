@@ -8,6 +8,7 @@ from googleLeadsConsolidator import (
     map_mercado_livre,
     map_meta,
     map_site,
+    map_tiktok,
     map_uol,
     map_weebmotors,
     normalize_model,
@@ -143,6 +144,26 @@ class GoogleLeadsConsolidatorTest(unittest.TestCase):
                 self.assertEqual(master[0]["Canal"], "Campanha Urban")
                 self.assertEqual(import_rows[0]["Canal"], "Campanha Urban")
                 self.assertEqual(import_rows[0]["Canal de Origem"], source)
+
+    def test_tiktok_keeps_a_separate_channel_for_mg4_urban(self):
+        frame = pd.DataFrame(
+            [{
+                "created_time": "2026-08-14 10:20:10(UTC-03:00)",
+                "ad_name": "MG4 - Urban",
+                "Email": "urban@example.com",
+                "Name": "Cliente Urban",
+                "Phone number": "+5581999990001",
+                "Em qual concessionária gostaria de ser atendido?": "Autobrand Recife - Recife/PE",
+            }]
+        )
+
+        master, import_rows, issues, _ = map_tiktok(frame)
+
+        self.assertEqual(issues, [])
+        self.assertEqual(master[0]["Modelo"], "MG4 URBAN")
+        self.assertEqual(master[0]["Canal"], "TikTok")
+        self.assertEqual(import_rows[0]["Canal"], "TikTok")
+        self.assertEqual(import_rows[0]["Canal de Origem"], "TikTok")
 
     def test_non_urban_model_keeps_original_source_channel(self):
         frame = pd.DataFrame(

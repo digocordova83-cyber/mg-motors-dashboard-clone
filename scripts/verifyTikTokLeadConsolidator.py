@@ -40,7 +40,7 @@ def main() -> None:
         "Nome": "Cliente Urban",
         "Email": "urban@example.com",
         "Telefone": "5581999990001",
-        "Canal": "Campanha Urban",
+        "Canal": "TikTok",
     }
     assert import_rows[0]["Canal de Origem"] == "TikTok"
     assert import_rows[0]["Data Corrigida"] == "14/08/2026"

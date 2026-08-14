@@ -1619,3 +1619,23 @@
 > A abertura visual direta foi redirecionada para a tela de acesso protegido. Nenhuma credencial foi solicitada ou manipulada; a validação da contabilização TikTok seguirá pelos dados persistidos, contratos tRPC, regressões do componente e build de produção.
 
 > Validação final: os dados persistidos confirmam 11 Leads TikTok, distribuídos em oito dealers, com `MG4 URBAN`, canal analítico `Campanha Urban` e procedência `TikTok`. O quadro existente usa `mg4UrbanSourceChannels` dinamicamente e recebeu regressão explícita para TikTok. Foram aprovados 266 testes em 48 arquivos, TypeScript sem erros, build de produção concluído e logs recentes sem erros novos de runtime.
+
+## TikTok como canal analítico separado — 14/08/2026
+
+- [x] Auditar todos os pontos que classificam MG4 URBAN como Campanha Urban e definir a exceção explícita para origem TikTok.
+- [x] Exibir TikTok como canal próprio na distribuição por canais e na série diária, preservando `sourceChannel = TikTok`.
+- [x] Atualizar os 11 registros existentes sem adicionar, remover ou duplicar Leads.
+- [x] Reconciliar `Total de Leads = soma dos canais = soma dos dias` no período e na competência de agosto.
+- [x] Garantir que Campanha Urban diminua exatamente 11 e TikTok aumente exatamente 11, mantendo o total geral inalterado.
+- [x] Adicionar regressões do consolidador, parser, analytics, canais esperados, dias zerados e interface.
+- [x] Reexecutar a automação para confirmar idempotência após a reclassificação.
+- [x] Validar dados reais, suíte completa, TypeScript, build e logs; salvar checkpoint restaurável.
+- [x] Entregar a reconciliação final e os arquivos consolidados da execução.
+
+> Reclassificação aplicada pela execução `20260814-145134`: a base permaneceu em 16.238 Leads. A automação identificou 11 hashes antigos removidos e 11 novos hashes TikTok, substituiu a base transacionalmente e manteve zero perda e zero duplicação. No arquivo mestre, Campanha Urban passou de 2.369 para 2.358 (-11) e TikTok de 0 para 11 (+11), com o total inalterado.
+
+> Reconciliação do mesmo contrato do dashboard: no corte D-1 de 01–13/08, `4.568 total = 4.568 soma dos canais = 4.568 soma dos dias`; TikTok soma 5 no canal e 5 no dia 13/08. Considerando a fonte até 14/08, `4.574 = 4.574 = 4.574`; TikTok soma 11, distribuídos em cinco Leads em 13/08 e seis em 14/08. A reexecução `20260814-145301` retornou `NO_CHANGES`, zero novos e zero removidos.
+
+> A interface já renderiza `data.channels` e `data.channelOrder` dinamicamente; por isso TikTok aparece automaticamente na distribuição e no gráfico diário. O quadro MG4 URBAN por origem continua usando `sourceChannel`, sem dupla contagem.
+
+> Validação técnica final: sete testes Python e 267 testes Vitest em 48 arquivos aprovados; TypeScript sem erros; build de produção concluído. A captura sem sessão exibiu corretamente a tela de acesso protegido, portanto a interface interna foi validada pelo contrato real do backend e pelas regressões dinâmicas de `data.channels` e `data.channelOrder`. Logs recentes não apresentam erro novo relacionado à integração TikTok.

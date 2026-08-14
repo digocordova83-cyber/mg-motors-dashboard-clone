@@ -189,7 +189,13 @@ def build_record(
 ) -> tuple[dict[str, str], dict[str, str]]:
     model = normalize_model(model_source)
     cleaned_phone = clean_phone(phone)
-    resolved_channel = "Campanha Urban" if model == "MG4 URBAN" else channel
+    resolved_channel = (
+        "TikTok"
+        if folded(source_channel) == "TIKTOK"
+        else "Campanha Urban"
+        if model == "MG4 URBAN"
+        else channel
+    )
     master = {
         "Data": source_date,
         "Modelo": model,

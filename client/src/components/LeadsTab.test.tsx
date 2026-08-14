@@ -48,6 +48,14 @@ describe("interface de Leads", () => {
     expect(source).toContain('accent="#38bdf8"');
   });
 
+  it("renderiza dinamicamente TikTok na distribuição por canal e na série diária", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain("data.channels.map");
+    expect(source).toContain("data.channelOrder.map");
+    expect(source).toContain('dataKey={channel}');
+  });
+
   it("expõe ações acessíveis para abrir os Leads por canal de cada concessionária", () => {
     const dealer = {
       dealerName: "Dealer A",

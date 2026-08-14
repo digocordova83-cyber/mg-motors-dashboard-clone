@@ -392,8 +392,12 @@ function normalizeRow(
   const email = normalizeEmail(emailRaw);
   const phone = normalizePhone(phoneRaw);
   const sourceChannel = normalizeLeadChannel(channelRaw);
-  const channel = isMg4UrbanLeadModel(model) ? "Campanha Urban" : sourceChannel;
   const normalizedSourceChannel = normalizeLeadChannel(sourceChannelRaw);
+  const channel = normalizedSourceChannel === "TikTok"
+    ? "TikTok"
+    : isMg4UrbanLeadModel(model)
+      ? "Campanha Urban"
+      : sourceChannel;
   const correctedDate = correctKnownLeadDateAnomaly({
     correctedDate: parsedCorrectedDate,
     correctedDateRaw,

@@ -95,7 +95,7 @@ describe("parseLeadCsv", () => {
     expect(result.records[0].rawPayload.sourceChannel).toBe("Site");
   });
 
-  it("normaliza TikTok como procedência e mantém MG4 URBAN em Campanha Urban", () => {
+  it("normaliza TikTok como procedência e canal analítico separado para MG4 URBAN", () => {
     const result = parseLeadCsv(
       csvWithSourceChannel(
         "2026-08-14 10:20:10(UTC-03:00),MG4 URBAN,PE,Recife,Autobrand Recife - Recife/PE,Cliente TikTok,tiktok@example.com,+5581999990001,Campanha Urban,14/08/2026,Autobrand Recife - Recife/PE,tiktok",
@@ -103,7 +103,7 @@ describe("parseLeadCsv", () => {
     );
 
     expect(result.records[0]).toMatchObject({
-      channel: "Campanha Urban",
+      channel: "TikTok",
       sourceChannel: "TikTok",
       region: "PE",
       city: "Recife",
@@ -111,6 +111,7 @@ describe("parseLeadCsv", () => {
       phone: "5581999990001",
     });
     expect(result.records[0].rawPayload.sourceChannel).toBe("tiktok");
+    expect(result.channels).toContainEqual({ value: "TikTok", count: 1 });
   });
 
   it("corrige para 01/07 somente a assinatura exata dos 18 Leads do Mercado Livre", () => {
