@@ -20,6 +20,7 @@ const consolidation: GoogleLeadsConsolidationReport = {
   issuesTotal: 1,
   rowsWithIssues: 1,
   channels: { Site: 5, Meta: 4, UOL: 2 },
+  sourceChannels: { Site: 5, Meta: 4, UOL: 1, TikTok: 1 },
   models: { MG4: 7, MGS5: 4 },
   sheets: [],
   issues: [
@@ -152,6 +153,7 @@ describe("automação da planilha Google de Leads", () => {
       dashboardRowsAfter: 11,
       rowsInsertedByReplacement: 11,
       channelCounts: { Meta: 4, Site: 5, UOL: 2 },
+      sourceChannelCounts: { Meta: 4, Site: 5, UOL: 1, TikTok: 1 },
       invalidIssues: consolidation.issues,
       importId: 81,
       importFileUrl: "/manus-storage/import.csv",
@@ -161,6 +163,8 @@ describe("automação da planilha Google de Leads", () => {
     expect(report).toContain("Duplicatas internas do arquivo: 2");
     expect(report).toContain("Registros já existentes na base: 8");
     expect(report).toContain("Site: 5");
+    expect(report).toContain("Leads válidos por canal de origem");
+    expect(report).toContain("TikTok: 1");
     expect(report).toContain("Site, linha 9");
   });
 });

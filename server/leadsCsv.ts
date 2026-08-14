@@ -191,6 +191,7 @@ const CHANNEL_BY_KEY = new Map<string, string>([
   ["CAMPANHA URBAN", "Campanha Urban"],
   ["MERCADO LIVRE", "Mercado Livre"],
   ["UOL", "UOL"],
+  ["TIKTOK", "TikTok"],
   ["PROXY", "Proxy"],
 ]);
 

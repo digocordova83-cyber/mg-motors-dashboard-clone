@@ -95,6 +95,24 @@ describe("parseLeadCsv", () => {
     expect(result.records[0].rawPayload.sourceChannel).toBe("Site");
   });
 
+  it("normaliza TikTok como procedência e mantém MG4 URBAN em Campanha Urban", () => {
+    const result = parseLeadCsv(
+      csvWithSourceChannel(
+        "2026-08-14 10:20:10(UTC-03:00),MG4 URBAN,PE,Recife,Autobrand Recife - Recife/PE,Cliente TikTok,tiktok@example.com,+5581999990001,Campanha Urban,14/08/2026,Autobrand Recife - Recife/PE,tiktok",
+      ),
+    );
+
+    expect(result.records[0]).toMatchObject({
+      channel: "Campanha Urban",
+      sourceChannel: "TikTok",
+      region: "PE",
+      city: "Recife",
+      dealerRaw: "Autobrand Recife - Recife/PE",
+      phone: "5581999990001",
+    });
+    expect(result.records[0].rawPayload.sourceChannel).toBe("tiktok");
+  });
+
   it("corrige para 01/07 somente a assinatura exata dos 18 Leads do Mercado Livre", () => {
     const exactKnownOccurrence = [
       "Tue Jun 01 2026 00:00:00 GMT-0400 (Chile Standard Time)",

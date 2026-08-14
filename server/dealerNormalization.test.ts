@@ -24,6 +24,8 @@ describe("dealer normalization", () => {
     expect(canonicalizeDealerName("MEGAMIT - ALPHAVILLE")).toBe("Baltic Shopping Tamboré");
     expect(canonicalizeDealerName("DS AUTOMOTOR")).toBe("DÃO SILVEIRA NATAL");
     expect(canonicalizeDealerName("Baltic — Alphaville/SP")).toBe("Baltic Shopping Tamboré");
+    expect(canonicalizeDealerForAnalytics("Euroville — Juiz de Fora/MG")).toBe("EUROVILLE JUIZ DE FORA");
+    expect(canonicalizeDealerForAnalytics("Sinal — Av. Europa/SP")).toBe("SINAL AV EUROPA");
     expect(isExplicitDealerAlias("ligação_")).toBe(false);
   });
 

@@ -1508,3 +1508,114 @@
 > Idempotência confirmada: a reimportação de `metas.xlsx` retornou `NO_CHANGES`, `idempotent: true` e `rowsInserted: 0`; a prévia manteve 31/31 linhas-fonte conciliadas, zero duplicidades canônicas e a consolidação Savol em uma única chave.
 
 > Validação técnica final: auditoria reconciliada com 3.452 = 3.433 conciliados + 19 em qualificação + 0 fora da meta; 30 dealers canônicos, 24 com Sales reportadas, 178 Sales preservadas, 262 testes aprovados, TypeScript sem erros e build de produção concluído.
+
+## Atualização manual do dashboard — 13/08/2026
+
+- [x] Executar a automação oficial de Leads a partir da planilha Google e gerar XLSX, CSV, relatório Markdown e JSON da execução.
+- [x] Validar linhas encontradas, válidas, novas, duplicatas internas, duplicatas já existentes, inválidas e detalhamento por canal.
+- [x] Atualizar Google Ads e Meta Ads até o último D-1 disponível, preservando cache e snapshots válidos.
+- [x] Reconciliar total da base, MG4 URBAN, UOL, dealers canônicos, Leads em qualificação, metas e Sales após a atualização.
+- [x] Conciliar `Euroville — Juiz de Fora/MG` com `EUROVILLE JUIZ DE FORA`, preservando `dealerRaw`.
+- [x] Conciliar `Sinal — Av. Europa/SP` com `SINAL AV EUROPA`, preservando `dealerRaw`.
+- [x] Validar o dashboard, executar regressões necessárias e salvar checkpoint restaurável.
+- [x] Entregar ao usuário o relatório completo e os arquivos gerados pela execução.
+
+> Execução `20260813-085037`: status `UPDATED`; 16.281 linhas encontradas, 16.277 válidas, 712 duplicatas internas, 15.116 já existentes, quatro inválidas e 449 novos registros. A base passou de 15.116 para 15.565 Leads. A reexecução `20260813-085214` retornou `NO_CHANGES`, zero novos registros e zero linhas gravadas.
+
+> Refresh de mídia em 13/08/2026: a primeira auditoria mensal encontrou timeout em uma consulta Meta, sem substituir snapshots válidos. A rotina operacional de D-1 foi então executada com sucesso para 12/08, usando `windsor-live` nas duas fontes, sem falha parcial e com auditoria persistida. Google aqueceu 14/07–12/08 com R$ 320.053,00 e 7.260,7 conversões; Meta aqueceu 06–12/08 com R$ 11.752,14 e 1.606 Leads. A consulta independente da competência confirmou dados até 12/08 nas duas plataformas.
+
+## Execução agendada da automação de Leads — 13/08/2026
+
+- [x] Executar o comando oficial exatamente como informado e ler `/tmp/mg-leads-scheduled-result.json`.
+- [x] Ler o `reportMarkdown` indicado pelo JSON e validar todas as contagens solicitadas.
+- [x] Entregar o resultado em português com `masterXlsx`, `masterCsv` e `reportMarkdown` anexados.
+
+> Execução `20260813-090339`: `NO_CHANGES`; 16.281 linhas encontradas, 16.277 válidas, zero novos registros, 712 duplicatas internas, 15.565 já existentes e quatro inválidas. A base permaneceu em 15.565 Leads, sem linhas gravadas.
+
+## Nova atualização do dashboard — 13/08/2026
+
+- [x] Executar novamente a automação oficial de Leads sem modificar as regras de importação.
+- [x] Ler o resultado e validar novos registros, duplicidades, inválidos, base antes/depois e canais.
+- [x] Confirmar a idempotência da base atualizada e entregar XLSX, CSV e relatório Markdown.
+
+> Execução `20260813-091916`: `UPDATED`; 16.292 linhas encontradas, 16.288 válidas, 713 duplicatas internas, 15.565 já existentes, quatro inválidas e 10 novos Leads. A base passou de 15.565 para 15.575 registros; os 10 novos vieram do Mercado Livre, cujo total válido passou de 736 para 747. A reexecução `20260813-092109` retornou `NO_CHANGES`, zero novos registros e zero linhas gravadas.
+
+## Nova execução agendada da automação de Leads — 13/08/2026
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, todas as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
+
+> Execução `20260813-100557`: `NO_CHANGES`; 16.292 linhas encontradas, 16.288 válidas, zero novos registros, 713 duplicatas internas, 15.575 registros já existentes e quatro linhas inválidas. A base permaneceu em 15.575 Leads, sem gravações adicionais.
+
+## Atualização adicional do dashboard — 13/08/2026
+
+- [x] Executar novamente a automação oficial de Leads.
+- [x] Validar linhas encontradas, novos registros, duplicidades, inválidos, canais e base antes/depois.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260813-101318`: `NO_CHANGES`; 16.292 linhas encontradas, 16.288 válidas, zero novos registros, 713 duplicatas internas, 15.575 registros já existentes e quatro inválidas. A base permaneceu em 15.575 Leads, sem linhas gravadas.
+
+## Sincronização da base atualizada — 13/08/2026
+
+- [x] Executar a automação oficial de Leads sobre a fonte atualizada.
+- [x] Validar linhas encontradas, novos registros, duplicidades, inválidos e detalhamento por canal.
+- [x] Confirmar a base antes/depois e a idempotência após a importação.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260813-151610`: `UPDATED`; 16.388 linhas encontradas, 16.384 válidas, 714 duplicatas internas, 15.575 já existentes, quatro inválidas e 95 novos Leads. A base passou de 15.575 para 15.670 registros. A reexecução `20260813-151746` retornou `NO_CHANGES`, zero novos registros e zero linhas gravadas.
+
+## Execução agendada após a sincronização — 13/08/2026
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, todas as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` no relatório final.
+
+> Execução `20260814-090514`: `UPDATED`; 16.858 linhas encontradas, 16.854 válidas, 719 duplicatas internas, 15.670 já existentes, quatro inválidas e 465 novos Leads. A base passou de 15.670 para 16.135 registros.
+
+## Atualização adicional do dashboard — 14/08/2026
+
+- [x] Executar novamente a automação oficial de Leads.
+- [x] Validar novos registros, duplicidades, inválidos, canais e base antes/depois.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260814-095438`: `NO_CHANGES`; 16.858 linhas encontradas, 16.854 válidas, zero novos registros, 719 duplicatas internas, 16.135 registros já existentes e quatro inválidas. A base permaneceu em 16.135 Leads, sem linhas gravadas.
+
+## Nova atualização do dashboard — 14/08/2026
+
+- [x] Executar novamente a automação oficial de Leads.
+- [x] Validar novos registros, duplicidades, inválidos, canais e base antes/depois.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260814-100000`: `UPDATED`; 16.950 linhas encontradas, 16.946 válidas, 719 duplicatas internas, 16.135 já existentes, quatro inválidas e 92 novos Leads. A base passou de 16.135 para 16.227 registros. A reexecução `20260814-100146` retornou `NO_CHANGES`, zero novos registros e zero linhas gravadas.
+
+## Execução agendada após a atualização das 10h — 14/08/2026
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, todas as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` no relatório final.
+
+> Execução `20260814-100521`: `NO_CHANGES`; 16.950 linhas encontradas, 16.946 válidas, zero novos registros, 719 duplicatas internas, 16.227 já existentes e quatro inválidas. A base permaneceu em 16.227 Leads, sem linhas gravadas.
+
+## Integração da nova aba TikTok — 14/08/2026
+
+- [x] Auditar a estrutura real, cabeçalhos e qualidade dos dados da aba TikTok na planilha-fonte.
+- [x] Definir o de-para de data, modelo, localização, concessionária, contato e canal sem inventar campos ausentes.
+- [x] Incorporar TikTok ao consolidador oficial, preservando deduplicação e compatibilidade com as cinco abas existentes.
+- [x] Adicionar regressões para mapeamento, modelos, telefones, dealer bruto, localização e canal TikTok.
+- [x] Executar a automação, importar os Leads novos e gerar XLSX, CSV, Markdown e JSON.
+- [x] Reexecutar para confirmar idempotência e reconciliar TikTok, dealers canônicos, inválidos e total da base.
+- [x] Validar o dashboard, a suíte completa, TypeScript e build; salvar checkpoint restaurável.
+- [x] Entregar o relatório completo e os arquivos da execução.
+
+> Auditoria da fonte: a nova aba foi criada como `Tikok` e contém 11 linhas válidas. O mapeamento usa `created_time`, `ad_name`, `Name`, `Email`, `Phone number` e `Em qual concessionária gostaria de ser atendido?`; cidade e UF são derivadas exclusivamente do sufixo `Cidade/UF` do dealer. Todos os 11 anúncios são `MG4 - Urban`, portanto o canal analítico permanece `Campanha Urban` e a procedência é preservada como `TikTok`.
+
+> Modo seco `20260814-124233`: 11 novos registros detectados, zero inválidos na aba TikTok, zero remoções e `TikTok: 11` no detalhamento por canal de origem. As 21 regressões direcionadas do consolidador, importador CSV e relatório passaram.
+
+> Execução real `20260814-124435`: `UPDATED`; 16.961 linhas encontradas, 16.957 válidas, 719 duplicatas internas, 16.227 já existentes, quatro inválidas e 11 novos Leads TikTok. A base passou de 16.227 para 16.238 registros. Todos os 11 são MG4 URBAN, aparecem analiticamente em `Campanha Urban` e mantêm `TikTok` como canal de origem.
+
+> Reconciliação: quatro Leads TikTok em Recife/PE e um em cada uma das cidades Porto Alegre/RS, Belo Horizonte/MG, Aracaju/SE, Salvador/BA, Goiânia/GO, Guarulhos/SP e Curitiba/PR. Os oito rótulos convergiram aos dealers canônicos, com 30/30 dealers cobertos, zero aliases fora da meta e zero perda. A reexecução `20260814-124609` retornou `NO_CHANGES`, zero novos registros e zero linhas gravadas.
+
+> A abertura visual direta foi redirecionada para a tela de acesso protegido. Nenhuma credencial foi solicitada ou manipulada; a validação da contabilização TikTok seguirá pelos dados persistidos, contratos tRPC, regressões do componente e build de produção.
+
+> Validação final: os dados persistidos confirmam 11 Leads TikTok, distribuídos em oito dealers, com `MG4 URBAN`, canal analítico `Campanha Urban` e procedência `TikTok`. O quadro existente usa `mg4UrbanSourceChannels` dinamicamente e recebeu regressão explícita para TikTok. Foram aprovados 266 testes em 48 arquivos, TypeScript sem erros, build de produção concluído e logs recentes sem erros novos de runtime.

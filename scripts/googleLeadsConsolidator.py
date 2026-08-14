@@ -19,7 +19,14 @@ SPREADSHEET_ID = "1DnkkrrU3GqcuBd5br_OQDaGMMtA2iN2ik4yEV5-Ggw8"
 DEFAULT_SOURCE_URL = (
     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=xlsx"
 )
-SOURCE_SHEETS = ("Site", "Meta", "Weebmotors", "Mercado Livre", "Uol")
+SOURCE_SHEET_GROUPS = (
+    ("Site", ("Site",)),
+    ("TikTok", ("TikTok", "Tikok")),
+    ("Meta", ("Meta",)),
+    ("Weebmotors", ("Weebmotors",)),
+    ("Mercado Livre", ("Mercado Livre",)),
+    ("Uol", ("Uol",)),
+)
 MASTER_COLUMNS = (
     "Data",
     "Modelo",
@@ -127,6 +134,14 @@ def parse_date(value: Any, *, dayfirst: bool) -> str:
     if pd.isna(parsed):
         return ""
     return parsed.strftime("%d/%m/%Y")
+
+
+def parse_dealer_location(value: Any) -> tuple[str, str]:
+    raw = normalize_header(value)
+    match = re.search(r"\s+-\s+(.+?)\s*/\s*([A-Za-z]{2})\s*$", raw)
+    if not match:
+        return "", ""
+    return match.group(1).strip(), match.group(2).upper()
 
 
 def normalize_columns(frame: pd.DataFrame) -> pd.DataFrame:
@@ -269,6 +284,45 @@ def map_meta(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, 
             source_channel="Meta",
         ),
         model_source=lambda row: row_value(row, form_name),
+        corrected_date_source=lambda row: row_value(row, source_date),
+    )
+
+
+def map_tiktok(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, str]], list[MappingIssue], int]:
+    source_date = resolve_column(frame, "created_time")
+    model = resolve_column(frame, "ad_name", "ad name")
+    dealer = resolve_column(
+        frame,
+        "Em qual concessionária gostaria de ser atendido?",
+        "Em qual concessionaria gostaria de ser atendido?",
+    )
+    name = resolve_column(frame, "Name", "Nome")
+    phone = resolve_column(frame, "Phone number", "Telefone", "phone_number")
+    email = resolve_column(frame, "Email", "E-mail")
+
+    def mapper(row: pd.Series) -> tuple[dict[str, str], dict[str, str]]:
+        dealer_value = row_value(row, dealer)
+        city_value, region_value = parse_dealer_location(dealer_value)
+        return build_record(
+            source_date=row_value(row, source_date),
+            corrected_date=parse_date(row_value(row, source_date), dayfirst=False),
+            model_source=row_value(row, model),
+            region=region_value,
+            city=city_value,
+            dealer=dealer_value,
+            name=row_value(row, name),
+            email=row_value(row, email),
+            phone=row_value(row, phone),
+            channel="TikTok",
+            source_channel="TikTok",
+        )
+
+    return map_rows(
+        "TikTok",
+        frame,
+        empty_columns=(source_date, name, email, phone, dealer, model),
+        mapper=mapper,
+        model_source=lambda row: row_value(row, model),
         corrected_date_source=lambda row: row_value(row, source_date),
     )
 
@@ -430,6 +484,7 @@ SHEET_MAPPERS: dict[
     Callable[[pd.DataFrame], tuple[list[dict[str, str]], list[dict[str, str]], list[MappingIssue], int]],
 ] = {
     "Site": map_site,
+    "TikTok": map_tiktok,
     "Meta": map_meta,
     "Weebmotors": map_weebmotors,
     "Mercado Livre": map_mercado_livre,
@@ -465,7 +520,18 @@ def write_outputs(
 def consolidate(source_file: Path, output_dir: Path, run_label: str) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     workbook = pd.ExcelFile(source_file, engine="openpyxl")
-    missing_sheets = [sheet for sheet in SOURCE_SHEETS if sheet not in workbook.sheet_names]
+    sheet_names_by_key = {folded(name): name for name in workbook.sheet_names}
+    sheet_plan: list[tuple[str, str]] = []
+    missing_sheets: list[str] = []
+    for logical_name, aliases in SOURCE_SHEET_GROUPS:
+        actual_name = next(
+            (sheet_names_by_key[folded(alias)] for alias in aliases if folded(alias) in sheet_names_by_key),
+            None,
+        )
+        if actual_name is None:
+            missing_sheets.append("/".join(aliases))
+        else:
+            sheet_plan.append((logical_name, actual_name))
     if missing_sheets:
         raise ValueError(f"Aba(s) ausente(s): {', '.join(missing_sheets)}")
 
@@ -474,24 +540,24 @@ def consolidate(source_file: Path, output_dir: Path, run_label: str) -> dict[str
     all_issues: list[MappingIssue] = []
     sheet_stats: list[SheetStats] = []
 
-    for sheet in SOURCE_SHEETS:
+    for logical_sheet, source_sheet in sheet_plan:
         frame = normalize_columns(
             pd.read_excel(
                 source_file,
-                sheet_name=sheet,
+                sheet_name=source_sheet,
                 dtype=str,
                 keep_default_na=False,
                 na_filter=False,
                 engine="openpyxl",
             )
         )
-        master_rows, import_rows, issues, empty_rows = SHEET_MAPPERS[sheet](frame)
+        master_rows, import_rows, issues, empty_rows = SHEET_MAPPERS[logical_sheet](frame)
         all_master.extend(master_rows)
         all_import.extend(import_rows)
         all_issues.extend(issues)
         sheet_stats.append(
             SheetStats(
-                sheet=sheet,
+                sheet=logical_sheet,
                 rows_read=len(frame),
                 rows_output=len(master_rows),
                 rows_empty=empty_rows,
@@ -503,6 +569,7 @@ def consolidate(source_file: Path, output_dir: Path, run_label: str) -> dict[str
         all_master, all_import, output_dir, run_label
     )
     channels = Counter(row["Canal"] for row in all_master)
+    source_channels = Counter(row["Canal de Origem"] for row in all_import)
     models = Counter(row["Modelo"] or "INVALIDO" for row in all_master)
     source_rows_total = sum(stats.rows_read - stats.rows_empty for stats in sheet_stats)
     report = {
@@ -517,6 +584,7 @@ def consolidate(source_file: Path, output_dir: Path, run_label: str) -> dict[str
         "issuesTotal": len(all_issues),
         "rowsWithIssues": len({(issue.sheet, issue.source_row) for issue in all_issues}),
         "channels": dict(channels.most_common()),
+        "sourceChannels": dict(source_channels.most_common()),
         "models": dict(models.most_common()),
         "sheets": [asdict(stats) for stats in sheet_stats],
         "issues": [asdict(issue) for issue in all_issues[:100]],

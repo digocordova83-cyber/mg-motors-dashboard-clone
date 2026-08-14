@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-12T15:30:00.000Z",
+  "generatedAt": "2026-08-13T12:00:00.000Z",
   "sources": [
     "Dealers_atualizado.xlsx",
     "https://mgmotoroficial.com.br/mg-care/concessionarias",
@@ -19,6 +19,7 @@
     { "sourceKey": "IGUAUTO FORTALEZA CE", "canonical": "IGUALTO - MG FORTALEZA" },
     { "sourceKey": "SINAL SAO PAULO SP", "canonical": "SINAL AV EUROPA" },
     { "sourceKey": "SINAL SAO PAULO", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "SINAL AV EUROPA SP", "canonical": "SINAL AV EUROPA" },
     { "sourceKey": "EUROVILLE BH BARAO MG", "canonical": "EUROVILLE - BH BARÃO" },
     { "sourceKey": "EUROVILLE BH SHOPPING MG", "canonical": "EUROVILLE - BH BARÃO" },
     { "sourceKey": "POTENZA RECREIO RJ", "canonical": "POTENZA - RECREIO" },
@@ -39,6 +40,7 @@
     { "sourceKey": "AUTOMEC SOROCABA SOROCABA SP", "canonical": "AUTOMEC SOROCABA" },
     { "sourceKey": "BALTIC GUARULHOS GUARULHOS SP", "canonical": "BALTIC GUARULHOS" },
     { "sourceKey": "EUROVILLE JUIZ DE FORA JUIZ DE FORA MG", "canonical": "EUROVILLE JUIZ DE FORA" },
+    { "sourceKey": "EUROVILLE JUIZ DE FORA MG", "canonical": "EUROVILLE JUIZ DE FORA" },
     { "sourceKey": "EUROVILLE UBERLANDIA UBERLANDIA MG", "canonical": "EUROVILLE UBERLANDIA" },
     { "sourceKey": "HG ARACAJU ARACAJU SE", "canonical": "HG ARACAJU" },
     { "sourceKey": "JAVEP BAURU SP", "canonical": "JAVEP/SP" },

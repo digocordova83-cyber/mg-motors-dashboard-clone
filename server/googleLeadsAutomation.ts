@@ -34,6 +34,7 @@ export type GoogleLeadsConsolidationReport = {
   issuesTotal: number;
   rowsWithIssues: number;
   channels: Record<string, number>;
+  sourceChannels: Record<string, number>;
   models: Record<string, number>;
   sheets: Array<{
     sheet: string;
@@ -67,6 +68,7 @@ export type GoogleLeadsAutomationResult = {
   dashboardRowsAfter: number;
   rowsInsertedByReplacement: number;
   channelCounts: Record<string, number>;
+  sourceChannelCounts: Record<string, number>;
   invalidIssues: GoogleLeadsMappingIssue[];
   importId: number | null;
   importFileUrl: string | null;
@@ -214,6 +216,10 @@ export function formatGoogleLeadsAutomationReport(result: GoogleLeadsAutomationR
     "",
     ...breakdownLines(result.channelCounts),
     "",
+    "## Leads válidos por canal de origem",
+    "",
+    ...breakdownLines(result.sourceChannelCounts),
+    "",
     "## Linhas rejeitadas",
     "",
     ...invalidLines,
@@ -294,6 +300,7 @@ export async function executeGoogleLeadsAutomation(
     dashboardRowsAfter,
     rowsInsertedByReplacement: importResult?.rowsInserted ?? 0,
     channelCounts: consolidation.channels,
+    sourceChannelCounts: consolidation.sourceChannels,
     invalidIssues: consolidation.issues,
     importId: importResult?.importId ?? null,
     importFileUrl: importResult?.fileUrl ?? null,
