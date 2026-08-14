@@ -1639,3 +1639,23 @@
 > A interface já renderiza `data.channels` e `data.channelOrder` dinamicamente; por isso TikTok aparece automaticamente na distribuição e no gráfico diário. O quadro MG4 URBAN por origem continua usando `sourceChannel`, sem dupla contagem.
 
 > Validação técnica final: sete testes Python e 267 testes Vitest em 48 arquivos aprovados; TypeScript sem erros; build de produção concluído. A captura sem sessão exibiu corretamente a tela de acesso protegido, portanto a interface interna foi validada pelo contrato real do backend e pelas regressões dinâmicas de `data.channels` e `data.channelOrder`. Logs recentes não apresentam erro novo relacionado à integração TikTok.
+
+## Metas e atingimento por canal — 14/08/2026
+
+- [x] Auditar `metas.xlsx`, identificar as metas oficiais por canal/veículo e registrar totais, divergências e campos ausentes.
+- [x] Criar de-para explícito entre os nomes da planilha e os canais analíticos do dashboard, incluindo TikTok separado.
+- [x] Expor por canal realizado, meta, percentual de atingimento e saldo, sem alterar a soma de Leads.
+- [x] Exibir barra vermelha de progresso em cada linha da Distribuição por canal, limitada visualmente a 100% e com o percentual real preservado.
+- [x] Tratar canal sem meta de forma explícita, sem inventar valor nem exibir progresso enganoso.
+- [x] Preservar o corte D-1 e reconciliar total de Leads, soma dos canais e soma dos dias após a mudança.
+- [x] Adicionar regressões de backend e interface para metas, TikTok, excesso de meta, meta zero/ausente, locale e responsividade.
+- [x] Validar dados reais, interface, suíte completa, TypeScript e build; salvar checkpoint restaurável.
+- [x] Entregar ao usuário o resultado e a reconciliação final das metas por canal.
+
+> Auditoria de `metas.xlsx`: 30 dealers canônicos; meta oficial de 11.996 Leads e 548 Sales. Metas por veículo persistidas: Google 6.019, Meta 3.734, Publya 614, Webmotors 579, Mercado Livre 442 e TikTok 620; soma por canais 12.008, ou 12 acima de `TOTAL DEALER`, divergência já identificada como arredondamento da planilha.
+
+> De-para definido sem inferência: `Site` compara o realizado de origem Site contra `Google + Publya` (6.633), pois a base de Leads não separa esses dois veículos; `Meta`, `Webmotors`, `Mercado Livre` e `TikTok` usam o realizado mensal pelo respectivo `sourceChannel`, incluindo MG4 URBAN captado pelo veículo. `Campanha Urban` continua como classificação analítica e não recebe meta própria, porque a planilha não possui coluna Urban. O quadro explicará essa base para evitar dupla contagem ou leitura enganosa.
+
+> Reconciliação real de 01–13/08: 4.568 total = 4.568 na soma dos canais = 4.568 na soma dos dias. Atingimento mensal por veículo em D-1: Site/Google+Publya 1.677 de 6.633 (25,28%); Meta 2.387 de 3.734 (63,93%); Webmotors 324 de 579 (55,96%); Mercado Livre 175 de 442 (39,59%); TikTok 5 de 620 (0,81%). Campanha Urban permanece com 1.260 Leads no período e sem meta direta inventada.
+
+> Validação final: 269 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. A captura da rota protegida confirmou que o acesso sem sessão continua bloqueado; o quadro interno foi validado pelo contrato real do serviço, reconciliação reproduzível e renderização estática responsiva das barras.

@@ -28,10 +28,21 @@ describe("buildLeadAnalytics", () => {
     const result = buildLeadAnalytics({
       rows,
       pacingRows: rows,
+      channelTargetRows: rows,
       dateFrom: "2026-08-01",
       dateTo: "2026-08-02",
       competence: "2026-08",
       goal: 100,
+      channelTargetDefinitions: {
+        Site: { target: 4, targetLabel: "Google + Publya", sourceChannels: ["Site"] },
+        Meta: { target: 2, targetLabel: "Meta", sourceChannels: ["Meta"] },
+        TikTok: { target: 2, targetLabel: "TikTok", sourceChannels: ["TikTok"] },
+      },
+      channelTargetSummary: {
+        totalLeadTarget: 8,
+        totalChannelTarget: 8,
+        channelDifference: 0,
+      },
     });
 
     expect(result.channels).toEqual(expect.arrayContaining([
@@ -48,6 +59,41 @@ describe("buildLeadAnalytics", () => {
     expect(result.channels.reduce((sum, item) => sum + item.leads, 0)).toBe(5);
     expect(result.daily.reduce((sum, point) => sum + point.total, 0)).toBe(5);
     expect(result.channelOrder).toContain("TikTok");
+    expect(result.channels).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        value: "Site",
+        leads: 1,
+        target: 4,
+        targetActual: 3,
+        achievementPercent: 75,
+        remainingToTarget: 1,
+        targetLabel: "Google + Publya",
+      }),
+      expect.objectContaining({
+        value: "Meta",
+        leads: 0,
+        target: 2,
+        targetActual: 1,
+        achievementPercent: 50,
+        remainingToTarget: 1,
+      }),
+      expect.objectContaining({
+        value: "TikTok",
+        target: 2,
+        targetActual: 1,
+        achievementPercent: 50,
+      }),
+      expect.objectContaining({
+        value: "Campanha Urban",
+        target: null,
+        targetActual: null,
+      }),
+    ]));
+    expect(result.channelTargetSummary).toEqual({
+      totalLeadTarget: 8,
+      totalChannelTarget: 8,
+      channelDifference: 0,
+    });
     expect(result.daily[0]).toMatchObject({
       date: "2026-08-01",
       total: 2,

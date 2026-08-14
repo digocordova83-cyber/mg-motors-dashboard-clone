@@ -5,6 +5,7 @@ import dealerTargetAliases from "./data/dealer-target-aliases.json";
 import {
   dealerTargetRecordSetsEqual,
   parseDealerTargetsWorkbook,
+  summarizeDealerChannelTargets,
 } from "./dealerTargetsService";
 
 const HEADERS = [
@@ -102,5 +103,33 @@ describe("metas mensais por concessionária", () => {
     expect(
       dealerTargetRecordSetsEqual([{ recordHash: "a" }], [{ recordHash: "b" }]),
     ).toBe(false);
+  });
+
+  it("soma as metas canônicas por canal e explicita a diferença contra TOTAL DEALER", () => {
+    const summary = summarizeDealerChannelTargets([
+      {
+        leadTarget: 100,
+        channelTargets: { google: 50, meta: 30, publya: 5, webmotors: 5, mercadoLivre: 5, tiktok: 7 },
+      },
+      {
+        leadTarget: 50,
+        channelTargets: { google: 25, meta: 15, publya: 2, webmotors: 3, mercadoLivre: 2, tiktok: 3 },
+      },
+    ]);
+
+    expect(summary).toEqual({
+      dealerCount: 2,
+      totalLeadTarget: 150,
+      totalChannelTarget: 152,
+      channelDifference: 2,
+      channelTargets: {
+        google: 75,
+        meta: 45,
+        publya: 7,
+        webmotors: 8,
+        mercadoLivre: 7,
+        tiktok: 10,
+      },
+    });
   });
 });

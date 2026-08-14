@@ -11,7 +11,12 @@ import {
   startOfUtcMonth,
   type LeadAnalytics,
   type LeadAnalyticsRow,
+  type LeadChannelTargetMap,
 } from "./leadsAnalytics";
+import {
+  getDealerChannelTargetSummary,
+  type DealerChannelTargetSummary,
+} from "./dealerTargetsService";
 
 const MAX_ANALYTICS_RANGE_DAYS = 370;
 export const UOL_LEAD_CHANNEL_LAST_ACTIVE_DATE = "2026-07-31";
@@ -168,6 +173,32 @@ async function getLatestLeadImportAt(): Promise<string | null> {
   return latestAt ? new Date(latestAt).toISOString() : null;
 }
 
+export function buildLeadChannelTargetDefinitions(
+  summary: DealerChannelTargetSummary | null,
+): LeadChannelTargetMap {
+  if (!summary) return {};
+  const targets = summary.channelTargets;
+  return {
+    Site: {
+      target: targets.google + targets.publya,
+      targetLabel: "Google + Publya",
+      sourceChannels: ["Site"],
+    },
+    Meta: { target: targets.meta, targetLabel: "Meta", sourceChannels: ["Meta"] },
+    Webmotors: {
+      target: targets.webmotors,
+      targetLabel: "Webmotors",
+      sourceChannels: ["Webmotors"],
+    },
+    "Mercado Livre": {
+      target: targets.mercadoLivre,
+      targetLabel: "Mercado Livre",
+      sourceChannels: ["Mercado Livre"],
+    },
+    TikTok: { target: targets.tiktok, targetLabel: "TikTok", sourceChannels: ["TikTok"] },
+  };
+}
+
 export async function getLeadAnalytics(input: {
   dateFrom: string;
   dateTo: string;
@@ -178,13 +209,14 @@ export async function getLeadAnalytics(input: {
   const monthStart = startOfUtcMonth(period.dateTo);
   const monthEnd = endOfUtcMonth(period.dateTo);
   const pacingAsOfDate = monthEnd < period.cutoffDate ? monthEnd : period.cutoffDate;
-  const [rows, pacingRows, channelUpdateRows, goal, updatedAt, expectedChannels] = await Promise.all([
+  const [rows, pacingRows, channelUpdateRows, goal, updatedAt, expectedChannels, channelTargets] = await Promise.all([
     getLeadRows(period.dateFrom, period.dateTo),
     getLeadRows(monthStart, pacingAsOfDate),
     getLeadRows(period.cutoffDate, period.cutoffDate),
     getLeadMonthlyGoal(competence),
     getLatestLeadImportAt(),
     getExpectedLeadChannels(period.cutoffDate),
+    getDealerChannelTargetSummary(competence),
   ]);
 
   return {
@@ -194,6 +226,7 @@ export async function getLeadAnalytics(input: {
     ...buildLeadAnalytics({
       rows,
       pacingRows,
+      channelTargetRows: pacingRows,
       pacingAsOfDate,
       channelUpdateRows,
       channelUpdateDate: period.cutoffDate,
@@ -202,6 +235,14 @@ export async function getLeadAnalytics(input: {
       competence,
       goal: goal?.goalCount ?? null,
       expectedChannels,
+      channelTargetDefinitions: buildLeadChannelTargetDefinitions(channelTargets),
+      channelTargetSummary: channelTargets
+        ? {
+            totalLeadTarget: channelTargets.totalLeadTarget,
+            totalChannelTarget: channelTargets.totalChannelTarget,
+            channelDifference: channelTargets.channelDifference,
+          }
+        : null,
     }),
   };
 }

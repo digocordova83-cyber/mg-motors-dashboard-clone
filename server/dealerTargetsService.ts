@@ -37,6 +37,15 @@ export type DealerTargetChannelTargets = {
   tiktok: number;
 };
 
+export type DealerChannelTargetSummary = {
+  competence: string;
+  dealerCount: number;
+  totalLeadTarget: number;
+  totalChannelTarget: number;
+  channelDifference: number;
+  channelTargets: DealerTargetChannelTargets;
+};
+
 export type DealerTargetParsedRow = {
   sourceRowNumber: number;
   sourceDealerName: string;
@@ -445,6 +454,39 @@ export async function getDealerTargetsForCompetence(competence: string) {
     .from(dealerMonthlyTargets)
     .where(eq(dealerMonthlyTargets.competence, competence))
     .orderBy(asc(dealerMonthlyTargets.canonicalDealer));
+}
+
+export function summarizeDealerChannelTargets(
+  rows: readonly Pick<typeof dealerMonthlyTargets.$inferSelect, "leadTarget" | "channelTargets">[],
+): Omit<DealerChannelTargetSummary, "competence"> {
+  const channelTargets = rows.reduce<DealerTargetChannelTargets>(
+    (total, row) => ({
+      google: total.google + Number(row.channelTargets.google ?? 0),
+      meta: total.meta + Number(row.channelTargets.meta ?? 0),
+      publya: total.publya + Number(row.channelTargets.publya ?? 0),
+      webmotors: total.webmotors + Number(row.channelTargets.webmotors ?? 0),
+      mercadoLivre: total.mercadoLivre + Number(row.channelTargets.mercadoLivre ?? 0),
+      tiktok: total.tiktok + Number(row.channelTargets.tiktok ?? 0),
+    }),
+    { google: 0, meta: 0, publya: 0, webmotors: 0, mercadoLivre: 0, tiktok: 0 },
+  );
+  const totalLeadTarget = rows.reduce((sum, row) => sum + Number(row.leadTarget), 0);
+  const totalChannelTarget = Object.values(channelTargets).reduce((sum, value) => sum + value, 0);
+  return {
+    dealerCount: rows.length,
+    totalLeadTarget,
+    totalChannelTarget,
+    channelDifference: totalChannelTarget - totalLeadTarget,
+    channelTargets,
+  };
+}
+
+export async function getDealerChannelTargetSummary(
+  competence: string,
+): Promise<DealerChannelTargetSummary | null> {
+  const rows = await getDealerTargetsForCompetence(competence);
+  if (!rows.length) return null;
+  return { competence, ...summarizeDealerChannelTargets(rows) };
 }
 
 export async function getDealerTargetByKey(competence: string, canonicalDealerKey: string) {

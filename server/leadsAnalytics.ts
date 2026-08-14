@@ -20,6 +20,28 @@ export type LeadBreakdownItem = {
   sharePercent: number;
 };
 
+export type LeadChannelTargetDefinition = {
+  target: number;
+  targetLabel: string;
+  sourceChannels: string[];
+};
+
+export type LeadChannelTargetMap = Record<string, LeadChannelTargetDefinition>;
+
+export type LeadChannelBreakdownItem = LeadBreakdownItem & {
+  target: number | null;
+  targetActual: number | null;
+  achievementPercent: number | null;
+  remainingToTarget: number | null;
+  targetLabel: string | null;
+};
+
+export type LeadChannelTargetSummary = {
+  totalLeadTarget: number;
+  totalChannelTarget: number;
+  channelDifference: number;
+};
+
 export type LeadDailyPoint = {
   date: string;
   total: number;
@@ -96,7 +118,8 @@ export type LeadAnalytics = {
     calendarDays: number;
   };
   pacing: LeadPacing;
-  channels: LeadBreakdownItem[];
+  channels: LeadChannelBreakdownItem[];
+  channelTargetSummary: LeadChannelTargetSummary | null;
   models: LeadBreakdownItem[];
   mg4UrbanSourceChannels: LeadBreakdownItem[];
   regions: LeadBreakdownItem[];
@@ -110,6 +133,7 @@ export type LeadAnalytics = {
 export type BuildLeadAnalyticsInput = {
   rows: LeadAnalyticsRow[];
   pacingRows: Array<Pick<LeadAnalyticsRow, "correctedDate">>;
+  channelTargetRows?: LeadAnalyticsRow[];
   pacingAsOfDate?: string;
   channelUpdateRows?: LeadAnalyticsRow[];
   channelUpdateDate?: string;
@@ -118,6 +142,8 @@ export type BuildLeadAnalyticsInput = {
   competence: string;
   goal: number | null;
   expectedChannels?: string[];
+  channelTargetDefinitions?: LeadChannelTargetMap;
+  channelTargetSummary?: LeadChannelTargetSummary | null;
 };
 
 function round(value: number, decimals = 2): number {
@@ -209,6 +235,52 @@ function buildBreakdown(
     dailyAverage: round(leads / calendarDays),
     sharePercent: total ? round((leads / total) * 100) : 0,
   }));
+}
+
+function buildChannelBreakdown(
+  rows: LeadAnalyticsRow[],
+  monthlyRows: LeadAnalyticsRow[],
+  calendarDays: number,
+  targetDefinitions: LeadChannelTargetMap,
+): LeadChannelBreakdownItem[] {
+  const breakdown = buildBreakdown(rows, row => row.channel, calendarDays);
+  const existing = new Set(breakdown.map(item => item.value));
+  for (const channel of Object.keys(targetDefinitions)) {
+    if (existing.has(channel)) continue;
+    breakdown.push({ value: channel, leads: 0, dailyAverage: 0, sharePercent: 0 });
+  }
+
+  const monthlySourceCounts = new Map<string, number>();
+  for (const row of monthlyRows) {
+    const source = normalizeChannel(row.sourceChannel ?? row.channel);
+    monthlySourceCounts.set(source, (monthlySourceCounts.get(source) ?? 0) + 1);
+  }
+
+  return breakdown.map(item => {
+    const definition = targetDefinitions[item.value];
+    if (!definition) {
+      return {
+        ...item,
+        target: null,
+        targetActual: null,
+        achievementPercent: null,
+        remainingToTarget: null,
+        targetLabel: null,
+      };
+    }
+    const targetActual = definition.sourceChannels.reduce(
+      (sum, source) => sum + (monthlySourceCounts.get(source) ?? 0),
+      0,
+    );
+    return {
+      ...item,
+      target: definition.target,
+      targetActual,
+      achievementPercent: definition.target > 0 ? round((targetActual / definition.target) * 100) : null,
+      remainingToTarget: definition.target > 0 ? definition.target - targetActual : null,
+      targetLabel: definition.targetLabel,
+    };
+  });
 }
 
 function buildDaily(
@@ -415,7 +487,12 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
       ...row,
       dealerName: canonicalizeDealerForAnalytics(row.dealerName),
     }));
-  const channels = buildBreakdown(rows, row => row.channel, calendarDays);
+  const channels = buildChannelBreakdown(
+    rows,
+    input.channelTargetRows ?? [],
+    calendarDays,
+    input.channelTargetDefinitions ?? {},
+  );
   const mg4UrbanRows = rows.filter(row => isMg4UrbanLeadModel(row.model));
   const mg4UrbanSourceChannels = buildBreakdown(
     mg4UrbanRows,
@@ -468,6 +545,7 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
       input.pacingAsOfDate,
     ),
     channels,
+    channelTargetSummary: input.channelTargetSummary ?? null,
     models: buildBreakdown(rows, row => row.model, calendarDays),
     mg4UrbanSourceChannels,
     regions: buildBreakdown(rows, row => row.region, calendarDays),

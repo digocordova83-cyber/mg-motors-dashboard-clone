@@ -6,6 +6,7 @@ import {
   CsvDuplicateChannelBreakdown,
   CsvImportFeedback,
   CsvPreviewSummary,
+  ChannelTargetProgress,
   DealerAudit,
   LeadEmptyState,
   LeadFilterIdentity,
@@ -54,6 +55,50 @@ describe("interface de Leads", () => {
     expect(source).toContain("data.channels.map");
     expect(source).toContain("data.channelOrder.map");
     expect(source).toContain('dataKey={channel}');
+  });
+
+  it("exibe meta, percentual, saldo e barra vermelha por veículo sem inventar meta para Campanha Urban", () => {
+    const withTarget = renderToStaticMarkup(
+      <ChannelTargetProgress
+        locale="pt-BR"
+        item={{
+          value: "TikTok",
+          leads: 5,
+          dailyAverage: 0.38,
+          sharePercent: 0.11,
+          target: 620,
+          targetActual: 11,
+          achievementPercent: 1.77,
+          remainingToTarget: 609,
+          targetLabel: "TikTok",
+        }}
+      />,
+    );
+    expect(withTarget).toContain("Meta TikTok");
+    expect(withTarget).toContain("11 / 620");
+    expect(withTarget).toContain("1,77%");
+    expect(withTarget).toContain("609 para a meta");
+    expect(withTarget).toContain('role="progressbar"');
+    expect(withTarget).toContain("bg-[#e2212d]");
+
+    const withoutTarget = renderToStaticMarkup(
+      <ChannelTargetProgress
+        locale="en-US"
+        item={{
+          value: "Campanha Urban",
+          leads: 1260,
+          dailyAverage: 96.92,
+          sharePercent: 27.58,
+          target: null,
+          targetActual: null,
+          achievementPercent: null,
+          remainingToTarget: null,
+          targetLabel: null,
+        }}
+      />,
+    );
+    expect(withoutTarget).toContain("No direct target in the spreadsheet");
+    expect(withoutTarget).not.toContain('role="progressbar"');
   });
 
   it("expõe ações acessíveis para abrir os Leads por canal de cada concessionária", () => {

@@ -47,6 +47,7 @@ type LeadAnalytics = RouterOutputs["leads"]["analytics"];
 type LeadPreview = RouterOutputs["leads"]["previewCsv"];
 type LeadImportResult = RouterOutputs["leads"]["importCsv"];
 type DealerAuditItem = LeadAnalytics["dealerAudit"]["dealers"][number];
+type LeadChannelItem = LeadAnalytics["channels"][number];
 
 type Locale = "pt-BR" | "en-US";
 
@@ -123,6 +124,62 @@ function formatCategoryLabel(value: string | null | undefined, locale: Locale) {
     return ui(locale, "Indisponível", "Unavailable");
   }
   return normalized;
+}
+
+export function ChannelTargetProgress({
+  item,
+  locale = "pt-BR",
+}: {
+  item: LeadChannelItem;
+  locale?: Locale;
+}) {
+  if (
+    item.target === null ||
+    item.targetActual === null ||
+    item.achievementPercent === null ||
+    item.remainingToTarget === null ||
+    !item.targetLabel
+  ) {
+    return (
+      <p className="mt-2 text-[9px] leading-4 text-slate-600">
+        {ui(
+          locale,
+          "Sem meta direta na planilha; classificação analítica por campanha.",
+          "No direct target in the spreadsheet; analytical campaign classification.",
+        )}
+      </p>
+    );
+  }
+
+  const progress = Math.max(0, Math.min(100, item.achievementPercent));
+  const gap = item.remainingToTarget;
+  const gapText = gap > 0
+    ? `${formatInteger(gap, locale)} ${ui(locale, "para a meta", "remaining")}`
+    : gap < 0
+      ? `${formatInteger(Math.abs(gap), locale)} ${ui(locale, "acima da meta", "above target")}`
+      : ui(locale, "Meta atingida", "Target achieved");
+
+  return (
+    <div className="mt-2" data-channel-target={item.value}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[9px]">
+        <p className="min-w-0 text-slate-500">
+          {ui(locale, "Meta", "Target")} {item.targetLabel} · {formatInteger(item.targetActual, locale)} / {formatInteger(item.target, locale)}
+        </p>
+        <p className="shrink-0 font-semibold text-red-300">{formatNumber(item.achievementPercent, locale)}%</p>
+      </div>
+      <div
+        className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#151f2e]"
+        role="progressbar"
+        aria-label={`${ui(locale, "Atingimento da meta", "Target achievement")} ${item.targetLabel}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+      >
+        <div className="h-full rounded-full bg-[#e2212d]" style={{ width: `${progress}%` }} />
+      </div>
+      <p className="mt-1 text-[9px] text-slate-600">{gapText}</p>
+    </div>
+  );
 }
 
 const DEALER_QUALIFICATION_LABELS = new Set([
@@ -1142,17 +1199,38 @@ export function LeadsTab({
           ) : <div className="grid min-h-[260px] place-items-center text-xs text-slate-600">{ui(locale, "Nenhum Lead no período.", "No Leads in this period.")}</div>}
         </LeadPanel>
 
-        <LeadPanel title={ui(locale, "Distribuição por canal", "Distribution by channel")} subtitle={ui(locale, "Volume, média diária e participação no período.", "Volume, daily average, and share for the period.")}>
+        <LeadPanel title={ui(locale, "Distribuição por canal", "Distribution by channel")} subtitle={ui(locale, "Volume no período e atingimento da meta mensal por veículo até D-1.", "Period volume and monthly vehicle target achievement through D-1.")}>
           <div className="divide-y divide-[#172131]">
             {data.channels.map((item, index) => (
-              <div key={item.value} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 text-[10px]">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
-                <div className="min-w-0"><p className="truncate font-medium text-slate-300" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</p><p className="mt-0.5 text-[9px] text-slate-600">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")}</p></div>
-                <div className="text-right"><p className="font-semibold text-white">{formatInteger(item.leads, locale)}</p><p className="mt-0.5 text-[9px] text-slate-600">{formatNumber(item.sharePercent, locale)}%</p></div>
+              <div key={item.value} className="px-4 py-3 text-[10px]">
+                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
+                  <div className="min-w-0"><p className="truncate font-medium text-slate-300" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</p><p className="mt-0.5 text-[9px] text-slate-600">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")}</p></div>
+                  <div className="text-right"><p className="font-semibold text-white">{formatInteger(item.leads, locale)}</p><p className="mt-0.5 text-[9px] text-slate-600">{formatNumber(item.sharePercent, locale)}%</p></div>
+                </div>
+                <div className="ml-[22px]">
+                  <ChannelTargetProgress item={item} locale={locale} />
+                </div>
               </div>
             ))}
             {!data.channels.length ? <div className="grid min-h-48 place-items-center text-xs text-slate-600">{ui(locale, "Indisponível no período.", "Unavailable for this period.")}</div> : null}
           </div>
+          {data.channelTargetSummary ? (
+            <div className="border-t border-[#172131] px-4 py-3 text-[9px] leading-4 text-slate-600">
+              <p>
+                {ui(
+                  locale,
+                  "Realizado da barra considera o veículo de origem no mês, incluindo MG4 URBAN. Google e Publya aparecem combinados em Site; Campanha Urban não possui meta direta na planilha.",
+                  "Bar actuals use the monthly source vehicle, including MG4 URBAN. Google and Publya are combined under Site; Urban Campaign has no direct spreadsheet target.",
+                )}
+              </p>
+              {data.channelTargetSummary.channelDifference !== 0 ? (
+                <p className="mt-1">
+                  {ui(locale, "Nota:", "Note:")} {ui(locale, "a soma das metas por canal difere da meta total em", "channel targets differ from the total target by")} {formatInteger(Math.abs(data.channelTargetSummary.channelDifference), locale)} {ui(locale, "Leads por arredondamento da planilha.", "Leads due to spreadsheet rounding.")}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </LeadPanel>
       </div>
 
