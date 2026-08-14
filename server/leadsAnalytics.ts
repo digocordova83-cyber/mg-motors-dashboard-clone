@@ -204,6 +204,21 @@ function normalizeChannel(value: string): string {
   return value.trim() || LEADS_UNAVAILABLE;
 }
 
+function isUrbanCampaignClassification(value: string): boolean {
+  return normalizeChannel(value).toLocaleLowerCase("pt-BR") === "campanha urban";
+}
+
+export function resolveLeadReportingChannel(
+  row: Pick<LeadAnalyticsRow, "channel" | "sourceChannel">,
+): string {
+  const sourceChannel = normalizeChannel(row.sourceChannel ?? "");
+  if (sourceChannel !== LEADS_UNAVAILABLE && !isUrbanCampaignClassification(sourceChannel)) {
+    return sourceChannel;
+  }
+  const storedChannel = normalizeChannel(row.channel);
+  return isUrbanCampaignClassification(storedChannel) ? LEADS_UNAVAILABLE : storedChannel;
+}
+
 function canShowChannelUpdate(channel: string): boolean {
   const normalized = normalizeChannel(channel);
   return (
@@ -243,7 +258,7 @@ function buildChannelBreakdown(
   calendarDays: number,
   targetDefinitions: LeadChannelTargetMap,
 ): LeadChannelBreakdownItem[] {
-  const breakdown = buildBreakdown(rows, row => row.channel, calendarDays);
+  const breakdown = buildBreakdown(rows, resolveLeadReportingChannel, calendarDays);
   const existing = new Set(breakdown.map(item => item.value));
   for (const channel of Object.keys(targetDefinitions)) {
     if (existing.has(channel)) continue;
@@ -252,7 +267,7 @@ function buildChannelBreakdown(
 
   const monthlySourceCounts = new Map<string, number>();
   for (const row of monthlyRows) {
-    const source = normalizeChannel(row.sourceChannel ?? row.channel);
+    const source = resolveLeadReportingChannel(row);
     monthlySourceCounts.set(source, (monthlySourceCounts.get(source) ?? 0) + 1);
   }
 
@@ -291,7 +306,7 @@ function buildDaily(
 ): LeadDailyPoint[] {
   const byDate = new Map<string, Map<string, number>>();
   for (const row of rows) {
-    const channel = normalizeChannel(row.channel);
+    const channel = resolveLeadReportingChannel(row);
     let channelCounts = byDate.get(row.correctedDate);
     if (!channelCounts) {
       channelCounts = new Map<string, number>();
@@ -328,7 +343,7 @@ function buildDealerAudit(
   const channelsByDealer = new Map<string, Map<string, number>>();
   for (const row of rows) {
     const dealerName = row.dealerName.trim() || LEADS_UNAVAILABLE;
-    const channel = normalizeChannel(row.channel);
+    const channel = resolveLeadReportingChannel(row);
     let byDate = byDealer.get(dealerName);
     if (!byDate) {
       byDate = new Map<string, number>();
@@ -496,7 +511,7 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
   const mg4UrbanRows = rows.filter(row => isMg4UrbanLeadModel(row.model));
   const mg4UrbanSourceChannels = buildBreakdown(
     mg4UrbanRows,
-    row => row.sourceChannel ?? row.channel,
+    resolveLeadReportingChannel,
     calendarDays,
   );
   const dealers = buildBreakdown(rows, row => row.dealerName, calendarDays);
@@ -506,7 +521,9 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
     new Set(
       [...(input.expectedChannels ?? []), ...activeChannelOrder].map(normalizeChannel),
     ),
-  ).filter(channel => channel !== LEADS_UNAVAILABLE);
+  ).filter(
+    channel => channel !== LEADS_UNAVAILABLE && !isUrbanCampaignClassification(channel),
+  );
   const channelOrder = [
     ...activeChannelOrder,
     ...expectedChannels
@@ -520,7 +537,7 @@ export function buildLeadAnalytics(input: BuildLeadAnalyticsInput): LeadAnalytic
   );
   const channelUpdateCounts = new Map<string, number>();
   for (const row of channelUpdateRows) {
-    const channel = normalizeChannel(row.channel);
+    const channel = resolveLeadReportingChannel(row);
     channelUpdateCounts.set(channel, (channelUpdateCounts.get(channel) ?? 0) + 1);
   }
   const updatingChannels = channelOrder.filter(

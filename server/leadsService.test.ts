@@ -27,7 +27,7 @@ describe("ciclo de vida dos canais de Leads", () => {
     ]);
   });
 
-  it("mantém UOL nas opções de julho e o remove das opções de agosto", () => {
+  it("mantém UOL em julho, remove-o em agosto e nunca expõe Campanha Urban", () => {
     const channels = ["Site", "Meta", "UOL", "Campanha Urban"];
 
     expect(filterExpectedLeadChannelsByDate(channels, "2026-07-31")).toContain("UOL");
@@ -35,7 +35,7 @@ describe("ciclo de vida dos canais de Leads", () => {
     expect(filterExpectedLeadChannelsByDate(channels, "2026-08-01")).toEqual([
       "Site",
       "Meta",
-      "Campanha Urban",
     ]);
+    expect(filterExpectedLeadChannelsByDate(channels, "2026-07-31")).not.toContain("Campanha Urban");
   });
 });

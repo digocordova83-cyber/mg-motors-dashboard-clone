@@ -11,7 +11,7 @@ type Summary = {
   dailyTotal: number;
   tiktokChannel: number;
   tiktokDaily: number;
-  campanhaUrban: number;
+  campanhaUrbanPresent: boolean;
   tiktokByDay: Array<{ date: string; leads: number }>;
   channels: Array<{ value: string; leads: number }>;
 };
@@ -24,7 +24,10 @@ function summarize(analytics: LeadAnalytics, dateFrom: string, dateTo: string): 
     (sum, point) => sum + Number(point.values.TikTok ?? 0),
     0,
   );
-  const campanhaUrban = analytics.channels.find(item => item.value === "Campanha Urban")?.leads ?? 0;
+  const campanhaUrbanPresent =
+    analytics.channels.some(item => item.value === "Campanha Urban") ||
+    analytics.channelOrder.includes("Campanha Urban") ||
+    analytics.daily.some(point => Object.hasOwn(point.values, "Campanha Urban"));
 
   if (analytics.summary.totalLeads !== channelTotal) {
     throw new Error(`Soma dos canais (${channelTotal}) diverge do total (${analytics.summary.totalLeads}).`);
@@ -38,6 +41,9 @@ function summarize(analytics: LeadAnalytics, dateFrom: string, dateTo: string): 
   if (!analytics.channelOrder.includes("TikTok")) {
     throw new Error("TikTok não aparece na ordem de canais do gráfico diário.");
   }
+  if (campanhaUrbanPresent) {
+    throw new Error("Campanha Urban ainda aparece na distribuição ou na série diária.");
+  }
 
   return {
     dateFrom,
@@ -47,7 +53,7 @@ function summarize(analytics: LeadAnalytics, dateFrom: string, dateTo: string): 
     dailyTotal,
     tiktokChannel,
     tiktokDaily,
-    campanhaUrban,
+    campanhaUrbanPresent,
     tiktokByDay: analytics.daily
       .map(point => ({ date: point.date, leads: Number(point.values.TikTok ?? 0) }))
       .filter(point => point.leads > 0),
@@ -75,9 +81,9 @@ async function main() {
     .where(and(gte(leads.correctedDate, dateFrom), lte(leads.correctedDate, latestSourceDate)))
     .orderBy(asc(leads.correctedDate), asc(leads.id));
 
-  const expectedChannels = Array.from(new Set(rows.map(row => row.channel))).sort((a, b) =>
-    a.localeCompare(b, "pt-BR"),
-  );
+  const expectedChannels = Array.from(
+    new Set(rows.map(row => row.sourceChannel ?? row.channel)),
+  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
   const build = (periodRows: typeof rows, dateTo: string) =>
     buildLeadAnalytics({
       rows: periodRows,

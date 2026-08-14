@@ -144,8 +144,8 @@ export function ChannelTargetProgress({
       <p className="mt-2 text-[9px] leading-4 text-slate-600">
         {ui(
           locale,
-          "Sem meta direta na planilha; classificação analítica por campanha.",
-          "No direct target in the spreadsheet; analytical campaign classification.",
+          "Sem meta direta na planilha para este canal de origem.",
+          "No direct spreadsheet target for this source channel.",
         )}
       </p>
     );
@@ -1220,8 +1220,8 @@ export function LeadsTab({
               <p>
                 {ui(
                   locale,
-                  "Realizado da barra considera o veículo de origem no mês, incluindo MG4 URBAN. Google e Publya aparecem combinados em Site; Campanha Urban não possui meta direta na planilha.",
-                  "Bar actuals use the monthly source vehicle, including MG4 URBAN. Google and Publya are combined under Site; Urban Campaign has no direct spreadsheet target.",
+                  "A contabilização usa o veículo de origem no mês, incluindo MG4 URBAN. Google e Publya aparecem combinados em Site.",
+                  "Accounting uses the monthly source vehicle, including MG4 URBAN. Google and Publya are combined under Site.",
                 )}
               </p>
               {data.channelTargetSummary.channelDifference !== 0 ? (

@@ -31,9 +31,11 @@ async function main() {
       );
     }
   }
-  const urban = analytics.channels.find(item => item.value === "Campanha Urban");
-  if (!urban || urban.target !== null || urban.targetActual !== null) {
-    throw new Error("Campanha Urban recebeu meta direta indevida.");
+  if (
+    analytics.channels.some(item => item.value === "Campanha Urban") ||
+    analytics.channelOrder.includes("Campanha Urban")
+  ) {
+    throw new Error("Campanha Urban ainda aparece na contabilização por canal.");
   }
   if (
     analytics.channelTargetSummary?.totalLeadTarget !== 11996 ||

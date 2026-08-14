@@ -1686,3 +1686,21 @@
 > Snapshot servido ao dashboard em D-1 (01–13/08): 4.327 Leads, 248 Sales, conversão de 5,73%, 17,45 Leads por venda e estimativa arredondada de 18 Leads por venda. As 248 Sales reconciliam integralmente entre resumo, dealers, estados e acompanhamento de metas; 25/25 dealers correspondentes, zero unmatched e zero dealer sem venda W3. TECAR SHOPPING - GOIÂNIA aparece com 158 Leads, duas Sales e 1,27% de conversão.
 
 > Validação final: 272 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. O parser continua bloqueando múltiplas linhas vazias, subtotal regional divergente ou residual não positivo; apenas o residual único e comprovável é reparado, sempre com aviso auditável.
+
+## Canais originais na contabilização — 14/08/2026
+
+- [x] Auditar todos os cálculos que usam `channel` e `sourceChannel` na distribuição, metas, série diária, filtros e exportações.
+- [x] Remover `Campanha Urban` da distribuição por canal e do gráfico diário sem alterar a classificação armazenada dos Leads.
+- [x] Redistribuir cada Lead Urban ao canal original preservado: Site, Meta, Webmotors, Mercado Livre, TikTok ou outra origem válida.
+- [x] Recalcular metas, realizado mensal, atingimento, saldo, participação e média diária pelos canais originais.
+- [x] Garantir que `Total de Leads = soma dos canais originais = soma dos dias`, sem dupla contagem ou perda.
+- [x] Preservar o quadro MG4 URBAN por origem e os demais filtros e indicadores existentes.
+- [x] Adicionar regressões de backend e interface para ausência de Campanha Urban e inclusão dos canais originais.
+- [x] Validar dados reais, suíte completa, TypeScript, build e logs; salvar checkpoint restaurável.
+- [x] Entregar ao usuário a reconciliação antes/depois dos canais e do total.
+
+> Implementação: a base continua armazenando `channel = Campanha Urban` para a classificação de campanha, mas toda contabilização do dashboard passa a usar `sourceChannel`. Distribuição, gráfico diário, médias, participação, canal principal, auditoria por dealer, status de atualização e metas usam agora Site, Meta, Webmotors, Mercado Livre, TikTok e demais origens válidas. Campanha Urban não aparece na lista nem na série.
+
+> Reconciliação D-1 de 01–13/08: `4.568 total = 4.568 canais originais = 4.568 dias`. Meta 2.387/3.734 (63,93%); Site 1.677/6.633 (25,28%); Webmotors 324/579 (55,96%); Mercado Livre 175/442 (39,59%); TikTok 5/620 (0,81%). Campanha Urban está ausente. Até 14/08, a fonte fecha em 4.574, incluindo 11 TikTok em dois dias, também sem Campanha Urban.
+
+> Validação final: 272 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. A rota sem sessão continua exibindo corretamente o acesso protegido. Os logs recentes não apresentam falhas no cliente ou na rede; o único erro de módulo encontrado ocorreu durante a edição parcial às 22:22 e foi resolvido pelo reinício automático do servidor às 22:23.

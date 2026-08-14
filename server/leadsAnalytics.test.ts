@@ -17,7 +17,7 @@ function row(
 }
 
 describe("buildLeadAnalytics", () => {
-  it("reconcilia MG4 URBAN com TikTok separado em canais, total e série diária", () => {
+  it("redistribui MG4 URBAN aos canais originais e reconcilia total e série diária", () => {
     const rows = [
       row("2026-08-01", "Campanha Urban", "Dealer A", "MG4 URBAN", "SP", "Site"),
       row("2026-08-01", "Campanha Urban", "Dealer B", "MG4 URBAN", "SP", "Meta"),
@@ -46,9 +46,11 @@ describe("buildLeadAnalytics", () => {
     });
 
     expect(result.channels).toEqual(expect.arrayContaining([
-      expect.objectContaining({ value: "Campanha Urban", leads: 3 }),
+      expect.objectContaining({ value: "Site", leads: 3 }),
+      expect.objectContaining({ value: "Meta", leads: 1 }),
       expect.objectContaining({ value: "TikTok", leads: 1 }),
     ]));
+    expect(result.channels.some(item => item.value === "Campanha Urban")).toBe(false);
     expect(result.mg4UrbanSourceChannels).toEqual([
       { value: "Site", leads: 2, dailyAverage: 1, sharePercent: 50 },
       { value: "Meta", leads: 1, dailyAverage: 0.5, sharePercent: 25 },
@@ -62,7 +64,7 @@ describe("buildLeadAnalytics", () => {
     expect(result.channels).toEqual(expect.arrayContaining([
       expect.objectContaining({
         value: "Site",
-        leads: 1,
+        leads: 3,
         target: 4,
         targetActual: 3,
         achievementPercent: 75,
@@ -71,7 +73,7 @@ describe("buildLeadAnalytics", () => {
       }),
       expect.objectContaining({
         value: "Meta",
-        leads: 0,
+        leads: 1,
         target: 2,
         targetActual: 1,
         achievementPercent: 50,
@@ -83,11 +85,6 @@ describe("buildLeadAnalytics", () => {
         targetActual: 1,
         achievementPercent: 50,
       }),
-      expect.objectContaining({
-        value: "Campanha Urban",
-        target: null,
-        targetActual: null,
-      }),
     ]));
     expect(result.channelTargetSummary).toEqual({
       totalLeadTarget: 8,
@@ -97,12 +94,12 @@ describe("buildLeadAnalytics", () => {
     expect(result.daily[0]).toMatchObject({
       date: "2026-08-01",
       total: 2,
-      values: { "Campanha Urban": 2, TikTok: 0, Site: 0 },
+      values: { Site: 1, Meta: 1, TikTok: 0 },
     });
     expect(result.daily[1]).toMatchObject({
       date: "2026-08-02",
       total: 3,
-      values: { "Campanha Urban": 1, TikTok: 1, Site: 1 },
+      values: { Site: 2, Meta: 0, TikTok: 1 },
     });
   });
 
@@ -141,12 +138,12 @@ describe("buildLeadAnalytics", () => {
     });
   });
 
-  it("sinaliza canais esperados zerados no último dia, remove o preenchido e ignora Campanha Urban", () => {
+  it("sinaliza canais originais zerados e exclui Campanha Urban da ordem diária", () => {
     const previousRows = [
       row("2026-07-19", "Site", "Dealer A"),
       row("2026-07-19", "Meta", "Dealer A"),
       row("2026-07-19", "Webmotors", "Dealer B"),
-      row("2026-07-19", "Campanha Urban", "Dealer C"),
+      row("2026-07-19", "Campanha Urban", "Dealer C", "MG4 URBAN", "SP", "Meta"),
       row("2026-07-20", "Site", "Dealer A"),
     ];
     const expectedChannels = ["Site", "Meta", "Webmotors", "Campanha Urban"];
@@ -164,8 +161,9 @@ describe("buildLeadAnalytics", () => {
       Site: 1,
       Meta: 0,
       Webmotors: 0,
-      "Campanha Urban": 0,
     });
+    expect(beforeFill.channelOrder).not.toContain("Campanha Urban");
+    expect(beforeFill.channels.some(item => item.value === "Campanha Urban")).toBe(false);
     expect(beforeFill.channelUpdate).toEqual({
       date: "2026-07-20",
       updatingChannels: ["Meta", "Webmotors"],

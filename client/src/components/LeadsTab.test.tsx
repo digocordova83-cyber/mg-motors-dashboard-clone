@@ -57,7 +57,7 @@ describe("interface de Leads", () => {
     expect(source).toContain('dataKey={channel}');
   });
 
-  it("exibe meta, percentual, saldo e barra vermelha por veículo sem inventar meta para Campanha Urban", () => {
+  it("exibe meta, percentual, saldo e barra vermelha sem inventar meta para origens não mapeadas", () => {
     const withTarget = renderToStaticMarkup(
       <ChannelTargetProgress
         locale="pt-BR"
@@ -85,7 +85,7 @@ describe("interface de Leads", () => {
       <ChannelTargetProgress
         locale="en-US"
         item={{
-          value: "Campanha Urban",
+          value: "Canal sem meta",
           leads: 1260,
           dailyAverage: 96.92,
           sharePercent: 27.58,
@@ -97,7 +97,7 @@ describe("interface de Leads", () => {
         }}
       />,
     );
-    expect(withoutTarget).toContain("No direct target in the spreadsheet");
+    expect(withoutTarget).toContain("No direct spreadsheet target for this source channel");
     expect(withoutTarget).not.toContain('role="progressbar"');
   });
 

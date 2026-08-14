@@ -8,6 +8,7 @@ import { getDb } from "./db";
 import {
   buildLeadAnalytics,
   endOfUtcMonth,
+  resolveLeadReportingChannel,
   startOfUtcMonth,
   type LeadAnalytics,
   type LeadAnalyticsRow,
@@ -32,7 +33,11 @@ export function filterLeadRowsByChannelLifecycle<T extends Pick<LeadAnalyticsRow
 }
 
 export function filterExpectedLeadChannelsByDate(channels: string[], date: string): string[] {
-  return channels.filter(channel => isLeadChannelActiveOnDate(channel, date));
+  return channels.filter(
+    channel =>
+      channel.trim().toLocaleUpperCase("pt-BR") !== "CAMPANHA URBAN" &&
+      isLeadChannelActiveOnDate(channel, date),
+  );
 }
 
 function assertDateRange(dateFrom: string, dateTo: string): void {
@@ -151,12 +156,12 @@ async function getExpectedLeadChannels(dateTo: string): Promise<string[]> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível");
   const rows = await db
-    .selectDistinct({ channel: leads.channel })
+    .selectDistinct({ channel: leads.channel, sourceChannel: leads.sourceChannel })
     .from(leads)
     .where(lte(leads.correctedDate, dateTo))
     .orderBy(asc(leads.channel));
   return filterExpectedLeadChannelsByDate(
-    rows.map(row => row.channel.trim()).filter(Boolean),
+    rows.map(resolveLeadReportingChannel).filter(Boolean),
     dateTo,
   );
 }
