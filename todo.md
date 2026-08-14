@@ -1659,3 +1659,30 @@
 > Reconciliação real de 01–13/08: 4.568 total = 4.568 na soma dos canais = 4.568 na soma dos dias. Atingimento mensal por veículo em D-1: Site/Google+Publya 1.677 de 6.633 (25,28%); Meta 2.387 de 3.734 (63,93%); Webmotors 324 de 579 (55,96%); Mercado Livre 175 de 442 (39,59%); TikTok 5 de 620 (0,81%). Campanha Urban permanece com 1.260 Leads no período e sem meta direta inventada.
 
 > Validação final: 269 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. A captura da rota protegida confirmou que o acesso sem sessão continua bloqueado; o quadro interno foi validado pelo contrato real do serviço, reconciliação reproduzível e renderização estática responsiva das barras.
+
+## Correção da importação de vendas — PDF de 14/08/2026
+
+- [x] Auditar a tabela `Weekly Target Achievement - Retail` do PDF real e identificar mudanças de layout, colunas ou subtotais.
+- [x] Reconciliar W1–W5 entre linhas de dealers, subtotais regionais e TOTAL, distinguindo ausência de venda de erro de leitura.
+- [x] Explicar exatamente por que W2 e W3 falham e por que TECAR GOIÂNIA aparece sem venda S3.
+- [x] Corrigir o parser sem desabilitar a validação auditável de regiões e TOTAL.
+- [x] Adicionar regressões para o novo formato e preservar compatibilidade com PDFs e CSVs anteriores.
+- [x] Validar o PDF enviado ponta a ponta e confirmar dealers, matches, semana de referência e totais.
+- [x] Executar a prévia e importar o relatório somente após todas as reconciliações passarem.
+- [x] Confirmar idempotência, recalcular Leads/Sales/conversão e validar o dashboard.
+- [x] Executar suíte completa, TypeScript e build; salvar checkpoint restaurável.
+- [x] Informar a causa, a correção, os totais importados e eventuais dados realmente ausentes.
+
+> Causa comprovada: o parser leu corretamente a página Retail. O próprio PDF deixa TECAR GOIÂNIA sem Retail em W2 e W3, mas inclui duas vendas no subtotal R02 e no Total. R01 reconcilia em 113/153; R02 soma 72/93 nos dealers visíveis, enquanto imprime 74/95; o Total imprime 187/248. A diferença é exatamente duas unidades em W2 e W3.
+
+> Confirmação independente: a página `Sales Funnel by Region & Dealer` do mesmo PDF informa TECAR GOIÂNIA com `Retail TGT = 8` e `Retail = 2`, além de confirmar R02 = 95 e Total = 248 no acumulado W3. Portanto a sequência validada é W1 sem venda informada, W2 = 2 e W3 = 2; nenhum número foi inventado para forçar a soma.
+
+> Correção implementada: o parser só preenche um residual quando região e TOTAL concordam, existe exatamente um dealer vazio naquela região e o residual é inteiro e positivo. O percentual é derivado da meta visível, a linha recebe novo hash e a prévia exibe avisos auditáveis. Casos ambíguos continuam bloqueados. Foram aprovadas 21 regressões direcionadas e TypeScript sem erros.
+
+> Prévia real corrigida: 28 linhas, 25 dealers, duas regiões, um TOTAL, semana de referência W3, zero dealers sem venda de referência e `248 dealers = 248 regiões = 248 TOTAL`, sem erros. Avisos explícitos registram TECAR GOIÂNIA W2 = 2 (83,3%) e W3 = 2 (48,8%).
+
+> Importação concluída em 14/08/2026: competência 2026-08, W3, 248 Retail Sales, 25/25 dealers correspondentes, zero dealers sem correspondência e 28 linhas persistidas. TECAR GOIÂNIA foi importada com duas vendas e 48,8% na semana de referência. A reexecução retornou `idempotent: true` e `rowsInserted: 0` para o mesmo importId 330001.
+
+> Snapshot servido ao dashboard em D-1 (01–13/08): 4.327 Leads, 248 Sales, conversão de 5,73%, 17,45 Leads por venda e estimativa arredondada de 18 Leads por venda. As 248 Sales reconciliam integralmente entre resumo, dealers, estados e acompanhamento de metas; 25/25 dealers correspondentes, zero unmatched e zero dealer sem venda W3. TECAR SHOPPING - GOIÂNIA aparece com 158 Leads, duas Sales e 1,27% de conversão.
+
+> Validação final: 272 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. O parser continua bloqueando múltiplas linhas vazias, subtotal regional divergente ou residual não positivo; apenas o residual único e comprovável é reparado, sempre com aviso auditável.

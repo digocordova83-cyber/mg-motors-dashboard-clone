@@ -149,6 +149,101 @@ function sumRetail(rows: WeeklySalesRow[], week: WeekKey): number {
   return rows.reduce((total, row) => total + (row.weeks[week]?.retail ?? 0), 0);
 }
 
+function repairUniqueRegionRetailResiduals(rows: WeeklySalesRow[]): {
+  rows: WeeklySalesRow[];
+  warnings: string[];
+} {
+  const repairedRows = rows.map(row => ({
+    ...row,
+    weeks: Object.fromEntries(
+      WEEK_KEYS.map(week => [week, { ...row.weeks[week] }]),
+    ) as Record<WeekKey, WeeklySalesWeekMetrics>,
+  }));
+  const warnings: string[] = [];
+  const modifiedIndexes = new Set<number>();
+  const regionIndexes = repairedRows
+    .map((row, index) => (row.rowType === "REGION" ? index : -1))
+    .filter(index => index >= 0);
+  const totalRows = repairedRows.filter(row => row.rowType === "TOTAL");
+  if (regionIndexes.length === 0 || totalRows.length !== 1) {
+    return { rows: repairedRows, warnings };
+  }
+
+  const segments = regionIndexes.map((regionIndex, segmentIndex) => {
+    const nextRegionIndex = regionIndexes[segmentIndex + 1] ?? repairedRows.length;
+    return {
+      regionIndex,
+      dealerIndexes: repairedRows
+        .map((row, index) =>
+          index > regionIndex && index < nextRegionIndex && row.rowType === "DEALER"
+            ? index
+            : -1,
+        )
+        .filter(index => index >= 0),
+    };
+  });
+  const totalRow = totalRows[0];
+
+  for (const week of WEEK_KEYS) {
+    const reportedTotal = totalRow.weeks[week]?.retail ?? null;
+    const regionRetails = regionIndexes.map(
+      index => repairedRows[index]?.weeks[week]?.retail ?? null,
+    );
+    if (reportedTotal === null || regionRetails.some(value => value === null)) continue;
+    const regionSum = regionRetails.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+    if (regionSum !== reportedTotal) continue;
+
+    for (const segment of segments) {
+      const regionRow = repairedRows[segment.regionIndex];
+      const regionRetail = regionRow?.weeks[week]?.retail ?? null;
+      if (regionRetail === null) continue;
+
+      const missingDealerIndexes = segment.dealerIndexes.filter(index => {
+        const metrics = repairedRows[index]?.weeks[week];
+        return metrics?.retail === null && metrics.achievementPercent === null;
+      });
+      if (missingDealerIndexes.length !== 1) continue;
+
+      const knownDealerRetail = segment.dealerIndexes.reduce((sum, index) => {
+        const value = repairedRows[index]?.weeks[week]?.retail;
+        return sum + (value ?? 0);
+      }, 0);
+      const residual = regionRetail - knownDealerRetail;
+      if (residual <= 0 || !Number.isInteger(residual)) continue;
+
+      const dealerIndex = missingDealerIndexes[0];
+      const dealerRow = repairedRows[dealerIndex];
+      const metrics = dealerRow?.weeks[week];
+      if (!dealerRow || !metrics || metrics.target === null || metrics.target <= 0) continue;
+
+      const achievementPercent = Number(((residual / metrics.target) * 100).toFixed(1));
+      dealerRow.weeks[week] = {
+        ...metrics,
+        retail: residual,
+        achievementPercent,
+      };
+      modifiedIndexes.add(dealerIndex);
+      warnings.push(
+        `${dealerRow.sourceName}: Semana ${week} reconciliada em ${residual} venda${residual === 1 ? "" : "s"} pelo residual único de ${regionRow.sourceName}; percentual derivado em ${achievementPercent.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%.`,
+      );
+    }
+  }
+
+  return {
+    rows: repairedRows.map((row, index) =>
+      modifiedIndexes.has(index)
+        ? createWeeklySalesRow({
+            sourceRowNumber: row.sourceRowNumber,
+            sourceName: row.sourceName,
+            weeks: row.weeks,
+            tokens: row.tokens,
+          })
+        : row,
+    ),
+    warnings,
+  };
+}
+
 function validatePdfRows(rows: WeeklySalesRow[]): string[] {
   const errors: string[] = [];
   const dealerRows = rows.filter(row => row.rowType === "DEALER");
@@ -264,7 +359,7 @@ export function buildWeeklySalesPreviewFromPdfExtraction(
     );
   }
 
-  const rows = extraction.rows.map((row, index) =>
+  const extractedRows = extraction.rows.map((row, index) =>
     createWeeklySalesRow({
       sourceRowNumber: index + 2,
       sourceName: row.name,
@@ -272,6 +367,8 @@ export function buildWeeklySalesPreviewFromPdfExtraction(
       tokens: toAuditTokens(row.weeks),
     }),
   );
+  const repaired = repairUniqueRegionRetailResiduals(extractedRows);
+  const rows = repaired.rows;
   errors.push(...validatePdfRows(rows));
 
   return buildWeeklySalesPreview({
@@ -279,6 +376,7 @@ export function buildWeeklySalesPreviewFromPdfExtraction(
     rows,
     rowsTotal: extraction.rows.length,
     errors,
+    warnings: repaired.warnings,
   });
 }
 

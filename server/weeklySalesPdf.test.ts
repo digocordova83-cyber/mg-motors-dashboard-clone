@@ -140,6 +140,97 @@ describe("Weekly Target Achievement PDF", () => {
     );
   });
 
+  it("reconcilia um residual regional positivo quando existe exatamente um dealer vazio", () => {
+    const weeks = {
+      "1": metric(1, null, null),
+      "2": metric(2.4, null, null),
+      "3": metric(4.1, null, null),
+      "4": metric(6, null, null),
+      "5": metric(8, null, null),
+    };
+    const knownDealerWeeks = {
+      "1": metric(10, 20, 200),
+      "2": metric(20, 72, 360),
+      "3": metric(30, 93, 310),
+      "4": metric(40, null, null),
+      "5": metric(50, null, null),
+    };
+    const regionWeeks = {
+      "1": metric(11, 20, 181.8),
+      "2": metric(22.4, 74, 330.4),
+      "3": metric(34.1, 95, 278.6),
+      "4": metric(46, null, null),
+      "5": metric(58, null, null),
+    };
+    const preview = buildWeeklySalesPreviewFromPdfExtraction(PDF, {
+      tableTitle: "Weekly Target Achievement - Retail",
+      rows: [
+        { name: "R02", weeks: regionWeeks },
+        { name: "TECAR BRASÍLIA", weeks: knownDealerWeeks },
+        { name: "TECAR GOIÂNIA", weeks },
+        { name: "Total", weeks: regionWeeks },
+      ],
+    });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.summary).toMatchObject({
+      referenceWeek: 3,
+      referenceDealerSalesTotal: 95,
+      referenceRegionSalesTotal: 95,
+      referenceReportedSalesTotal: 95,
+      reconciliationPassed: true,
+    });
+    expect(preview.rows[2]?.weeks["1"]).toEqual(metric(1, null, null));
+    expect(preview.rows[2]?.weeks["2"]).toEqual(metric(2.4, 2, 83.3));
+    expect(preview.rows[2]?.weeks["3"]).toEqual(metric(4.1, 2, 48.8));
+    expect(preview.warnings).toEqual([
+      "TECAR GOIÂNIA: Semana 2 reconciliada em 2 vendas pelo residual único de R02; percentual derivado em 83,3%.",
+      "TECAR GOIÂNIA: Semana 3 reconciliada em 2 vendas pelo residual único de R02; percentual derivado em 48,8%.",
+    ]);
+  });
+
+  it("não repara residual quando mais de um dealer da região está vazio", () => {
+    const base = extraction();
+    const emptyWeeks = {
+      ...base.rows[1]!.weeks,
+      "4": metric(42.4, null, null),
+    };
+    const preview = buildWeeklySalesPreviewFromPdfExtraction(PDF, {
+      ...base,
+      rows: [
+        base.rows[0]!,
+        { ...base.rows[1]!, name: "BALTIC BARUERI", weeks: emptyWeeks },
+        { ...base.rows[1]!, name: "TECAR GOIÂNIA", weeks: emptyWeeks },
+        base.rows[2]!,
+      ],
+    });
+
+    expect(preview.errors).toContain(
+      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+    );
+    expect(preview.rows[1]?.weeks["4"]?.retail).toBeNull();
+    expect(preview.rows[2]?.weeks["4"]?.retail).toBeNull();
+    expect(preview.warnings).not.toContainEqual(expect.stringContaining("reconciliada"));
+  });
+
+  it("não repara residual quando subtotais regionais e TOTAL divergem", () => {
+    const base = extraction();
+    const preview = buildWeeklySalesPreviewFromPdfExtraction(PDF, {
+      ...base,
+      rows: [
+        { ...base.rows[0]!, weeks: { ...base.rows[0]!.weeks, "4": metric(42.4, 13, 30.7) } },
+        { ...base.rows[1]!, weeks: { ...base.rows[1]!.weeks, "4": metric(42.4, null, null) } },
+        base.rows[2]!,
+      ],
+    });
+
+    expect(preview.rows[1]?.weeks["4"]?.retail).toBeNull();
+    expect(preview.errors).toContain(
+      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+    );
+    expect(preview.warnings).not.toContainEqual(expect.stringContaining("reconciliada"));
+  });
+
   it("rejeita bytes que não correspondem a um PDF", () => {
     expect(() =>
       buildWeeklySalesPreviewFromPdfExtraction(Buffer.from("not-a-pdf"), extraction()),
