@@ -42,6 +42,7 @@
     { "sourceKey": "EUROVILLE JUIZ DE FORA JUIZ DE FORA MG", "canonical": "EUROVILLE JUIZ DE FORA" },
     { "sourceKey": "EUROVILLE JUIZ DE FORA MG", "canonical": "EUROVILLE JUIZ DE FORA" },
     { "sourceKey": "EUROVILLE UBERLANDIA UBERLANDIA MG", "canonical": "EUROVILLE UBERLANDIA" },
+    { "sourceKey": "EUROVILLE UBERLANDIA MG", "canonical": "EUROVILLE UBERLANDIA" },
     { "sourceKey": "HG ARACAJU ARACAJU SE", "canonical": "HG ARACAJU" },
     { "sourceKey": "JAVEP BAURU SP", "canonical": "JAVEP/SP" },
     { "sourceKey": "LA FONTAINE JOINVILLE JOINVILLE SC", "canonical": "LA FONTAINE JOINVILLE" },

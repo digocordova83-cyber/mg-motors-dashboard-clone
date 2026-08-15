@@ -1704,3 +1704,18 @@
 > Reconciliação D-1 de 01–13/08: `4.568 total = 4.568 canais originais = 4.568 dias`. Meta 2.387/3.734 (63,93%); Site 1.677/6.633 (25,28%); Webmotors 324/579 (55,96%); Mercado Livre 175/442 (39,59%); TikTok 5/620 (0,81%). Campanha Urban está ausente. Até 14/08, a fonte fecha em 4.574, incluindo 11 TikTok em dois dias, também sem Campanha Urban.
 
 > Validação final: 272 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. A rota sem sessão continua exibindo corretamente o acesso protegido. Os logs recentes não apresentam falhas no cliente ou na rede; o único erro de módulo encontrado ocorreu durante a edição parcial às 22:22 e foi resolvido pelo reinício automático do servidor às 22:23.
+
+## Atualização operacional do dashboard — 14/08/2026
+
+- [x] Executar a automação oficial de Leads com a fonte mais recente.
+- [x] Validar novos registros, duplicidades internas, registros existentes e inválidos.
+- [x] Confirmar que a distribuição usa somente os canais originais e que Campanha Urban permanece ausente.
+- [x] Conciliar `Euroville — Uberlândia/MG` com `EUROVILLE UBERLANDIA`, preservando o dealer bruto.
+- [x] Reexecutar para comprovar idempotência e reconciliar total da base, canais e série diária.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260815-084719`: `UPDATED`; 17.632 linhas encontradas, 17.628 válidas, 720 duplicatas internas, 16.217 já existentes, quatro inválidas, 691 novos Leads e 21 registros removidos da fonte. A substituição transacional levou a base de 16.238 para 16.908 registros. A reexecução `20260815-084936` retornou `NO_CHANGES`, zero novos registros, zero remoções e zero linhas gravadas.
+
+> Reconciliação D-1 de 01–14/08: `5.244 total = 5.244 canais originais = 5.244 dias`; Meta 2.888, Site 1.846, Webmotors 324, Mercado Livre 175 e TikTok 11. Campanha Urban permanece ausente da camada analítica. Os 30 dealers canônicos concentram 5.216 Leads, 28 permanecem em qualificação e zero estão fora da meta; o novo rótulo Euroville — Uberlândia/MG foi conciliado sem alterar `dealerRaw`.
+
+> Validação final: 272 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído.
