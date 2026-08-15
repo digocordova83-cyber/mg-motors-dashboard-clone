@@ -1172,16 +1172,16 @@ export function LeadsTab({
         </div>
       </LeadPanel>
 
-      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(520px,1fr)]">
+      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-2 2xl:items-stretch">
         <LeadPanel
-          className="self-start"
+          className="flex h-full flex-col"
           title={ui(locale, "Leads por dia e canal", "Leads by day and channel")}
           subtitle={ui(locale, "Evolução diária por canal de origem, reconciliada com o total do período.", "Daily source-channel trend reconciled to the period total.")}
           action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${data.daily.length} dias`, `${data.daily.length} days`)}</span>}
         >
           {data.daily.length ? (
-            <div className="overflow-x-auto">
-              <div className="h-[320px] min-w-[720px] px-3 pb-2 pt-5">
+            <div className="flex flex-1 overflow-x-auto">
+              <div className="h-[320px] min-w-[720px] flex-1 px-3 pb-2 pt-5 2xl:h-auto 2xl:min-h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stackedDaily} margin={{ top: 20, right: 12, left: -6, bottom: 0 }} barCategoryGap="22%">
                     <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
@@ -1226,14 +1226,14 @@ export function LeadsTab({
         </LeadPanel>
 
         <LeadPanel
-          className="self-start"
+          className="flex h-full flex-col"
           title={ui(locale, "Distribuição por canal", "Distribution by channel")}
           subtitle={ui(locale, "Volume, participação e atingimento da meta mensal por veículo até D-1.", "Volume, share, and monthly vehicle target achievement through D-1.")}
           action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${activeChannelCount} canais`, `${activeChannelCount} channels`)}</span>}
         >
-          <div data-testid="channel-target-grid" className="grid gap-2 p-3 sm:grid-cols-2">
+          <div data-testid="channel-target-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2">
             {data.channels.map((item, index) => (
-              <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-3 text-[10px]">
+              <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-2.5 text-[10px]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-2.5">
                     <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />

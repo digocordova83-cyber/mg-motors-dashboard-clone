@@ -1722,11 +1722,15 @@
 
 ## Nova atualização operacional do dashboard — 15/08/2026
 
-- [ ] Executar a automação oficial de Leads com a fonte mais recente.
-- [ ] Validar novos registros, remoções da fonte, duplicidades e inválidos.
-- [ ] Confirmar canais originais, ausência de Campanha Urban e dealers canônicos.
-- [ ] Reexecutar para comprovar idempotência e reconciliar total da base, canais e série diária.
-- [ ] Entregar XLSX, CSV e relatório Markdown da execução.
+- [x] Executar a automação oficial de Leads com a fonte mais recente.
+- [x] Validar novos registros, remoções da fonte, duplicidades e inválidos.
+- [x] Confirmar canais originais, ausência de Campanha Urban e dealers canônicos.
+- [x] Reexecutar para comprovar idempotência e reconciliar total da base, canais e série diária.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260815-085914`: `UPDATED`; 17.663 linhas encontradas, 17.659 válidas, 723 duplicatas internas, 16.908 já existentes, quatro inválidas, 28 novos Leads e zero remoções. A base passou de 16.908 para 16.936. A execução `20260815-090400` confirmou `NO_CHANGES` e entregou os três artefatos atualizados.
+
+> Reconciliação D-1 de 01–14/08: `5.272 total = 5.272 canais originais = 5.272 dias`; Meta 2.888, Site 1.846, Webmotors 324, Mercado Livre 203 e TikTok 11. Campanha Urban permanece ausente. Dealers: 5.244 conciliados, 28 em qualificação, zero fora da meta e zero dealers ativos sem Leads.
 
 ## Redesenho do bloco de canais — 15/08/2026
 
@@ -1746,6 +1750,20 @@
 > Validação visual: desktop largo com proporção 1,45:1 e painéis independentes; tablet com painéis empilhados e cards em duas colunas; mobile com painel em coluna única e cards legíveis sem estouro. O gráfico passou de 350px para 320px e ganhou resumo de total, média diária, pico e canais ativos. Acessibilidade das barras preservada com `aria-valuetext`.
 
 > Validação técnica final: 273 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído.
+
+## Blocos de canais com tamanho igual — 15/08/2026
+
+- [x] Alterar o desktop para duas colunas 50/50.
+- [x] Garantir que os dois painéis compartilhem exatamente a mesma altura externa.
+- [x] Compactar os cards e a nota da distribuição para caber sem corte, overflow ou rolagem interna.
+- [x] Preservar o gráfico com área útil legível e o resumo inferior alinhado.
+- [x] Manter os painéis empilhados e com altura natural em tablet e mobile.
+- [x] Atualizar regressões estruturais e validar visualmente em desktop e mobile.
+- [x] Executar suíte completa, TypeScript e build; salvar checkpoint restaurável.
+
+> A regra 50/50 substitui a proporção 1,45:1 anterior. Em desktop, a prévia mediu ambos os painéis com 608 × 578,06 px, largura e altura idênticas; o gráfico cresce com o painel, enquanto os cards usam conteúdo compacto sem rolagem interna. Em mobile, os painéis empilham com 351 px de largura e zero overflow horizontal.
+
+> Validação final: 273 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído.
 
 ## Execução agendada de Leads — 15/08/2026
 
