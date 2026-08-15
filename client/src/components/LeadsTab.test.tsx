@@ -57,6 +57,19 @@ describe("interface de Leads", () => {
     expect(source).toContain('dataKey={channel}');
   });
 
+  it("usa composição compacta, painéis sem altura forçada e cards responsivos para os canais", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain('data-testid="channel-overview-layout"');
+    expect(source).toContain("grid items-start gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(520px,1fr)]");
+    expect(source).toContain('data-testid="daily-channel-summary"');
+    expect(source).toContain('data-testid="channel-target-grid"');
+    expect(source).toContain('data-testid="channel-target-card"');
+    expect(source).toContain("h-[320px] min-w-[720px]");
+    expect(source).not.toContain("xl:grid-cols-[1.7fr_1fr]");
+    expect(source).not.toContain("h-[350px] min-w-[760px]");
+  });
+
   it("exibe meta, percentual, saldo e barra vermelha sem inventar meta para origens não mapeadas", () => {
     const withTarget = renderToStaticMarkup(
       <ChannelTargetProgress
@@ -79,6 +92,7 @@ describe("interface de Leads", () => {
     expect(withTarget).toContain("1,77%");
     expect(withTarget).toContain("609 para a meta");
     expect(withTarget).toContain('role="progressbar"');
+    expect(withTarget).toContain('aria-valuetext="1,77% · 609 para a meta"');
     expect(withTarget).toContain("bg-[#e2212d]");
 
     const withoutTarget = renderToStaticMarkup(

@@ -1719,3 +1719,38 @@
 > Reconciliação D-1 de 01–14/08: `5.244 total = 5.244 canais originais = 5.244 dias`; Meta 2.888, Site 1.846, Webmotors 324, Mercado Livre 175 e TikTok 11. Campanha Urban permanece ausente da camada analítica. Os 30 dealers canônicos concentram 5.216 Leads, 28 permanecem em qualificação e zero estão fora da meta; o novo rótulo Euroville — Uberlândia/MG foi conciliado sem alterar `dealerRaw`.
 
 > Validação final: 272 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído.
+
+## Nova atualização operacional do dashboard — 15/08/2026
+
+- [ ] Executar a automação oficial de Leads com a fonte mais recente.
+- [ ] Validar novos registros, remoções da fonte, duplicidades e inválidos.
+- [ ] Confirmar canais originais, ausência de Campanha Urban e dealers canônicos.
+- [ ] Reexecutar para comprovar idempotência e reconciliar total da base, canais e série diária.
+- [ ] Entregar XLSX, CSV e relatório Markdown da execução.
+
+## Redesenho do bloco de canais — 15/08/2026
+
+- [x] Auditar a estrutura, alturas, larguras e densidade atuais de Leads por dia/canal e Distribuição por canal.
+- [x] Redefinir a proporção desktop para reduzir o espaço vazio do gráfico e ampliar a legibilidade das metas.
+- [x] Desacoplar a altura dos dois painéis: gráfico com altura fixa compacta e distribuição com altura definida pelo conteúdo.
+- [x] Reorganizar o desktop em proporção equilibrada, mantendo empilhamento integral abaixo do breakpoint de notebook.
+- [x] Criar linhas de canal mais compactas, com valor, participação, meta, atingimento e saldo em hierarquia clara.
+- [x] Ajustar altura do gráfico, legenda, eixos e espaçamentos sem alterar dados ou cálculos.
+- [x] Garantir empilhamento e leitura adequados em tablet e mobile, sem rolagem horizontal desnecessária.
+- [x] Adicionar regressões estruturais para o novo layout e preservar acessibilidade das barras.
+- [x] Validar visualmente em desktop e mobile; executar suíte completa, TypeScript e build.
+- [x] Salvar checkpoint restaurável e apresentar o novo bloco ao usuário.
+
+> Composição definida: grade passa a duas colunas equilibradas somente em telas 2XL; abaixo disso, painéis empilham. O gráfico terá altura útil de 320px e rodapé de leitura rápida com pico, média e canais ativos. A distribuição usará cards compactos em duas colunas no desktop e uma coluna no mobile, com realizado e participação no cabeçalho e meta, percentual, barra e saldo no mesmo eixo visual. Os painéis deixam de compartilhar altura artificial.
+
+> Validação visual: desktop largo com proporção 1,45:1 e painéis independentes; tablet com painéis empilhados e cards em duas colunas; mobile com painel em coluna única e cards legíveis sem estouro. O gráfico passou de 350px para 320px e ganhou resumo de total, média diária, pico e canais ativos. Acessibilidade das barras preservada com `aria-valuetext`.
+
+> Validação técnica final: 273 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído.
+
+## Execução agendada de Leads — 15/08/2026
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
+
+> Execução `20260815-090400`: `NO_CHANGES`; 17.663 linhas encontradas, 17.659 válidas, zero novos registros, 723 duplicatas internas, 16.936 já existentes e quatro inválidas. A base permaneceu em 16.936 Leads, sem gravações adicionais.

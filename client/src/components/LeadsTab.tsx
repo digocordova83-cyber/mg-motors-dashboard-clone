@@ -141,7 +141,7 @@ export function ChannelTargetProgress({
     !item.targetLabel
   ) {
     return (
-      <p className="mt-2 text-[9px] leading-4 text-slate-600">
+      <p className="mt-3 border-t border-[#1b2637] pt-2 text-[9px] leading-4 text-slate-600">
         {ui(
           locale,
           "Sem meta direta na planilha para este canal de origem.",
@@ -160,24 +160,30 @@ export function ChannelTargetProgress({
       : ui(locale, "Meta atingida", "Target achieved");
 
   return (
-    <div className="mt-2" data-channel-target={item.value}>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[9px]">
-        <p className="min-w-0 text-slate-500">
-          {ui(locale, "Meta", "Target")} {item.targetLabel} · {formatInteger(item.targetActual, locale)} / {formatInteger(item.target, locale)}
-        </p>
-        <p className="shrink-0 font-semibold text-red-300">{formatNumber(item.achievementPercent, locale)}%</p>
+    <div className="mt-3 border-t border-[#1b2637] pt-2.5" data-channel-target={item.value}>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-[8px] font-semibold uppercase tracking-[0.11em] text-slate-600">
+            {ui(locale, "Meta", "Target")} {item.targetLabel}
+          </p>
+          <p className="mt-0.5 text-[10px] font-medium text-slate-400">
+            {formatInteger(item.targetActual, locale)} / {formatInteger(item.target, locale)}
+          </p>
+        </div>
+        <p className="shrink-0 text-xs font-semibold text-red-300">{formatNumber(item.achievementPercent, locale)}%</p>
       </div>
       <div
-        className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#151f2e]"
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#151f2e]"
         role="progressbar"
         aria-label={`${ui(locale, "Atingimento da meta", "Target achievement")} ${item.targetLabel}`}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={progress}
+        aria-valuetext={`${formatNumber(item.achievementPercent, locale)}% · ${gapText}`}
       >
         <div className="h-full rounded-full bg-[#e2212d]" style={{ width: `${progress}%` }} />
       </div>
-      <p className="mt-1 text-[9px] text-slate-600">{gapText}</p>
+      <p className="mt-1.5 text-[9px] text-slate-600">{gapText}</p>
     </div>
   );
 }
@@ -1078,6 +1084,8 @@ export function LeadsTab({
   const data = analytics.data;
   const channelHistoryDealerNames = new Set(data.dealerAudit.dealers.map(dealer => dealer.dealerName));
   const stackedDaily = data.daily.map(point => ({ date: point.date, total: point.total, media7d: point.rollingAverage7d, ...point.values }));
+  const peakDailyTotal = data.daily.reduce((peak, point) => Math.max(peak, point.total), 0);
+  const activeChannelCount = data.channels.filter(item => item.leads > 0).length;
   const uploadError = clientUploadError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
 
   return (
@@ -1164,59 +1172,88 @@ export function LeadsTab({
         </div>
       </LeadPanel>
 
-      <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
-        <LeadPanel title={ui(locale, "Leads por dia e canal", "Leads by day and channel")} subtitle={ui(locale, "Barras empilhadas reconciliadas com o total diário; linha mostra a média móvel de 7 dias.", "Stacked bars reconcile to daily totals; the line shows the 7-day moving average.")}>
+      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(520px,1fr)]">
+        <LeadPanel
+          className="self-start"
+          title={ui(locale, "Leads por dia e canal", "Leads by day and channel")}
+          subtitle={ui(locale, "Evolução diária por canal de origem, reconciliada com o total do período.", "Daily source-channel trend reconciled to the period total.")}
+          action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${data.daily.length} dias`, `${data.daily.length} days`)}</span>}
+        >
           {data.daily.length ? (
             <div className="overflow-x-auto">
-              <div className="h-[350px] min-w-[760px] px-2 pb-3 pt-7">
+              <div className="h-[320px] min-w-[720px] px-3 pb-2 pt-5">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stackedDaily} margin={{ top: 24, right: 18, left: 0, bottom: 0 }}>
-                  <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tickFormatter={value => formatShortDate(String(value), locale)} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
-                  <YAxis allowDecimals={false} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={42} />
-                  <Tooltip contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} labelFormatter={value => formatDate(String(value), locale)} formatter={(value, name) => [formatInteger(Number(value), locale), String(name)]} />
-                  <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8", paddingTop: 10 }} />
-                  {data.channelOrder.map((channel, index) => (
-                    <Bar key={channel} dataKey={channel} name={channel} stackId="channels" fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} radius={index === data.channelOrder.length - 1 ? [3, 3, 0, 0] : 0}>
-                      {index === data.channelOrder.length - 1 ? (
-                        <LabelList
-                          dataKey="total"
-                          position="top"
-                          offset={8}
-                          fill="#cbd5e1"
-                          fontSize={9}
-                          fontWeight={700}
-                          formatter={(value: unknown) => formatDailyBarTotal(value, locale)}
-                        />
-                      ) : null}
-                    </Bar>
-                  ))}
-                  <Line type="monotone" dataKey="media7d" name={ui(locale, "Média móvel 7d", "7-day moving average")} stroke="#f8fafc" strokeWidth={2} dot={false} />
+                  <BarChart data={stackedDaily} margin={{ top: 20, right: 12, left: -6, bottom: 0 }} barCategoryGap="22%">
+                    <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={value => formatShortDate(String(value), locale)} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
+                    <YAxis allowDecimals={false} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={40} />
+                    <Tooltip contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} labelFormatter={value => formatDate(String(value), locale)} formatter={(value, name) => [formatInteger(Number(value), locale), String(name)]} />
+                    <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8", paddingTop: 8 }} />
+                    {data.channelOrder.map((channel, index) => (
+                      <Bar key={channel} dataKey={channel} name={channel} stackId="channels" maxBarSize={48} fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} radius={index === data.channelOrder.length - 1 ? [3, 3, 0, 0] : 0}>
+                        {index === data.channelOrder.length - 1 ? (
+                          <LabelList
+                            dataKey="total"
+                            position="top"
+                            offset={7}
+                            fill="#cbd5e1"
+                            fontSize={9}
+                            fontWeight={700}
+                            formatter={(value: unknown) => formatDailyBarTotal(value, locale)}
+                          />
+                        ) : null}
+                      </Bar>
+                    ))}
+                    <Line type="monotone" dataKey="media7d" name={ui(locale, "Média móvel 7d", "7-day moving average")} stroke="#f8fafc" strokeWidth={2} dot={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
-          ) : <div className="grid min-h-[260px] place-items-center text-xs text-slate-600">{ui(locale, "Nenhum Lead no período.", "No Leads in this period.")}</div>}
-        </LeadPanel>
-
-        <LeadPanel title={ui(locale, "Distribuição por canal", "Distribution by channel")} subtitle={ui(locale, "Volume no período e atingimento da meta mensal por veículo até D-1.", "Period volume and monthly vehicle target achievement through D-1.")}>
-          <div className="divide-y divide-[#172131]">
-            {data.channels.map((item, index) => (
-              <div key={item.value} className="px-4 py-3 text-[10px]">
-                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
-                  <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
-                  <div className="min-w-0"><p className="truncate font-medium text-slate-300" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</p><p className="mt-0.5 text-[9px] text-slate-600">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")}</p></div>
-                  <div className="text-right"><p className="font-semibold text-white">{formatInteger(item.leads, locale)}</p><p className="mt-0.5 text-[9px] text-slate-600">{formatNumber(item.sharePercent, locale)}%</p></div>
-                </div>
-                <div className="ml-[22px]">
-                  <ChannelTargetProgress item={item} locale={locale} />
-                </div>
+          ) : <div className="grid min-h-[320px] place-items-center text-xs text-slate-600">{ui(locale, "Nenhum Lead no período.", "No Leads in this period.")}</div>}
+          <div data-testid="daily-channel-summary" className="grid grid-cols-2 border-t border-[#172131] bg-[#0a111d]/45 sm:grid-cols-4">
+            {[
+              [ui(locale, "Total no período", "Period total"), formatInteger(data.summary.totalLeads, locale)],
+              [ui(locale, "Média por dia", "Daily average"), formatNumber(data.pacing.averagePerDay, locale)],
+              [ui(locale, "Pico diário", "Daily peak"), formatInteger(peakDailyTotal, locale)],
+              [ui(locale, "Canais ativos", "Active channels"), formatInteger(activeChannelCount, locale)],
+            ].map(([label, value]) => (
+              <div key={label} className="border-[#172131] px-4 py-3 even:border-l sm:border-l sm:first:border-l-0">
+                <p className="text-[8px] font-semibold uppercase tracking-[0.11em] text-slate-600">{label}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-200">{value}</p>
               </div>
             ))}
-            {!data.channels.length ? <div className="grid min-h-48 place-items-center text-xs text-slate-600">{ui(locale, "Indisponível no período.", "Unavailable for this period.")}</div> : null}
+          </div>
+        </LeadPanel>
+
+        <LeadPanel
+          className="self-start"
+          title={ui(locale, "Distribuição por canal", "Distribution by channel")}
+          subtitle={ui(locale, "Volume, participação e atingimento da meta mensal por veículo até D-1.", "Volume, share, and monthly vehicle target achievement through D-1.")}
+          action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${activeChannelCount} canais`, `${activeChannelCount} channels`)}</span>}
+        >
+          <div data-testid="channel-target-grid" className="grid gap-2 p-3 sm:grid-cols-2">
+            {data.channels.map((item, index) => (
+              <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-3 text-[10px]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-200" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</p>
+                      <p className="mt-1 text-[9px] text-slate-600">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")} · {formatNumber(item.sharePercent, locale)}% {ui(locale, "do período", "of period")}</p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-base font-semibold leading-none text-white">{formatInteger(item.leads, locale)}</p>
+                    <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads</p>
+                  </div>
+                </div>
+                <ChannelTargetProgress item={item} locale={locale} />
+              </article>
+            ))}
+            {!data.channels.length ? <div className="col-span-full grid min-h-48 place-items-center text-xs text-slate-600">{ui(locale, "Indisponível no período.", "Unavailable for this period.")}</div> : null}
           </div>
           {data.channelTargetSummary ? (
-            <div className="border-t border-[#172131] px-4 py-3 text-[9px] leading-4 text-slate-600">
+            <div className="border-t border-[#172131] bg-[#0a111d]/35 px-4 py-3 text-[9px] leading-4 text-slate-600">
               <p>
                 {ui(
                   locale,
