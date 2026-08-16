@@ -1765,6 +1765,30 @@
 
 > Validação final: 273 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído.
 
+## Execução agendada de Leads — 15/08/2026, segundo disparo
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
+
+> Execução `20260815-100239`: `NO_CHANGES`; 17.663 linhas encontradas, 17.659 válidas, zero novos registros, 723 duplicatas internas, 16.936 já existentes, quatro inválidas e zero remoções. A base permaneceu em 16.936 Leads, sem gravações adicionais.
+
+## Execução agendada de Leads — 15/08/2026, terceiro disparo
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
+
+> Execução `20260816-090409`: `NO_CHANGES`; 17.663 linhas encontradas, 17.659 válidas, zero novos registros, 723 duplicatas internas, 16.936 já existentes, quatro inválidas e zero remoções. A base permaneceu em 16.936 Leads, sem gravações adicionais.
+
+## Execução agendada de Leads — 16/08/2026, segundo disparo
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
+
+> Execução `20260816-100412`: `NO_CHANGES`; 17.663 linhas encontradas, 17.659 válidas, zero novos registros, 723 duplicatas internas, 16.936 já existentes, quatro inválidas e zero remoções. A base permaneceu em 16.936 Leads, sem gravações adicionais.
+
 ## Execução agendada de Leads — 15/08/2026
 
 - [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
@@ -1772,3 +1796,38 @@
 - [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
 
 > Execução `20260815-090400`: `NO_CHANGES`; 17.663 linhas encontradas, 17.659 válidas, zero novos registros, 723 duplicatas internas, 16.936 já existentes e quatro inválidas. A base permaneceu em 16.936 Leads, sem gravações adicionais.
+
+## Atualização operacional do dashboard — 16/08/2026
+
+- [x] Executar a automação oficial de Leads com a fonte mais recente.
+- [x] Validar novos registros, remoções da fonte, duplicidades e inválidos.
+- [x] Confirmar canais de origem, ausência analítica de Campanha Urban e dealers canônicos.
+- [x] Reexecutar para comprovar idempotência e reconciliar total da base, canais e dias.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260816-104237`: `UPDATED`; 18.429 linhas encontradas, 18.425 válidas, 729 duplicatas internas, 16.936 já existentes, quatro inválidas, 760 novos Leads e zero remoções. A base passou de 16.936 para 17.696 registros. A reexecução `20260816-104504` retornou `NO_CHANGES`, zero novos registros e zero gravações.
+
+> Reconciliação D-1 de 01–15/08: `6.032 total = 6.032 canais de origem = 6.032 dias`; Meta 3.479, Site 1.990, Webmotors 324, Mercado Livre 228 e TikTok 11. Campanha Urban permanece ausente da camada analítica. Dealers: 6.004 conciliados, 28 em qualificação, zero fora da meta e 30 dealers canônicos cobertos.
+
+## Correção da aba Google Ads — série incompleta — 16/08/2026
+
+- [x] Reproduzir o filtro de 30 dias e confirmar por que a interface exibe somente 17–19/07.
+- [x] Auditar resposta Windsor, snapshots persistidos, cache em memória e fallback do período.
+- [x] Confirmar a data máxima real disponível e a cobertura diária até D-1 sem inventar valores.
+- [x] Corrigir a seleção do snapshot ou a consulta que está truncando a série.
+- [x] Atualizar o snapshot correto e reconciliar investimento, conversões, impressões, cliques, CPA, CPC e CTR.
+- [x] Adicionar regressões para impedir que um snapshot parcial seja usado em um período maior.
+- [x] Validar a aba Google Ads com a série completa e estados de fonte/cache transparentes.
+- [x] Executar suíte completa, TypeScript e build; salvar checkpoint restaurável.
+
+> Causa raiz: a integração filtrava pelo nome exato `MG Motors`, mas a conta oficial `535-798-6801` passou a retornar `account_name = MG Motor`. A resposta ao vivo ficou limitada ao histórico anterior à renomeação, 204 linhas e somente 17–19/07. O snapshot persistido de 30 dias também foi contaminado por essa resposta parcial (`dataThroughDate = 05/07` para um período até 15/08), enquanto o snapshot anterior completo chegava a 14/08.
+
+> Evidência independente: a conta `535-798-6801` via conector Windsor retornou 2.058 linhas, 70 campanhas e 30 dias contínuos de 17/07 a 15/08, com `account_name = MG Motor`. O campo `account_id` foi confirmado como dimensão válida e estável. A consulta parcial foi bloqueada e não substituiu o snapshot completo.
+
+> Correção aplicada: consulta e normalização por `account_id`, nome mantido apenas como rótulo, rejeição de resposta que não alcança o fim solicitado e divisão da janela de 30 dias em blocos semanais para evitar timeout. O refresh posterior retornou `windsor-live`, 2.058 linhas, 70 campanhas e cobertura até 15/08.
+
+> Snapshot final persistido: período 17/07–15/08, 2.058 linhas, 70 campanhas, `dataThroughDate = 15/08`, fonte `windsor-live` e atualização em 16/08 às 11:15:44 de Brasília. A auditoria operacional do D-1 ficou `SUCCESS` e preservou o conjunto completo para o primeiro acesso ao dashboard.
+
+> KPIs do contrato real: R$ 349.493,96 investidos, 6.836,7 conversões, CPA R$ 51,12, CTR 8,15%, taxa de conversão 1,76%, CPC R$ 0,90, 388.182 cliques e 4.762.324 impressões. A série contém 30 dias, de 17/07 a 15/08, sem lacunas; investimento, cliques e impressões reconciliam exatamente com o diário e conversões ficam dentro da tolerância explícita de arredondamento.
+
+> Validação final: 277 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. Foram adicionadas regressões para renomeação da conta, filtro por `account_id`, resposta parcial, última data realmente carregada e janela de 30 dias dividida em cinco blocos semanais. O acesso sem sessão continua protegido, e os logs após a correção não apresentam novos erros de runtime.

@@ -24,10 +24,12 @@ export const MG_MOTORS_ACCOUNT_NAME = "MG Motors";
 export const TAG_CORRECTION_DATE = "2026-07-15";
 const WINDSOR_API_URL = "https://connectors.windsor.ai/google_ads";
 const CACHE_TTL_MS = 10 * 60 * 1000;
+const WINDSOR_QUERY_WINDOW_DAYS = 7;
 
 export type GoogleAdsRow = AnalyticsRow & {
   ctr: number | null;
   cpc: number | null;
+  account_id: string;
   account_name: string;
   datasource: string;
 };
@@ -89,6 +91,7 @@ function normalizeRows(payload: unknown): GoogleAdsRow[] {
         search_budget_lost_impression_share: numberOrNull(
           item.search_budget_lost_impression_share,
         ),
+        account_id: String(item.account_id ?? ""),
         account_name: String(item.account_name ?? ""),
         datasource: String(item.datasource ?? ""),
       } satisfies GoogleAdsRow;
@@ -97,7 +100,9 @@ function normalizeRows(payload: unknown): GoogleAdsRow[] {
       row =>
         row.campaign_id.length > 0 &&
         row.date.length === 10 &&
-        row.account_name === MG_MOTORS_ACCOUNT_NAME &&
+        (row.account_id.length > 0
+          ? row.account_id === MG_MOTORS_ACCOUNT_ID
+          : row.account_name === MG_MOTORS_ACCOUNT_NAME || row.account_name === "MG Motor") &&
         row.datasource === "google_ads",
     );
 }
@@ -108,17 +113,25 @@ function filterByDate(rows: GoogleAdsRow[], dateFrom: string, dateTo: string) {
   return rows.filter(row => row.date >= dateFrom && row.date <= dateTo);
 }
 
-async function fetchWindsorRows(dateFrom: string, dateTo: string) {
-  const apiKey = process.env.WINDSOR_API_KEY;
-  if (!apiKey) throw new Error("WINDSOR_API_KEY não configurada");
+function buildWindsorDateChunks(dateFrom: string, dateTo: string) {
+  const chunks: Array<{ dateFrom: string; dateTo: string }> = [];
+  for (let current = dateFrom; current <= dateTo; ) {
+    const candidateEnd = addDays(current, WINDSOR_QUERY_WINDOW_DAYS - 1);
+    const chunkEnd = candidateEnd < dateTo ? candidateEnd : dateTo;
+    chunks.push({ dateFrom: current, dateTo: chunkEnd });
+    current = addDays(chunkEnd, 1);
+  }
+  return chunks;
+}
 
+async function fetchWindsorChunk(dateFrom: string, dateTo: string, apiKey: string) {
   const params = new URLSearchParams({
     api_key: apiKey,
     fields:
-      "campaign,campaign_id,date,spend,conversions,clicks,impressions,ctr,cpc,budget_amount,campaign_status,bidding_strategy_type,optimization_score,search_impression_share,search_budget_lost_impression_share,account_name,datasource",
+      "campaign,campaign_id,date,spend,conversions,clicks,impressions,ctr,cpc,budget_amount,campaign_status,bidding_strategy_type,optimization_score,search_impression_share,search_budget_lost_impression_share,account_id,account_name,datasource",
     date_from: dateFrom,
     date_to: dateTo,
-    filter: JSON.stringify([["account_name", "eq", MG_MOTORS_ACCOUNT_NAME]]),
+    filter: JSON.stringify([["account_id", "eq", MG_MOTORS_ACCOUNT_ID]]),
     _max_rows: "100000",
   });
 
@@ -128,8 +141,29 @@ async function fetchWindsorRows(dateFrom: string, dateTo: string) {
   });
 
   if (!response.ok) throw new Error(`Windsor.ai respondeu HTTP ${response.status}`);
-  const rows = normalizeRows(await response.json());
+  return normalizeRows(await response.json());
+}
+
+async function fetchWindsorRows(dateFrom: string, dateTo: string) {
+  const apiKey = process.env.WINDSOR_API_KEY;
+  if (!apiKey) throw new Error("WINDSOR_API_KEY não configurada");
+
+  const chunks = buildWindsorDateChunks(dateFrom, dateTo);
+  const rows = (
+    await Promise.all(
+      chunks.map(chunk => fetchWindsorChunk(chunk.dateFrom, chunk.dateTo, apiKey)),
+    )
+  ).flat();
   if (rows.length === 0) throw new Error("Windsor.ai não retornou linhas para o período");
+  const dataThroughDate = rows.reduce(
+    (latest, row) => (row.date > latest ? row.date : latest),
+    "",
+  );
+  if (dataThroughDate < dateTo) {
+    throw new Error(
+      `Windsor.ai retornou série parcial até ${dataThroughDate}; esperado até ${dateTo}`,
+    );
+  }
   return rows;
 }
 
@@ -357,6 +391,10 @@ export function buildDashboardData(
   const mediaGoal = goals.find(goal => goal.goalType === "MEDIA_BUDGET" && goal.scopeKey === "ACCOUNT");
   const pacing = buildPacing(historyRows, mediaGoal?.monthlyBudgetGoal ?? null, dateTo);
   const dailyComparison = buildDailyComparison(historyRows, dateTo);
+  const lastClosedDate = rows.reduce(
+    (latest, row) => (row.date > latest ? row.date : latest),
+    "",
+  ) || null;
   const rankings = buildRankings(campaignAnalytics);
   const productPerformance = buildProductPerformance(campaignAnalytics);
   const regionPerformance = buildRegionPerformance(campaignAnalytics, summary.cpa);
@@ -393,7 +431,7 @@ export function buildDashboardData(
       rowCount: rows.length,
       historyRowCount: historyRows.length,
       campaignCount: campaigns.length,
-      lastClosedDate: dailyComparison.referenceDate,
+      lastClosedDate,
       cacheTtlSeconds: CACHE_TTL_MS / 1000,
     },
   };

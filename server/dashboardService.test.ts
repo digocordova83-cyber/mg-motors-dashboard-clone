@@ -30,6 +30,7 @@ const baseRow: GoogleAdsRow = {
   bidding_strategy_type: "MAXIMIZE_CONVERSIONS",
   optimization_score: 0.82,
   search_impression_share: 0.34,
+  account_id: "535-798-6801",
   account_name: "MG Motors",
   datasource: "google_ads",
 };
@@ -65,6 +66,18 @@ describe("buildDashboardData", () => {
     expect(result.summary.ctr).toBe(5);
     expect(result.summary.cpc).toBe(4);
     expect(result.daily).toHaveLength(2);
+    expect(result.metadata.lastClosedDate).toBe("2026-07-15");
+  });
+
+  it("expõe a última data realmente carregada quando o período solicitado é maior", () => {
+    const result = buildDashboardData(
+      [{ ...baseRow, date: "2026-07-14" }],
+      { source: "test", updatedAt: "2026-07-20T00:00:00.000Z", cacheHit: false },
+      "2026-07-14",
+      "2026-07-19",
+    );
+
+    expect(result.metadata.lastClosedDate).toBe("2026-07-14");
   });
 
   it("classifica CPA a partir da média geral, usando 2x para crítico", () => {
@@ -175,5 +188,86 @@ describe("cache Windsor.ai", () => {
     expect(result.source).toBe("windsor-live");
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(dbMocks.upsertDashboardDataSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("identifica a conta pelo account_id e aceita a mudança do nome descritivo", async () => {
+    const renamedAccountRow = {
+      ...baseRow,
+      date: "2026-08-15",
+      account_name: "MG Motor",
+    };
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [renamedAccountRow] }),
+    } as Response);
+
+    const result = await getGoogleAdsRows("2026-08-15", "2026-08-15", {
+      forceRefresh: true,
+    });
+
+    expect(result.source).toBe("windsor-live");
+    expect(result.rows).toEqual([expect.objectContaining(renamedAccountRow)]);
+    const requestUrl = new URL(String(vi.mocked(fetch).mock.calls[0]?.[0]));
+    expect(JSON.parse(requestUrl.searchParams.get("filter") ?? "null")).toEqual([
+      ["account_id", "eq", "535-798-6801"],
+    ]);
+    expect(requestUrl.searchParams.get("fields")).toContain("account_id");
+  });
+
+  it("rejeita resposta ao vivo parcial e não substitui o snapshot completo", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ ...baseRow, date: "2026-07-17" }] }),
+    } as Response);
+
+    const result = await getGoogleAdsRows("2026-07-17", "2026-07-19", {
+      forceRefresh: true,
+    });
+
+    expect(result.source).toBe("windsor-snapshot");
+    expect(result.rows.length).toBeGreaterThan(0);
+    expect(dbMocks.upsertDashboardDataSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("carrega 30 dias em cinco blocos semanais e persiste somente o conjunto completo", async () => {
+    vi.mocked(fetch).mockImplementation(async input => {
+      const requestUrl = new URL(String(input));
+      const chunkDateTo = requestUrl.searchParams.get("date_to") ?? "";
+      return {
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              ...baseRow,
+              date: chunkDateTo,
+              account_name: "MG Motor",
+            },
+          ],
+        }),
+      } as Response;
+    });
+
+    const result = await getGoogleAdsRows("2026-07-17", "2026-08-15", {
+      forceRefresh: true,
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(5);
+    expect(result.source).toBe("windsor-live");
+    expect(result.rows).toHaveLength(5);
+    expect(result.rows.map(row => row.date)).toEqual([
+      "2026-07-23",
+      "2026-07-30",
+      "2026-08-06",
+      "2026-08-13",
+      "2026-08-15",
+    ]);
+    expect(dbMocks.upsertDashboardDataSnapshot).toHaveBeenCalledTimes(1);
+    expect(dbMocks.upsertDashboardDataSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: "GOOGLE_ADS",
+        periodFrom: "2026-07-17",
+        periodTo: "2026-08-15",
+      }),
+    );
   });
 });
