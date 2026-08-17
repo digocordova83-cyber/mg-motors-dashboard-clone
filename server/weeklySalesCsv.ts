@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import weeklySalesAliasesSource from "./data/weekly-sales-dealer-aliases.json";
+import { MTD_RETAIL_ORDER_LABEL } from "@shared/dashboardLabels";
 import {
   canonicalizeDealerName,
   isExplicitDealerAlias,
@@ -382,10 +383,10 @@ export function buildWeeklySalesPreview(input: {
   if (totalRows.length !== 1) {
     errors.push(`Esperada exatamente 1 linha TOTAL; encontradas ${totalRows.length}.`);
   } else if (referenceWeek === null) {
-    errors.push("A linha TOTAL não possui vendas Retail preenchidas em nenhuma semana.");
+    errors.push(`A linha TOTAL não possui ${MTD_RETAIL_ORDER_LABEL} preenchido em nenhuma semana.`);
   } else if (!reconciliationPassed) {
     errors.push(
-      `A soma das vendas da Semana ${referenceWeek} não reconcilia entre concessionárias, regiões e TOTAL.`,
+      `O total de ${MTD_RETAIL_ORDER_LABEL} da Semana ${referenceWeek} não reconcilia entre concessionárias, regiões e TOTAL.`,
     );
   }
 
@@ -399,7 +400,7 @@ export function buildWeeklySalesPreview(input: {
     });
     for (const week of partialWeeks) {
       errors.push(
-        `A Semana ${week} possui vendas em concessionárias ou regiões, mas o Retail do TOTAL está vazio.`,
+        `A Semana ${week} possui ${MTD_RETAIL_ORDER_LABEL} em concessionárias ou regiões, mas o campo ${MTD_RETAIL_ORDER_LABEL} do TOTAL está vazio.`,
       );
     }
   }
@@ -409,7 +410,7 @@ export function buildWeeklySalesPreview(input: {
       ? []
       : dealerRows
           .filter(row => row.weeks[String(referenceWeek)]?.retail === null)
-          .map(row => `${row.sourceName}: Semana ${referenceWeek} sem vendas informadas.`);
+          .map(row => `${row.sourceName}: Semana ${referenceWeek} sem ${MTD_RETAIL_ORDER_LABEL} informado.`);
   const dealersWithoutWeek4Sales = dealerRows.filter(
     row => row.weeks["4"]?.retail === null,
   ).length;
@@ -440,11 +441,11 @@ export function buildWeeklySalesPreview(input: {
 }
 
 export function parseWeeklySalesCsv(buffer: Buffer): WeeklySalesCsvPreview {
-  if (buffer.length === 0) throw new Error("O arquivo de vendas está vazio.");
+  if (buffer.length === 0) throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} está vazio.`);
 
   const content = decodeCsv(buffer).replace(/\r\n?/g, "\n").trimEnd();
   const lines = content.split("\n").filter(line => line.trim().length > 0);
-  if (lines.length < 2) throw new Error("O arquivo precisa conter cabeçalho e dados de vendas.");
+  if (lines.length < 2) throw new Error(`O arquivo precisa conter cabeçalho e dados de ${MTD_RETAIL_ORDER_LABEL}.`);
 
   const header = splitLooseCsvLine(lines[0]).map(value => value.toUpperCase());
   if (

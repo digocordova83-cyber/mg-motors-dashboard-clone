@@ -1831,3 +1831,37 @@
 > KPIs do contrato real: R$ 349.493,96 investidos, 6.836,7 conversões, CPA R$ 51,12, CTR 8,15%, taxa de conversão 1,76%, CPC R$ 0,90, 388.182 cliques e 4.762.324 impressões. A série contém 30 dias, de 17/07 a 15/08, sem lacunas; investimento, cliques e impressões reconciliam exatamente com o diário e conversões ficam dentro da tolerância explícita de arredondamento.
 
 > Validação final: 277 testes em 48 arquivos aprovados, TypeScript sem erros e build de produção concluído. Foram adicionadas regressões para renomeação da conta, filtro por `account_id`, resposta parcial, última data realmente carregada e janela de 30 dias dividida em cinco blocos semanais. O acesso sem sessão continua protegido, e os logs após a correção não apresentam novos erros de runtime.
+
+## Atualização manual de Leads — 16/08/2026
+
+- [x] Executar a automação oficial sobre a planilha-fonte atualizada.
+- [x] Validar linhas encontradas, válidas, novas, duplicadas, inválidas e removidas.
+- [x] Reexecutar para confirmar idempotência e ausência de duplicação.
+- [x] Entregar o relatório completo com XLSX, CSV e Markdown da execução principal.
+
+> Execução principal `20260817-082021`: `UPDATED`; 19.151 linhas encontradas, 19.147 válidas, 718 novos registros, 733 duplicatas internas, 17.696 já existentes, quatro inválidas e zero remoções. A base passou de 17.696 para 18.414 Leads. A reexecução `20260817-082217` retornou `NO_CHANGES`, zero novos registros e zero linhas gravadas.
+
+## Execução agendada de Leads — 17/08/2026
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
+
+> Execução `20260817-090236`: `NO_CHANGES`; 19.151 linhas encontradas, 19.147 válidas, zero novos registros, 733 duplicatas internas, 18.414 já existentes, quatro inválidas e zero remoções. A base permaneceu em 18.414 Leads, sem gravações adicionais.
+
+## Execução agendada de Leads — 17/08/2026, segundo disparo
+
+- [x] Executar exatamente o comando oficial solicitado e ler o resultado gerado.
+- [x] Validar o `reportMarkdown`, as contagens e o detalhamento por canal.
+- [x] Entregar `masterXlsx`, `masterCsv` e `reportMarkdown` anexados ao relatório final.
+
+> Execução `20260817-100651`: `NO_CHANGES`; 19.151 linhas encontradas, 19.147 válidas, zero novos registros, 733 duplicatas internas, 18.414 já existentes, quatro inválidas e zero remoções. A base permaneceu em 18.414 Leads, sem gravações adicionais.
+
+## Padronização “MTD Retail Order” — 17/08/2026
+
+- [x] Inventariar todos os rótulos visíveis de Vendas/Sales no dashboard, sem alterar campos internos ou dados.
+- [x] Substituir a nomenclatura exibida por `MTD Retail Order` em cards, títulos, tabelas, gráficos, metas, tooltips e estados vazios.
+- [x] Preservar textos que descrevem conceitos diferentes de venda varejo, como nomes técnicos de arquivos e rotas internas.
+- [x] Atualizar traduções e regressões para impedir o retorno dos rótulos antigos.
+- [x] Validar interface, acessibilidade, TypeScript, suíte completa e build.
+- [x] Salvar checkpoint restaurável e entregar a padronização.

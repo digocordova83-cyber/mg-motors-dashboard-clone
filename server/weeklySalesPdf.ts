@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { z } from "zod";
+import { MTD_RETAIL_ORDER_LABEL } from "@shared/dashboardLabels";
 
 import { invokeLLM, listLLMModels } from "./_core/llm";
 import {
@@ -101,7 +102,7 @@ const pdfExtractionJsonSchema = {
 let modelPromise: Promise<string> | null = null;
 
 function assertPdfBuffer(buffer: Buffer): void {
-  if (buffer.length === 0) throw new Error("O arquivo de vendas está vazio.");
+  if (buffer.length === 0) throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} está vazio.`);
   const signature = buffer.subarray(0, PDF_SIGNATURE.length).toString("ascii");
   if (signature !== PDF_SIGNATURE) {
     throw new Error("O arquivo selecionado não possui uma assinatura PDF válida.");
@@ -224,7 +225,7 @@ function repairUniqueRegionRetailResiduals(rows: WeeklySalesRow[]): {
       };
       modifiedIndexes.add(dealerIndex);
       warnings.push(
-        `${dealerRow.sourceName}: Semana ${week} reconciliada em ${residual} venda${residual === 1 ? "" : "s"} pelo residual único de ${regionRow.sourceName}; percentual derivado em ${achievementPercent.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%.`,
+        `${dealerRow.sourceName}: Semana ${week} reconciliada em ${residual} ${MTD_RETAIL_ORDER_LABEL} pelo residual único de ${regionRow.sourceName}; percentual derivado em ${achievementPercent.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%.`,
       );
     }
   }
@@ -288,7 +289,7 @@ function validatePdfRows(rows: WeeklySalesRow[]): string[] {
       const percentageIsNull = metrics.achievementPercent === null;
       if (retailIsNull !== percentageIsNull) {
         errors.push(
-          `Linha ${row.sourceRowNumber} (${row.sourceName}): vendas e percentual da Semana ${week} precisam estar ambos preenchidos ou ambos vazios.`,
+          `Linha ${row.sourceRowNumber} (${row.sourceName}): ${MTD_RETAIL_ORDER_LABEL} e percentual da Semana ${week} precisam estar ambos preenchidos ou ambos vazios.`,
         );
       }
 
@@ -312,7 +313,7 @@ function validatePdfRows(rows: WeeklySalesRow[]): string[] {
           metrics.achievementPercent > maximumPercentage + displayTolerance
         ) {
           errors.push(
-            `Linha ${row.sourceRowNumber} (${row.sourceName}): percentual da Semana ${week} incompatível com meta e vendas.`,
+            `Linha ${row.sourceRowNumber} (${row.sourceName}): percentual da Semana ${week} incompatível com meta e ${MTD_RETAIL_ORDER_LABEL}.`,
           );
         }
       }
@@ -331,12 +332,12 @@ function validatePdfRows(rows: WeeklySalesRow[]): string[] {
 
     if (!hasReportedData) continue;
     if (reportedRetail === null) {
-      errors.push(`A linha TOTAL não informa vendas para a Semana ${week}.`);
+      errors.push(`A linha TOTAL não informa ${MTD_RETAIL_ORDER_LABEL} para a Semana ${week}.`);
       continue;
     }
     if (dealerRetail !== regionRetail || dealerRetail !== reportedRetail) {
       errors.push(
-        `A soma das vendas da Semana ${week} não reconcilia entre concessionárias, regiões e TOTAL.`,
+        `O total de ${MTD_RETAIL_ORDER_LABEL} da Semana ${week} não reconcilia entre concessionárias, regiões e TOTAL.`,
       );
     }
   }

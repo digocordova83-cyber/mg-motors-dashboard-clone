@@ -69,7 +69,7 @@ const tracking = {
 };
 
 describe("DealerTargetTrackingPanel", () => {
-  it("ordena por atingimento e preserva dealers sem Sales reportada", () => {
+  it("ordena por atingimento e preserva dealers sem MTD Retail Order reportado", () => {
     expect(sortDealerTargetProgress(dealers, "leadAchievement", "asc").map(row => row.dealerName)).toEqual([
       "DEALER B",
       "DEALER A",
@@ -87,6 +87,8 @@ describe("DealerTargetTrackingPanel", () => {
     expect(html).toContain("Leads atribuídos às 2 concessionárias");
     expect(html).not.toContain("31 concessionárias");
     expect(html).toContain("Leads atribuídos / meta");
+    expect(html).toContain("Meta de MTD Retail Order");
+    expect(html).toContain("Atingimento de MTD Retail Order");
     expect(html).toContain("100 / 150");
     expect(html).toContain("5 / 15");
     expect(html).toContain("66,67%");
@@ -102,6 +104,8 @@ describe("DealerTargetTrackingPanel", () => {
     expect(html).toContain("D-1 Leads assigned to the 2 dealers");
     expect(html).not.toContain("31 dealers");
     expect(html).toContain("Lead achievement");
+    expect(html).toContain("MTD Retail Order target");
+    expect(html).toContain("MTD Retail Order achievement");
     expect(html).toContain("Search dealer or state");
     expect(html).toContain("dealers reported");
   });

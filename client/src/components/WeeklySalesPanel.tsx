@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MTD_RETAIL_ORDER_LABEL } from "@/lib/dashboardLabels";
 import { trpc } from "@/lib/trpc";
 import { DealerTargetTrackingPanel } from "./DealerTargetTrackingPanel";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -271,18 +272,18 @@ export function WeeklySalesPeriodIdentity({
         {ui(locale, "Leads", "Leads")}: {formatIsoDate(dateFrom, locale)}–{formatIsoDate(dateTo, locale)}
       </span>
       <span aria-hidden="true"> • </span>
-      {ui(locale, "Vendas: referência acumulada", "Sales: cumulative reference")} {formatCompetence(competence, locale)}.
+      {ui(locale, `${MTD_RETAIL_ORDER_LABEL}: referência acumulada`, `${MTD_RETAIL_ORDER_LABEL}: cumulative reference`)} {formatCompetence(competence, locale)}.
       <span className="block sm:inline sm:before:content-[' • ']">
         {referenceWeek
           ? ui(
               locale,
-              `A Semana ${referenceWeek} é a última semana com Retail preenchido e serve como base dos indicadores.`,
-              `Week ${referenceWeek} is the latest week with Retail filled and is used as the KPI reference.`,
+              `A Semana ${referenceWeek} é a última semana com ${MTD_RETAIL_ORDER_LABEL} preenchido e serve como base dos indicadores.`,
+              `Week ${referenceWeek} is the latest week with ${MTD_RETAIL_ORDER_LABEL} filled and is used as the KPI reference.`,
             )
           : ui(
               locale,
-              "A última semana com Retail preenchido será usada automaticamente como base dos indicadores.",
-              "The latest week with Retail filled will automatically be used as the KPI reference.",
+              `A última semana com ${MTD_RETAIL_ORDER_LABEL} preenchido será usada automaticamente como base dos indicadores.`,
+              `The latest week with ${MTD_RETAIL_ORDER_LABEL} filled will automatically be used as the KPI reference.`,
             )}
       </span>
     </>
@@ -371,14 +372,14 @@ export function WeeklySalesSummaryCards({
       <MetricCard
         title={ui(
           locale,
-          `Vendas — Semana ${metrics.referenceWeek ?? "—"}`,
-          `Sales — Week ${metrics.referenceWeek ?? "—"}`,
+          `${MTD_RETAIL_ORDER_LABEL} — Semana ${metrics.referenceWeek ?? "—"}`,
+          `${MTD_RETAIL_ORDER_LABEL} — Week ${metrics.referenceWeek ?? "—"}`,
         )}
         value={formatInteger(summary.totalSales, locale)}
         subtitle={ui(
           locale,
-          `${formatInteger(summary.matchedSales, locale)} correspondentes • ${formatInteger(summary.unmatchedSales, locale)} sem correspondência`,
-          `${formatInteger(summary.matchedSales, locale)} matched • ${formatInteger(summary.unmatchedSales, locale)} unmatched`,
+          `${formatInteger(summary.matchedSales, locale)} ${MTD_RETAIL_ORDER_LABEL} correspondentes • ${formatInteger(summary.unmatchedSales, locale)} sem correspondência`,
+          `${formatInteger(summary.matchedSales, locale)} matched ${MTD_RETAIL_ORDER_LABEL} • ${formatInteger(summary.unmatchedSales, locale)} unmatched`,
         )}
         icon={<ShoppingCart className="h-4 w-4" />}
         accent="#e2212d"
@@ -386,21 +387,21 @@ export function WeeklySalesSummaryCards({
       <MetricCard
         title={ui(locale, "Taxa de conversão", "Conversion rate")}
         value={formatMetric(summary.conversionRatePercent, locale, "%")}
-        subtitle={ui(locale, "Vendas correspondentes ÷ Leads", "Matched sales ÷ Leads")}
+        subtitle={ui(locale, `${MTD_RETAIL_ORDER_LABEL} correspondentes ÷ Leads`, `Matched ${MTD_RETAIL_ORDER_LABEL} ÷ Leads`)}
         icon={<Gauge className="h-4 w-4" />}
         accent="#38bdf8"
       />
       <MetricCard
-        title={ui(locale, "Leads por venda", "Leads per sale")}
+        title={ui(locale, `Leads por ${MTD_RETAIL_ORDER_LABEL}`, `Leads per ${MTD_RETAIL_ORDER_LABEL}`)}
         value={formatMetric(summary.leadsPerSale, locale)}
-        subtitle={ui(locale, "Leads ÷ vendas correspondentes", "Leads ÷ matched sales")}
+        subtitle={ui(locale, `Leads ÷ ${MTD_RETAIL_ORDER_LABEL} correspondentes`, `Leads ÷ matched ${MTD_RETAIL_ORDER_LABEL}`)}
         icon={<Building2 className="h-4 w-4" />}
         accent="#10b981"
       />
       <MetricCard
         title={ui(locale, "Leads estimados necessários", "Estimated Leads needed")}
         value={formatMetric(summary.estimatedLeadsNeeded, locale)}
-        subtitle={ui(locale, "Arredondamento para gerar 1 venda", "Rounded estimate to generate 1 sale")}
+        subtitle={ui(locale, `Arredondamento para gerar 1 ${MTD_RETAIL_ORDER_LABEL}`, `Rounded estimate to generate 1 ${MTD_RETAIL_ORDER_LABEL}`)}
         icon={<Target className="h-4 w-4" />}
         accent="#f59e0b"
       />
@@ -426,7 +427,7 @@ export function WeeklySalesWeekSelector({
           {ui(locale, "Período acumulado do ranking", "Ranking cumulative period")}
         </p>
         <p className="mt-0.5 text-[9px] text-slate-600">
-          {ui(locale, "Selecione a semana para recalcular Leads, Retail Sales e conversão.", "Select a week to recalculate Leads, Retail Sales, and conversion.")}
+          {ui(locale, `Selecione a semana para recalcular Leads, ${MTD_RETAIL_ORDER_LABEL} e conversão.`, `Select a week to recalculate Leads, ${MTD_RETAIL_ORDER_LABEL}, and conversion.`)}
         </p>
       </div>
       <div className="flex flex-wrap gap-1 rounded-lg border border-[#242f42] bg-[#080e18] p-1" role="group" aria-label={ui(locale, "Semana do ranking", "Ranking week")}>
@@ -475,7 +476,7 @@ export function WeeklySalesStateDealerTable({
     <div className="min-w-0">
       <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[10px] font-semibold text-slate-300">
-          {ui(locale, `Concessionárias com Leads ou vendas em ${state.stateName}`, `Dealers with Leads or sales in ${state.stateName}`)}
+          {ui(locale, `Concessionárias com Leads ou ${MTD_RETAIL_ORDER_LABEL} em ${state.stateName}`, `Dealers with Leads or ${MTD_RETAIL_ORDER_LABEL} in ${state.stateName}`)}
         </p>
         <p className="text-[9px] text-slate-600">
           {dealers.length} {ui(locale, "com movimento no período", "with activity in the period")}
@@ -487,12 +488,12 @@ export function WeeklySalesStateDealerTable({
             <div className="flex items-start justify-between gap-3">
               <p className="min-w-0 break-words text-[10px] font-semibold text-slate-200">{dealer.dealerName}</p>
               <span className={`shrink-0 rounded-full border px-2 py-1 text-[8px] font-medium ${values.sales === null ? "border-amber-500/20 bg-amber-500/10 text-amber-300" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"}`}>
-                {values.sales === null ? ui(locale, "Sem venda", "No sales row") : ui(locale, "Venda reportada", "Sales reported")}
+                {values.sales === null ? ui(locale, `Sem ${MTD_RETAIL_ORDER_LABEL}`, `No ${MTD_RETAIL_ORDER_LABEL}`) : ui(locale, `${MTD_RETAIL_ORDER_LABEL} reportado`, `${MTD_RETAIL_ORDER_LABEL} reported`)}
               </span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[#1c2738] pt-3">
               <div><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">Leads</p><p className="mt-1 text-sm font-semibold text-white">{formatInteger(values.leads, locale)}</p></div>
-              <div><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">Retail</p><p className="mt-1 text-sm font-semibold text-slate-300">{values.sales === null ? "—" : formatInteger(values.sales, locale)}</p></div>
+              <div><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 text-sm font-semibold text-slate-300">{values.sales === null ? "—" : formatInteger(values.sales, locale)}</p></div>
               <div><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "Conversão", "Conversion")}</p><p className="mt-1 text-sm font-semibold text-sky-300">{formatMetric(values.conversionRatePercent, locale, "%")}</p></div>
             </div>
           </div>
@@ -504,9 +505,9 @@ export function WeeklySalesStateDealerTable({
             <tr>
               <th className="px-3 py-2 font-semibold">Dealer</th>
               <th className="px-3 py-2 text-right font-semibold">Leads</th>
-              <th className="px-3 py-2 text-right font-semibold">Retail Sales</th>
+              <th className="px-3 py-2 text-right font-semibold">{MTD_RETAIL_ORDER_LABEL}</th>
               <th className="px-3 py-2 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th>
-              <th className="px-3 py-2 text-right font-semibold">{ui(locale, "Cobertura de vendas", "Sales coverage")}</th>
+              <th className="px-3 py-2 text-right font-semibold">{ui(locale, `Cobertura de ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} coverage`)}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#172131] bg-[#0d1522]">
@@ -518,7 +519,7 @@ export function WeeklySalesStateDealerTable({
                 <td className="px-3 py-2.5 text-right font-medium text-sky-300">{formatMetric(values.conversionRatePercent, locale, "%")}</td>
                 <td className="px-3 py-2.5 text-right">
                   <span className={`inline-flex rounded-full border px-2 py-1 text-[8px] font-medium ${values.sales === null ? "border-amber-500/20 bg-amber-500/10 text-amber-300" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"}`}>
-                    {values.sales === null ? ui(locale, "Sem linha no arquivo", "Not in sales file") : ui(locale, "Venda reportada", "Sales reported")}
+                    {values.sales === null ? ui(locale, "Sem linha no arquivo", "Not in source file") : ui(locale, `${MTD_RETAIL_ORDER_LABEL} reportado`, `${MTD_RETAIL_ORDER_LABEL} reported`)}
                   </span>
                 </td>
               </tr>
@@ -558,19 +559,19 @@ export function WeeklySalesStateRanking({
 
   return (
     <Panel
-      title={ui(locale, "Principais concessionárias, Leads e vendas por estado", "Top Dealers, Leads and Sales by State")}
+      title={ui(locale, `Principais concessionárias, Leads e ${MTD_RETAIL_ORDER_LABEL} por estado`, `Top Dealers, Leads and ${MTD_RETAIL_ORDER_LABEL} by State`)}
       subtitle={ui(
         locale,
-        `Semana ${selectedWeek}: uma única visão de Leads, Retail Sales e conversão. Expanda o estado para ver os dealers.`,
-        `Week ${selectedWeek}: one view of Leads, Retail Sales, and conversion. Expand a state to view dealers.`,
+        `Semana ${selectedWeek}: uma única visão de Leads, ${MTD_RETAIL_ORDER_LABEL} e conversão. Expanda o estado para ver os dealers.`,
+        `Week ${selectedWeek}: one view of Leads, ${MTD_RETAIL_ORDER_LABEL}, and conversion. Expand a state to view dealers.`,
       )}
       action={<span className="text-[9px] font-medium text-slate-600">{rows.length} {ui(locale, "estado(s)", "state(s)")}</span>}
     >
       <div className="border-b border-sky-400/10 bg-sky-400/[0.035] px-4 py-3 text-[9px] leading-4 text-slate-500">
         {ui(
           locale,
-          "A conversão usa as vendas do último arquivo disponível e somente os Leads dos dealers presentes nesse arquivo. A cobertura é exibida em cada estado para evitar leitura distorcida.",
-          "Conversion uses the latest available sales file and only Leads from dealers present in that file. Coverage is shown for each state to avoid distorted readings.",
+          `A conversão usa o ${MTD_RETAIL_ORDER_LABEL} do último arquivo disponível e somente os Leads dos dealers presentes nesse arquivo. A cobertura é exibida em cada estado para evitar leitura distorcida.`,
+          `Conversion uses the latest available ${MTD_RETAIL_ORDER_LABEL} file and only Leads from dealers present in that file. Coverage is shown for each state to avoid distorted readings.`,
         )}
       </div>
       {rows.length ? (
@@ -585,7 +586,7 @@ export function WeeklySalesStateRanking({
                   onClick={() => changeSort(key)}
                   className={`inline-flex items-center justify-center gap-1 rounded-md px-2 py-2 text-[9px] font-semibold ${sortKey === key ? "bg-[#e2212d] text-white" : "text-slate-500"}`}
                 >
-                  {key === "leads" ? "Leads" : key === "sales" ? "Retail" : ui(locale, "Conversão", "Conversion")}
+                  {key === "leads" ? "Leads" : key === "sales" ? MTD_RETAIL_ORDER_LABEL : ui(locale, "Conversão", "Conversion")}
                   <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
                 </button>
               ))}
@@ -616,7 +617,7 @@ export function WeeklySalesStateRanking({
                     </div>
                     <div className="mt-3 grid grid-cols-4 gap-2 border-t border-[#1c2738] pt-3">
                       <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Leads</p><p className="mt-1 text-sm font-semibold text-white">{formatInteger(row.leads, locale)}</p></div>
-                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Retail</p><p className="mt-1 text-sm font-semibold text-slate-300">{formatInteger(row.sales, locale)}</p></div>
+                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 text-sm font-semibold text-slate-300">{formatInteger(row.sales, locale)}</p></div>
                       <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "Conversão", "Conversion")}</p><p className="mt-1 text-sm font-semibold text-sky-300">{formatMetric(row.conversionRatePercent, locale, "%")}</p></div>
                       <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Dealers</p><p className="mt-1 text-sm font-semibold text-slate-300">{row.recipientDealers}/{row.officialDealers}</p></div>
                     </div>
@@ -638,7 +639,7 @@ export function WeeklySalesStateRanking({
                 {(["leads", "sales", "conversion"] as const).map(key => (
                   <th key={key} className="px-3 py-3 text-right font-semibold" aria-sort={sortKey === key ? (sortDirection === "desc" ? "descending" : "ascending") : "none"}>
                     <button type="button" onClick={() => changeSort(key)} className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 outline-none hover:text-slate-300 focus-visible:ring-2 focus-visible:ring-[#e2212d]/60">
-                      {key === "leads" ? "Leads" : key === "sales" ? "Retail Sales" : ui(locale, "Conversão", "Conversion")}
+                      {key === "leads" ? "Leads" : key === "sales" ? MTD_RETAIL_ORDER_LABEL : ui(locale, "Conversão", "Conversion")}
                       <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </th>
@@ -738,7 +739,7 @@ export function WeeklySalesBottomConversion({
                   {row.dealerName}
                 </p>
                 <p className="shrink-0 text-right tabular-nums text-slate-500">
-                  {formatInteger(row.sales, locale)} {ui(locale, "vendas", "sales")} • {formatInteger(row.leads, locale)} Leads • <span className="font-semibold text-red-300">{formatNumber(row.conversionRatePercent, locale)}%</span>
+                  {formatInteger(row.sales, locale)} {MTD_RETAIL_ORDER_LABEL} • {formatInteger(row.leads, locale)} Leads • <span className="font-semibold text-red-300">{formatNumber(row.conversionRatePercent, locale)}%</span>
                 </p>
               </div>
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#172131]">
@@ -795,7 +796,7 @@ export function WeeklySalesTopConversion({
                   {row.dealerName}
                 </p>
                 <p className="shrink-0 text-right tabular-nums text-slate-500">
-                  {formatInteger(row.sales, locale)} {ui(locale, "vendas", "sales")} • {formatInteger(row.leads, locale)} Leads • <span className="font-semibold text-emerald-300">{formatNumber(row.conversionRatePercent, locale)}%</span>
+                  {formatInteger(row.sales, locale)} {MTD_RETAIL_ORDER_LABEL} • {formatInteger(row.leads, locale)} Leads • <span className="font-semibold text-emerald-300">{formatNumber(row.conversionRatePercent, locale)}%</span>
                 </p>
               </div>
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#172131]">
@@ -835,11 +836,11 @@ export function WeeklySalesWeekHistory({
           {ui(
             locale,
             referenceWeek
-              ? `Meta, vendas e Leads são acumulados; a Semana ${referenceWeek} é a referência atual da conversão.`
-              : "Meta, vendas e Leads são acumulados; a última semana preenchida será a referência da conversão.",
+              ? `Meta, ${MTD_RETAIL_ORDER_LABEL} e Leads são acumulados; a Semana ${referenceWeek} é a referência atual da conversão.`
+              : `Meta, ${MTD_RETAIL_ORDER_LABEL} e Leads são acumulados; a última semana preenchida será a referência da conversão.`,
             referenceWeek
-              ? `Target, sales and Leads are cumulative; Week ${referenceWeek} is the current conversion reference.`
-              : "Target, sales and Leads are cumulative; the latest filled week will be the conversion reference.",
+              ? `Target, ${MTD_RETAIL_ORDER_LABEL}, and Leads are cumulative; Week ${referenceWeek} is the current conversion reference.`
+              : `Target, ${MTD_RETAIL_ORDER_LABEL}, and Leads are cumulative; the latest filled week will be the conversion reference.`,
           )}
         </p>
       </div>
@@ -878,7 +879,7 @@ export function WeeklySalesWeekHistory({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-600">{ui(locale, "Vendas", "Sales")}</dt>
+                  <dt className="text-slate-600">{MTD_RETAIL_ORDER_LABEL}</dt>
                   <dd className="mt-1 font-semibold text-white">
                     {values.retail === null ? "—" : formatInteger(values.retail, locale)}
                   </dd>
@@ -940,7 +941,7 @@ export function WeeklySalesMetricsTable({
 
   return (
     <Panel
-      title={ui(locale, "Eficiência de vendas por concessionária", "Sales efficiency by dealer")}
+      title={ui(locale, `Eficiência de ${MTD_RETAIL_ORDER_LABEL} por concessionária`, `${MTD_RETAIL_ORDER_LABEL} efficiency by dealer`)}
       subtitle={ui(
         locale,
         `Semana ${selectedWeek}: ranking acumulado com correspondências confirmadas. Use os cabeçalhos para reordenar.`,
@@ -981,8 +982,8 @@ export function WeeklySalesMetricsTable({
             </strong>{" "}
             {ui(
               locale,
-              "As vendas permanecem auditáveis, mas não entram na conversão consolidada até o de/para ser confirmado.",
-              "Sales remain auditable, but are excluded from consolidated conversion until the mapping is confirmed.",
+              `Os registros de ${MTD_RETAIL_ORDER_LABEL} permanecem auditáveis, mas não entram na conversão consolidada até o de/para ser confirmado.`,
+              `${MTD_RETAIL_ORDER_LABEL} records remain auditable, but are excluded from consolidated conversion until the mapping is confirmed.`,
             )}
           </p>
         </div>
@@ -997,7 +998,7 @@ export function WeeklySalesMetricsTable({
               {(["sales", "leads", "conversion"] as const).map(key => (
                 <th key={key} className="px-3 py-3 text-right font-semibold" aria-sort={sortKey === key ? (sortDirection === "desc" ? "descending" : "ascending") : "none"}>
                   <button type="button" onClick={() => changeSort(key)} className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 outline-none hover:text-slate-300 focus-visible:ring-2 focus-visible:ring-[#e2212d]/60">
-                    {key === "sales" ? "Retail Sales" : key === "leads" ? ui(locale, "Leads recebidos", "Leads received") : ui(locale, "Conversão", "Conversion")}
+                    {key === "sales" ? MTD_RETAIL_ORDER_LABEL : key === "leads" ? ui(locale, "Leads recebidos", "Leads received") : ui(locale, "Conversão", "Conversion")}
                     <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </th>
@@ -1113,11 +1114,11 @@ export function WeeklySalesPreviewSummary({
     [ui(locale, "Correspondentes", "Matched"), preview.summary.matchedDealerRows],
     [ui(locale, "Sem correspondência", "Unmatched"), preview.summary.unmatchedDealerRows],
     [
-      ui(locale, `Vendas S${referenceWeek ?? "—"}`, `W${referenceWeek ?? "—"} sales`),
+      ui(locale, `${MTD_RETAIL_ORDER_LABEL} S${referenceWeek ?? "—"}`, `${MTD_RETAIL_ORDER_LABEL} W${referenceWeek ?? "—"}`),
       preview.summary.referenceDealerSalesTotal,
     ],
     [
-      ui(locale, `Sem venda S${referenceWeek ?? "—"}`, `No W${referenceWeek ?? "—"} sales`),
+      ui(locale, `Sem ${MTD_RETAIL_ORDER_LABEL} S${referenceWeek ?? "—"}`, `No ${MTD_RETAIL_ORDER_LABEL} W${referenceWeek ?? "—"}`),
       preview.summary.dealersWithoutReferenceSales,
     ],
     [ui(locale, "Linhas totais", "Total rows"), preview.summary.rowsTotal],
@@ -1202,7 +1203,7 @@ export function WeeklySalesPreviewSummary({
               <th className="px-3 py-2.5">{ui(locale, "Arquivo", "File")}</th>
               <th className="px-3 py-2.5">{ui(locale, "Concessionária final", "Resolved dealer")}</th>
               <th className="px-3 py-2.5 text-right">
-                {ui(locale, `Vendas S${referenceWeek ?? "—"}`, `W${referenceWeek ?? "—"} sales`)}
+                {ui(locale, `${MTD_RETAIL_ORDER_LABEL} S${referenceWeek ?? "—"}`, `${MTD_RETAIL_ORDER_LABEL} W${referenceWeek ?? "—"}`)}
               </th>
               <th className="px-3 py-2.5">{ui(locale, "Correspondência", "Match")}</th>
             </tr>
@@ -1240,7 +1241,7 @@ export function WeeklySalesImportHistory({
 }) {
   return (
     <Panel
-      title={ui(locale, "Histórico de vendas semanais", "Weekly sales import history")}
+      title={ui(locale, `Histórico semanal de ${MTD_RETAIL_ORDER_LABEL}`, `Weekly ${MTD_RETAIL_ORDER_LABEL} import history`)}
       subtitle={ui(
         locale,
         "Arquivos preservados com competência, reconciliação e usuário responsável.",
@@ -1257,7 +1258,7 @@ export function WeeklySalesImportHistory({
                 <th className="px-3 py-3">{ui(locale, "Competência", "Period")}</th>
                 <th className="px-3 py-3">{ui(locale, "Importado por", "Imported by")}</th>
                 <th className="px-3 py-3">{ui(locale, "Data", "Date")}</th>
-                <th className="px-3 py-3 text-right">{ui(locale, "Vendas referência", "Reference sales")}</th>
+                <th className="px-3 py-3 text-right">{ui(locale, `${MTD_RETAIL_ORDER_LABEL} referência`, `Reference ${MTD_RETAIL_ORDER_LABEL}`)}</th>
                 <th className="px-3 py-3 text-right">{ui(locale, "Correspondentes", "Matched")}</th>
                 <th className="px-3 py-3 text-right">{ui(locale, "Sem correspondência", "Unmatched")}</th>
                 <th className="px-4 py-3">Status</th>
@@ -1314,7 +1315,7 @@ export function WeeklySalesImportHistory({
           <div>
             <FileCheck2 className="mx-auto h-5 w-5 text-slate-700" />
             <p className="mt-2 text-xs font-medium text-slate-300">
-              {ui(locale, "Nenhuma importação de vendas registrada", "No weekly sales import recorded")}
+              {ui(locale, `Nenhuma importação de ${MTD_RETAIL_ORDER_LABEL} registrada`, `No weekly ${MTD_RETAIL_ORDER_LABEL} import recorded`)}
             </p>
           </div>
         </div>
@@ -1400,8 +1401,8 @@ export function WeeklySalesPanel({
           ? ui(locale, "Arquivo já importado para esta competência; nenhuma linha foi duplicada.", "File already imported for this period; no rows were duplicated.")
           : ui(
               locale,
-              `${formatInteger(result.rowsInserted, locale)} linhas de vendas semanais importadas com sucesso.`,
-              `${formatInteger(result.rowsInserted, locale)} weekly sales rows imported successfully.`,
+              `${formatInteger(result.rowsInserted, locale)} linhas de ${MTD_RETAIL_ORDER_LABEL} importadas com sucesso.`,
+              `${formatInteger(result.rowsInserted, locale)} weekly ${MTD_RETAIL_ORDER_LABEL} rows imported successfully.`,
             ),
       );
       setUpload(null);
@@ -1516,10 +1517,10 @@ export function WeeklySalesPanel({
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.13em] text-[#ff8088]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#e2212d]" />
-            {ui(locale, "Vendas semanais", "Weekly sales")}
+            {ui(locale, `${MTD_RETAIL_ORDER_LABEL} semanal`, `Weekly ${MTD_RETAIL_ORDER_LABEL}`)}
           </div>
           <h2 id="weekly-sales-title" className="mt-1 text-sm font-semibold text-white">
-            {ui(locale, "Conversão de Leads em vendas", "Lead-to-sale conversion")} • <span className="capitalize">{formatCompetence(competence, locale)}</span>
+            {ui(locale, `Conversão de Leads em ${MTD_RETAIL_ORDER_LABEL}`, `Lead-to-${MTD_RETAIL_ORDER_LABEL} conversion`)} • <span className="capitalize">{formatCompetence(competence, locale)}</span>
           </h2>
           <p className="mt-1 text-[10px] leading-5 text-slate-500">
             <WeeklySalesPeriodIdentity
@@ -1541,8 +1542,8 @@ export function WeeklySalesPanel({
               className="hidden"
               aria-label={ui(
                 locale,
-                "Selecionar CSV ou PDF de vendas semanais",
-                "Select weekly sales CSV or PDF",
+                `Selecionar CSV ou PDF de ${MTD_RETAIL_ORDER_LABEL}`,
+                `Select weekly ${MTD_RETAIL_ORDER_LABEL} CSV or PDF`,
               )}
             />
             <Button
@@ -1561,7 +1562,7 @@ export function WeeklySalesPanel({
                 ? upload?.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
                   ? ui(locale, "Lendo PDF...", "Reading PDF...")
                   : ui(locale, "Validando...", "Validating...")
-                : ui(locale, "Importar vendas", "Import sales")}
+                : ui(locale, `Importar ${MTD_RETAIL_ORDER_LABEL}`, `Import ${MTD_RETAIL_ORDER_LABEL}`)}
             </Button>
             <input
               ref={targetsFileInputRef}
@@ -1612,7 +1613,7 @@ export function WeeklySalesPanel({
                   )}
             </>
           ) : importMutation.isPending ? (
-            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, "Arquivando e importando vendas semanais...", "Archiving and importing weekly sales...")}</>
+            <><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />{ui(locale, `Arquivando e importando ${MTD_RETAIL_ORDER_LABEL}...`, `Archiving and importing weekly ${MTD_RETAIL_ORDER_LABEL}...`)}</>
           ) : error ? (
             <><AlertTriangle className="mr-2 inline h-4 w-4" />{error}</>
           ) : (
@@ -1648,14 +1649,14 @@ export function WeeklySalesPanel({
         <div className="grid min-h-52 place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421]">
           <div className="text-center">
             <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#e2212d]" />
-            <p className="mt-2 text-xs text-slate-500">{ui(locale, "Carregando vendas semanais...", "Loading weekly sales...")}</p>
+            <p className="mt-2 text-xs text-slate-500">{ui(locale, `Carregando ${MTD_RETAIL_ORDER_LABEL}...`, `Loading weekly ${MTD_RETAIL_ORDER_LABEL}...`)}</p>
           </div>
         </div>
       ) : metrics.error ? (
         <div className="grid min-h-48 place-items-center rounded-xl border border-red-500/20 bg-red-500/[0.04] px-5 text-center">
           <div>
             <AlertTriangle className="mx-auto h-5 w-5 text-red-400" />
-            <p className="mt-2 text-xs font-medium text-red-200">{ui(locale, "Não foi possível carregar as vendas", "Weekly sales could not be loaded")}</p>
+            <p className="mt-2 text-xs font-medium text-red-200">{ui(locale, `Não foi possível carregar ${MTD_RETAIL_ORDER_LABEL}`, `Weekly ${MTD_RETAIL_ORDER_LABEL} could not be loaded`)}</p>
             <p className="mt-1 text-[10px] text-red-300/70">{metrics.error.message}</p>
             <Button type="button" size="sm" variant="outline" onClick={() => metrics.refetch()} className="mt-3 border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/15 hover:text-white">
               {ui(locale, "Tentar novamente", "Try again")}
@@ -1672,7 +1673,7 @@ export function WeeklySalesPanel({
               <div>
                 <Target className="mx-auto h-5 w-5 text-slate-700" />
                 <p className="mt-2 text-xs font-medium text-slate-300">{ui(locale, "Metas mensais ainda não importadas", "Monthly targets not imported yet")}</p>
-                <p className="mt-1 text-[10px] text-slate-600">{ui(locale, "Use Atualizar metas para carregar TOTAL DEALER e SALES por concessionária.", "Use Update targets to load TOTAL DEALER and SALES by dealer.")}</p>
+                <p className="mt-1 text-[10px] text-slate-600">{ui(locale, `Use Atualizar metas para carregar TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} por concessionária.`, `Use Update targets to load TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} by dealer.`)}</p>
               </div>
             </div>
           )}
@@ -1716,14 +1717,14 @@ export function WeeklySalesPanel({
           <div className="max-w-lg">
             <FileCheck2 className="mx-auto h-6 w-6 text-slate-700" />
             <p className="mt-3 text-sm font-medium text-slate-300">
-              {ui(locale, "Nenhuma venda semanal importada para esta competência", "No weekly sales imported for this period")}
+              {ui(locale, `Nenhum ${MTD_RETAIL_ORDER_LABEL} semanal importado para esta competência`, `No weekly ${MTD_RETAIL_ORDER_LABEL} imported for this period`)}
             </p>
             <p className="mt-1 text-[10px] leading-5 text-slate-600">
               {canImportLeads
                 ? ui(
                     locale,
-                    "Use “Importar vendas” para enviar o CSV semanal ou o PDF Daily Sales Planning Report, revisar correspondências e confirmar a carga.",
-                    "Use “Import sales” to upload the weekly CSV or Daily Sales Planning Report PDF, review dealer matches, and confirm the import.",
+                    `Use “Importar ${MTD_RETAIL_ORDER_LABEL}” para enviar o CSV semanal ou o PDF Daily Sales Planning Report, revisar correspondências e confirmar a carga.`,
+                    `Use “Import ${MTD_RETAIL_ORDER_LABEL}” to upload the weekly CSV or Daily Sales Planning Report PDF, review dealer matches, and confirm the import.`,
                   )
                 : ui(locale, "Aguardando o upload manual pelo administrador responsável.", "Waiting for the responsible administrator to upload the file.")}
             </p>
@@ -1753,7 +1754,7 @@ export function WeeklySalesPanel({
               {ui(locale, "Prévia auditável", "Auditable preview")}
             </div>
             <DialogTitle className="pr-8 text-lg text-white">
-              {ui(locale, "Confirmar vendas semanais", "Confirm weekly sales")}
+              {ui(locale, `Confirmar ${MTD_RETAIL_ORDER_LABEL} semanal`, `Confirm weekly ${MTD_RETAIL_ORDER_LABEL}`)}
             </DialogTitle>
             <DialogDescription className="text-[11px] leading-5 text-slate-500">
               {preview
@@ -1808,14 +1809,14 @@ export function WeeklySalesPanel({
               <>
                 <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-[10px] leading-5 ${targetsPreview.valid ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-200/80" : "border-red-500/20 bg-red-500/[0.06] text-red-200/80"}`}>
                   {targetsPreview.valid ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-300" />}
-                  <p><strong className={targetsPreview.valid ? "text-emerald-300" : "text-red-300"}>{targetsPreview.valid ? ui(locale, "Planilha pronta para importação.", "Workbook ready to import.") : ui(locale, "A planilha possui bloqueios.", "The workbook has blocking issues.")}</strong> {ui(locale, "TOTAL DEALER e SALES serão gravados na competência selecionada.", "TOTAL DEALER and SALES will be stored for the selected period.")}</p>
+                  <p><strong className={targetsPreview.valid ? "text-emerald-300" : "text-red-300"}>{targetsPreview.valid ? ui(locale, "Planilha pronta para importação.", "Workbook ready to import.") : ui(locale, "A planilha possui bloqueios.", "The workbook has blocking issues.")}</strong> {ui(locale, `TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} serão gravados na competência selecionada.`, `TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} will be stored for the selected period.`)}</p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   {[
                     [ui(locale, "Concessionárias", "Dealers"), targetsPreview.summary.rows],
                     [ui(locale, "Correspondências", "Matched"), targetsPreview.summary.matchedRows],
                     [ui(locale, "Meta de Leads", "Lead target"), targetsPreview.summary.totalLeadTarget],
-                    [ui(locale, "Meta de Sales", "Sales target"), targetsPreview.summary.totalSalesTarget],
+                    [ui(locale, `Meta de ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} target`), targetsPreview.summary.totalSalesTarget],
                   ].map(([label, value]) => (
                     <div key={String(label)} className="rounded-lg border border-[#1f2b3e] bg-[#0a111d] p-3"><p className="text-[9px] uppercase tracking-[0.1em] text-slate-600">{label}</p><p className="mt-2 text-lg font-semibold text-white">{formatInteger(Number(value), locale)}</p></div>
                   ))}

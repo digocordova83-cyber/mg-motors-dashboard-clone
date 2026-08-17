@@ -101,7 +101,7 @@ describe("Weekly Target Achievement CSV", () => {
     expect(preview.summary.dealersWithoutReferenceSales).toBe(1);
     expect(preview.summary.dealersWithoutWeek4Sales).toBe(1);
     expect(preview.rows[0]?.weeks["4"]?.retail).toBeNull();
-    expect(preview.warnings).toContain("HG ARACAJU: Semana 4 sem vendas informadas.");
+    expect(preview.warnings).toContain("HG ARACAJU: Semana 4 sem MTD Retail Order informado.");
   });
 
   it("rejeita arquivo cujo total da última semana preenchida não reconcilia", () => {
@@ -116,7 +116,7 @@ describe("Weekly Target Achievement CSV", () => {
     expect(preview.summary.referenceWeek).toBe(5);
     expect(preview.summary.reconciliationPassed).toBe(false);
     expect(preview.errors).toContain(
-      "A soma das vendas da Semana 5 não reconcilia entre concessionárias, regiões e TOTAL.",
+      "O total de MTD Retail Order da Semana 5 não reconcilia entre concessionárias, regiões e TOTAL.",
     );
   });
 
@@ -131,7 +131,7 @@ describe("Weekly Target Achievement CSV", () => {
 
     expect(preview.summary.referenceWeek).toBe(4);
     expect(preview.errors).toContain(
-      "A Semana 5 possui vendas em concessionárias ou regiões, mas o Retail do TOTAL está vazio.",
+      "A Semana 5 possui MTD Retail Order em concessionárias ou regiões, mas o campo MTD Retail Order do TOTAL está vazio.",
     );
   });
 
@@ -144,7 +144,7 @@ describe("Weekly Target Achievement CSV", () => {
     expect(preview.summary.referenceWeek).toBeNull();
     expect(preview.summary.reconciliationPassed).toBe(false);
     expect(preview.errors).toContain(
-      "A linha TOTAL não possui vendas Retail preenchidas em nenhuma semana.",
+      "A linha TOTAL não possui MTD Retail Order preenchido em nenhuma semana.",
     );
   });
 

@@ -3,6 +3,7 @@ import {
   getDashboardCutoffDate,
   isIsoCalendarDate,
 } from "@shared/dashboardDates";
+import { MTD_RETAIL_ORDER_LABEL } from "@shared/dashboardLabels";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
@@ -155,14 +156,14 @@ const weeklySalesMetricsSchema = z
     ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "O período de Leads deve pertencer à competência das vendas",
+        message: `O período de Leads deve pertencer à competência de ${MTD_RETAIL_ORDER_LABEL}`,
         path: ["dateFrom"],
       });
     }
   });
 const weeklySalesUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
-  base64: z.string().min(4).max(7_100_000, "O arquivo de vendas excede o limite de 5 MB"),
+  base64: z.string().min(4).max(7_100_000, `O arquivo de ${MTD_RETAIL_ORDER_LABEL} excede o limite de 5 MB`),
   competence: competenceSchema,
   expectedFileHash: z.string().length(64).optional(),
 });

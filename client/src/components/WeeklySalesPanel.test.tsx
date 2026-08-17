@@ -195,12 +195,12 @@ describe("vendas semanais na experiência de concessionárias", () => {
     );
 
     expect(pt).toContain("Leads: 08/07/2026–22/07/2026");
-    expect(pt).toContain("Vendas: referência acumulada");
-    expect(pt).toContain("A Semana 5 é a última semana com Retail preenchido");
+    expect(pt).toContain("MTD Retail Order: referência acumulada");
+    expect(pt).toContain("A Semana 5 é a última semana com MTD Retail Order preenchido");
     expect(pt).toContain("julho de 2026");
     expect(en).toContain("Leads: 07/08/2026–07/22/2026");
-    expect(en).toContain("Sales: cumulative reference");
-    expect(en).toContain("Week 5 is the latest week with Retail filled");
+    expect(en).toContain("MTD Retail Order: cumulative reference");
+    expect(en).toContain("Week 5 is the latest week with MTD Retail Order filled");
     expect(en).toContain("July 2026");
   });
 
@@ -208,14 +208,14 @@ describe("vendas semanais na experiência de concessionárias", () => {
     const cards = renderToStaticMarkup(<WeeklySalesSummaryCards metrics={metrics} />);
     const table = renderToStaticMarkup(<WeeklySalesMetricsTable metrics={metrics} />);
 
-    expect(cards).toContain("Vendas — Semana 5");
+    expect(cards).toContain("MTD Retail Order — Semana 5");
     expect(cards).toContain("Taxa de conversão");
-    expect(cards).toContain("Leads por venda");
+    expect(cards).toContain("Leads por MTD Retail Order");
     expect(cards).toContain("Leads estimados necessários");
     expect(cards).toContain("4%");
     expect(cards).toContain("25");
     expect(table).toContain("Semana 5: ranking acumulado");
-    expect(table).toContain("Retail Sales");
+    expect(table).toContain("MTD Retail Order");
     expect(table).toContain("Leads recebidos");
     expect(table).toContain("Origem");
     expect(table).not.toContain("CSV:");
@@ -243,7 +243,7 @@ describe("vendas semanais na experiência de concessionárias", () => {
       <WeeklySalesStateDealerTable state={(stateMetrics as any).states[0]} selectedWeek={5} />,
     );
 
-    expect(ranking).toContain("Principais concessionárias, Leads e vendas por estado");
+    expect(ranking).toContain("Principais concessionárias, Leads e MTD Retail Order por estado");
     expect(ranking).toContain("São Paulo");
     expect(ranking).toContain("50 de 90 Leads");
     expect(ranking).toContain("55,56%");
@@ -257,8 +257,8 @@ describe("vendas semanais na experiência de concessionárias", () => {
       <WeeklySalesStateRanking metrics={stateMetrics} selectedWeek={5} locale="en-US" />,
     );
 
-    expect(ranking).toContain("Top Dealers, Leads and Sales by State");
-    expect(ranking).toContain("Week 5: one view of Leads, Retail Sales, and conversion");
+    expect(ranking).toContain("Top Dealers, Leads and MTD Retail Order by State");
+    expect(ranking).toContain("Week 5: one view of Leads, MTD Retail Order, and conversion");
     expect(ranking).not.toContain("Principais concessionárias, Leads e vendas por estado");
   });
 
@@ -275,7 +275,7 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(historyPt).toContain("Semana 4");
     expect(historyPt).toContain("Semana 5");
     expect(historyPt).toContain("Referência mensal");
-    expect(historyPt).toContain("Meta, vendas e Leads são acumulados");
+    expect(historyPt).toContain("Meta, MTD Retail Order e Leads são acumulados");
     expect(historyPt).toMatch(/Semana 1[\s\S]*Leads[\s\S]*20/);
     expect(historyPt).toMatch(/Semana 4[\s\S]*Leads[\s\S]*100/);
     expect(historyPt).toMatch(/Semana 5[\s\S]*Leads[\s\S]*125/);
@@ -283,20 +283,20 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(historyEn).toContain("Week 5");
     expect(historyEn).toContain("Monthly reference");
     expect(historyEn).toContain("Target");
-    expect(historyEn).toContain("Sales");
+    expect(historyEn).toContain("MTD Retail Order");
     expect(historyEn).toContain("Achievement");
-    expect(historyEn).toContain("Target, sales and Leads are cumulative");
+    expect(historyEn).toContain("Target, MTD Retail Order, and Leads are cumulative");
   });
 
   it("mantém métricas e correspondência integralmente em inglês para mgsales", () => {
     const cards = renderToStaticMarkup(<WeeklySalesSummaryCards metrics={metrics} locale="en-US" />);
     const table = renderToStaticMarkup(<WeeklySalesMetricsTable metrics={metrics} locale="en-US" />);
 
-    expect(cards).toContain("Sales — Week 5");
+    expect(cards).toContain("MTD Retail Order — Week 5");
     expect(cards).toContain("Conversion rate");
-    expect(cards).toContain("Leads per sale");
+    expect(cards).toContain("Leads per MTD Retail Order");
     expect(cards).toContain("Estimated Leads needed");
-    expect(table).toContain("Sales efficiency by dealer");
+    expect(table).toContain("MTD Retail Order efficiency by dealer");
     expect(table).toContain("1 unmatched dealer(s)");
     expect(table).toContain("Week 5: cumulative ranking");
     expect(table).toContain("Leads received");
@@ -319,7 +319,7 @@ describe("vendas semanais na experiência de concessionárias", () => {
     );
 
     expect(table).not.toContain("4 concessionária(s) sem correspondência");
-    expect(table).not.toContain("As vendas permanecem auditáveis");
+    expect(table).not.toContain("Os registros de MTD Retail Order permanecem auditáveis");
   });
 
   it("exclui qualificação e dealers sem correspondência dos rankings de conversão", () => {
@@ -485,7 +485,7 @@ describe("vendas semanais na experiência de concessionárias", () => {
     const html = renderToStaticMarkup(<WeeklySalesPreviewSummary preview={preview} />);
 
     expect(html).toContain("Reconciliação da Semana 5 aprovada");
-    expect(html).toContain("Vendas S5");
+    expect(html).toContain("MTD Retail Order S5");
     expect(html).toContain("Sem correspondência na base de Leads");
     expect(html).toContain("DEALER SEM MAPA");
     expect(html).toContain("Baltic Shopping Tamboré");

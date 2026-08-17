@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MTD_RETAIL_ORDER_LABEL } from "@/lib/dashboardLabels";
 import type { inferRouterOutputs } from "@trpc/server";
 import { ArrowUpDown, Search, Target } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -145,8 +146,8 @@ export function DealerTargetTrackingPanel({
           <p className="mt-1 max-w-3xl text-[11px] leading-5 text-slate-600">
             {ui(
               locale,
-              `TOTAL DEALER e SALES do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1 e Retail da última semana reportada.`,
-              `Monthly TOTAL DEALER and SALES targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers and Retail from the latest reported week.`,
+              `TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1 e ${MTD_RETAIL_ORDER_LABEL} da última semana reportada.`,
+              `Monthly TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers and ${MTD_RETAIL_ORDER_LABEL} from the latest reported week.`,
             )}
           </p>
         </div>
@@ -158,7 +159,7 @@ export function DealerTargetTrackingPanel({
 
       <div data-testid="dealer-target-summary" className="grid sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard locale={locale} eyebrow={ui(locale, "Leads atribuídos / meta", "Assigned Leads / target")} value={`${formatInteger(summary.leadsActual, locale)} / ${formatInteger(summary.leadTarget, locale)}`} subtitle={gapLabel(summary.leadGap, locale)} achievement={summary.leadAchievementPercent} accent="#38bdf8" />
-        <SummaryCard locale={locale} eyebrow={ui(locale, "Meta de Sales", "Sales target")} value={`${formatInteger(summary.salesActual, locale)} / ${formatInteger(summary.salesTarget, locale)}`} subtitle={`${gapLabel(summary.salesGap, locale)} • ${formatInteger(summary.salesReportedDealers, locale)}/${formatInteger(summary.dealers, locale)} ${ui(locale, "dealers reportados", "dealers reported")}`} achievement={summary.salesAchievementPercent} accent="#e2212d" />
+        <SummaryCard locale={locale} eyebrow={ui(locale, `Meta de ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} target`)} value={`${formatInteger(summary.salesActual, locale)} / ${formatInteger(summary.salesTarget, locale)}`} subtitle={`${gapLabel(summary.salesGap, locale)} • ${formatInteger(summary.salesReportedDealers, locale)}/${formatInteger(summary.dealers, locale)} ${ui(locale, "dealers reportados", "dealers reported")}`} achievement={summary.salesAchievementPercent} accent="#e2212d" />
         <SummaryCard locale={locale} eyebrow={ui(locale, "Conversão real", "Actual conversion")} value={summary.actualConversionRatePercent === null ? "—" : `${formatNumber(summary.actualConversionRatePercent, locale)}%`} subtitle={`${ui(locale, "Meta", "Target")}: ${formatNumber(summary.targetConversionRatePercent, locale)}%`} achievement={conversionAchievement} accent="#10b981" />
         <SummaryCard locale={locale} eyebrow={ui(locale, "Cobertura da meta", "Target coverage")} value={`${formatInteger(summary.dealers, locale)} dealers`} subtitle={ui(locale, `${formatInteger(summary.dealers, locale)}/${formatInteger(summary.dealers, locale)} concessionárias conciliadas`, `${formatInteger(summary.dealers, locale)}/${formatInteger(summary.dealers, locale)} dealers matched`)} achievement={100} accent="#a78bfa" />
       </div>
@@ -171,9 +172,9 @@ export function DealerTargetTrackingPanel({
         <div className="flex flex-col gap-2 sm:flex-row">
           <select value={sortKey} onChange={event => setSortKey(event.target.value as DealerTargetSortKey)} aria-label={ui(locale, "Ordenar metas por", "Sort targets by")} className="h-9 rounded-md border border-[#273247] bg-[#101827] px-3 text-[10px] text-slate-300 outline-none focus:border-[#e2212d]">
             <option value="leadAchievement">{ui(locale, "Atingimento de Leads", "Lead achievement")}</option>
-            <option value="salesAchievement">{ui(locale, "Atingimento de Sales", "Sales achievement")}</option>
+            <option value="salesAchievement">{ui(locale, `Atingimento de ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} achievement`)}</option>
             <option value="leadGap">{ui(locale, "Gap de Leads", "Lead gap")}</option>
-            <option value="salesGap">{ui(locale, "Gap de Sales", "Sales gap")}</option>
+            <option value="salesGap">{ui(locale, `Gap de ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} gap`)}</option>
           </select>
           <Button type="button" variant="outline" size="sm" onClick={() => setSortDirection(current => current === "asc" ? "desc" : "asc")} className="h-9 border-[#273247] bg-[#101827] text-[10px] text-slate-300 hover:bg-[#182338] hover:text-white">
             <ArrowUpDown className="mr-2 h-3.5 w-3.5" />
@@ -186,14 +187,14 @@ export function DealerTargetTrackingPanel({
         {rows.map(row => (
           <article key={row.dealerKey} className="rounded-lg border border-[#1c2738] bg-[#0a111d] p-3">
             <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words text-[10px] font-semibold text-slate-200">{row.dealerName}</p><p className="mt-0.5 text-[9px] text-slate-600">{row.stateCode}</p></div><span className={`shrink-0 text-xs font-semibold ${achievementTone(row.leadAchievementPercent)}`}>{formatNumber(row.leadAchievementPercent, locale)}%</span></div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[9px]"><div><p className="text-slate-600">Leads</p><p className="mt-1 font-medium text-sky-300">{formatInteger(row.leadsActual, locale)} / {formatInteger(row.leadTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.leadGap, locale)}</p></div><div><p className="text-slate-600">Sales</p><p className="mt-1 font-medium text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)} / {formatInteger(row.salesTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.salesGap, locale)}</p></div></div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[9px]"><div><p className="text-slate-600">Leads</p><p className="mt-1 font-medium text-sky-300">{formatInteger(row.leadsActual, locale)} / {formatInteger(row.leadTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.leadGap, locale)}</p></div><div><p className="text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 font-medium text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)} / {formatInteger(row.salesTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.salesGap, locale)}</p></div></div>
           </article>
         ))}
       </div>
 
       <div className="hidden max-w-full overflow-x-auto md:block">
         <table className="w-full min-w-[1050px] text-left" data-testid="dealer-target-table">
-          <thead className="border-y border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-4 py-3 font-semibold">Dealer</th><th className="px-3 py-3 text-center font-semibold">UF</th><th className="px-3 py-3 text-right font-semibold">Leads</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Ating. Leads", "Lead achiev.")}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Gap Leads", "Lead gap")}</th><th className="px-3 py-3 text-right font-semibold">Sales</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Ating. Sales", "Sales achiev.")}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Gap Sales", "Sales gap")}</th><th className="px-4 py-3 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th></tr></thead>
+          <thead className="border-y border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-4 py-3 font-semibold">Dealer</th><th className="px-3 py-3 text-center font-semibold">UF</th><th className="px-3 py-3 text-right font-semibold">Leads</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Ating. Leads", "Lead achiev.")}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Gap Leads", "Lead gap")}</th><th className="px-3 py-3 text-right font-semibold">{MTD_RETAIL_ORDER_LABEL}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, `Ating. ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} achiev.`)}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, `Gap ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} gap`)}</th><th className="px-4 py-3 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th></tr></thead>
           <tbody className="divide-y divide-[#172131]">
             {rows.map(row => (
               <tr key={row.dealerKey} className="text-[10px] transition-colors hover:bg-white/[0.025]">

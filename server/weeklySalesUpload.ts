@@ -1,5 +1,6 @@
-const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+import { MTD_RETAIL_ORDER_LABEL } from "@shared/dashboardLabels";
 
+const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const PDF_MIME_TYPES = new Set(["application/pdf", "application/x-pdf"]);
 const CSV_MIME_TYPES = new Set([
   "text/csv",
@@ -93,25 +94,25 @@ export function decodeWeeklySalesBase64(value: string): DecodedWeeklySalesUpload
   let base64 = dataUrlMatch ? trimmed.slice(dataUrlMatch[0].length) : trimmed;
 
   if (!dataUrlMatch && /^data:/i.test(trimmed)) {
-    throw new Error("O arquivo de vendas não está em um Data URL Base64 válido.");
+    throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} não está em um Data URL Base64 válido.`);
   }
 
   base64 = base64.replace(/\s+/g, "");
   if (!base64 || base64.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
-    throw new Error("O conteúdo do arquivo de vendas está corrompido.");
+    throw new Error(`O conteúdo do arquivo de ${MTD_RETAIL_ORDER_LABEL} está corrompido.`);
   }
 
   const bytes = Buffer.from(base64, "base64");
   const canonicalInput = base64.replace(/=+$/, "");
   const canonicalDecoded = bytes.toString("base64").replace(/=+$/, "");
   if (canonicalInput !== canonicalDecoded) {
-    throw new Error("O conteúdo do arquivo de vendas está corrompido.");
+    throw new Error(`O conteúdo do arquivo de ${MTD_RETAIL_ORDER_LABEL} está corrompido.`);
   }
   if (bytes.length === 0) {
-    throw new Error("O arquivo de vendas está vazio.");
+    throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} está vazio.`);
   }
   if (bytes.length > MAX_WEEKLY_SALES_FILE_SIZE_BYTES) {
-    throw new Error("O arquivo de vendas excede o limite de 5 MB.");
+    throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} excede o limite de 5 MB.`);
   }
 
   return { bytes, declaredMimeType };
@@ -138,7 +139,7 @@ export function describeWeeklySalesFile(input: {
   const signatureKind = hasPdfSignature(input.bytes) ? "PDF" : "CSV";
 
   if (!extensionKind) {
-    throw new Error("Selecione um arquivo de vendas no formato CSV ou PDF.");
+    throw new Error(`Selecione um arquivo de ${MTD_RETAIL_ORDER_LABEL} no formato CSV ou PDF.`);
   }
   if (declaredMimeType && !mimeKind && !GENERIC_MIME_TYPES.has(declaredMimeType)) {
     throw new Error(`O tipo de arquivo ${declaredMimeType} não é aceito. Envie um CSV ou PDF.`);

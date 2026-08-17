@@ -133,10 +133,10 @@ describe("Weekly Target Achievement PDF", () => {
 
     expect(preview.errors).toContain("Concessionárias repetidas na tabela Retail: BALTIC BARUERI.");
     expect(preview.errors).toContain(
-      "Linha 4 (BALTIC BARUERI): percentual da Semana 4 incompatível com meta e vendas.",
+      "Linha 4 (BALTIC BARUERI): percentual da Semana 4 incompatível com meta e MTD Retail Order.",
     );
     expect(preview.errors).toContain(
-      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+      "O total de MTD Retail Order da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
     );
   });
 
@@ -184,8 +184,8 @@ describe("Weekly Target Achievement PDF", () => {
     expect(preview.rows[2]?.weeks["2"]).toEqual(metric(2.4, 2, 83.3));
     expect(preview.rows[2]?.weeks["3"]).toEqual(metric(4.1, 2, 48.8));
     expect(preview.warnings).toEqual([
-      "TECAR GOIÂNIA: Semana 2 reconciliada em 2 vendas pelo residual único de R02; percentual derivado em 83,3%.",
-      "TECAR GOIÂNIA: Semana 3 reconciliada em 2 vendas pelo residual único de R02; percentual derivado em 48,8%.",
+      "TECAR GOIÂNIA: Semana 2 reconciliada em 2 MTD Retail Order pelo residual único de R02; percentual derivado em 83,3%.",
+      "TECAR GOIÂNIA: Semana 3 reconciliada em 2 MTD Retail Order pelo residual único de R02; percentual derivado em 48,8%.",
     ]);
   });
 
@@ -206,7 +206,7 @@ describe("Weekly Target Achievement PDF", () => {
     });
 
     expect(preview.errors).toContain(
-      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+      "O total de MTD Retail Order da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
     );
     expect(preview.rows[1]?.weeks["4"]?.retail).toBeNull();
     expect(preview.rows[2]?.weeks["4"]?.retail).toBeNull();
@@ -226,7 +226,7 @@ describe("Weekly Target Achievement PDF", () => {
 
     expect(preview.rows[1]?.weeks["4"]?.retail).toBeNull();
     expect(preview.errors).toContain(
-      "A soma das vendas da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
+      "O total de MTD Retail Order da Semana 4 não reconcilia entre concessionárias, regiões e TOTAL.",
     );
     expect(preview.warnings).not.toContainEqual(expect.stringContaining("reconciliada"));
   });

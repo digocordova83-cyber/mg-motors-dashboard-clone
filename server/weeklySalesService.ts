@@ -2,6 +2,7 @@ import { getDashboardCutoffDate, resolveDashboardPeriod } from "@shared/dashboar
 import { createHash } from "node:crypto";
 
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { MTD_RETAIL_ORDER_LABEL } from "@shared/dashboardLabels";
 
 import {
   leads,
@@ -217,18 +218,18 @@ type EnrichedSalesRow = WeeklySalesRow & {
 
 function assertCompetence(competence: string): void {
   if (!/^\d{4}-\d{2}$/.test(competence)) {
-    throw new Error("Competência de vendas inválida. Use AAAA-MM.");
+    throw new Error(`Competência de ${MTD_RETAIL_ORDER_LABEL} inválida. Use AAAA-MM.`);
   }
   const [year, month] = competence.split("-").map(Number);
   if (year < 2020 || year > 2100 || month < 1 || month > 12) {
-    throw new Error("Competência de vendas fora do intervalo permitido.");
+    throw new Error(`Competência de ${MTD_RETAIL_ORDER_LABEL} fora do intervalo permitido.`);
   }
 }
 
 function assertFileSize(bytes: Buffer): void {
-  if (bytes.length === 0) throw new Error("O arquivo de vendas está vazio.");
+  if (bytes.length === 0) throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} está vazio.`);
   if (bytes.length > MAX_FILE_SIZE_BYTES) {
-    throw new Error("O arquivo de vendas excede o limite de 5 MB.");
+    throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} excede o limite de 5 MB.`);
   }
 }
 
@@ -459,7 +460,7 @@ function resolveWeeklyLeadPeriod(
   const period = resolveDashboardPeriod(dateFrom, dateTo);
 
   if (!period.dateFrom.startsWith(`${competence}-`) || !period.dateTo.startsWith(`${competence}-`)) {
-    throw new Error("O período de Leads precisa pertencer à competência mensal das vendas.");
+    throw new Error(`O período de Leads precisa pertencer à competência mensal de ${MTD_RETAIL_ORDER_LABEL}.`);
   }
 
   return { dateFrom: period.dateFrom, dateTo: period.dateTo };
@@ -633,7 +634,7 @@ async function createOrResetImport(input: {
       input.existing.status === "PROCESSING" &&
       now - input.existing.createdAt < PROCESSING_TIMEOUT_MS
     ) {
-      throw new Error("Este arquivo de vendas já está sendo processado. Aguarde a conclusão.");
+      throw new Error(`Este arquivo de ${MTD_RETAIL_ORDER_LABEL} já está sendo processado. Aguarde a conclusão.`);
     }
     await db.update(weeklySalesImports).set(values).where(eq(weeklySalesImports.id, input.existing.id));
     return input.existing.id;
@@ -644,7 +645,7 @@ async function createOrResetImport(input: {
     fileHash: input.parsed.fileHash,
   });
   const created = await findImportByIdentity(input.parsed.fileHash, input.competence);
-  if (!created) throw new Error("Não foi possível registrar o lote de vendas semanais.");
+  if (!created) throw new Error(`Não foi possível registrar o lote semanal de ${MTD_RETAIL_ORDER_LABEL}.`);
   return created.id;
 }
 
@@ -702,7 +703,7 @@ export async function importWeeklySalesCsv(input: {
   const preview = buildPreview({ fileName, competence, parsed, rows });
   if (!preview.valid) {
     throw new Error(
-      preview.errors[0] ?? "O arquivo de vendas não passou na reconciliação da semana de referência.",
+      preview.errors[0] ?? `O arquivo de ${MTD_RETAIL_ORDER_LABEL} não passou na reconciliação da semana de referência.`,
     );
   }
 

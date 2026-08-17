@@ -146,7 +146,7 @@ describe("upload de vendas semanais CSV/PDF", () => {
         bytes: CSV_BYTES,
         declaredMimeType: "text/plain",
       }),
-    ).toThrow("Selecione um arquivo de vendas no formato CSV ou PDF");
+    ).toThrow("Selecione um arquivo de MTD Retail Order no formato CSV ou PDF");
   });
 
   it("rejeita conteúdo binário disfarçado de CSV", () => {
