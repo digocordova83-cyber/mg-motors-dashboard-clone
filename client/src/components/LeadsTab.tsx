@@ -1172,7 +1172,7 @@ export function LeadsTab({
         </div>
       </LeadPanel>
 
-      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-2 2xl:items-stretch">
+      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] 2xl:items-stretch">
         <LeadPanel
           className="flex h-full flex-col"
           title={ui(locale, "Leads por dia e canal", "Leads by day and channel")}
@@ -1231,15 +1231,15 @@ export function LeadsTab({
           subtitle={ui(locale, "Volume, participação e atingimento da meta mensal por veículo até D-1.", "Volume, share, and monthly vehicle target achievement through D-1.")}
           action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${activeChannelCount} canais`, `${activeChannelCount} channels`)}</span>}
         >
-          <div data-testid="channel-target-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2">
+          <div data-testid="channel-target-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-1.5 2xl:p-2">
             {data.channels.map((item, index) => (
-              <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-2.5 text-[10px]">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-2.5">
+              <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-2.5 text-[10px] 2xl:p-2">
+                <div className="flex items-start justify-between gap-3 2xl:gap-2">
+                  <div className="flex min-w-0 items-start gap-2.5 2xl:gap-2">
                     <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-slate-200" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</p>
-                      <p className="mt-1 text-[9px] text-slate-600">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")} · {formatNumber(item.sharePercent, locale)}% {ui(locale, "do período", "of period")}</p>
+                      <p className="mt-1 text-[9px] leading-3 text-slate-600 2xl:text-[8px]">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")} · {formatNumber(item.sharePercent, locale)}% {ui(locale, "do período", "of period")}</p>
                     </div>
                   </div>
                   <div className="shrink-0 text-right">

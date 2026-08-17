@@ -57,18 +57,19 @@ describe("interface de Leads", () => {
     expect(source).toContain('dataKey={channel}');
   });
 
-  it("usa composição 50/50 com painéis de mesma altura e conteúdo responsivo", () => {
+  it("usa composição 70/30 no desktop com painéis de mesma altura e conteúdo responsivo", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('data-testid="channel-overview-layout"');
-    expect(source).toContain("grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-2 2xl:items-stretch");
+    expect(source).toContain("grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] 2xl:items-stretch");
     expect(source).toContain('className="flex h-full flex-col"');
     expect(source).toContain('data-testid="daily-channel-summary"');
     expect(source).toContain('data-testid="channel-target-grid"');
     expect(source).toContain('data-testid="channel-target-card"');
     expect(source).toContain("h-[320px] min-w-[720px] flex-1");
-    expect(source).toContain("grid flex-1 content-start gap-2 p-3 sm:grid-cols-2");
+    expect(source).toContain("grid flex-1 content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-1.5 2xl:p-2");
     expect(source).not.toContain("self-start");
+    expect(source).not.toContain("2xl:grid-cols-2 2xl:items-stretch");
     expect(source).not.toContain("xl:grid-cols-[1.7fr_1fr]");
     expect(source).not.toContain("h-[350px] min-w-[760px]");
   });

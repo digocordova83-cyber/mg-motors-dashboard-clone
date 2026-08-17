@@ -1880,3 +1880,15 @@
 > Idempotência confirmada pela execução `20260817-145015`: `NO_CHANGES`, zero novos registros, zero remoções e zero linhas gravadas. No recorte integral até D-1, `18.423 total = 18.423 canais = 18.423 dias = 17.622 atribuídos + 801 em qualificação`. Em agosto até 16/08, `6.759 = 6.731 conciliados + 28 em qualificação + 0 fora da meta`; 30 dealers canônicos possuem Leads e nenhuma meta ficou zerada.
 
 > Validação técnica: 34 regressões direcionadas aprovadas, TypeScript sem erros e integridade confirmada para XLSX, CSV e relatório Markdown.
+
+## Proporção 70/30 no bloco de canais — 17/08/2026
+
+- [x] Alterar a grade desktop para 70% em `Leads por dia e canal` e 30% em `Distribuição por canal`.
+- [x] Compactar os cards de distribuição para a coluna menor sem cortar valores, metas, percentuais ou barras.
+- [x] Preservar empilhamento natural e leitura integral em tablet e mobile.
+- [x] Atualizar regressões estruturais e validar visualmente a proporção, alturas e ausência de overflow.
+- [x] Executar testes, TypeScript e build; revisar o TODO e salvar checkpoint restaurável.
+
+> Implementação: a grade em telas 2XL usa `minmax(0, 7fr) minmax(0, 3fr)`, preservando exatamente a relação 70/30. Abaixo de 1536 px os painéis continuam empilhados. A distribuição mantém duas colunas internas, com gaps, padding e textos auxiliares compactados apenas no desktop largo.
+
+> Validação: 277 testes em 48 arquivos aprovados, TypeScript sem erros, build de produção concluído e regra 70/30 confirmada no CSS compilado. A captura automatizada permaneceu na validação de acesso sem sessão; a proporção interna foi comprovada pela regressão estrutural e pelo artefato CSS gerado.
