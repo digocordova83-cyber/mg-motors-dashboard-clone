@@ -1924,3 +1924,28 @@
 > Validação visual concluída em seis imagens 1280×720. Todos os slides renderizam sem cortes; o deck contém 01–16/08, MTD Retail Order, TikTok separado e Campanha Urban redistribuída aos canais de origem. A auditoria textual encontrou zero ocorrências de 01–09, Vendas no Varejo, Retail Sales, July, Investment, Investimento, CPL ou valores monetários nos slides ativos.
 
 > Apresentação final preparada em seis páginas: capa, visão geral, Leads por canal, resultados de campanha, MTD Retail Order e rede, e encerramento. Entrega renderizada em `manus-slides://21B4Cmt7eZnxgqu03CCgtE`.
+
+## Aba TikTok Ads via Windsor — 17/08/2026
+
+- [x] Auditar os contratos, serviços, rotas, componentes, filtros e testes atuais da aba Meta Ads para reutilizar o padrão comprovado.
+- [x] Inspecionar a conexão Windsor e confirmar conta, cobertura, dimensões e métricas TikTok Ads realmente disponíveis.
+- [x] Definir contratos tipados e regras de normalização para resumo, série diária, campanhas, grupos de anúncios, criativos e recortes disponíveis.
+- [x] Implementar coleta TikTok Ads com `account_id` estável, validação de cobertura, cache/snapshot e tratamento explícito de respostas parciais.
+- [x] Expor rotas de leitura e atualização TikTok Ads com as mesmas regras de acesso e D-1 usadas nas demais mídias.
+- [x] Criar a aba TikTok Ads no padrão visual da Meta Ads, com KPIs, evolução, tabelas, filtros, atualização e estados de carregamento/erro/vazio.
+- [x] Integrar navegação, localização PT/EN, modo somente leitura e histórico de atualização sem afetar as abas existentes.
+- [x] Criar regressões de serviço, rotas, UI, navegação e segredo; reconciliar os totais com a fonte Windsor.
+- [x] Validar desktop, tablet e mobile, executar suíte completa, TypeScript e build.
+- [x] Revisar o TODO, salvar checkpoint restaurável e entregar a nova aba.
+
+> Auditoria concluída na conta Windsor `7668787778449719316` (`Ag. BBRO - MG Motor Brasil - AUT`). A entrega confirmada de 13–16/08 soma R$ 2.077,91, 86 formulários nativos TikTok, 181.144 impressões, 95.100 de alcance, 734 cliques e 2.425 engajamentos. Conta, campos, agrupamentos válidos, criativo, demografia, regiões e limitações estão documentados em `docs/tiktok-windsor-audit-2026-08-17.md`; o contrato de implementação está em `docs/tiktok-ads-contract.md`.
+
+> Backend implementado com oito consultas Windsor, incluindo séries filtráveis por campanha e grupo, identidade estável, TTL de 15 minutos, deduplicação concorrente, snapshot persistente `TIKTOK_ADS`, rejeição de bundles parciais, bounds D-1, rotas tRPC e inclusão no refresh diário. A migração `0014_spooky_violations.sql` ampliou os enums das tabelas de auditoria e snapshots sem remover dados.
+
+> Interface integrada em `?module=tiktok-ads`, no mesmo padrão visual da Meta Ads, com seis KPIs, filtros de campanha/grupo aplicados também aos gráficos, investimento e Leads diários, CPL, modelos, campanhas, grupos, criativos, idade, gênero e estados. O botão Atualizar força nova leitura Windsor, preserva o último sucesso em caso de erro e atualiza o timestamp compartilhado do dashboard.
+
+> Verificação ao vivo de 01–16/08: `R$ 2.077,91 = diário = campanha = grupo = anúncio`; `86 Leads = diário = série por campanha = campanha = série por grupo = grupo = anúncio`; `86 conversões = gênero = idade = regiões`. Cobertura até 16/08, quatro dias ativos, uma campanha, um grupo, um anúncio, 13 linhas demográficas e 18 regiões. Evidência em `docs/tiktok-ads-live-verification.json`.
+
+> Validação final: 294 testes em 50 arquivos aprovados, incluindo serviço, cache, snapshot, refresh diário, permissões, segredo Windsor, navegação, PT/EN, estados e renderização integral da interface. TypeScript e build de produção aprovados. Grades responsivas, alturas limitadas e rolagem interna foram cobertas por regressão estrutural; a captura automática da rota confirmou o bloqueio de acesso sem sessão, sem expor o dashboard protegido.
+
+> Inicialização limpa confirmada após reinício: servidor disponível em `http://localhost:3000/`, sem erros atuais de runtime ou navegador. O acesso direto sem sessão permanece corretamente bloqueado.

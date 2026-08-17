@@ -36,10 +36,22 @@ const metaSuccess = {
   },
 };
 
+const tiktokSuccess = {
+  daily: [{ date: "2026-07-20" }],
+  summary: { spend: 60, leads: 3 },
+  metadata: {
+    source: "windsor-live",
+    updatedAt: "2026-07-21T11:30:00.000Z",
+    dataThroughDate: "2026-07-20",
+    rowCounts: { daily: 1, campaigns: 1, adGroups: 1, ads: 1 },
+  },
+};
+
 function buildDependencies(overrides: Record<string, unknown> = {}) {
   return {
     loadGoogleAds: vi.fn(async () => googleSuccess as never),
     loadMetaAds: vi.fn(async () => metaSuccess as never),
+    loadTikTokAds: vi.fn(async () => tiktokSuccess as never),
     persistRefresh: vi.fn(async () => undefined as never),
     now: () => new Date("2026-07-21T11:30:00.000Z"),
     ...overrides,
@@ -80,7 +92,12 @@ describe("daily scheduled D-1 refresh", () => {
       "2026-07-20",
       { forceRefresh: true },
     );
-    expect(dependencies.persistRefresh).toHaveBeenCalledTimes(2);
+    expect(dependencies.loadTikTokAds).toHaveBeenCalledWith(
+      "2026-07-14",
+      "2026-07-20",
+      { forceRefresh: true },
+    );
+    expect(dependencies.persistRefresh).toHaveBeenCalledTimes(3);
     expect(dependencies.persistRefresh).toHaveBeenCalledWith(
       expect.objectContaining({
         source: "GOOGLE_ADS",
@@ -105,9 +122,21 @@ describe("daily scheduled D-1 refresh", () => {
         }),
       }),
     );
+    expect(dependencies.persistRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: "TIKTOK_ADS",
+        refreshDate: "2026-07-20",
+        status: "SUCCESS",
+        taskUid: "task_daily",
+        metadata: expect.objectContaining({
+          warmedFrom: "2026-07-14",
+          warmedTo: "2026-07-20",
+        }),
+      }),
+    );
   });
 
-  it("registra falha parcial sem apagar o sucesso independente da outra fonte", async () => {
+  it("registra falha parcial sem apagar o sucesso independente das outras fontes", async () => {
     const dependencies = buildDependencies({
       loadGoogleAds: vi.fn(async () => ({
         ...googleSuccess,
@@ -125,11 +154,32 @@ describe("daily scheduled D-1 refresh", () => {
     expect(result.partialFailure).toBe(true);
     expect(result.googleAds.status).toBe("FAILED");
     expect(result.metaAds.status).toBe("SUCCESS");
+    expect(result.tiktokAds.status).toBe("SUCCESS");
     expect(dependencies.persistRefresh).toHaveBeenCalledWith(
-      expect.objectContaining({
-        source: "GOOGLE_ADS",
-        status: "FAILED",
-      }),
+      expect.objectContaining({ source: "GOOGLE_ADS", status: "FAILED" }),
+    );
+  });
+
+  it("mantém Google e Meta disponíveis quando apenas TikTok falha", async () => {
+    const dependencies = buildDependencies({
+      loadTikTokAds: vi.fn(async () => ({
+        ...tiktokSuccess,
+        daily: [],
+        metadata: { ...tiktokSuccess.metadata, source: "persistent-snapshot" },
+      }) as never),
+    });
+
+    const result = await executeDailyRefresh(
+      { date: "2026-07-20", taskUid: "task_daily" },
+      dependencies as never,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.googleAds.status).toBe("SUCCESS");
+    expect(result.metaAds.status).toBe("SUCCESS");
+    expect(result.tiktokAds.status).toBe("FAILED");
+    expect(dependencies.persistRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "TIKTOK_ADS", status: "FAILED" }),
     );
   });
 

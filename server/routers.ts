@@ -51,6 +51,7 @@ import {
 import { exportLeadsBase } from "./leadsExportService";
 import { loadMetaCreativeInventory } from "./metaCreativeInventory";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
+import { getTikTokAdsBounds, loadTikTokAdsData } from "./tiktokAdsService";
 import {
   getWeeklySalesImportHistory,
   getWeeklySalesMetrics,
@@ -81,6 +82,7 @@ function createPermissionProcedure(permission: keyof DashboardPermissions) {
 
 const googleAdsProcedure = createPermissionProcedure("canAccessGoogleAds");
 const metaAdsProcedure = createPermissionProcedure("canAccessMetaAds");
+const tiktokAdsProcedure = createPermissionProcedure("canAccessMetaAds");
 const leadsProcedure = createPermissionProcedure("canAccessLeads");
 const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations");
 const historyProcedure = createPermissionProcedure("canAccessHistory");
@@ -439,6 +441,17 @@ export const appRouter = router({
       .input(dashboardPeriodSchema)
       .query(({ input }) => loadMetaAdsData(input.dateFrom, input.dateTo)),
     creativeInventory: metaAdsProcedure.query(() => loadMetaCreativeInventory()),
+  }),
+  tiktokAds: router({
+    bounds: tiktokAdsProcedure.query(() => getTikTokAdsBounds()),
+    data: tiktokAdsProcedure
+      .input(dashboardPeriodSchema)
+      .query(({ input }) => loadTikTokAdsData(input.dateFrom, input.dateTo)),
+    refresh: tiktokAdsProcedure
+      .input(dashboardPeriodSchema)
+      .mutation(({ input }) =>
+        loadTikTokAdsData(input.dateFrom, input.dateTo, { forceRefresh: true }),
+      ),
   }),
   dashboard: router({
     getData: googleAdsProcedure

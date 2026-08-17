@@ -59,5 +59,6 @@ describe("rotas protegidas de Leads", () => {
       dateTo: "2026-07-22",
     })).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(caller.metaAds.bounds()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.tiktokAds.bounds()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

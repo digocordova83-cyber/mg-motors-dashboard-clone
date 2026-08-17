@@ -85,7 +85,7 @@ export const dashboardSourceRefreshes = mysqlTable(
   "dashboard_source_refreshes",
   {
     id: int("id").autoincrement().primaryKey(),
-    source: mysqlEnum("source", ["GOOGLE_ADS", "META_ADS"]).notNull(),
+    source: mysqlEnum("source", ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"]).notNull(),
     refreshDate: date("refreshDate", { mode: "string" }).notNull(),
     periodFrom: date("periodFrom", { mode: "string" }).notNull(),
     periodTo: date("periodTo", { mode: "string" }).notNull(),
@@ -119,7 +119,7 @@ export const dashboardDataSnapshots = mysqlTable(
   "dashboard_data_snapshots",
   {
     id: int("id").autoincrement().primaryKey(),
-    source: mysqlEnum("source", ["GOOGLE_ADS", "META_ADS"]).notNull(),
+    source: mysqlEnum("source", ["GOOGLE_ADS", "META_ADS", "TIKTOK_ADS"]).notNull(),
     periodFrom: date("periodFrom", { mode: "string" }).notNull(),
     periodTo: date("periodTo", { mode: "string" }).notNull(),
     dataThroughDate: date("dataThroughDate", { mode: "string" }).notNull(),

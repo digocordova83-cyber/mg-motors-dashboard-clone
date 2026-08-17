@@ -225,7 +225,7 @@ export async function listDashboardAccessEvents(input: {
   };
 }
 
-export type DashboardRefreshSource = "GOOGLE_ADS" | "META_ADS";
+export type DashboardRefreshSource = "GOOGLE_ADS" | "META_ADS" | "TIKTOK_ADS";
 
 type DashboardRefreshMetadata = Record<string, number | string | boolean | null>;
 

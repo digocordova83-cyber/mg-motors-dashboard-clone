@@ -6,6 +6,7 @@ import {
 } from "@shared/dashboardDates";
 import { loadDashboardData } from "./dashboardService";
 import { loadMetaAdsData } from "./metaAdsService";
+import { loadTikTokAdsData } from "./tiktokAdsService";
 import {
   recordDashboardSourceRefresh,
   type DashboardRefreshSource,
@@ -15,6 +16,7 @@ import { sdk } from "./_core/sdk";
 export const DAILY_REFRESH_TIMEZONE = DASHBOARD_TIME_ZONE;
 export const GOOGLE_ADS_DEFAULT_WINDOW_DAYS = 30;
 export const META_ADS_DEFAULT_WINDOW_DAYS = 7;
+export const TIKTOK_ADS_DEFAULT_WINDOW_DAYS = 7;
 
 type SerializableMetadata = Record<string, number | string | boolean | null>;
 
@@ -40,11 +42,13 @@ export type DailyRefreshResult = {
   taskUid: string;
   googleAds: SourceRefreshResult;
   metaAds: SourceRefreshResult;
+  tiktokAds: SourceRefreshResult;
 };
 
 type RefreshDependencies = {
   loadGoogleAds: typeof loadDashboardData;
   loadMetaAds: typeof loadMetaAdsData;
+  loadTikTokAds: typeof loadTikTokAdsData;
   persistRefresh: typeof recordDashboardSourceRefresh;
   now: () => Date;
 };
@@ -52,6 +56,7 @@ type RefreshDependencies = {
 const defaultDependencies: RefreshDependencies = {
   loadGoogleAds: loadDashboardData,
   loadMetaAds: loadMetaAdsData,
+  loadTikTokAds: loadTikTokAdsData,
   persistRefresh: recordDashboardSourceRefresh,
   now: () => new Date(),
 };
@@ -176,8 +181,12 @@ export async function executeDailyRefresh(
     input.date,
     -(META_ADS_DEFAULT_WINDOW_DAYS - 1),
   );
+  const tiktokDateFrom = addIsoDays(
+    input.date,
+    -(TIKTOK_ADS_DEFAULT_WINDOW_DAYS - 1),
+  );
 
-  const [googleAds, metaAds] = await Promise.all([
+  const [googleAds, metaAds, tiktokAds] = await Promise.all([
     refreshSource(dependencies, {
       source: "GOOGLE_ADS",
       date: input.date,
@@ -233,10 +242,40 @@ export async function executeDailyRefresh(
         };
       },
     }),
+    refreshSource(dependencies, {
+      source: "TIKTOK_ADS",
+      date: input.date,
+      taskUid: input.taskUid,
+      load: async () => {
+        const data = await dependencies.loadTikTokAds(tiktokDateFrom, input.date, {
+          forceRefresh: true,
+        });
+        const liveSource = data.metadata.source;
+        return {
+          liveSource,
+          complete:
+            data.metadata.dataThroughDate === input.date &&
+            data.daily.some(row => row.date === input.date) &&
+            liveSource === "windsor-live",
+          metadata: {
+            dailyRows: data.metadata.rowCounts.daily ?? 0,
+            campaignRows: data.metadata.rowCounts.campaigns ?? 0,
+            adGroupRows: data.metadata.rowCounts.adGroups ?? 0,
+            adRows: data.metadata.rowCounts.ads ?? 0,
+            dataThroughDate: data.metadata.dataThroughDate,
+            spend: data.summary.spend,
+            leads: data.summary.leads,
+            updatedAt: data.metadata.updatedAt,
+            warmedFrom: tiktokDateFrom,
+            warmedTo: input.date,
+          },
+        };
+      },
+    }),
   ]);
 
   const completedAt = dependencies.now();
-  const ok = googleAds.ok && metaAds.ok;
+  const ok = googleAds.ok && metaAds.ok && tiktokAds.ok;
   return {
     ok,
     partialFailure: !ok,
@@ -247,6 +286,7 @@ export async function executeDailyRefresh(
     taskUid: input.taskUid,
     googleAds,
     metaAds,
+    tiktokAds,
   };
 }
 

@@ -21,6 +21,13 @@ describe("navegação modular do dashboard", () => {
     });
   });
 
+  it("resolve TikTok Ads como módulo próprio sem subaba", () => {
+    expect(resolveDashboardRoute("?module=tiktok-ads")).toEqual({
+      module: "tiktok-ads",
+      googleTab: "overview",
+    });
+  });
+
   it("resolve o histórico administrativo como módulo próprio sem subaba", () => {
     expect(resolveDashboardRoute("?module=access-history&tab=history")).toEqual({
       module: "access-history",
@@ -50,6 +57,11 @@ describe("navegação modular do dashboard", () => {
     expect(params(buildDashboardSearch("?tab=history&campaign=123", "meta-ads", "history"))).toEqual({
       campaign: "123",
       module: "meta-ads",
+    });
+
+    expect(params(buildDashboardSearch("?tab=history&campaign=123", "tiktok-ads", "history"))).toEqual({
+      campaign: "123",
+      module: "tiktok-ads",
     });
 
     expect(params(buildDashboardSearch("?campaign=123", "google-ads", "investment"))).toEqual({

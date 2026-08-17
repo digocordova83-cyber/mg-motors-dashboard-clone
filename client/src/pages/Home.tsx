@@ -15,6 +15,7 @@ import { OptimizationHistoryTab } from "@/components/OptimizationHistoryTab";
 import { AccessHistoryTab } from "@/components/AccessHistoryTab";
 import { LeadsTab } from "@/components/LeadsTab";
 import { MetaAdsDashboard } from "@/components/MetaAdsDashboard";
+import { TikTokAdsDashboard } from "@/components/TikTokAdsDashboard";
 import { MediaPlanDashboard } from "@/components/MediaPlanDashboard";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
@@ -67,6 +68,7 @@ import {
   Target,
   TrendingUp,
   UsersRound,
+  Video,
 } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -165,6 +167,7 @@ const dashboardModules: Array<{
 }> = [
   { id: "google-ads", labels: { "pt-BR": "Google Ads", "en-US": "Google Ads" }, permission: "canAccessGoogleAds", icon: BarChart3 },
   { id: "meta-ads", labels: { "pt-BR": "Meta Ads", "en-US": "Meta Ads" }, permission: "canAccessMetaAds", icon: Megaphone },
+  { id: "tiktok-ads", labels: { "pt-BR": "TikTok Ads", "en-US": "TikTok Ads" }, permission: "canAccessMetaAds", icon: Video },
   { id: "leads", labels: { "pt-BR": "Leads", "en-US": "Leads" }, permission: "canAccessLeads", icon: UsersRound },
   { id: "media-plan", labels: { "pt-BR": "Plano de Mídia", "en-US": "Media Plan" }, permission: "canAccessMediaPlan", icon: FileSpreadsheet },
   { id: "access-history", labels: { "pt-BR": "Histórico de acessos", "en-US": "Access History" }, permission: "canAccessAccessHistory", icon: ShieldCheck },
@@ -1367,6 +1370,10 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
     onSuccess: async () => {
       await utils.dashboardAuth.session.invalidate();
       utils.dashboard.getData.reset();
+      utils.metaAds.data.reset();
+      utils.metaAds.bounds.reset();
+      utils.tiktokAds.data.reset();
+      utils.tiktokAds.bounds.reset();
       utils.leads.analytics.reset();
       utils.leads.bounds.reset();
       utils.leads.importHistory.reset();
@@ -1562,7 +1569,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
         ) : null}
       </div>
 
-      {activeModule === "access-history" ? <AccessHistoryTab locale={locale} /> : activeModule === "meta-ads" ? <MetaAdsDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : activeModule === "media-plan" ? <MediaPlanDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : (
+      {activeModule === "access-history" ? <AccessHistoryTab locale={locale} /> : activeModule === "meta-ads" ? <MetaAdsDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : activeModule === "tiktok-ads" ? <TikTokAdsDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : activeModule === "media-plan" ? <MediaPlanDashboard locale={locale} onUpdatedAt={handleUpdatedAt} /> : (
         <main className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6">
           <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
