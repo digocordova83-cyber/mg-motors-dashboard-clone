@@ -1909,3 +1909,18 @@
 > Idempotência confirmada pela execução `20260817-150605`: `NO_CHANGES`, zero novos, zero removidos e zero linhas gravadas. Até D-1, `18.707 total = 18.707 canais = 18.707 dias = 17.906 atribuídos + 801 em qualificação`. Em agosto até 16/08, `7.043 = 7.015 conciliados + 28 em qualificação + 0 fora da meta`; 30 dealers canônicos possuem Leads e nenhuma meta ficou zerada.
 
 > Validação técnica: 35 regressões direcionadas aprovadas, TypeScript sem erros e integridade confirmada para XLSX, CSV e relatório Markdown.
+
+## Executive Summary em português — 01 a 16/08/2026
+
+- [x] Auditar a apresentação Executive Summary existente, sua ordem, textos, dados e padrão visual.
+- [x] Extrair do dashboard os resultados verificados de Leads, canais, MTD Retail Order, conversão, campanhas e rede entre 01 e 16/08.
+- [x] Reconciliar totais, rankings e percentuais sem expor gestão de investimento indevida no summary corporativo.
+- [x] Atualizar todos os slides necessários e garantir conteúdo integralmente em português.
+- [x] Validar números, fontes, hierarquia visual, legibilidade e ausência de inglês residual.
+- [x] Apresentar a versão final e registrar a entrega no histórico do projeto.
+
+> Snapshot reproduzível salvo em `data-pt-aug-01-16.json`, extraído das mesmas fontes oficiais usadas pelo dashboard. Reconciliação de Leads: `7.043 total = 7.043 canais = 7.043 dias = 7.043 modelos = 7.015 atribuídos + 28 em qualificação`. MTD Retail Order: 248 pedidos, 25 dealers reportados, zero unmatched e 3,73% de conversão. Google e Meta possuem cobertura confirmada até 16/08; nenhuma métrica de investimento foi incluída no roteiro corporativo.
+
+> Validação visual concluída em seis imagens 1280×720. Todos os slides renderizam sem cortes; o deck contém 01–16/08, MTD Retail Order, TikTok separado e Campanha Urban redistribuída aos canais de origem. A auditoria textual encontrou zero ocorrências de 01–09, Vendas no Varejo, Retail Sales, July, Investment, Investimento, CPL ou valores monetários nos slides ativos.
+
+> Apresentação final preparada em seis páginas: capa, visão geral, Leads por canal, resultados de campanha, MTD Retail Order e rede, e encerramento. Entrega renderizada em `manus-slides://21B4Cmt7eZnxgqu03CCgtE`.
