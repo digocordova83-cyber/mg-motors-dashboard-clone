@@ -1237,9 +1237,9 @@ export function LeadsTab({
         </div>
       </LeadPanel>
 
-      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] 2xl:items-stretch">
+      <div data-testid="channel-overview-layout" className="space-y-4">
         <LeadPanel
-          className="flex h-full flex-col"
+          className="flex flex-col"
           title={ui(locale, "Leads por dia e canal", "Leads by day and channel")}
           subtitle={ui(locale, "Evolução diária por canal de origem, reconciliada com o total do período.", "Daily source-channel trend reconciled to the period total.")}
           action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${data.daily.length} dias`, `${data.daily.length} days`)}</span>}
@@ -1290,13 +1290,17 @@ export function LeadsTab({
           </div>
         </LeadPanel>
 
-        <div data-testid="channel-overview-side" className="grid min-w-0 content-start gap-4">
+        <div
+          data-testid="channel-lower-layout"
+          className={`grid min-w-0 items-stretch gap-4 ${data.mediaInvestment ? "xl:grid-cols-2" : ""}`}
+        >
           <LeadPanel
+            className="flex h-full flex-col"
             title={ui(locale, "Distribuição por canal", "Distribution by channel")}
             subtitle={ui(locale, "Volume, participação e atingimento da meta mensal por veículo até D-1.", "Volume, share, and monthly vehicle target achievement through D-1.")}
             action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${activeChannelCount} canais`, `${activeChannelCount} channels`)}</span>}
           >
-            <div data-testid="channel-target-grid" className="grid content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-2">
+            <div data-testid="channel-target-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2">
               {data.channels.map((item, index) => (
                 <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-3 text-[10px]">
                   <div className="flex items-start justify-between gap-3">
@@ -1331,11 +1335,12 @@ export function LeadsTab({
 
           {data.mediaInvestment ? (
             <LeadPanel
+              className="flex h-full flex-col"
               title={ui(locale, "Investimento e CPL de mídia paga", "Paid media investment and CPL")}
               subtitle={ui(locale, "Google/Site, Meta e TikTok no mesmo período D-1.", "Google/Site, Meta, and TikTok in the same D-1 period.")}
               action={<span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] font-semibold text-emerald-300">{ui(locale, "3 canais pagos", "3 paid channels")}</span>}
             >
-              <div data-testid="paid-media-grid" className="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2">
+              <div data-testid="paid-media-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2">
                 {data.mediaInvestment.channels.map(reference => (
                   <ChannelMediaReference key={reference.channel} reference={reference} locale={locale} />
                 ))}

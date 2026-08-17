@@ -58,21 +58,23 @@ describe("interface de Leads", () => {
     expect(source).toContain('dataKey={channel}');
   });
 
-  it("preserva a composição 65/35 e empilha dois blocos legíveis na coluna de distribuição", () => {
+  it("usa o gráfico em largura total e mantém distribuição e mídia paga em 50/50 abaixo", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('data-testid="channel-overview-layout"');
-    expect(source).toContain("grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] 2xl:items-stretch");
-    expect(source).toContain('data-testid="channel-overview-side"');
+    expect(source).toContain('data-testid="channel-overview-layout" className="space-y-4"');
+    expect(source).toContain('data-testid="channel-lower-layout"');
+    expect(source).toContain('data.mediaInvestment ? "xl:grid-cols-2" : ""');
     expect(source).toContain('data-testid="daily-channel-summary"');
     expect(source).toContain('data-testid="channel-target-grid"');
     expect(source).toContain('data-testid="channel-target-card"');
     expect(source).toContain("h-[320px] min-w-[720px] flex-1");
-    expect(source).toContain("grid content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-2");
+    expect(source).toContain("grid flex-1 content-start gap-2 p-3 sm:grid-cols-2");
     expect(source).toContain('data-testid="paid-media-grid"');
-    expect(source).toContain("sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2");
+    expect(source).toContain('data-testid="paid-media-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2"');
+    expect(source).not.toContain('data-testid="channel-overview-side"');
+    expect(source).not.toContain("2xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)]");
     expect(source).not.toContain("self-start");
-    expect(source).not.toContain("2xl:grid-cols-2 2xl:items-stretch");
     expect(source).not.toContain("xl:grid-cols-[1.7fr_1fr]");
     expect(source).not.toContain("h-[350px] min-w-[760px]");
   });

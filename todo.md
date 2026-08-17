@@ -1984,3 +1984,20 @@
 > A coluna de 35% agora contém dois painéis independentes: o primeiro preserva Leads, participação, meta, atingimento e saldo dos cinco canais; o segundo concentra investimento/CPL dos três canais pagos em células amplas e apresenta, abaixo, investimento total, Leads pagos e CPL geral estimado. Em larguras intermediárias o bloco pago usa três colunas; no desktop 65/35 usa duas, evitando compressão.
 
 > Validação final: 299 testes em 51 arquivos, TypeScript e build de produção aprovados. A reconciliação ao vivo confirmou as três fontes, o total e o CPL geral; a rota protegida continua bloqueando acesso sem sessão e sem erros de tipagem ou build.
+
+## Gráfico em largura total e blocos inferiores 50/50 — 17/08/2026
+
+- [x] Requisito substituído antes da implementação: não remover `Distribuição por canal`; mantê-lo no layout final.
+- [x] Ampliar `Leads por dia e canal` para 100% da largura disponível em desktop, tablet e mobile.
+- [x] Requisito refinado antes da implementação: não deixar `Investimento e CPL de mídia paga` sozinho em largura total.
+- [x] Posicionar, abaixo do gráfico, `Distribuição por canal` e `Investimento e CPL de mídia paga` lado a lado em 50/50 no desktop.
+- [x] Preservar integralmente o bloco `Investimento e CPL de mídia paga`, incluindo CPL geral estimado.
+- [x] Preservar cálculos, gráfico, filtros, investimento total, CPLs por canal e CPL geral estimado.
+- [x] Atualizar regressões para impedir o retorno do layout 65/35 e validar o novo fluxo vertical.
+- [x] Executar suíte completa, TypeScript e build; revisar o TODO e salvar checkpoint restaurável.
+
+> Layout final: `Leads por dia e canal` ocupa uma linha inteira e 100% da largura. Na linha seguinte, `Distribuição por canal` e `Investimento e CPL de mídia paga` usam uma grade de duas colunas iguais a partir do desktop (`xl:grid-cols-2`); em tablet e mobile, empilham naturalmente. Se a referência de mídia não estiver disponível para o perfil, Distribuição usa a largura integral.
+
+> O painel de mídia paga foi preservado sem alterações de cálculo: investimento total de R$ 261.775,41, 6.248 Leads pagos e CPL geral estimado de R$ 41,90, além dos CPLs individuais de Site/Google, Meta e TikTok. Os dois painéis inferiores usam altura compartilhada e conteúdo interno flexível para manter alinhamento visual.
+
+> Validação final: 299 testes em 51 arquivos, TypeScript e build de produção aprovados. Reinício limpo do servidor concluído sem erros atuais de tipagem ou runtime.
