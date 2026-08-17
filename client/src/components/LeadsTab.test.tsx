@@ -58,33 +58,38 @@ describe("interface de Leads", () => {
     expect(source).toContain('dataKey={channel}');
   });
 
-  it("usa composição 65/35 no desktop com painéis de mesma altura e conteúdo responsivo", () => {
+  it("preserva a composição 65/35 e empilha dois blocos legíveis na coluna de distribuição", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('data-testid="channel-overview-layout"');
     expect(source).toContain("grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] 2xl:items-stretch");
-    expect(source).toContain('className="flex h-full flex-col"');
+    expect(source).toContain('data-testid="channel-overview-side"');
     expect(source).toContain('data-testid="daily-channel-summary"');
     expect(source).toContain('data-testid="channel-target-grid"');
     expect(source).toContain('data-testid="channel-target-card"');
     expect(source).toContain("h-[320px] min-w-[720px] flex-1");
-    expect(source).toContain("grid flex-1 content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-1.5 2xl:p-2");
+    expect(source).toContain("grid content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-2");
+    expect(source).toContain('data-testid="paid-media-grid"');
+    expect(source).toContain("sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2");
     expect(source).not.toContain("self-start");
     expect(source).not.toContain("2xl:grid-cols-2 2xl:items-stretch");
     expect(source).not.toContain("xl:grid-cols-[1.7fr_1fr]");
     expect(source).not.toContain("h-[350px] min-w-[760px]");
   });
 
-  it("exibe investimento e CPL somente para Site/Google, Meta e TikTok, além do total de referência", () => {
+  it("separa investimento/CPL das metas e exibe o CPL geral estimado somente para os três canais pagos", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('data-testid="paid-media-investment-total"');
     expect(source).toContain('data-testid="channel-media-reference"');
-    expect(source).toContain("Google Ads + Meta Ads + TikTok Ads");
-    expect(source).toContain('item.value as "Site" | "Meta" | "TikTok"');
-    expect(source).toContain("Site usa o investimento de Google Ads");
-    expect(source).toContain("CPL de referência = investimento do canal no período ÷ Leads exibidos no canal");
-    expect(source).toContain("Webmotors e Mercado Livre permanecem sem investimento/CPL");
+    expect(source).toContain('data-testid="estimated-overall-cpl"');
+    expect(source).toContain('data-testid="paid-media-summary"');
+    expect(source).toContain("Investimento e CPL de mídia paga");
+    expect(source).toContain("data.mediaInvestment.channels.map");
+    expect(source).toContain("data.mediaInvestment.paidMediaLeads");
+    expect(source).toContain("data.mediaInvestment.estimatedOverallCpl");
+    expect(source).toContain("Investimento total ÷ Leads de Site + Meta + TikTok");
+    expect(source).toContain("Webmotors e Mercado Livre não entram neste cálculo");
   });
 
   it("renderiza investimento e CPL de referência com moeda brasileira", () => {
@@ -107,7 +112,10 @@ describe("interface de Leads", () => {
     ).replaceAll("\u00a0", " ");
 
     expect(html).toContain('data-channel="Site"');
-    expect(html).toContain("Investimento · Google Ads");
+    expect(html).toContain("Site");
+    expect(html).toContain("Google Ads");
+    expect(html).toContain("2.149");
+    expect(html).toContain("Investimento");
     expect(html).toContain("R$ 232.549,00");
     expect(html).toContain("CPL de referência");
     expect(html).toContain("R$ 108,21");

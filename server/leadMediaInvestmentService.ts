@@ -22,6 +22,8 @@ export type LeadMediaInvestmentReference = {
   formula: "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS";
   totalInvestment: number | null;
   availableInvestment: number;
+  paidMediaLeads: number;
+  estimatedOverallCpl: number | null;
   allSourcesAvailable: boolean;
   channels: Array<
     PaidMediaMeasurement & {
@@ -144,14 +146,21 @@ export function buildLeadMediaInvestmentReference(input: {
   const availableInvestment = round(
     channels.reduce((sum, item) => sum + (item.investment ?? 0), 0),
   );
+  const paidMediaLeads = channels.reduce((sum, item) => sum + item.leads, 0);
   const allSourcesAvailable = channels.every(item => item.status === "AVAILABLE");
+  const totalInvestment = allSourcesAvailable ? availableInvestment : null;
 
   return {
     dateFrom: input.dateFrom,
     dateTo: input.dateTo,
     formula: "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS",
-    totalInvestment: allSourcesAvailable ? availableInvestment : null,
+    totalInvestment,
     availableInvestment,
+    paidMediaLeads,
+    estimatedOverallCpl:
+      totalInvestment != null && paidMediaLeads > 0
+        ? round(totalInvestment / paidMediaLeads)
+        : null,
     allSourcesAvailable,
     channels,
   };

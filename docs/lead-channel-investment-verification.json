@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-08-17T19:40:08.451Z",
+  "verifiedAt": "2026-08-17T21:05:17.435Z",
   "period": {
     "dateFrom": "2026-08-01",
     "dateTo": "2026-08-16"
@@ -8,6 +8,8 @@
   "totalLeads": 7043,
   "totalInvestment": 261775.41,
   "availableInvestment": 261775.41,
+  "paidMediaLeads": 6248,
+  "estimatedOverallCpl": 41.9,
   "allSourcesAvailable": true,
   "channels": [
     {
@@ -55,6 +57,7 @@
     "threePaidChannelsOnly": true,
     "sourceMapping": true,
     "totalReconciled": true,
-    "cplReconciled": true
+    "cplReconciled": true,
+    "overallCplReconciled": true
   }
 }

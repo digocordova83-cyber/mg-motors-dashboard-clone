@@ -61,6 +61,8 @@ describe("referência de investimento e CPL por canal", () => {
 
     expect(result.totalInvestment).toBe(261_775.41);
     expect(result.availableInvestment).toBe(261_775.41);
+    expect(result.paidMediaLeads).toBe(6_248);
+    expect(result.estimatedOverallCpl).toBe(41.9);
     expect(result.channels).toEqual([
       expect.objectContaining({ channel: "Site", leads: 2_149, referenceCpl: 108.21 }),
       expect.objectContaining({ channel: "Meta", leads: 4_013, referenceCpl: 6.77 }),
@@ -87,6 +89,8 @@ describe("referência de investimento e CPL por canal", () => {
 
     expect(result.totalInvestment).toBeNull();
     expect(result.availableInvestment).toBe(259_697.5);
+    expect(result.paidMediaLeads).toBe(6_248);
+    expect(result.estimatedOverallCpl).toBeNull();
     expect(result.allSourcesAvailable).toBe(false);
     expect(result.channels.find(item => item.channel === "TikTok")?.referenceCpl).toBeNull();
   });

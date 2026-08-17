@@ -215,29 +215,41 @@ export function ChannelMediaReference({
         : null;
 
   return (
-    <div
+    <article
       data-testid="channel-media-reference"
       data-channel={reference.channel}
-      className="mt-2 grid grid-cols-2 gap-2 border-t border-[#1b2637] pt-2"
+      className="rounded-lg border border-[#1c2738] bg-[#0a111d]/65 p-3"
     >
-      <div className="min-w-0">
-        <p className="truncate text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
-          {ui(locale, "Investimento", "Investment")} · {reference.platform}
-        </p>
-        <p className="mt-1 text-[10px] font-semibold text-slate-300">
-          {reference.investment == null ? "—" : formatCurrency(reference.investment, locale)}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-slate-100">{formatCategoryLabel(reference.channel, locale)}</p>
+          <p className="mt-1 text-[9px] text-slate-600">{reference.platform}</p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-sm font-semibold text-white">{formatInteger(reference.leads, locale)}</p>
+          <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads</p>
+        </div>
       </div>
-      <div className="min-w-0 text-right">
-        <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
-          {ui(locale, "CPL de referência", "Reference CPL")}
-        </p>
-        <p className="mt-1 text-[10px] font-semibold text-emerald-300">
-          {reference.referenceCpl == null ? "—" : formatCurrency(reference.referenceCpl, locale)}
-        </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="rounded-md border border-[#1b2637] bg-[#0d1624] px-3 py-2.5">
+          <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
+            {ui(locale, "Investimento", "Investment")}
+          </p>
+          <p className="mt-1.5 text-xs font-semibold text-slate-200">
+            {reference.investment == null ? "—" : formatCurrency(reference.investment, locale)}
+          </p>
+        </div>
+        <div className="rounded-md border border-emerald-400/10 bg-emerald-400/[0.04] px-3 py-2.5 text-right">
+          <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
+            {ui(locale, "CPL de referência", "Reference CPL")}
+          </p>
+          <p className="mt-1.5 text-xs font-semibold text-emerald-300">
+            {reference.referenceCpl == null ? "—" : formatCurrency(reference.referenceCpl, locale)}
+          </p>
+        </div>
       </div>
-      {coverageLabel ? <p className="col-span-2 text-[8px] text-amber-300/80">{coverageLabel}</p> : null}
-    </div>
+      {coverageLabel ? <p className="mt-2 text-[8px] text-amber-300/80">{coverageLabel}</p> : null}
+    </article>
   );
 }
 
@@ -1139,9 +1151,6 @@ export function LeadsTab({
   const stackedDaily = data.daily.map(point => ({ date: point.date, total: point.total, media7d: point.rollingAverage7d, ...point.values }));
   const peakDailyTotal = data.daily.reduce((peak, point) => Math.max(peak, point.total), 0);
   const activeChannelCount = data.channels.filter(item => item.leads > 0).length;
-  const mediaInvestmentByChannel = new Map(
-    data.mediaInvestment?.channels.map(item => [item.channel, item]) ?? [],
-  );
   const uploadError = clientUploadError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
 
   return (
@@ -1281,88 +1290,98 @@ export function LeadsTab({
           </div>
         </LeadPanel>
 
-        <LeadPanel
-          className="flex h-full flex-col"
-          title={ui(locale, "Distribuição por canal", "Distribution by channel")}
-          subtitle={ui(locale, "Volume, meta, investimento e CPL de referência até D-1.", "Volume, target, investment, and reference CPL through D-1.")}
-          action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${activeChannelCount} canais`, `${activeChannelCount} channels`)}</span>}
-        >
-          {data.mediaInvestment ? (
-            <div data-testid="paid-media-investment-total" className="flex items-center justify-between gap-4 border-b border-[#172131] bg-[#0a111d]/50 px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-300">
-                  <CircleDollarSign className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.11em] text-slate-600">{ui(locale, "Investimento total de referência", "Total reference investment")}</p>
-                  <p className="mt-0.5 truncate text-[9px] text-slate-600">Google Ads + Meta Ads + TikTok Ads</p>
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-base font-semibold text-white">
-                  {data.mediaInvestment.totalInvestment == null
-                    ? "—"
-                    : formatCurrency(data.mediaInvestment.totalInvestment, locale)}
-                </p>
-                <p className={`mt-1 text-[8px] font-semibold ${data.mediaInvestment.allSourcesAvailable ? "text-emerald-300" : "text-amber-300"}`}>
-                  {data.mediaInvestment.allSourcesAvailable
-                    ? ui(locale, "3 fontes reconciliadas", "3 reconciled sources")
-                    : ui(locale, `Disponível: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}`, `Available: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}`)}
-                </p>
-              </div>
-            </div>
-          ) : null}
-          <div data-testid="channel-target-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-1.5 2xl:p-2">
-            {data.channels.map((item, index) => {
-              const mediaReference = mediaInvestmentByChannel.get(item.value as "Site" | "Meta" | "TikTok");
-              return (
-                <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-2.5 text-[10px] 2xl:p-2">
-                <div className="flex items-start justify-between gap-3 2xl:gap-2">
-                  <div className="flex min-w-0 items-start gap-2.5 2xl:gap-2">
-                    <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-200" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</p>
-                      <p className="mt-1 text-[9px] leading-3 text-slate-600 2xl:text-[8px]">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")} · {formatNumber(item.sharePercent, locale)}% {ui(locale, "do período", "of period")}</p>
+        <div data-testid="channel-overview-side" className="grid min-w-0 content-start gap-4">
+          <LeadPanel
+            title={ui(locale, "Distribuição por canal", "Distribution by channel")}
+            subtitle={ui(locale, "Volume, participação e atingimento da meta mensal por veículo até D-1.", "Volume, share, and monthly vehicle target achievement through D-1.")}
+            action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${activeChannelCount} canais`, `${activeChannelCount} channels`)}</span>}
+          >
+            <div data-testid="channel-target-grid" className="grid content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-2">
+              {data.channels.map((item, index) => (
+                <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-3 text-[10px]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-slate-200" title={formatCategoryLabel(item.value, locale)}>{formatCategoryLabel(item.value, locale)}</p>
+                        <p className="mt-1 text-[9px] leading-3 text-slate-600">{formatNumber(item.dailyAverage, locale)} {ui(locale, "por dia", "per day")} · {formatNumber(item.sharePercent, locale)}% {ui(locale, "do período", "of period")}</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-base font-semibold leading-none text-white">{formatInteger(item.leads, locale)}</p>
+                      <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads</p>
                     </div>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-base font-semibold leading-none text-white">{formatInteger(item.leads, locale)}</p>
-                    <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads</p>
+                  <ChannelTargetProgress item={item} locale={locale} />
+                </article>
+              ))}
+              {!data.channels.length ? <div className="col-span-full grid min-h-48 place-items-center text-xs text-slate-600">{ui(locale, "Indisponível no período.", "Unavailable for this period.")}</div> : null}
+            </div>
+            {data.channelTargetSummary ? (
+              <div className="border-t border-[#172131] bg-[#0a111d]/35 px-4 py-3 text-[9px] leading-4 text-slate-600">
+                <p>{ui(locale, "A contabilização usa o veículo de origem no mês, incluindo MG4 URBAN.", "Accounting uses the monthly source vehicle, including MG4 URBAN.")}</p>
+                {data.channelTargetSummary.channelDifference !== 0 ? (
+                  <p className="mt-1">
+                    {ui(locale, "Nota:", "Note:")} {ui(locale, "a soma das metas por canal difere da meta total em", "channel targets differ from the total target by")} {formatInteger(Math.abs(data.channelTargetSummary.channelDifference), locale)} {ui(locale, "Leads por arredondamento da planilha.", "Leads due to spreadsheet rounding.")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </LeadPanel>
+
+          {data.mediaInvestment ? (
+            <LeadPanel
+              title={ui(locale, "Investimento e CPL de mídia paga", "Paid media investment and CPL")}
+              subtitle={ui(locale, "Google/Site, Meta e TikTok no mesmo período D-1.", "Google/Site, Meta, and TikTok in the same D-1 period.")}
+              action={<span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] font-semibold text-emerald-300">{ui(locale, "3 canais pagos", "3 paid channels")}</span>}
+            >
+              <div data-testid="paid-media-grid" className="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-2">
+                {data.mediaInvestment.channels.map(reference => (
+                  <ChannelMediaReference key={reference.channel} reference={reference} locale={locale} />
+                ))}
+              </div>
+
+              <div data-testid="paid-media-summary" className="border-t border-[#172131] bg-[#0a111d]/45 p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div data-testid="paid-media-investment-total" className="rounded-lg border border-[#1c2738] bg-[#0d1624] p-3">
+                    <div className="flex items-center gap-2">
+                      <CircleDollarSign className="h-4 w-4 text-emerald-300" aria-hidden="true" />
+                      <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Investimento total", "Total investment")}</p>
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-white">
+                      {data.mediaInvestment.totalInvestment == null ? "—" : formatCurrency(data.mediaInvestment.totalInvestment, locale)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-[#1c2738] bg-[#0d1624] p-3 text-right">
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Leads dos canais pagos", "Paid-channel Leads")}</p>
+                    <p className="mt-2 text-sm font-semibold text-white">{formatInteger(data.mediaInvestment.paidMediaLeads, locale)}</p>
+                    <p className="mt-1 text-[8px] text-slate-600">Site + Meta + TikTok</p>
                   </div>
                 </div>
-                {mediaReference ? <ChannelMediaReference reference={mediaReference} locale={locale} /> : null}
-                <ChannelTargetProgress item={item} locale={locale} />
-              </article>
-              );
-            })}
-            {!data.channels.length ? <div className="col-span-full grid min-h-48 place-items-center text-xs text-slate-600">{ui(locale, "Indisponível no período.", "Unavailable for this period.")}</div> : null}
-          </div>
-          {data.channelTargetSummary ? (
-            <div className="border-t border-[#172131] bg-[#0a111d]/35 px-4 py-3 text-[9px] leading-4 text-slate-600">
-              <p>
-                {ui(
-                  locale,
-                  "A contabilização usa o veículo de origem no mês, incluindo MG4 URBAN. Site usa o investimento de Google Ads; Meta usa Meta Ads; TikTok usa TikTok Ads.",
-                  "Accounting uses the monthly source vehicle, including MG4 URBAN. Site uses Google Ads investment; Meta uses Meta Ads; TikTok uses TikTok Ads.",
-                )}
-              </p>
-              {data.mediaInvestment ? (
-                <p className="mt-1">
-                  {ui(
-                    locale,
-                    "CPL de referência = investimento do canal no período ÷ Leads exibidos no canal. Webmotors e Mercado Livre permanecem sem investimento/CPL.",
-                    "Reference CPL = channel investment in the period ÷ Leads shown for the channel. Webmotors and Mercado Livre remain without investment/CPL.",
-                  )}
+
+                <div data-testid="estimated-overall-cpl" className="mt-2 rounded-lg border border-[#e2212d]/25 bg-[#e2212d]/[0.07] p-4">
+                  <div className="flex items-end justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#ff8c93]">{ui(locale, "CPL geral estimado", "Estimated overall CPL")}</p>
+                      <p className="mt-1.5 text-[9px] leading-4 text-slate-500">
+                        {ui(locale, "Investimento total ÷ Leads de Site + Meta + TikTok", "Total investment ÷ Site + Meta + TikTok Leads")}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-2xl font-semibold text-white">
+                      {data.mediaInvestment.estimatedOverallCpl == null ? "—" : formatCurrency(data.mediaInvestment.estimatedOverallCpl, locale)}
+                    </p>
+                  </div>
+                </div>
+
+                <p className={`mt-2 text-[8px] leading-4 ${data.mediaInvestment.allSourcesAvailable ? "text-slate-600" : "text-amber-300/80"}`}>
+                  {data.mediaInvestment.allSourcesAvailable
+                    ? ui(locale, "Google Ads + Meta Ads + TikTok Ads reconciliados. Webmotors e Mercado Livre não entram neste cálculo.", "Google Ads + Meta Ads + TikTok Ads reconciled. Webmotors and Mercado Livre are excluded from this calculation.")
+                    : ui(locale, `Cobertura parcial. Investimento disponível: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}.`, `Partial coverage. Available investment: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}.`)}
                 </p>
-              ) : null}
-              {data.channelTargetSummary.channelDifference !== 0 ? (
-                <p className="mt-1">
-                  {ui(locale, "Nota:", "Note:")} {ui(locale, "a soma das metas por canal difere da meta total em", "channel targets differ from the total target by")} {formatInteger(Math.abs(data.channelTargetSummary.channelDifference), locale)} {ui(locale, "Leads por arredondamento da planilha.", "Leads due to spreadsheet rounding.")}
-                </p>
-              ) : null}
-            </div>
+              </div>
+            </LeadPanel>
           ) : null}
-        </LeadPanel>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

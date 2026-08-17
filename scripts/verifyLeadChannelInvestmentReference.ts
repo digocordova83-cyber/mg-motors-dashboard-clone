@@ -50,6 +50,12 @@ async function main() {
         Math.abs(reference.totalInvestment - reference.availableInvestment) < 0.01,
       "O total completo não reconcilia com as três fontes disponíveis.",
     );
+    const expectedOverallCpl =
+      Math.round((reference.availableInvestment / reference.paidMediaLeads) * 100) / 100;
+    assert(
+      reference.estimatedOverallCpl === expectedOverallCpl,
+      "O CPL geral estimado não reconcilia com investimento e Leads pagos.",
+    );
   }
   for (const item of reference.channels) {
     if (item.investment != null && item.leads > 0) {
@@ -65,6 +71,8 @@ async function main() {
     totalLeads: analytics.summary.totalLeads,
     totalInvestment: reference.totalInvestment,
     availableInvestment: reference.availableInvestment,
+    paidMediaLeads: reference.paidMediaLeads,
+    estimatedOverallCpl: reference.estimatedOverallCpl,
     allSourcesAvailable: reference.allSourcesAvailable,
     channels: reference.channels,
     excludedChannels: ["Webmotors", "Mercado Livre"],
@@ -73,6 +81,7 @@ async function main() {
       sourceMapping: true,
       totalReconciled: true,
       cplReconciled: true,
+      overallCplReconciled: true,
     },
   };
   const output = resolve("docs/lead-channel-investment-verification.json");

@@ -1967,3 +1967,20 @@
 > O contrato publica o total apenas quando as três fontes cobrem integralmente o período; falhas são isoladas por plataforma e não fabricam CPL. A grade desktop usa `minmax(0, 13fr) minmax(0, 7fr)`, equivalente a 65/35, e continua empilhada abaixo de 1536 px.
 
 > Validação final: 299 testes em 51 arquivos aprovados, incluindo cálculo, cobertura parcial, falha isolada, formatação BRL, exclusão de Webmotors/Mercado Livre e proporção 65/35. TypeScript e build de produção aprovados; regra 13fr/7fr confirmada no CSS compilado. Reinício limpo sem erros atuais. A captura automatizada permaneceu corretamente no acesso protegido sem sessão; o conteúdo interno foi validado por regressões renderizadas e pela reconciliação ao vivo.
+
+## Separação dos blocos e CPL geral estimado — 17/08/2026
+
+- [x] Auditar a composição atual do painel e preservar a grade externa 65/35.
+- [x] Calcular `CPL geral estimado = (Google + Meta + TikTok) ÷ (Leads de Site + Meta + TikTok)` no mesmo período D-1.
+- [x] Separar visualmente `Distribuição e metas por canal` de `Investimento e CPL de mídia paga`.
+- [x] Exibir Google/Site, Meta e TikTok com investimento e CPL em linhas mais amplas, sem comprimir os cards de meta.
+- [x] Exibir abaixo o CPL geral estimado, o total investido e o total de Leads pagos usados no denominador.
+- [x] Manter Webmotors e Mercado Livre fora do investimento e do CPL geral.
+- [x] Validar cálculos, PT/EN, responsividade, suíte completa, TypeScript e build.
+- [x] Revisar o TODO e salvar checkpoint restaurável.
+
+> Reconciliação D-1 de 01–16/08: `R$ 261.775,41 ÷ 6.248 Leads pagos = CPL geral estimado de R$ 41,90`. O denominador contém somente Site `2.149` + Meta `4.013` + TikTok `86`; Webmotors e Mercado Livre permanecem excluídos. Evidência reproduzível atualizada em `docs/lead-channel-investment-verification.json`.
+
+> A coluna de 35% agora contém dois painéis independentes: o primeiro preserva Leads, participação, meta, atingimento e saldo dos cinco canais; o segundo concentra investimento/CPL dos três canais pagos em células amplas e apresenta, abaixo, investimento total, Leads pagos e CPL geral estimado. Em larguras intermediárias o bloco pago usa três colunas; no desktop 65/35 usa duas, evitando compressão.
+
+> Validação final: 299 testes em 51 arquivos, TypeScript e build de produção aprovados. A reconciliação ao vivo confirmou as três fontes, o total e o CPL geral; a rota protegida continua bloqueando acesso sem sessão e sem erros de tipagem ou build.
