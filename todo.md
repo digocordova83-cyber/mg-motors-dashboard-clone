@@ -1892,3 +1892,20 @@
 > Implementação: a grade em telas 2XL usa `minmax(0, 7fr) minmax(0, 3fr)`, preservando exatamente a relação 70/30. Abaixo de 1536 px os painéis continuam empilhados. A distribuição mantém duas colunas internas, com gaps, padding e textos auxiliares compactados apenas no desktop largo.
 
 > Validação: 277 testes em 48 arquivos aprovados, TypeScript sem erros, build de produção concluído e regra 70/30 confirmada no CSS compilado. A captura automatizada permaneceu na validação de acesso sem sessão; a proporção interna foi comprovada pela regressão estrutural e pelo artefato CSS gerado.
+
+## Atualização de Leads — Webmotors e TikTok — 17/08/2026
+
+- [x] Executar a rotina oficial sobre a planilha-fonte com as últimas linhas de Webmotors e TikTok.
+- [x] Comparar a execução com a base de 18.423 Leads e identificar novos registros por canal de origem.
+- [x] Validar modelos, dealers, datas, duplicatas, inválidos e contabilização analítica de TikTok e Webmotors.
+- [x] Reexecutar a rotina para confirmar idempotência e ausência de duplicação ou remoção indevida.
+- [x] Reconciliar total, soma dos canais, soma dos dias, dealers canônicos e Leads em qualificação.
+- [x] Entregar XLSX, CSV e relatório Markdown; executar regressões, revisar o TODO e salvar checkpoint.
+
+> Execução `20260817-150433`: `UPDATED`; 19.448 linhas encontradas, 19.444 válidas, 286 novos registros, 735 duplicatas internas, 18.423 registros já existentes, quatro inválidas e zero remoções. A base passou de 18.423 para 18.709 Leads.
+
+> Incremento líquido por origem: Webmotors passou de 1.513 para 1.722 Leads persistidos (`+209`) e TikTok de 11 para 88 (`+77`), totalizando os 286 novos registros. A fonte trouxe 211 novas linhas válidas de Webmotors, das quais duas foram descartadas como duplicatas internas; as 77 novas linhas TikTok foram preservadas. Dois Leads TikTok têm data 17/08 e, pela regra D-1, entram na visualização a partir do próximo fechamento.
+
+> Idempotência confirmada pela execução `20260817-150605`: `NO_CHANGES`, zero novos, zero removidos e zero linhas gravadas. Até D-1, `18.707 total = 18.707 canais = 18.707 dias = 17.906 atribuídos + 801 em qualificação`. Em agosto até 16/08, `7.043 = 7.015 conciliados + 28 em qualificação + 0 fora da meta`; 30 dealers canônicos possuem Leads e nenhuma meta ficou zerada.
+
+> Validação técnica: 35 regressões direcionadas aprovadas, TypeScript sem erros e integridade confirmada para XLSX, CSV e relatório Markdown.
