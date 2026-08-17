@@ -1865,3 +1865,18 @@
 - [x] Atualizar traduções e regressões para impedir o retorno dos rótulos antigos.
 - [x] Validar interface, acessibilidade, TypeScript, suíte completa e build.
 - [x] Salvar checkpoint restaurável e entregar a padronização.
+
+## Atualização manual da base de Leads — 17/08/2026
+
+- [x] Executar a rotina oficial de consolidação e importação sobre a planilha-fonte atualizada.
+- [x] Validar linhas encontradas, válidas, novas, duplicatas internas, existentes, inválidas e remoções da fonte.
+- [x] Reconciliar base antes/depois, canais de origem, dias, dealers canônicos e Leads em qualificação.
+- [x] Reexecutar a rotina para confirmar idempotência e ausência de duplicação.
+- [x] Entregar XLSX, CSV e relatório Markdown da execução principal.
+- [x] Executar regressões necessárias, revisar o TODO e salvar checkpoint restaurável.
+
+> Execução `20260817-144854`: `UPDATED`; 19.160 linhas encontradas, 19.156 válidas, nove novos registros, 733 duplicatas internas, 18.414 registros já existentes, quatro inválidas e zero remoções. A base passou de 18.414 para 18.423 Leads. Os nove novos registros vieram da origem Webmotors; oito permanecem em Webmotors e um MG4 URBAN mantém a classificação transacional Campanha Urban, sendo contabilizado analiticamente pela origem Webmotors.
+
+> Idempotência confirmada pela execução `20260817-145015`: `NO_CHANGES`, zero novos registros, zero remoções e zero linhas gravadas. No recorte integral até D-1, `18.423 total = 18.423 canais = 18.423 dias = 17.622 atribuídos + 801 em qualificação`. Em agosto até 16/08, `6.759 = 6.731 conciliados + 28 em qualificação + 0 fora da meta`; 30 dealers canônicos possuem Leads e nenhuma meta ficou zerada.
+
+> Validação técnica: 34 regressões direcionadas aprovadas, TypeScript sem erros e integridade confirmada para XLSX, CSV e relatório Markdown.
