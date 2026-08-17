@@ -1949,3 +1949,21 @@
 > Validação final: 294 testes em 50 arquivos aprovados, incluindo serviço, cache, snapshot, refresh diário, permissões, segredo Windsor, navegação, PT/EN, estados e renderização integral da interface. TypeScript e build de produção aprovados. Grades responsivas, alturas limitadas e rolagem interna foram cobertas por regressão estrutural; a captura automática da rota confirmou o bloqueio de acesso sem sessão, sem expor o dashboard protegido.
 
 > Inicialização limpa confirmada após reinício: servidor disponível em `http://localhost:3000/`, sem erros atuais de runtime ou navegador. O acesso direto sem sessão permanece corretamente bloqueado.
+
+## Investimento e CPL na distribuição por canal — 17/08/2026
+
+- [x] Auditar o recorte de datas e os contratos atuais de Leads, Google Ads, Meta Ads e TikTok Ads.
+- [x] Reconciliar investimento D-1 de Site/Google, Meta e TikTok sem misturar as métricas nativas de Leads das plataformas.
+- [x] Calcular CPL de referência como investimento do canal dividido pelos Leads exibidos no quadro de distribuição.
+- [x] Manter Webmotors e Mercado Livre sem investimento e CPL, preservando Leads, meta, atingimento e saldo.
+- [x] Exibir investimento total de referência como soma de Google Ads + Meta Ads + TikTok Ads.
+- [x] Alterar a grade desktop para 65% em `Leads por dia e canal` e 35% em `Distribuição por canal`.
+- [x] Preservar empilhamento e legibilidade integral em tablet e mobile.
+- [x] Criar regressões de cálculo, contrato, interface e layout; reconciliar os valores com as três fontes.
+- [x] Executar suíte completa, TypeScript e build; revisar o TODO e salvar checkpoint restaurável.
+
+> Reconciliação ao vivo de 01–16/08: Site/Google Ads `R$ 232.549,00 ÷ 2.149 Leads = CPL R$ 108,21`; Meta Ads `R$ 27.148,50 ÷ 4.013 Leads = CPL R$ 6,77`; TikTok Ads `R$ 2.077,91 ÷ 86 Leads = CPL R$ 24,16`. Investimento total `R$ 261.775,41 = Google + Meta + TikTok`. Webmotors e Mercado Livre permanecem excluídos de investimento/CPL. Evidência em `docs/lead-channel-investment-verification.json`.
+
+> O contrato publica o total apenas quando as três fontes cobrem integralmente o período; falhas são isoladas por plataforma e não fabricam CPL. A grade desktop usa `minmax(0, 13fr) minmax(0, 7fr)`, equivalente a 65/35, e continua empilhada abaixo de 1536 px.
+
+> Validação final: 299 testes em 51 arquivos aprovados, incluindo cálculo, cobertura parcial, falha isolada, formatação BRL, exclusão de Webmotors/Mercado Livre e proporção 65/35. TypeScript e build de produção aprovados; regra 13fr/7fr confirmada no CSS compilado. Reinício limpo sem erros atuais. A captura automatizada permaneceu corretamente no acesso protegido sem sessão; o conteúdo interno foi validado por regressões renderizadas e pela reconciliação ao vivo.

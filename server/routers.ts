@@ -49,6 +49,10 @@ import {
   upsertLeadMonthlyGoal,
 } from "./leadsService";
 import { exportLeadsBase } from "./leadsExportService";
+import {
+  buildLeadMediaInvestmentReference,
+  loadPaidMediaInvestmentMeasurements,
+} from "./leadMediaInvestmentService";
 import { loadMetaCreativeInventory } from "./metaCreativeInventory";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import { getTikTokAdsBounds, loadTikTokAdsData } from "./tiktokAdsService";
@@ -332,7 +336,24 @@ export const appRouter = router({
     bounds: leadsProcedure.query(() => getLeadDataBounds()),
     analytics: leadsProcedure
       .input(dashboardPeriodSchema)
-      .query(({ input }) => getLeadAnalytics(input)),
+      .query(async ({ ctx, input }) => {
+        const canAccessPaidMedia =
+          ctx.dashboardSession.permissions.canAccessGoogleAds &&
+          ctx.dashboardSession.permissions.canAccessMetaAds;
+        const mediaPromise = canAccessPaidMedia
+          ? loadPaidMediaInvestmentMeasurements(input.dateFrom, input.dateTo)
+          : null;
+        const analytics = await getLeadAnalytics(input);
+        const mediaInvestment = mediaPromise
+          ? buildLeadMediaInvestmentReference({
+              dateFrom: analytics.dateFrom,
+              dateTo: analytics.dateTo,
+              channelLeads: analytics.channels,
+              measurements: await mediaPromise,
+            })
+          : null;
+        return { ...analytics, mediaInvestment };
+      }),
     exportBase: mutableLeadsProcedure
       .input(leadsExportSchema)
       .mutation(({ input }) => exportLeadsBase(input)),

@@ -1,0 +1,60 @@
+{
+  "verifiedAt": "2026-08-17T19:40:08.451Z",
+  "period": {
+    "dateFrom": "2026-08-01",
+    "dateTo": "2026-08-16"
+  },
+  "formula": "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS",
+  "totalLeads": 7043,
+  "totalInvestment": 261775.41,
+  "availableInvestment": 261775.41,
+  "allSourcesAvailable": true,
+  "channels": [
+    {
+      "channel": "Site",
+      "platform": "Google Ads",
+      "investment": 232549,
+      "source": "persistent-snapshot",
+      "updatedAt": "2026-08-17T11:36:15.632Z",
+      "dataThroughDate": "2026-08-16",
+      "status": "AVAILABLE",
+      "error": null,
+      "leads": 2149,
+      "referenceCpl": 108.21
+    },
+    {
+      "channel": "Meta",
+      "platform": "Meta Ads",
+      "investment": 27148.5,
+      "source": "persistent-snapshot",
+      "updatedAt": "2026-08-17T18:22:10.533Z",
+      "dataThroughDate": "2026-08-16",
+      "status": "AVAILABLE",
+      "error": null,
+      "leads": 4013,
+      "referenceCpl": 6.77
+    },
+    {
+      "channel": "TikTok",
+      "platform": "TikTok Ads",
+      "investment": 2077.91,
+      "source": "persistent-snapshot",
+      "updatedAt": "2026-08-17T19:12:22.286Z",
+      "dataThroughDate": "2026-08-16",
+      "status": "AVAILABLE",
+      "error": null,
+      "leads": 86,
+      "referenceCpl": 24.16
+    }
+  ],
+  "excludedChannels": [
+    "Webmotors",
+    "Mercado Livre"
+  ],
+  "checks": {
+    "threePaidChannelsOnly": true,
+    "sourceMapping": true,
+    "totalReconciled": true,
+    "cplReconciled": true
+  }
+}

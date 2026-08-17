@@ -6,6 +6,7 @@ import {
   CsvDuplicateChannelBreakdown,
   CsvImportFeedback,
   CsvPreviewSummary,
+  ChannelMediaReference,
   ChannelTargetProgress,
   DealerAudit,
   LeadEmptyState,
@@ -57,11 +58,11 @@ describe("interface de Leads", () => {
     expect(source).toContain('dataKey={channel}');
   });
 
-  it("usa composição 70/30 no desktop com painéis de mesma altura e conteúdo responsivo", () => {
+  it("usa composição 65/35 no desktop com painéis de mesma altura e conteúdo responsivo", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('data-testid="channel-overview-layout"');
-    expect(source).toContain("grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] 2xl:items-stretch");
+    expect(source).toContain("grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] 2xl:items-stretch");
     expect(source).toContain('className="flex h-full flex-col"');
     expect(source).toContain('data-testid="daily-channel-summary"');
     expect(source).toContain('data-testid="channel-target-grid"');
@@ -72,6 +73,44 @@ describe("interface de Leads", () => {
     expect(source).not.toContain("2xl:grid-cols-2 2xl:items-stretch");
     expect(source).not.toContain("xl:grid-cols-[1.7fr_1fr]");
     expect(source).not.toContain("h-[350px] min-w-[760px]");
+  });
+
+  it("exibe investimento e CPL somente para Site/Google, Meta e TikTok, além do total de referência", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain('data-testid="paid-media-investment-total"');
+    expect(source).toContain('data-testid="channel-media-reference"');
+    expect(source).toContain("Google Ads + Meta Ads + TikTok Ads");
+    expect(source).toContain('item.value as "Site" | "Meta" | "TikTok"');
+    expect(source).toContain("Site usa o investimento de Google Ads");
+    expect(source).toContain("CPL de referência = investimento do canal no período ÷ Leads exibidos no canal");
+    expect(source).toContain("Webmotors e Mercado Livre permanecem sem investimento/CPL");
+  });
+
+  it("renderiza investimento e CPL de referência com moeda brasileira", () => {
+    const html = renderToStaticMarkup(
+      <ChannelMediaReference
+        locale="pt-BR"
+        reference={{
+          channel: "Site",
+          platform: "Google Ads",
+          investment: 232_549,
+          source: "persistent-snapshot",
+          updatedAt: "2026-08-17T11:36:15.632Z",
+          dataThroughDate: "2026-08-16",
+          status: "AVAILABLE",
+          error: null,
+          leads: 2_149,
+          referenceCpl: 108.21,
+        }}
+      />,
+    ).replaceAll("\u00a0", " ");
+
+    expect(html).toContain('data-channel="Site"');
+    expect(html).toContain("Investimento · Google Ads");
+    expect(html).toContain("R$ 232.549,00");
+    expect(html).toContain("CPL de referência");
+    expect(html).toContain("R$ 108,21");
   });
 
   it("exibe meta, percentual, saldo e barra vermelha sem inventar meta para origens não mapeadas", () => {

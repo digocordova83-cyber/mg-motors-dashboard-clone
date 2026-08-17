@@ -17,6 +17,7 @@ import {
   BarChart3,
   Building2,
   CheckCircle2,
+  CircleDollarSign,
   Clock3,
   Download,
   FileCheck2,
@@ -48,6 +49,8 @@ type LeadPreview = RouterOutputs["leads"]["previewCsv"];
 type LeadImportResult = RouterOutputs["leads"]["importCsv"];
 type DealerAuditItem = LeadAnalytics["dealerAudit"]["dealers"][number];
 type LeadChannelItem = LeadAnalytics["channels"][number];
+type LeadMediaInvestment = NonNullable<LeadAnalytics["mediaInvestment"]>;
+type LeadMediaChannelReference = LeadMediaInvestment["channels"][number];
 
 type Locale = "pt-BR" | "en-US";
 
@@ -105,6 +108,15 @@ function formatNumber(value: number, locale: Locale, maximumFractionDigits = 2) 
 
 function formatInteger(value: number, locale: Locale) {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatCurrency(value: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export function formatDailyBarTotal(value: unknown, locale: Locale = "pt-BR") {
@@ -184,6 +196,47 @@ export function ChannelTargetProgress({
         <div className="h-full rounded-full bg-[#e2212d]" style={{ width: `${progress}%` }} />
       </div>
       <p className="mt-1.5 text-[9px] text-slate-600">{gapText}</p>
+    </div>
+  );
+}
+
+export function ChannelMediaReference({
+  reference,
+  locale,
+}: {
+  reference: LeadMediaChannelReference;
+  locale: Locale;
+}) {
+  const coverageLabel =
+    reference.status === "PARTIAL"
+      ? ui(locale, "Cobertura parcial", "Partial coverage")
+      : reference.status === "UNAVAILABLE"
+        ? ui(locale, "Indisponível", "Unavailable")
+        : null;
+
+  return (
+    <div
+      data-testid="channel-media-reference"
+      data-channel={reference.channel}
+      className="mt-2 grid grid-cols-2 gap-2 border-t border-[#1b2637] pt-2"
+    >
+      <div className="min-w-0">
+        <p className="truncate text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
+          {ui(locale, "Investimento", "Investment")} · {reference.platform}
+        </p>
+        <p className="mt-1 text-[10px] font-semibold text-slate-300">
+          {reference.investment == null ? "—" : formatCurrency(reference.investment, locale)}
+        </p>
+      </div>
+      <div className="min-w-0 text-right">
+        <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
+          {ui(locale, "CPL de referência", "Reference CPL")}
+        </p>
+        <p className="mt-1 text-[10px] font-semibold text-emerald-300">
+          {reference.referenceCpl == null ? "—" : formatCurrency(reference.referenceCpl, locale)}
+        </p>
+      </div>
+      {coverageLabel ? <p className="col-span-2 text-[8px] text-amber-300/80">{coverageLabel}</p> : null}
     </div>
   );
 }
@@ -1086,6 +1139,9 @@ export function LeadsTab({
   const stackedDaily = data.daily.map(point => ({ date: point.date, total: point.total, media7d: point.rollingAverage7d, ...point.values }));
   const peakDailyTotal = data.daily.reduce((peak, point) => Math.max(peak, point.total), 0);
   const activeChannelCount = data.channels.filter(item => item.leads > 0).length;
+  const mediaInvestmentByChannel = new Map(
+    data.mediaInvestment?.channels.map(item => [item.channel, item]) ?? [],
+  );
   const uploadError = clientUploadError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
 
   return (
@@ -1172,7 +1228,7 @@ export function LeadsTab({
         </div>
       </LeadPanel>
 
-      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] 2xl:items-stretch">
+      <div data-testid="channel-overview-layout" className="grid items-start gap-4 2xl:auto-rows-fr 2xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] 2xl:items-stretch">
         <LeadPanel
           className="flex h-full flex-col"
           title={ui(locale, "Leads por dia e canal", "Leads by day and channel")}
@@ -1228,12 +1284,39 @@ export function LeadsTab({
         <LeadPanel
           className="flex h-full flex-col"
           title={ui(locale, "Distribuição por canal", "Distribution by channel")}
-          subtitle={ui(locale, "Volume, participação e atingimento da meta mensal por veículo até D-1.", "Volume, share, and monthly vehicle target achievement through D-1.")}
+          subtitle={ui(locale, "Volume, meta, investimento e CPL de referência até D-1.", "Volume, target, investment, and reference CPL through D-1.")}
           action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${activeChannelCount} canais`, `${activeChannelCount} channels`)}</span>}
         >
+          {data.mediaInvestment ? (
+            <div data-testid="paid-media-investment-total" className="flex items-center justify-between gap-4 border-b border-[#172131] bg-[#0a111d]/50 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-300">
+                  <CircleDollarSign className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.11em] text-slate-600">{ui(locale, "Investimento total de referência", "Total reference investment")}</p>
+                  <p className="mt-0.5 truncate text-[9px] text-slate-600">Google Ads + Meta Ads + TikTok Ads</p>
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-base font-semibold text-white">
+                  {data.mediaInvestment.totalInvestment == null
+                    ? "—"
+                    : formatCurrency(data.mediaInvestment.totalInvestment, locale)}
+                </p>
+                <p className={`mt-1 text-[8px] font-semibold ${data.mediaInvestment.allSourcesAvailable ? "text-emerald-300" : "text-amber-300"}`}>
+                  {data.mediaInvestment.allSourcesAvailable
+                    ? ui(locale, "3 fontes reconciliadas", "3 reconciled sources")
+                    : ui(locale, `Disponível: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}`, `Available: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}`)}
+                </p>
+              </div>
+            </div>
+          ) : null}
           <div data-testid="channel-target-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2 2xl:gap-1.5 2xl:p-2">
-            {data.channels.map((item, index) => (
-              <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-2.5 text-[10px] 2xl:p-2">
+            {data.channels.map((item, index) => {
+              const mediaReference = mediaInvestmentByChannel.get(item.value as "Site" | "Meta" | "TikTok");
+              return (
+                <article key={item.value} data-testid="channel-target-card" className="rounded-lg border border-[#1c2738] bg-[#0a111d]/55 p-2.5 text-[10px] 2xl:p-2">
                 <div className="flex items-start justify-between gap-3 2xl:gap-2">
                   <div className="flex min-w-0 items-start gap-2.5 2xl:gap-2">
                     <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[index % CHANNEL_COLORS.length] }} />
@@ -1247,9 +1330,11 @@ export function LeadsTab({
                     <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads</p>
                   </div>
                 </div>
+                {mediaReference ? <ChannelMediaReference reference={mediaReference} locale={locale} /> : null}
                 <ChannelTargetProgress item={item} locale={locale} />
               </article>
-            ))}
+              );
+            })}
             {!data.channels.length ? <div className="col-span-full grid min-h-48 place-items-center text-xs text-slate-600">{ui(locale, "Indisponível no período.", "Unavailable for this period.")}</div> : null}
           </div>
           {data.channelTargetSummary ? (
@@ -1257,10 +1342,19 @@ export function LeadsTab({
               <p>
                 {ui(
                   locale,
-                  "A contabilização usa o veículo de origem no mês, incluindo MG4 URBAN. Google e Publya aparecem combinados em Site.",
-                  "Accounting uses the monthly source vehicle, including MG4 URBAN. Google and Publya are combined under Site.",
+                  "A contabilização usa o veículo de origem no mês, incluindo MG4 URBAN. Site usa o investimento de Google Ads; Meta usa Meta Ads; TikTok usa TikTok Ads.",
+                  "Accounting uses the monthly source vehicle, including MG4 URBAN. Site uses Google Ads investment; Meta uses Meta Ads; TikTok uses TikTok Ads.",
                 )}
               </p>
+              {data.mediaInvestment ? (
+                <p className="mt-1">
+                  {ui(
+                    locale,
+                    "CPL de referência = investimento do canal no período ÷ Leads exibidos no canal. Webmotors e Mercado Livre permanecem sem investimento/CPL.",
+                    "Reference CPL = channel investment in the period ÷ Leads shown for the channel. Webmotors and Mercado Livre remain without investment/CPL.",
+                  )}
+                </p>
+              ) : null}
               {data.channelTargetSummary.channelDifference !== 0 ? (
                 <p className="mt-1">
                   {ui(locale, "Nota:", "Note:")} {ui(locale, "a soma das metas por canal difere da meta total em", "channel targets differ from the total target by")} {formatInteger(Math.abs(data.channelTargetSummary.channelDifference), locale)} {ui(locale, "Leads por arredondamento da planilha.", "Leads due to spreadsheet rounding.")}
