@@ -2046,3 +2046,45 @@
 > Validação final: cinco registros, cinco ativos, zero programados, zero pausados, zero encerrados e próximo término em 23/08/2026. As fórmulas foram adaptadas ao locale `pt_BR`; zero erros permanecem. A inspeção visual confirmou hierarquia, legibilidade, filtros, cores de status e tabela sem perda de dados.
 
 > Entrega concluída no arquivo original do Google Sheets. A aba operacional está visível como `Controle de Criativos`; o backup original permanece oculto e reversível.
+
+## Atualização manual do dashboard — 18/08/2026, nova execução
+
+- [x] Executar a rotina oficial de consolidação e importação sobre a fonte mais recente.
+- [x] Validar linhas encontradas, válidas, novas, duplicatas internas, existentes, inválidas e remoções.
+- [x] Reconciliar base antes/depois e detalhamento por canal.
+- [x] Confirmar se o dashboard foi atualizado ou permaneceu sem mudanças.
+- [x] Validar e entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260818-095852`: `UPDATED`; 20.214 linhas encontradas, 20.210 válidas, 181 novos registros, 740 duplicatas internas, 19.289 registros já existentes, quatro inválidas e zero remoções. A base passou de 19.289 para 19.470 Leads.
+
+## Execução agendada obrigatória de Leads — 18/08/2026
+
+- [x] Executar exatamente o comando informado e gravar `/tmp/mg-leads-scheduled-result.json`.
+- [x] Ler o JSON resultante e o `reportMarkdown` indicado nele.
+- [x] Validar status, linhas, duplicatas, inválidos, base antes/depois e canais.
+- [x] Confirmar a existência de `masterXlsx`, `masterCsv` e `reportMarkdown`.
+- [x] Entregar o resumo em português com os três arquivos obrigatórios anexados.
+
+> Execução `20260818-100247`: `NO_CHANGES`; 20.214 linhas encontradas, 20.210 válidas, zero novos registros, 740 duplicatas internas, 19.470 registros já existentes, quatro inválidas e zero remoções. A base permaneceu em 19.470 Leads e nenhuma linha foi gravada.
+
+> Canais analíticos: Meta 6.987; Site 6.794; Campanha Urban 3.434; Webmotors 1.757; Mercado Livre 831; UOL 307; TikTok 100. Canais de origem: Site 8.587; Meta 8.393; Webmotors 1.908; Mercado Livre 915; UOL 307; TikTok 100.
+
+> Artefatos confirmados: XLSX 1.385.213 bytes, CSV 2.671.133 bytes e relatório Markdown 1.484 bytes.
+
+## Executive Summary em português — 01 a 17/08/2026
+
+- [x] Auditar a versão atual de seis slides e preservar seu padrão visual corporativo.
+- [x] Extrair do dashboard os dados verificados de Leads, canais, MTD Retail Order, conversão, Google, Meta e TikTok até 17/08.
+- [x] Reconciliar totais, rankings e percentuais sem incluir investimento, CPL ou gestão orçamentária.
+- [x] Atualizar capa, visão geral, canais, campanhas, MTD Retail Order/rede e encerramento.
+- [x] Garantir conteúdo integralmente em português e nomenclatura `MTD Retail Order`.
+- [x] Validar renderização 1280×720, números, hierarquia e ausência de conteúdo residual de 01–16/08.
+- [x] Apresentar e entregar a versão final atualizada.
+
+> Snapshot reproduzível salvo em `data-pt-aug-01-17.json`. Leads reconciliados em `7.806 total = 7.806 canais = 7.806 dias = 7.806 modelos = 7.778 atribuídos + 28 em qualificação`. MTD Retail Order: 248 pedidos, 25 dealers reportados, zero unmatched e 3,36% de conversão sobre 7.380 Leads atribuídos aos dealers reportados.
+
+> Cobertura de mídia confirmada até 17/08: Google 3.579.411 impressões e 251.078 cliques; Meta 1.350.550 impressões, 476.132 de alcance e 4.400 Leads de plataforma; TikTok 235.733 impressões, 114.731 de alcance e 100 Leads. Investimentos, CPLs e gestão orçamentária foram excluídos do roteiro corporativo.
+
+> Validação final: seis slides renderizados em 1280×720 sem cortes ou sobreposições. Auditoria textual encontrou zero ocorrências de `01–16`, `16 dias`, `July`, `Retail Sales`, `Vendas no Varejo`, `Investimento`, `CPL` ou valores monetários nos slides ativos. TypeScript aprovado e zero páginas pendentes.
+
+> Apresentação final preparada em `manus-slides://VhkWGrZnlCCjHAVK1akhF5`, com seis páginas atualizadas para 01–17/08/2026.
