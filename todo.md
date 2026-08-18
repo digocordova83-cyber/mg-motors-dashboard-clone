@@ -2166,3 +2166,19 @@
 - [x] Entregar a lista completa de cidades com UF e respectivos dealers.
 
 > Base oficial reconciliada em 26 cidades/áreas operacionais, 17 UFs e 31 dealers. São Paulo/SP concentra seis dealers; as demais localidades possuem um dealer cada.
+
+## Dashboard — CPL por estado e dealer — 18/08/2026
+
+- [x] Criar contrato de backend para CPL estimado por estado e por dealer no período selecionado.
+- [x] Usar investimento real de Google, Meta e TikTok com cobertura integral até a data final.
+- [x] Alocar o gasto de cada canal conforme a meta do respectivo canal por dealer, sem rateio uniforme.
+- [x] Usar somente Leads de Site, Meta e TikTok atribuídos ao dealer como denominador.
+- [x] Exibir cobertura, Leads sem dealer e aviso de que o CPL é estimado.
+- [x] Adicionar tabela de CPL por estado com Leads pagos, investimento alocado e CPL.
+- [x] Adicionar tabela de CPL por dealer com UF, Leads pagos, investimento alocado e CPL.
+- [x] Integrar as tabelas aos filtros de período já existentes na aba Leads.
+- [x] Cobrir cálculo, reconciliação e renderização com testes Vitest.
+- [x] Validar a nova visualização em desktop e mobile sem overflow do documento.
+- [x] Revisar o TODO, salvar checkpoint e entregar a atualização.
+
+> O novo bloco fica na aba Leads, logo abaixo de Distribuição por canal e Investimento/CPL de mídia paga. No recorte validado de 01–17/08/2026: R$ 290.313,02 de investimento, 6.819 Leads pagos, 6.791 atribuídos aos 30 dealers, 17 UFs operacionais e cobertura de 99,59%. Validação final: 303 testes em 53 arquivos, TypeScript e build aprovados; desktop 1440×1100 e mobile 390×844 sem overflow do documento.

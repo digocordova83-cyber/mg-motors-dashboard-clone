@@ -33,6 +33,7 @@ import { evaluateRecommendationCadence } from "./optimizationPolicy";
 import { LeadCsvValidationError } from "./leadsCsv";
 import {
   decodeDealerTargetsBase64,
+  getDealerTargetsForCompetence,
   importDealerTargets,
   previewDealerTargets,
 } from "./dealerTargetsService";
@@ -53,6 +54,7 @@ import {
   buildLeadMediaInvestmentReference,
   loadPaidMediaInvestmentMeasurements,
 } from "./leadMediaInvestmentService";
+import { buildLeadGeographicCplReference } from "./leadGeographicCplService";
 import { loadMetaCreativeInventory } from "./metaCreativeInventory";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import { getTikTokAdsBounds, loadTikTokAdsData } from "./tiktokAdsService";
@@ -340,19 +342,34 @@ export const appRouter = router({
         const canAccessPaidMedia =
           ctx.dashboardSession.permissions.canAccessGoogleAds &&
           ctx.dashboardSession.permissions.canAccessMetaAds;
-        const mediaPromise = canAccessPaidMedia
-          ? loadPaidMediaInvestmentMeasurements(input.dateFrom, input.dateTo)
-          : null;
-        const analytics = await getLeadAnalytics(input);
-        const mediaInvestment = mediaPromise
+        const [analytics, measurements, dealerTargets] = await Promise.all([
+          getLeadAnalytics(input),
+          canAccessPaidMedia
+            ? loadPaidMediaInvestmentMeasurements(input.dateFrom, input.dateTo)
+            : Promise.resolve(null),
+          canAccessPaidMedia
+            ? getDealerTargetsForCompetence(input.dateTo.slice(0, 7))
+            : Promise.resolve(null),
+        ]);
+        const mediaInvestment = measurements
           ? buildLeadMediaInvestmentReference({
               dateFrom: analytics.dateFrom,
               dateTo: analytics.dateTo,
               channelLeads: analytics.channels,
-              measurements: await mediaPromise,
+              measurements,
             })
           : null;
-        return { ...analytics, mediaInvestment };
+        const geographicCpl = measurements && dealerTargets?.length
+          ? buildLeadGeographicCplReference({
+              dateFrom: analytics.dateFrom,
+              dateTo: analytics.dateTo,
+              competence: input.dateTo.slice(0, 7),
+              dealerAudit: analytics.dealerAudit,
+              dealerTargets,
+              measurements,
+            })
+          : null;
+        return { ...analytics, mediaInvestment, geographicCpl };
       }),
     exportBase: mutableLeadsProcedure
       .input(leadsExportSchema)
