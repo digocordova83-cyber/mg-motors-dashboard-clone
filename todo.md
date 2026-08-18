@@ -2137,3 +2137,13 @@
 > Validação final: 300 testes em 51 arquivos aprovados, TypeScript sem erros, build de produção concluído e servidor reiniciado sem falhas atuais. Os três slides alterados renderizam em 1280×720 sem cortes ou sobreposições; a auditoria textual encontrou zero referências residuais a 248 pedidos, 3,36%, S3 ou relatório de 14/08.
 
 > Apresentação preparada em `manus-slides://NiJsvCEQ21qdpQ1ujXgaa8`.
+
+## Rodapés ancorados ao final dos slides — 18/08/2026
+
+- [x] Auditar a distância entre cada barra inferior e a borda final do canvas.
+- [x] Ancorar a barra do slide 2 na base da página, eliminando a faixa vazia abaixo.
+- [x] Aplicar a mesma regra aos demais slides com rodapé, preservando conteúdo e dados.
+- [x] Renderizar os seis slides em 1280×720 e validar alinhamento inferior, cortes e sobreposições.
+- [x] Apresentar e entregar a versão corrigida.
+
+> Validação final: seis slides renderizados em 1280×720; barras dos slides 2 a 5 ancoradas na base; capa e encerramento em altura integral; nenhum corte ou sobreposição identificado.
