@@ -2158,3 +2158,11 @@
 - [x] Entregar tabelas auditáveis de CPL por estado e por dealer, com metodologia e limitações explícitas.
 
 > Período analisado: 01–17/08/2026. Investimento real reconciliado: R$ 290.313,02. Leads pagos: 6.819. CPL geral sobre Leads do dashboard: R$ 42,57. Como as plataformas não oferecem vínculo uniforme de gasto real com dealer, o gasto de cada canal foi alocado proporcionalmente às metas de Leads do respectivo canal. A cobertura foi de 99,59%: 6.791 Leads pagos em 30 dealers, zero dealers canônicos sem meta e 28 Leads sem dealer utilizável.
+
+## Cidades com dealers oficiais — 18/08/2026
+
+- [x] Extrair a cidade e a UF operacional dos dealers oficiais ativos.
+- [x] Consolidar cidades repetidas e validar a quantidade de dealers por localidade.
+- [x] Entregar a lista completa de cidades com UF e respectivos dealers.
+
+> Base oficial reconciliada em 26 cidades/áreas operacionais, 17 UFs e 31 dealers. São Paulo/SP concentra seis dealers; as demais localidades possuem um dealer cada.
