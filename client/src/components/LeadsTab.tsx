@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { LeadGeographicCplTables } from "./LeadGeographicCplTables";
 import { WeeklySalesPanel } from "./WeeklySalesPanel";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
@@ -1390,10 +1389,6 @@ export function LeadsTab({
         </div>
       </div>
 
-      {data.geographicCpl ? (
-        <LeadGeographicCplTables reference={data.geographicCpl} locale={locale} />
-      ) : null}
-
       <div className="grid gap-4 lg:grid-cols-2">
         <BreakdownList title={ui(locale, "Leads por modelo", "Leads by model")} subtitle={ui(locale, "Classificação preservada do CSV.", "Classification preserved from CSV.")} items={data.models} accent="#e2212d" locale={locale} />
         <BreakdownList
@@ -1414,6 +1409,7 @@ export function LeadsTab({
         dateFrom={dateFrom}
         dateTo={dateTo}
         locale={locale}
+        geographicCpl={data.geographicCpl}
         canImportLeads={canImportLeads}
         channelHistoryDealerNames={channelHistoryDealerNames}
         onViewChannelHistory={dealerName => {

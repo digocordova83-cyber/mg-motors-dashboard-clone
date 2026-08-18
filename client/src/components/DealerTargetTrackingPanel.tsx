@@ -8,6 +8,8 @@ import React, { useMemo, useState } from "react";
 import type { AppRouter } from "../../../server/routers";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
+type LeadAnalytics = RouterOutputs["leads"]["analytics"];
+type LeadGeographicCpl = NonNullable<LeadAnalytics["geographicCpl"]>;
 type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
 type DealerTargetTracking = NonNullable<WeeklySalesMetrics["targets"]>;
 export type DealerTargetProgress = DealerTargetTracking["dealers"][number];
@@ -25,6 +27,15 @@ function formatInteger(value: number, locale: Locale) {
 
 function formatNumber(value: number, locale: Locale, maximumFractionDigits = 2) {
   return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
+}
+
+function formatCurrency(value: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function formatDateTime(value: number, locale: Locale) {
@@ -116,9 +127,11 @@ function SummaryCard({
 
 export function DealerTargetTrackingPanel({
   tracking,
+  geographicCpl,
   locale = "pt-BR",
 }: {
   tracking: DealerTargetTracking;
+  geographicCpl?: LeadGeographicCpl | null;
   locale?: Locale;
 }) {
   const [search, setSearch] = useState("");
@@ -130,6 +143,10 @@ export function DealerTargetTrackingPanel({
       !query ? true : fold(`${row.dealerName} ${row.stateCode}`).includes(query),
     );
   }, [search, sortDirection, sortKey, tracking.dealers]);
+  const cplByDealer = useMemo(
+    () => new Map((geographicCpl?.dealers ?? []).map(dealer => [fold(dealer.dealerName), dealer])),
+    [geographicCpl],
+  );
   const summary = tracking.summary;
   const conversionAchievement = summary.actualConversionRatePercent === null || summary.targetConversionRatePercent <= 0
     ? null
@@ -146,8 +163,8 @@ export function DealerTargetTrackingPanel({
           <p className="mt-1 max-w-3xl text-[11px] leading-5 text-slate-600">
             {ui(
               locale,
-              `TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1 e ${MTD_RETAIL_ORDER_LABEL} da última semana reportada.`,
-              `Monthly TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers and ${MTD_RETAIL_ORDER_LABEL} from the latest reported week.`,
+              `TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1. Investimento e CPL são estimados pela participação das metas de cada canal.`,
+              `Monthly TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers. Investment and CPL are estimated from each channel target share.`,
             )}
           </p>
         </div>
@@ -184,23 +201,29 @@ export function DealerTargetTrackingPanel({
       </div>
 
       <div className="space-y-2 p-3 md:hidden" data-testid="dealer-target-mobile-list">
-        {rows.map(row => (
-          <article key={row.dealerKey} className="rounded-lg border border-[#1c2738] bg-[#0a111d] p-3">
-            <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words text-[10px] font-semibold text-slate-200">{row.dealerName}</p><p className="mt-0.5 text-[9px] text-slate-600">{row.stateCode}</p></div><span className={`shrink-0 text-xs font-semibold ${achievementTone(row.leadAchievementPercent)}`}>{formatNumber(row.leadAchievementPercent, locale)}%</span></div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[9px]"><div><p className="text-slate-600">Leads</p><p className="mt-1 font-medium text-sky-300">{formatInteger(row.leadsActual, locale)} / {formatInteger(row.leadTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.leadGap, locale)}</p></div><div><p className="text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 font-medium text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)} / {formatInteger(row.salesTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.salesGap, locale)}</p></div></div>
-          </article>
-        ))}
+        {rows.map(row => {
+          const cpl = cplByDealer.get(fold(row.dealerName));
+          return (
+            <article key={row.dealerKey} className="rounded-lg border border-[#1c2738] bg-[#0a111d] p-3">
+              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words text-[10px] font-semibold text-slate-200">{row.dealerName}</p><p className="mt-0.5 text-[9px] text-slate-600">{row.stateCode}</p></div><span className={`shrink-0 text-xs font-semibold ${achievementTone(row.leadAchievementPercent)}`}>{formatNumber(row.leadAchievementPercent, locale)}%</span></div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-[9px]"><div><p className="text-slate-600">Leads</p><p className="mt-1 font-medium text-sky-300">{formatInteger(row.leadsActual, locale)} / {formatInteger(row.leadTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.leadGap, locale)}</p></div><div><p className="text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 font-medium text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)} / {formatInteger(row.salesTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.salesGap, locale)}</p></div><div><p className="text-slate-600">{ui(locale, "Investimento alocado", "Allocated investment")}</p><p className="mt-1 font-medium text-slate-200">{cpl?.investment == null ? "—" : formatCurrency(cpl.investment, locale)}</p></div><div><p className="text-slate-600">{ui(locale, "CPL estimado", "Estimated CPL")}</p><p className="mt-1 font-medium text-emerald-300">{cpl?.estimatedCpl == null ? "—" : formatCurrency(cpl.estimatedCpl, locale)}</p></div></div>
+            </article>
+          );
+        })}
       </div>
 
       <div className="hidden max-w-full overflow-x-auto md:block">
-        <table className="w-full min-w-[1050px] text-left" data-testid="dealer-target-table">
-          <thead className="border-y border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-4 py-3 font-semibold">Dealer</th><th className="px-3 py-3 text-center font-semibold">UF</th><th className="px-3 py-3 text-right font-semibold">Leads</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Ating. Leads", "Lead achiev.")}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Gap Leads", "Lead gap")}</th><th className="px-3 py-3 text-right font-semibold">{MTD_RETAIL_ORDER_LABEL}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, `Ating. ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} achiev.`)}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, `Gap ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} gap`)}</th><th className="px-4 py-3 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th></tr></thead>
+        <table className="w-full min-w-[1280px] text-left" data-testid="dealer-target-table">
+          <thead className="border-y border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600"><tr><th className="px-4 py-3 font-semibold">Dealer</th><th className="px-3 py-3 text-center font-semibold">UF</th><th className="px-3 py-3 text-right font-semibold">Leads</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Ating. Leads", "Lead achiev.")}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Gap Leads", "Lead gap")}</th><th className="px-3 py-3 text-right font-semibold">{MTD_RETAIL_ORDER_LABEL}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, `Ating. ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} achiev.`)}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, `Gap ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} gap`)}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "Investimento alocado", "Allocated investment")}</th><th className="px-3 py-3 text-right font-semibold">{ui(locale, "CPL estimado", "Estimated CPL")}</th><th className="px-4 py-3 text-right font-semibold">{ui(locale, "Conversão", "Conversion")}</th></tr></thead>
           <tbody className="divide-y divide-[#172131]">
-            {rows.map(row => (
-              <tr key={row.dealerKey} className="text-[10px] transition-colors hover:bg-white/[0.025]">
-                <td className="px-4 py-3 font-medium text-slate-200">{row.dealerName}</td><td className="px-3 py-3 text-center text-slate-500">{row.stateCode}</td><td className="px-3 py-3 text-right"><span className="font-semibold text-sky-300">{formatInteger(row.leadsActual, locale)}</span><span className="text-slate-600"> / {formatInteger(row.leadTarget, locale)}</span></td><td className={`px-3 py-3 text-right font-semibold ${achievementTone(row.leadAchievementPercent)}`}>{formatNumber(row.leadAchievementPercent, locale)}%</td><td className="px-3 py-3 text-right text-slate-400">{gapLabel(row.leadGap, locale)}</td><td className="px-3 py-3 text-right"><span className="font-semibold text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)}</span><span className="text-slate-600"> / {formatInteger(row.salesTarget, locale)}</span></td><td className={`px-3 py-3 text-right font-semibold ${achievementTone(row.salesAchievementPercent)}`}>{row.salesAchievementPercent === null ? "—" : `${formatNumber(row.salesAchievementPercent, locale)}%`}</td><td className="px-3 py-3 text-right text-slate-400">{gapLabel(row.salesGap, locale)}</td><td className="px-4 py-3 text-right text-emerald-300">{row.actualConversionRatePercent === null ? "—" : `${formatNumber(row.actualConversionRatePercent, locale)}%`}<span className="block text-[8px] text-slate-600">{ui(locale, "Meta", "Target")} {formatNumber(row.targetConversionRatePercent, locale)}%</span></td>
-              </tr>
-            ))}
+            {rows.map(row => {
+              const cpl = cplByDealer.get(fold(row.dealerName));
+              return (
+                <tr key={row.dealerKey} className="text-[10px] transition-colors hover:bg-white/[0.025]">
+                  <td className="px-4 py-3 font-medium text-slate-200">{row.dealerName}</td><td className="px-3 py-3 text-center text-slate-500">{row.stateCode}</td><td className="px-3 py-3 text-right"><span className="font-semibold text-sky-300">{formatInteger(row.leadsActual, locale)}</span><span className="text-slate-600"> / {formatInteger(row.leadTarget, locale)}</span></td><td className={`px-3 py-3 text-right font-semibold ${achievementTone(row.leadAchievementPercent)}`}>{formatNumber(row.leadAchievementPercent, locale)}%</td><td className="px-3 py-3 text-right text-slate-400">{gapLabel(row.leadGap, locale)}</td><td className="px-3 py-3 text-right"><span className="font-semibold text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)}</span><span className="text-slate-600"> / {formatInteger(row.salesTarget, locale)}</span></td><td className={`px-3 py-3 text-right font-semibold ${achievementTone(row.salesAchievementPercent)}`}>{row.salesAchievementPercent === null ? "—" : `${formatNumber(row.salesAchievementPercent, locale)}%`}</td><td className="px-3 py-3 text-right text-slate-400">{gapLabel(row.salesGap, locale)}</td><td className="px-3 py-3 text-right text-slate-300">{cpl?.investment == null ? "—" : formatCurrency(cpl.investment, locale)}</td><td className="px-3 py-3 text-right font-semibold text-emerald-300">{cpl?.estimatedCpl == null ? "—" : formatCurrency(cpl.estimatedCpl, locale)}</td><td className="px-4 py-3 text-right text-emerald-300">{row.actualConversionRatePercent === null ? "—" : `${formatNumber(row.actualConversionRatePercent, locale)}%`}<span className="block text-[8px] text-slate-600">{ui(locale, "Meta", "Target")} {formatNumber(row.targetConversionRatePercent, locale)}%</span></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

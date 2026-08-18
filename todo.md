@@ -2182,3 +2182,17 @@
 - [x] Revisar o TODO, salvar checkpoint e entregar a atualização.
 
 > O novo bloco fica na aba Leads, logo abaixo de Distribuição por canal e Investimento/CPL de mídia paga. No recorte validado de 01–17/08/2026: R$ 290.313,02 de investimento, 6.819 Leads pagos, 6.791 atribuídos aos 30 dealers, 17 UFs operacionais e cobertura de 99,59%. Validação final: 303 testes em 53 arquivos, TypeScript e build aprovados; desktop 1440×1100 e mobile 390×844 sem overflow do documento.
+
+## Ajuste — CPL nas tabelas existentes — 18/08/2026
+
+- [x] Remover da aba Leads as tabelas independentes de CPL por estado e dealer.
+- [x] Adicionar investimento alocado e CPL estimado à tabela existente de acompanhamento por dealer.
+- [x] Adicionar investimento alocado e CPL estimado à tabela existente de resultados por estado.
+- [x] Preservar busca, ordenação, expansão, metas, MTD Retail Order, conversão e demais colunas atuais.
+- [x] Manter a metodologia estimada e a cobertura acessíveis sem criar um novo painel de dados.
+- [x] Atualizar contratos e propriedades entre LeadsTab, WeeklySalesPanel e DealerTargetTrackingPanel.
+- [x] Atualizar regressões e remover o componente independente obsoleto.
+- [x] Validar desktop e mobile, executar testes, TypeScript e build.
+- [x] Revisar o TODO, salvar checkpoint e entregar a correção.
+
+> As tabelas independentes foram removidas. `Investimento alocado` e `CPL estimado` agora são duas colunas adicionais em `Acompanhamento das metas por concessionária` e em `Principais concessionárias, Leads e MTD Retail Order por estado`; no mobile, aparecem como campos dos cards já existentes. Busca, ordenação, expansão, metas, MTD Retail Order, conversão e cobertura foram preservadas. Validação: 302 testes em 52 arquivos, TypeScript e build aprovados; desktop e mobile sem overflow do documento.

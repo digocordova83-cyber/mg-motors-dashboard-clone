@@ -236,9 +236,15 @@ describe("vendas semanais na experiência de concessionárias", () => {
   });
 
   it("renderiza o ranking estadual e a abertura dos dealers com status de cobertura", () => {
+    const geographicCpl = {
+      states: [
+        { stateCode: "SP", investment: 5_000, estimatedCpl: 55.56 },
+        { stateCode: "PR", investment: 2_000, estimatedCpl: 40 },
+      ],
+    };
     const ranking = renderToStaticMarkup(
-      <WeeklySalesStateRanking metrics={stateMetrics} selectedWeek={5} />,
-    );
+      <WeeklySalesStateRanking metrics={stateMetrics} selectedWeek={5} geographicCpl={geographicCpl as never} />,
+    ).replaceAll("\u00a0", " ");
     const dealers = renderToStaticMarkup(
       <WeeklySalesStateDealerTable state={(stateMetrics as any).states[0]} selectedWeek={5} />,
     );
@@ -247,6 +253,10 @@ describe("vendas semanais na experiência de concessionárias", () => {
     expect(ranking).toContain("São Paulo");
     expect(ranking).toContain("50 de 90 Leads");
     expect(ranking).toContain("55,56%");
+    expect(ranking).toContain("Investimento alocado");
+    expect(ranking).toContain("CPL estimado");
+    expect(ranking).toContain("R$ 5.000,00");
+    expect(ranking).toContain("R$ 55,56");
     expect(dealers).toContain("SAVOL - SÃO CAETANO");
     expect(dealers).toContain("SINAL AV EUROPA");
     expect(dealers).toContain("Sem linha no arquivo");

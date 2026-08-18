@@ -34,6 +34,8 @@ import React, { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, us
 import type { AppRouter } from "../../../server/routers";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
+type LeadAnalytics = RouterOutputs["leads"]["analytics"];
+type LeadGeographicCpl = NonNullable<LeadAnalytics["geographicCpl"]>;
 type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
 type WeeklySalesDealer = WeeklySalesMetrics["dealers"][number];
 type WeeklySalesState = WeeklySalesMetrics["states"][number];
@@ -73,6 +75,7 @@ type WeeklySalesPanelProps = {
   dateFrom: string;
   dateTo: string;
   locale?: Locale;
+  geographicCpl?: LeadGeographicCpl | null;
   canImportLeads?: boolean;
   channelHistoryDealerNames?: ReadonlySet<string>;
   onViewChannelHistory?: (dealerName: string) => void;
@@ -108,6 +111,15 @@ function foldDealerName(value: string) {
     .toLocaleLowerCase("pt-BR")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function formatCurrency(value: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export function isDealerRankingNameEligible(value: string) {
@@ -534,10 +546,12 @@ export function WeeklySalesStateDealerTable({
 export function WeeklySalesStateRanking({
   metrics,
   selectedWeek,
+  geographicCpl,
   locale = "pt-BR",
 }: {
   metrics: WeeklySalesMetrics;
   selectedWeek: WeeklySalesWeek;
+  geographicCpl?: LeadGeographicCpl | null;
   locale?: Locale;
 }) {
   const [expandedStateCode, setExpandedStateCode] = useState<string | null>(null);
@@ -546,6 +560,10 @@ export function WeeklySalesStateRanking({
   const rows = useMemo(
     () => sortStatePerformanceRanking(buildStatePerformanceRanking(metrics, selectedWeek), sortKey, sortDirection),
     [metrics, selectedWeek, sortDirection, sortKey],
+  );
+  const cplByState = useMemo(
+    () => new Map((geographicCpl?.states ?? []).map(state => [state.stateCode, state])),
+    [geographicCpl],
   );
 
   function changeSort(nextKey: StateRankingSortKey) {
@@ -570,8 +588,8 @@ export function WeeklySalesStateRanking({
       <div className="border-b border-sky-400/10 bg-sky-400/[0.035] px-4 py-3 text-[9px] leading-4 text-slate-500">
         {ui(
           locale,
-          `A conversão usa o ${MTD_RETAIL_ORDER_LABEL} do último arquivo disponível e somente os Leads dos dealers presentes nesse arquivo. A cobertura é exibida em cada estado para evitar leitura distorcida.`,
-          `Conversion uses the latest available ${MTD_RETAIL_ORDER_LABEL} file and only Leads from dealers present in that file. Coverage is shown for each state to avoid distorted readings.`,
+          `A conversão usa o ${MTD_RETAIL_ORDER_LABEL} do último arquivo disponível e somente os Leads dos dealers presentes nesse arquivo. Investimento e CPL são estimados pela participação das metas de cada canal.`,
+          `Conversion uses the latest available ${MTD_RETAIL_ORDER_LABEL} file and only Leads from dealers present in that file. Investment and CPL are estimated from each channel target share.`,
         )}
       </div>
       {rows.length ? (
@@ -596,6 +614,7 @@ export function WeeklySalesStateRanking({
             {rows.map((row, index) => {
               const isExpanded = expandedStateCode === row.stateCode;
               const detailId = `state-dealers-mobile-${row.stateCode.toLocaleLowerCase("pt-BR")}`;
+              const cpl = cplByState.get(row.stateCode);
               return (
                 <div key={row.stateCode} className="rounded-xl border border-[#1c2738] bg-[#0d1421]">
                   <button
@@ -615,8 +634,10 @@ export function WeeklySalesStateRanking({
                       </span>
                       <ChevronDown className={`h-4 w-4 shrink-0 text-slate-600 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
                     </div>
-                    <div className="mt-3 grid grid-cols-4 gap-2 border-t border-[#1c2738] pt-3">
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#1c2738] pt-3 sm:grid-cols-3">
                       <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Leads</p><p className="mt-1 text-sm font-semibold text-white">{formatInteger(row.leads, locale)}</p></div>
+                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "Investimento alocado", "Allocated investment")}</p><p className="mt-1 text-sm font-semibold text-slate-300">{cpl?.investment == null ? "—" : formatCurrency(cpl.investment, locale)}</p></div>
+                      <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "CPL estimado", "Estimated CPL")}</p><p className="mt-1 text-sm font-semibold text-emerald-300">{cpl?.estimatedCpl == null ? "—" : formatCurrency(cpl.estimatedCpl, locale)}</p></div>
                       <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 text-sm font-semibold text-slate-300">{formatInteger(row.sales, locale)}</p></div>
                       <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "Conversão", "Conversion")}</p><p className="mt-1 text-sm font-semibold text-sky-300">{formatMetric(row.conversionRatePercent, locale, "%")}</p></div>
                       <div><p className="text-[7px] uppercase tracking-[0.08em] text-slate-600">Dealers</p><p className="mt-1 text-sm font-semibold text-slate-300">{row.recipientDealers}/{row.officialDealers}</p></div>
@@ -631,7 +652,7 @@ export function WeeklySalesStateRanking({
               );
             })}
           </div>
-          <table className="hidden w-full min-w-[820px] text-left md:table">
+          <table className="hidden w-full min-w-[1080px] text-left md:table">
             <thead className="border-b border-[#1d2737] bg-[#0a111d] text-[9px] uppercase tracking-[0.1em] text-slate-600">
               <tr>
                 <th className="w-14 px-4 py-3 text-center font-semibold">#</th>
@@ -644,6 +665,8 @@ export function WeeklySalesStateRanking({
                     </button>
                   </th>
                 ))}
+                <th className="px-3 py-3 text-right font-semibold">{ui(locale, "Investimento alocado", "Allocated investment")}</th>
+                <th className="px-3 py-3 text-right font-semibold">{ui(locale, "CPL estimado", "Estimated CPL")}</th>
                 <th className="px-3 py-3 text-right font-semibold">Dealers</th>
               </tr>
             </thead>
@@ -651,6 +674,7 @@ export function WeeklySalesStateRanking({
               {rows.map((row, index) => {
                 const isExpanded = expandedStateCode === row.stateCode;
                 const detailId = `state-dealers-${row.stateCode.toLocaleLowerCase("pt-BR")}`;
+                const cpl = cplByState.get(row.stateCode);
                 return (
                   <React.Fragment key={row.stateCode}>
                     <tr className="text-[10px] transition-colors hover:bg-white/[0.025]">
@@ -675,11 +699,13 @@ export function WeeklySalesStateRanking({
                       <td className="px-3 py-3 text-right font-semibold text-white">{formatInteger(row.leads, locale)}</td>
                       <td className="px-3 py-3 text-right text-slate-300">{formatInteger(row.sales, locale)}</td>
                       <td className="px-3 py-3 text-right font-medium text-sky-300">{formatMetric(row.conversionRatePercent, locale, "%")}</td>
+                      <td className="px-3 py-3 text-right text-slate-300">{cpl?.investment == null ? "—" : formatCurrency(cpl.investment, locale)}</td>
+                      <td className="px-3 py-3 text-right font-semibold text-emerald-300">{cpl?.estimatedCpl == null ? "—" : formatCurrency(cpl.estimatedCpl, locale)}</td>
                       <td className="px-3 py-3 text-right text-slate-400">{row.recipientDealers} {ui(locale, "de", "of")} {row.officialDealers}</td>
                     </tr>
                     {isExpanded ? (
                       <tr id={detailId} className="bg-[#0a111d]">
-                        <td colSpan={6} className="px-4 py-4">
+                        <td colSpan={8} className="px-4 py-4">
                           <WeeklySalesStateDealerTable state={row.state} selectedWeek={selectedWeek} locale={locale} />
                         </td>
                       </tr>
@@ -1329,6 +1355,7 @@ export function WeeklySalesPanel({
   dateFrom,
   dateTo,
   locale = "pt-BR",
+  geographicCpl,
   canImportLeads = false,
   channelHistoryDealerNames,
   onViewChannelHistory,
@@ -1667,7 +1694,7 @@ export function WeeklySalesPanel({
         <>
           <WeeklySalesSummaryCards metrics={metrics.data} locale={locale} />
           {metrics.data.targets ? (
-            <DealerTargetTrackingPanel tracking={metrics.data.targets} locale={locale} />
+            <DealerTargetTrackingPanel tracking={metrics.data.targets} geographicCpl={geographicCpl} locale={locale} />
           ) : (
             <div className="grid min-h-32 place-items-center rounded-xl border border-dashed border-[#263247] bg-[#0d1421] px-5 text-center">
               <div>
@@ -1686,6 +1713,7 @@ export function WeeklySalesPanel({
           <WeeklySalesStateRanking
             metrics={metrics.data}
             selectedWeek={rankingWeek}
+            geographicCpl={geographicCpl}
             locale={locale}
           />
           <div className="grid min-w-0 gap-4 xl:grid-cols-2">

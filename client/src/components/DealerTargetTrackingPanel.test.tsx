@@ -68,6 +68,13 @@ const tracking = {
   dealers,
 };
 
+const geographicCpl = {
+  dealers: [
+    { dealerName: "DEALER A", investment: 1_000, estimatedCpl: 12.5 },
+    { dealerName: "DEALER B", investment: 500, estimatedCpl: 25 },
+  ],
+};
+
 describe("DealerTargetTrackingPanel", () => {
   it("ordena por atingimento e preserva dealers sem MTD Retail Order reportado", () => {
     expect(sortDealerTargetProgress(dealers, "leadAchievement", "asc").map(row => row.dealerName)).toEqual([
@@ -81,7 +88,7 @@ describe("DealerTargetTrackingPanel", () => {
   });
 
   it("renderiza resumo, tabela desktop e cards mobile em português", () => {
-    const html = renderToStaticMarkup(<DealerTargetTrackingPanel tracking={tracking as never} locale="pt-BR" />);
+    const html = renderToStaticMarkup(<DealerTargetTrackingPanel tracking={tracking as never} geographicCpl={geographicCpl as never} locale="pt-BR" />).replaceAll("\u00a0", " ");
 
     expect(html).toContain("Acompanhamento das metas por concessionária");
     expect(html).toContain("Leads atribuídos às 2 concessionárias");
@@ -95,6 +102,10 @@ describe("DealerTargetTrackingPanel", () => {
     expect(html).toContain('data-testid="dealer-target-table"');
     expect(html).toContain('data-testid="dealer-target-mobile-list"');
     expect(html).toContain("DEALER B");
+    expect(html).toContain("Investimento alocado");
+    expect(html).toContain("CPL estimado");
+    expect(html).toContain("R$ 1.000,00");
+    expect(html).toContain("R$ 12,50");
   });
 
   it("localiza títulos e controles em inglês", () => {
@@ -108,5 +119,7 @@ describe("DealerTargetTrackingPanel", () => {
     expect(html).toContain("MTD Retail Order achievement");
     expect(html).toContain("Search dealer or state");
     expect(html).toContain("dealers reported");
+    expect(html).toContain("Allocated investment");
+    expect(html).toContain("Estimated CPL");
   });
 });
