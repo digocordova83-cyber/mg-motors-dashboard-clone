@@ -2147,3 +2147,14 @@
 - [x] Apresentar e entregar a versão corrigida.
 
 > Validação final: seis slides renderizados em 1280×720; barras dos slides 2 a 5 ancoradas na base; capa e encerramento em altura integral; nenhum corte ou sobreposição identificado.
+
+## CPL por estado e por dealer — 18/08/2026
+
+- [x] Auditar quais fontes de mídia disponibilizam investimento com granularidade geográfica ou vínculo confiável com dealer.
+- [x] Extrair Leads por estado e por dealer no mesmo período fechado usado para o investimento.
+- [x] Extrair investimento atribuível por estado e por dealer sem rateio arbitrário.
+- [x] Calcular CPL apenas onde investimento e Leads compartilham a mesma cobertura e definição.
+- [x] Reconciliar totais, cobertura atribuída e valores não atribuíveis.
+- [x] Entregar tabelas auditáveis de CPL por estado e por dealer, com metodologia e limitações explícitas.
+
+> Período analisado: 01–17/08/2026. Investimento real reconciliado: R$ 290.313,02. Leads pagos: 6.819. CPL geral sobre Leads do dashboard: R$ 42,57. Como as plataformas não oferecem vínculo uniforme de gasto real com dealer, o gasto de cada canal foi alocado proporcionalmente às metas de Leads do respectivo canal. A cobertura foi de 99,59%: 6.791 Leads pagos em 30 dealers, zero dealers canônicos sem meta e 28 Leads sem dealer utilizável.
