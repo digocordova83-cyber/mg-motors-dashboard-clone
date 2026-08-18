@@ -262,6 +262,38 @@ describe("Weekly Target Achievement PDF", () => {
     });
   });
 
+  it("usa o próximo modelo multimodal quando a primeira saída estruturada vem malformada", async () => {
+    llmMocks.listLLMModels.mockResolvedValue({
+      data: [
+        { id: "gemini-3-flash-preview" },
+        { id: "gpt-5-mini" },
+        { id: "claude-haiku-4-5" },
+      ],
+    });
+    llmMocks.invokeLLM
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            message: {
+              content: '{"tableTitle":"Weekly Target Achievement - Retail","rows":[',
+            },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: JSON.stringify(extraction()) } }],
+      });
+
+    const preview = await parseWeeklySalesPdf(PDF);
+
+    expect(preview.errors).toEqual([]);
+    expect(llmMocks.invokeLLM).toHaveBeenCalledTimes(2);
+    expect(llmMocks.invokeLLM.mock.calls.map(call => call[0]?.model)).toEqual([
+      "gemini-3-flash-preview",
+      "gpt-5-mini",
+    ]);
+  });
+
   it("falha de forma legível quando a saída estruturada do PDF é inválida", async () => {
     llmMocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ tableTitle: "Retail", rows: [] }) } }],

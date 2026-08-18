@@ -2103,3 +2103,37 @@
 > Validação visual concluída em seis imagens 1280×720: zero cortes, zero sobreposições e nenhum elemento fora do canvas. Os achados estão documentados em `validation-layout-adjusted/findings.md`.
 
 > Versão final preparada em `manus-slides://3cTI1qRf6YTZWDxwUAvoST`, com o layout reequilibrado nos seis slides.
+
+## Correção do importador de Vendas e atualização da Executive Summary — 18/08/2026
+
+- [x] Inspecionar o PDF enviado e o fluxo oficial de upload, preview e importação de Vendas.
+- [x] Reproduzir a falha sem alterar a base e identificar a causa raiz.
+- [x] Corrigir o parser ou importador preservando o contrato `MTD Retail Order` e os bloqueios de ambiguidade.
+- [x] Criar regressões específicas para o novo PDF e para a causa raiz encontrada.
+- [x] Importar o PDF corrigido na base oficial e confirmar idempotência.
+- [x] Reconciliar total de MTD Retail Order, semanas, dealers, aliases e registros não correspondidos.
+- [x] Informar quais concessionárias do PDF não foram encontradas no dashboard, se houver.
+- [x] Reextrair Leads, Vendas e conversão para a Executive Summary.
+- [x] Reconciliar investimento e CPL de Google, Meta e TikTok no mesmo período exibido nos slides.
+- [x] Calcular e exibir o investimento total consolidado das três plataformas.
+- [x] Atualizar os seis slides, incluindo ranking Top 5 e indicadores da rede.
+- [x] Validar dashboard, testes, TypeScript, build e renderização 1280×720 dos slides.
+- [x] Revisar o TODO, salvar checkpoint restaurável e entregar o diagnóstico e a apresentação atualizada.
+
+> O PDF de 17/08 possui 11 páginas, 1.278.074 bytes e assinatura válida. O parser local extraiu 29 linhas, 26 dealers, duas regiões e um TOTAL; W4 reconciliou em `338 = 338 = 338`, com zero erros e apenas o aviso de TECAR GOIÂNIA sem MTD Retail Order informado.
+
+> Causa raiz confirmada nos logs de produção: a leitura multimodal retornou JSON truncado/malformado, rejeitado em `JSON.parse` na posição 1964. O fluxo atual seleciona apenas um modelo e encerra a prévia na primeira resposta estruturada inválida, embora uma nova leitura do mesmo PDF possa funcionar. O arquivo, o tamanho, a assinatura, a competência e a reconciliação não são a causa da falha.
+
+> Correção implementada: o parser consulta o catálogo vivo e tenta, em ordem, Gemini Flash, GPT-5 Mini e Claude Haiku quando uma resposta multimodal vem vazia, malformada ou fora do schema. Uma regressão reproduz exatamente o JSON truncado de produção e comprova o fallback para o segundo modelo. Resultado: 300 testes em 51 arquivos aprovados e TypeScript sem erros.
+
+> Importação oficial concluída no lote `360001`: 29 linhas gravadas para a competência 2026-08, W4 como referência e 338 MTD Retail Orders reconciliados. Os 26 dealers foram correspondidos; zero dealers ficaram unmatched. TECAR GOIÂNIA permanece corretamente conciliada, mas sem MTD Retail Order informado no PDF.
+
+> Idempotência confirmada: a reexecução retornou o mesmo lote `360001`, `idempotent: true` e `rowsInserted: 0`. O dashboard reconciliou `338 = dealers = estados = metas`, com 26 dealers correspondidos, zero unmatched e conversão de 4,45% sobre 7.597 Leads atribuídos. TECAR GOIÂNIA possui 258 Leads, está conciliada e permanece sem MTD Retail Order informado na fonte.
+
+> Snapshot executivo atualizado: Google R$ 257.832,99 e CPL/CPA R$ 87,04; Meta R$ 29.858,97 e CPL R$ 6,79; TikTok R$ 2.621,06 e CPL R$ 26,21. Total investido: R$ 290.313,02; CPL combinado: R$ 38,91 sobre 7.462,1 resultados de plataforma.
+
+> Slides atualizados: visão geral com 338 MTD Retail Orders e conversão de 4,45%; campanhas com investimento e CPL de Google, Meta e TikTok, investimento total e CPL combinado; rede com W4, 26 dealers e novo Top 5 de 135 pedidos.
+
+> Validação final: 300 testes em 51 arquivos aprovados, TypeScript sem erros, build de produção concluído e servidor reiniciado sem falhas atuais. Os três slides alterados renderizam em 1280×720 sem cortes ou sobreposições; a auditoria textual encontrou zero referências residuais a 248 pedidos, 3,36%, S3 ou relatório de 14/08.
+
+> Apresentação preparada em `manus-slides://NiJsvCEQ21qdpQ1ujXgaa8`.

@@ -99,8 +99,6 @@ const pdfExtractionJsonSchema = {
   additionalProperties: false,
 } as const;
 
-let modelPromise: Promise<string> | null = null;
-
 function assertPdfBuffer(buffer: Buffer): void {
   if (buffer.length === 0) throw new Error(`O arquivo de ${MTD_RETAIL_ORDER_LABEL} está vazio.`);
   const signature = buffer.subarray(0, PDF_SIGNATURE.length).toString("ascii");
@@ -109,23 +107,14 @@ function assertPdfBuffer(buffer: Buffer): void {
   }
 }
 
-async function resolvePdfModel(): Promise<string> {
-  if (!modelPromise) {
-    modelPromise = listLLMModels()
-      .then(catalog => {
-        const available = new Set(catalog.data.map(model => model.id));
-        const selected = PDF_MODEL_PREFERENCES.find(model => available.has(model));
-        if (!selected) {
-          throw new Error("Nenhum modelo multimodal compatível está disponível.");
-        }
-        return selected;
-      })
-      .catch(error => {
-        modelPromise = null;
-        throw error;
-      });
+async function resolvePdfModels(): Promise<string[]> {
+  const catalog = await listLLMModels();
+  const available = new Set(catalog.data.map(model => model.id));
+  const selected = PDF_MODEL_PREFERENCES.filter(model => available.has(model));
+  if (!selected.length) {
+    throw new Error("Nenhum modelo multimodal compatível está disponível.");
   }
-  return modelPromise;
+  return selected;
 }
 
 function normalizeTitle(value: string): string {
@@ -382,54 +371,60 @@ export function buildWeeklySalesPreviewFromPdfExtraction(
 }
 
 async function extractWeeklySalesRetailTable(buffer: Buffer): Promise<WeeklySalesPdfExtraction> {
-  const model = await resolvePdfModel();
+  const models = await resolvePdfModels();
   const pdfDataUrl = `data:application/pdf;base64,${buffer.toString("base64")}`;
-  const response = await invokeLLM({
-    model,
-    max_tokens: 16_384,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a precise document extraction engine. Read only the page titled exactly 'Weekly Target Achievement - Retail'. Never read or merge the similar 'Weekly Target Achievement - Registration' table. Transcribe every visible value; do not calculate, infer, repair, or fill cells. Preserve blank cells as null. Return every visible data row in top-to-bottom order, including region rows such as R01/R02 and the final Total row.",
-      },
-      {
-        role: "user",
-        content: [
+  const failures: string[] = [];
+
+  for (const model of models) {
+    try {
+      const response = await invokeLLM({
+        model,
+        max_tokens: 16_384,
+        messages: [
           {
-            type: "text",
-            text:
-              "Extract the complete 'Weekly Target Achievement - Retail' table. For every row return its visible label and W1 through W5 TGT, Retail and percentage values. Decimal commas are decimal separators. Percentages must be numeric percentage points (for example, 120,4% becomes 120.4). Blank cells must be null, not zero. Use only values printed in the Retail table and keep all accents in dealer names.",
+            role: "system",
+            content:
+              "You are a precise document extraction engine. Read only the page titled exactly 'Weekly Target Achievement - Retail'. Never read or merge the similar 'Weekly Target Achievement - Registration' table. Transcribe every visible value; do not calculate, infer, repair, or fill cells. Preserve blank cells as null. Return every visible data row in top-to-bottom order, including region rows such as R01/R02 and the final Total row.",
           },
           {
-            type: "file_url",
-            file_url: { url: pdfDataUrl, mime_type: "application/pdf" },
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  "Extract the complete 'Weekly Target Achievement - Retail' table. For every row return its visible label and W1 through W5 TGT, Retail and percentage values. Decimal commas are decimal separators. Percentages must be numeric percentage points (for example, 120,4% becomes 120.4). Blank cells must be null, not zero. Use only values printed in the Retail table and keep all accents in dealer names.",
+              },
+              {
+                type: "file_url",
+                file_url: { url: pdfDataUrl, mime_type: "application/pdf" },
+              },
+            ],
           },
         ],
-      },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "weekly_target_achievement_retail",
-        strict: true,
-        schema: pdfExtractionJsonSchema,
-      },
-    },
-  });
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "weekly_target_achievement_retail",
+            strict: true,
+            schema: pdfExtractionJsonSchema,
+          },
+        },
+      });
 
-  const content = response.choices?.[0]?.message.content;
-  if (typeof content !== "string" || !content.trim()) {
-    console.error("Weekly sales PDF response did not contain structured choices", response);
-    throw new Error("A leitura do PDF não retornou dados estruturados.");
+      const content = response.choices?.[0]?.message.content;
+      if (typeof content !== "string" || !content.trim()) {
+        throw new Error("A leitura do PDF não retornou dados estruturados.");
+      }
+      return pdfExtractionSchema.parse(JSON.parse(content));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "falha não identificada";
+      failures.push(`${model}: ${message}`);
+      console.error(`Weekly sales PDF structured output rejected for ${model}`, error);
+    }
   }
 
-  try {
-    return pdfExtractionSchema.parse(JSON.parse(content));
-  } catch (error) {
-    console.error("Weekly sales PDF structured output rejected", error);
-    throw new Error("Não foi possível validar a tabela Retail extraída do PDF.");
-  }
+  console.error("Weekly sales PDF exhausted multimodal fallbacks", failures);
+  throw new Error("Não foi possível validar a tabela Retail extraída do PDF.");
 }
 
 export async function parseWeeklySalesPdf(buffer: Buffer): Promise<WeeklySalesCsvPreview> {

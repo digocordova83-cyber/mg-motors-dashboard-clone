@@ -20,6 +20,11 @@ async function main() {
     loadTikTokAdsData(DATE_FROM, DATE_TO),
   ]);
 
+  const totalInvestment =
+    google.summary.investment + meta.summary.spend + tiktok.summary.spend;
+  const totalPlatformLeads =
+    google.summary.conversions + meta.summary.leads + tiktok.summary.leads;
+
   const result = {
     reportingWindow: { dateFrom: DATE_FROM, dateTo: DATE_TO },
     leads: {
@@ -85,6 +90,32 @@ async function main() {
         engagements: campaign.engagements,
       })),
       metadata: tiktok.metadata,
+    },
+    mediaPerformance: {
+      google: {
+        investment: google.summary.investment,
+        leads: google.summary.conversions,
+        cpl: google.summary.cpa,
+        leadMetric: "conversions",
+      },
+      meta: {
+        investment: meta.summary.spend,
+        leads: meta.summary.leads,
+        cpl: meta.summary.cpl,
+        leadMetric: "leads",
+      },
+      tiktok: {
+        investment: tiktok.summary.spend,
+        leads: tiktok.summary.leads,
+        cpl: tiktok.summary.cpl,
+        leadMetric: tiktok.metadata.leadMetric,
+      },
+      totalInvestment: Number(totalInvestment.toFixed(2)),
+      totalPlatformLeads: Number(totalPlatformLeads.toFixed(1)),
+      blendedCpl:
+        totalPlatformLeads > 0
+          ? Number((totalInvestment / totalPlatformLeads).toFixed(2))
+          : null,
     },
   };
 
