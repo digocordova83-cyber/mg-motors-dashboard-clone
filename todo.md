@@ -2088,3 +2088,18 @@
 > Validação final: seis slides renderizados em 1280×720 sem cortes ou sobreposições. Auditoria textual encontrou zero ocorrências de `01–16`, `16 dias`, `July`, `Retail Sales`, `Vendas no Varejo`, `Investimento`, `CPL` ou valores monetários nos slides ativos. TypeScript aprovado e zero páginas pendentes.
 
 > Apresentação final preparada em `manus-slides://VhkWGrZnlCCjHAVK1akhF5`, com seis páginas atualizadas para 01–17/08/2026.
+
+## Ajuste de ocupação dos slides — Executive Summary 01–17/08
+
+- [x] Auditar o aproveitamento vertical e horizontal dos seis slides em 1280×720.
+- [x] Ampliar os blocos de conteúdo que aparentam ocupar somente parte da página.
+- [x] Reduzir áreas vazias excessivas sem acrescentar dados ou alterar números.
+- [x] Preservar o padrão visual MG, a hierarquia e a legibilidade executiva.
+- [x] Renderizar novamente os seis slides e validar cortes, alinhamentos e equilíbrio.
+- [x] Apresentar e entregar a versão ajustada.
+
+> Capa e encerramento receberam painéis de marca em altura integral. Visão geral, Leads, campanhas e rede tiveram painéis, barras, KPIs e rankings ampliados até o rodapé, preservando integralmente os dados de 01–17/08.
+
+> Validação visual concluída em seis imagens 1280×720: zero cortes, zero sobreposições e nenhum elemento fora do canvas. Os achados estão documentados em `validation-layout-adjusted/findings.md`.
+
+> Versão final preparada em `manus-slides://3cTI1qRf6YTZWDxwUAvoST`, com o layout reequilibrado nos seis slides.
