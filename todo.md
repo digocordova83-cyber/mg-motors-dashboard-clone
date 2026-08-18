@@ -2001,3 +2001,48 @@
 > O painel de mídia paga foi preservado sem alterações de cálculo: investimento total de R$ 261.775,41, 6.248 Leads pagos e CPL geral estimado de R$ 41,90, além dos CPLs individuais de Site/Google, Meta e TikTok. Os dois painéis inferiores usam altura compartilhada e conteúdo interno flexível para manter alinhamento visual.
 
 > Validação final: 299 testes em 51 arquivos, TypeScript e build de produção aprovados. Reinício limpo do servidor concluído sem erros atuais de tipagem ou runtime.
+
+## Execução agendada de Leads — 17/08/2026, execução solicitada
+
+- [x] Executar exatamente o comando oficial de automação informado pelo usuário.
+- [x] Ler `/tmp/mg-leads-scheduled-result.json` e o `reportMarkdown` apontado no resultado.
+- [x] Validar status, contagens, base antes/depois e detalhamento por canal.
+- [x] Confirmar a existência de `masterXlsx`, `masterCsv` e `reportMarkdown`.
+- [x] Entregar o resumo em português com os três arquivos obrigatórios anexados.
+
+> Execução `20260818-090232`: `UPDATED`; 19.892 linhas encontradas, 19.888 válidas, 439 novos registros, 740 duplicatas internas, 18.709 registros já existentes, quatro inválidas e zero remoções. A base passou de 18.709 para 19.148 Leads e o dashboard foi atualizado por substituição transacional com 19.148 linhas.
+
+> Canais analíticos: Meta 6.893; Site 6.794; Campanha Urban 3.294; Webmotors 1.681; Mercado Livre 831; UOL 307; TikTok 88. Canais de origem: Site 8.587; Meta 8.252; Webmotors 1.739; Mercado Livre 915; UOL 307; TikTok 88.
+
+> Artefatos confirmados: XLSX 1.368.149 bytes, CSV 2.636.140 bytes e relatório Markdown 1.482 bytes.
+
+## Nova sincronização do dashboard — 18/08/2026
+
+- [x] Executar a rotina oficial de consolidação e importação sobre a fonte atual.
+- [x] Validar status, linhas encontradas, válidas, novas, duplicatas, inválidas e base antes/depois.
+- [x] Reconciliar o detalhamento por canal e confirmar se o dashboard foi atualizado ou permaneceu sem mudanças.
+- [x] Confirmar e entregar XLSX, CSV e relatório Markdown da execução.
+
+> Execução `20260818-092814`: `UPDATED`; 20.033 linhas encontradas, 20.029 válidas, 141 novos registros, 740 duplicatas internas, 19.148 registros já existentes, quatro inválidas e zero remoções. A base passou de 19.148 para 19.289 Leads; a substituição transacional gravou 19.289 linhas e atualizou o dashboard.
+
+> Canais analíticos: Meta 6.987; Site 6.794; Campanha Urban 3.341; Webmotors 1.681; Mercado Livre 831; UOL 307; TikTok 88. Canais de origem: Site 8.587; Meta 8.393; Webmotors 1.739; Mercado Livre 915; UOL 307; TikTok 88.
+
+> Artefatos validados: XLSX 1.377.299 bytes, CSV 2.655.853 bytes e relatório Markdown 1.482 bytes.
+
+## Reformulação da planilha de controle de criativos — 18/08/2026
+
+- [x] Auditar todas as abas, cabeçalhos, dados, fórmulas, filtros, validações e padrões visuais existentes.
+- [x] Preservar integralmente os dados atuais e identificar os campos essenciais para acompanhar campanhas e criativos ativos.
+- [x] Definir uma hierarquia visual profissional, com cabeçalho, status, filtros e leitura operacional rápida.
+- [x] Aplicar formatação, larguras, alinhamentos, cores de status, validações e filtros sem congelamentos prejudiciais.
+- [x] Melhorar a usabilidade para inclusão, edição e acompanhamento de campanhas, peças, datas e responsáveis.
+- [x] Validar fórmulas, dados, filtros e visualização após as alterações.
+- [x] Entregar a planilha atualizada e documentar as melhorias realizadas.
+
+> A aba original foi duplicada antes das alterações como `Backup original - 18-08-2026` e mantida oculta. Os cinco registros, datas e links foram preservados.
+
+> A aba operacional foi renomeada para `Controle de Criativos` e recebeu resumo dinâmico, título, instruções, tabela com dez colunas, filtros, status, prazo automático, responsáveis e observações. Foram adicionadas 45 validações nas células inspecionadas, seis regras condicionais, faixas alternadas, links `Abrir pasta`, larguras específicas, grade oculta e congelamento até o cabeçalho operacional.
+
+> Validação final: cinco registros, cinco ativos, zero programados, zero pausados, zero encerrados e próximo término em 23/08/2026. As fórmulas foram adaptadas ao locale `pt_BR`; zero erros permanecem. A inspeção visual confirmou hierarquia, legibilidade, filtros, cores de status e tabela sem perda de dados.
+
+> Entrega concluída no arquivo original do Google Sheets. A aba operacional está visível como `Controle de Criativos`; o backup original permanece oculto e reversível.
