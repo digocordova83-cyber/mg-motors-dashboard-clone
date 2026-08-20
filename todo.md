@@ -2311,3 +2311,26 @@
 - [x] Confirmar visualmente as linhas Real acumulado e Pace acumulado.
 - [x] Confirmar que o painel redundante não aparece na composição final.
 - [x] Concluir validações técnicas, revisar o TODO e salvar checkpoint.
+
+## Atualização da base com TikTok — 20/08/2026
+
+- [x] Executar a rotina oficial de consolidação e importação sobre a fonte atualizada.
+- [x] Confirmar a leitura da aba TikTok e a quantidade de registros válidos por origem.
+- [x] Validar novos registros, duplicatas internas, existentes, inválidos e remoções da fonte.
+- [x] Reconciliar canais analíticos, canais de origem e base antes/depois.
+- [x] Confirmar diretamente no banco a contagem final persistida no dashboard.
+- [x] Validar XLSX, CSV e relatório Markdown e entregar o resultado da atualização.
+
+> Execução `20260820-104504`: dashboard atualizado com 19 novos Leads TikTok e zero remoções. TikTok passou de 111 para 130 registros por origem; a base total passou de 20.979 para 20.998 Leads. Foram encontradas 21.748 linhas, sendo 21.744 válidas, 746 duplicatas internas e quatro inválidas. A contagem final de 20.998 Leads e 130 TikTok foi confirmada diretamente no banco. XLSX íntegro, CSV com 21.745 linhas incluindo cabeçalho e relatório Markdown validados.
+
+## Novo acesso — tati — 20/08/2026
+
+- [x] Auditar o modelo de usuários, hash de senha e armazenamento de permissões do dashboard.
+- [x] Identificar o usuário `winicius` e registrar exatamente seus módulos e nível de acesso.
+- [x] Criar o usuário `tati` com a senha solicitada usando o mesmo algoritmo seguro de hash.
+- [x] Copiar para `tati` exatamente as mesmas permissões de `winicius`.
+- [x] Usar a senha inicial aprovada `tati2026`, atendendo ao mínimo de oito caracteres da política vigente.
+- [x] Validar autenticação, status ativo e equivalência das permissões sem expor hashes.
+- [x] Registrar e entregar o novo acesso.
+
+> Conta `tati` criada ativa, em português, com hash scrypt e autenticação validada. Permissões idênticas a `winicius`: acesso a Google Ads, Meta Ads, Leads, Plano de Mídia, Otimizações e Histórico; sem importação de Leads e sem Histórico de Acessos. A equivalência foi confirmada pela autenticação oficial e diretamente no banco, sem consultar ou expor hashes.
