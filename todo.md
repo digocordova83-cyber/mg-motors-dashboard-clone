@@ -2334,3 +2334,15 @@
 - [x] Registrar e entregar o novo acesso.
 
 > Conta `tati` criada ativa, em português, com hash scrypt e autenticação validada. Permissões idênticas a `winicius`: acesso a Google Ads, Meta Ads, Leads, Plano de Mídia, Otimizações e Histórico; sem importação de Leads e sem Histórico de Acessos. A equivalência foi confirmada pela autenticação oficial e diretamente no banco, sem consultar ou expor hashes.
+
+## Verificação manual do e-mail de vendas — 20/08/2026
+
+- [x] Consultar o Outlook pelo assunto `Daily Sales Planning Report` e identificar a mensagem do dia vigente.
+- [x] Confirmar a existência do PDF anexado e armazená-lo apenas no ambiente operacional.
+- [x] Processar o arquivo recebido `/home/ubuntu/upload/260820DailySalesPlanningReport.pdf`.
+- [x] Diagnosticar competência, data de referência, total de MTD Retail Orders e dealers antes da gravação.
+- [x] Importar o PDF exclusivamente pelo fluxo oficial e confirmar idempotência.
+- [x] Validar lote ativo, total persistido, dealers conciliados e unmatched diretamente no banco.
+- [x] Registrar e entregar o resultado da verificação manual.
+
+> O e-mail `Daily Sales Planning Report 260820` foi localizado em 20/08/2026 às 17:04 UTC e informava MTD de 399. O PDF recebido foi diagnosticado com 29 linhas: 26 dealers, duas regiões e um TOTAL; Semana 4; 399 MTD Retail Orders; reconciliação integral. Importação `420001` concluída para 2026-08 com 26 de 26 dealers conciliados, zero unmatched, zero erros e idempotência confirmada. Aviso preservado: `TECAR GOIÂNIA` sem MTD Retail Order informado na Semana 4.
