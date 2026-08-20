@@ -76,7 +76,15 @@ const geographicCpl = {
 };
 
 describe("DealerTargetTrackingPanel", () => {
-  it("ordena por atingimento e preserva dealers sem MTD Retail Order reportado", () => {
+  it("ordena por conversão e mantém taxas indisponíveis no final", () => {
+    expect(sortDealerTargetProgress(dealers, "conversion", "desc").map(row => row.dealerName)).toEqual([
+      "DEALER A",
+      "DEALER B",
+    ]);
+    expect(sortDealerTargetProgress(dealers, "conversion", "asc").map(row => row.dealerName)).toEqual([
+      "DEALER A",
+      "DEALER B",
+    ]);
     expect(sortDealerTargetProgress(dealers, "leadAchievement", "asc").map(row => row.dealerName)).toEqual([
       "DEALER B",
       "DEALER A",
@@ -91,6 +99,7 @@ describe("DealerTargetTrackingPanel", () => {
     const html = renderToStaticMarkup(<DealerTargetTrackingPanel tracking={tracking as never} geographicCpl={geographicCpl as never} locale="pt-BR" />).replaceAll("\u00a0", " ");
 
     expect(html).toContain("Acompanhamento das metas por concessionária");
+    expect(html).toContain("Melhor conversão");
     expect(html).toContain("Leads atribuídos às 2 concessionárias");
     expect(html).not.toContain("31 concessionárias");
     expect(html).toContain("Leads atribuídos / meta");
@@ -101,6 +110,9 @@ describe("DealerTargetTrackingPanel", () => {
     expect(html).toContain("66,67%");
     expect(html).toContain('data-testid="dealer-target-table"');
     expect(html).toContain('data-testid="dealer-target-mobile-list"');
+    expect(html).toContain('data-testid="dealer-mobile-conversion-DEALER A"');
+    expect(html).toContain("6,25%");
+    expect(html).toContain("Ating. 80%");
     expect(html).toContain("DEALER B");
     expect(html).toContain("Investimento alocado");
     expect(html).toContain("CPL estimado");
@@ -112,6 +124,7 @@ describe("DealerTargetTrackingPanel", () => {
     const html = renderToStaticMarkup(<DealerTargetTrackingPanel tracking={tracking as never} locale="en-US" />);
 
     expect(html).toContain("Dealer target tracking");
+    expect(html).toContain("Best conversion");
     expect(html).toContain("D-1 Leads assigned to the 2 dealers");
     expect(html).not.toContain("31 dealers");
     expect(html).toContain("Lead achievement");

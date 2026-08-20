@@ -31,8 +31,8 @@ import {
 import { type ChangeEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
   Legend,
   LabelList,
   Line,
@@ -64,6 +64,34 @@ type LeadsTabProps = {
 };
 
 type DealerSort = "leads" | "inactiveDays" | "lastReceipt";
+
+type LeadDailyPoint = {
+  date: string;
+  total: number;
+  rollingAverage7d: number;
+  values: Record<string, number>;
+};
+
+export function buildCumulativeLeadPaceSeries(
+  daily: readonly LeadDailyPoint[],
+  goal: number | null,
+  daysInMonth: number,
+) {
+  const dailyPace = goal !== null && daysInMonth > 0 ? goal / daysInMonth : null;
+  let accumulatedActual = 0;
+
+  return daily.map((point, index) => {
+    accumulatedActual += point.total;
+    return {
+      date: point.date,
+      total: point.total,
+      media7d: point.rollingAverage7d,
+      accumulatedActual,
+      accumulatedPace: dailyPace === null ? null : Math.round(dailyPace * (index + 1) * 100) / 100,
+      ...point.values,
+    };
+  });
+}
 
 export function resolveLeadsActionVisibility({
   readOnly,
@@ -1148,7 +1176,11 @@ export function LeadsTab({
 
   const data = analytics.data;
   const channelHistoryDealerNames = new Set(data.dealerAudit.dealers.map(dealer => dealer.dealerName));
-  const stackedDaily = data.daily.map(point => ({ date: point.date, total: point.total, media7d: point.rollingAverage7d, ...point.values }));
+  const stackedDaily = buildCumulativeLeadPaceSeries(data.daily, data.pacing.goal, data.pacing.daysInMonth);
+  const finalPacePoint = stackedDaily.at(-1);
+  const paceDifference = finalPacePoint?.accumulatedPace == null
+    ? null
+    : Math.round((finalPacePoint.accumulatedActual - finalPacePoint.accumulatedPace) * 100) / 100;
   const peakDailyTotal = data.daily.reduce((peak, point) => Math.max(peak, point.total), 0);
   const activeChannelCount = data.channels.filter(item => item.leads > 0).length;
   const uploadError = clientUploadError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
@@ -1241,21 +1273,31 @@ export function LeadsTab({
         <LeadPanel
           className="flex flex-col"
           title={ui(locale, "Leads por dia e canal", "Leads by day and channel")}
-          subtitle={ui(locale, "Evolução diária por canal de origem, reconciliada com o total do período.", "Daily source-channel trend reconciled to the period total.")}
-          action={<span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${data.daily.length} dias`, `${data.daily.length} days`)}</span>}
+          subtitle={ui(locale, "Volume diário por canal com acumulado Real versus Pace planejado no período.", "Daily channel volume with cumulative Actual versus Planned pace for the period.")}
+          action={(
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${data.daily.length} dias`, `${data.daily.length} days`)}</span>
+              <span className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold ${paceDifference === null ? "border-slate-500/20 bg-slate-500/10 text-slate-400" : paceDifference >= 0 ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-amber-500/20 bg-amber-500/10 text-amber-300"}`}>
+                {paceDifference === null
+                  ? ui(locale, "Pace indisponível", "Pace unavailable")
+                  : ui(locale, `${paceDifference >= 0 ? "+" : ""}${formatInteger(paceDifference, locale)} vs pace`, `${paceDifference >= 0 ? "+" : ""}${formatInteger(paceDifference, locale)} vs pace`)}
+              </span>
+            </div>
+          )}
         >
           {data.daily.length ? (
             <div className="flex flex-1 overflow-x-auto">
               <div className="h-[320px] min-w-[720px] flex-1 px-3 pb-2 pt-5 2xl:h-auto 2xl:min-h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stackedDaily} margin={{ top: 20, right: 12, left: -6, bottom: 0 }} barCategoryGap="22%">
+                  <ComposedChart data={stackedDaily} margin={{ top: 20, right: 2, left: -6, bottom: 0 }} barCategoryGap="22%">
                     <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" tickFormatter={value => formatShortDate(String(value), locale)} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
-                    <YAxis allowDecimals={false} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={40} />
+                    <YAxis yAxisId="daily" allowDecimals={false} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={40} />
+                    <YAxis yAxisId="cumulative" orientation="right" allowDecimals={false} stroke="#334155" tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} width={48} />
                     <Tooltip contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} labelFormatter={value => formatDate(String(value), locale)} formatter={(value, name) => [formatInteger(Number(value), locale), String(name)]} />
                     <Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8", paddingTop: 8 }} />
                     {data.channelOrder.map((channel, index) => (
-                      <Bar key={channel} dataKey={channel} name={channel} stackId="channels" maxBarSize={48} fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} radius={index === data.channelOrder.length - 1 ? [3, 3, 0, 0] : 0}>
+                      <Bar key={channel} yAxisId="daily" dataKey={channel} name={channel} stackId="channels" maxBarSize={48} fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} radius={index === data.channelOrder.length - 1 ? [3, 3, 0, 0] : 0} isAnimationActive={false}>
                         {index === data.channelOrder.length - 1 ? (
                           <LabelList
                             dataKey="total"
@@ -1269,8 +1311,11 @@ export function LeadsTab({
                         ) : null}
                       </Bar>
                     ))}
-                    <Line type="monotone" dataKey="media7d" name={ui(locale, "Média móvel 7d", "7-day moving average")} stroke="#f8fafc" strokeWidth={2} dot={false} />
-                  </BarChart>
+                    <Line yAxisId="cumulative" type="monotone" dataKey="accumulatedActual" name={ui(locale, "Real acumulado", "Cumulative actual")} stroke="#f8fafc" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#f8fafc" }} isAnimationActive={false} />
+                    {data.pacing.goal !== null ? (
+                      <Line yAxisId="cumulative" type="linear" dataKey="accumulatedPace" name={ui(locale, "Pace acumulado", "Cumulative pace")} stroke="#fb7185" strokeWidth={2} strokeDasharray="6 5" dot={false} activeDot={{ r: 4, fill: "#fb7185" }} isAnimationActive={false} />
+                    ) : null}
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>

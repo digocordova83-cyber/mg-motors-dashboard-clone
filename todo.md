@@ -2196,3 +2196,118 @@
 - [x] Revisar o TODO, salvar checkpoint e entregar a correção.
 
 > As tabelas independentes foram removidas. `Investimento alocado` e `CPL estimado` agora são duas colunas adicionais em `Acompanhamento das metas por concessionária` e em `Principais concessionárias, Leads e MTD Retail Order por estado`; no mobile, aparecem como campos dos cards já existentes. Busca, ordenação, expansão, metas, MTD Retail Order, conversão e cobertura foram preservadas. Validação: 302 testes em 52 arquivos, TypeScript e build aprovados; desktop e mobile sem overflow do documento.
+
+## Execução agendada obrigatória de Leads — 19/08/2026
+
+- [x] Executar exatamente o comando oficial informado e gravar `/tmp/mg-leads-scheduled-result.json`.
+- [x] Ler o JSON resultante e o `reportMarkdown` indicado.
+- [x] Validar status, linhas encontradas, válidas, novas, duplicatas, inválidas, base antes/depois e canais.
+- [x] Confirmar a existência de `masterXlsx`, `masterCsv` e `reportMarkdown`.
+- [x] Entregar o resumo em português com os três arquivos obrigatórios anexados.
+
+> Execução `20260819-090435`: `NO_CHANGES`; 20.214 linhas encontradas, 20.210 válidas, zero novos registros, 740 duplicatas internas, 19.470 já existentes, quatro inválidas e zero remoções. A base permaneceu em 19.470 Leads, sem substituição ou alteração do dashboard. Artefatos validados: XLSX íntegro, CSV com 20.211 linhas incluindo cabeçalho e relatório Markdown disponível.
+
+## Atualização manual da base de Leads — 19/08/2026
+
+- [x] Executar a rotina oficial de consolidação e importação de Leads.
+- [x] Validar linhas encontradas, válidas, novas, duplicadas e inválidas.
+- [x] Confirmar a base antes/depois e se o dashboard foi atualizado.
+- [x] Validar o detalhamento por canal e os artefatos gerados.
+- [x] Entregar o relatório da execução nesta tarefa.
+
+> Execução `20260819-092548`: dashboard atualizado com 507 novos Leads. A planilha continha 20.724 linhas, sendo 20.720 válidas, 743 duplicatas internas e quatro inválidas. A base passou de 19.470 para 19.977 registros; a contagem final de 19.977 foi confirmada diretamente no banco. Zero registros foram removidos da fonte. XLSX, CSV e relatório Markdown foram validados.
+
+## Reatualização manual da base de Leads — 19/08/2026
+
+- [x] Reexecutar a rotina oficial de consolidação e importação.
+- [x] Comparar novos registros com a base atual de 19.977 Leads.
+- [x] Validar duplicatas, inválidos, canais e artefatos gerados.
+- [x] Confirmar diretamente no banco a contagem final do dashboard.
+- [x] Entregar o relatório da reatualização nesta tarefa.
+
+> Execução `20260819-094152`: 57 novos Leads inseridos; a base passou de 19.977 para 20.034 registros, confirmados diretamente no banco. A origem continha 20.781 linhas, com 20.777 válidas, 743 duplicatas internas, quatro inválidas e zero remoções. XLSX, CSV e relatório Markdown foram validados.
+
+## Nova execução agendada obrigatória de Leads — 19/08/2026
+
+- [x] Executar exatamente o comando obrigatório e gravar `/tmp/mg-leads-scheduled-result.json`.
+- [x] Ler o JSON e o `reportMarkdown` apontado pelo resultado.
+- [x] Validar reconciliação, canais, base antes/depois e status do dashboard.
+- [x] Confirmar a existência e integridade de `masterXlsx`, `masterCsv` e `reportMarkdown`.
+- [x] Entregar o relatório em português com os três arquivos anexados.
+
+> Execução `20260819-100713`: `NO_CHANGES`; 20.781 linhas encontradas, 20.777 válidas, zero novos registros, 743 duplicatas internas, 20.034 já existentes, quatro inválidas e zero remoções. A base permaneceu em 20.034 Leads e o dashboard não sofreu alterações. XLSX, CSV e relatório Markdown foram validados.
+
+## Automação diária do Daily Sales Planning Report — 19/08/2026
+
+- [x] Verificar imediatamente a caixa de entrada pelo assunto `Daily Sales Planning Report` e localizar o PDF do dia vigente.
+- [x] Importar o PDF encontrado exclusivamente pelo fluxo oficial de MTD Retail Order do dashboard.
+- [x] Validar competência, data de referência, total de pedidos, dealers conciliados e idempotência.
+- [x] Configurar início diário às 08:00, com verificações de hora em hora até a importação bem-sucedida.
+- [x] Interromper novas tentativas no restante do dia após a importação e reiniciar automaticamente no dia seguinte às 08:00.
+- [x] Notificar nesta tarefa do Manus quando o e-mail não estiver disponível, quando houver falha ou quando a importação for concluída.
+- [x] Cobrir o controle diário, a parada após sucesso e o reinício no dia seguinte com testes.
+- [x] Documentar a configuração, salvar checkpoint e entregar o resultado da verificação atual.
+- [x] Reabrir a conexão do Office 365 Outlook em uma tela visível ao usuário e concluir a autorização da caixa `rodrigo.cordova@bbro.com.br`.
+- [x] Retomar o fluxo após a autorização e confirmar que o gatilho usa a conexão correta.
+
+> Automação recorrente encerrada por decisão do usuário. O processo aprovado passou a ser manual sob demanda; o PDF de 19/08 foi importado pelo fluxo oficial com 387 MTD Retail Orders, 26 dealers conciliados, zero unmatched e idempotência confirmada. O webhook experimental foi removido antes do checkpoint.
+
+## Simplificação das tabelas e evolução acumulada de Leads — 19/08/2026
+
+- [x] Remover do dashboard o painel redundante `Eficiência de MTD Retail Order por concessionária`.
+- [x] Preservar as informações operacionais nas tabelas existentes de dealers e estados.
+- [x] Ordenar a tabela de dealers por conversão decrescente, com valores indisponíveis ao final.
+- [x] Ordenar a tabela de estados por conversão decrescente, com valores indisponíveis ao final.
+- [x] Incorporar ao gráfico existente de Leads uma visão acumulada `Real × Pace planejado` sem criar novo painel redundante.
+- [x] Calcular o pace acumulado a partir da meta mensal e dos dias do mês, respeitando o período fechado até D-1.
+- [x] Mostrar visualmente se o acumulado real está acima ou abaixo da trajetória esperada.
+- [x] Atualizar testes de ordenação, reconciliação, pace e renderização.
+- [x] Validar desktop e mobile, executar TypeScript, testes e build e salvar checkpoint.
+
+> Implementação final: tabelas de dealers e estados iniciam pela maior conversão e mantêm taxas indisponíveis no final; cards mobile mostram a conversão explicitamente. O gráfico existente combina barras diárias com Real acumulado e Pace acumulado em `ComposedChart`, sem animação inicial, e informa o desvio frente ao pace. O painel redundante foi removido. Validação visual integral em desktop e mobile com dados reais de 01–19/08 e validação técnica com 305 testes, TypeScript e build aprovados.
+
+## Execução agendada obrigatória de Leads — 20/08/2026
+
+- [x] Executar exatamente o comando oficial e gravar `/tmp/mg-leads-scheduled-result.json`.
+- [x] Ler o JSON resultante e o `reportMarkdown` indicado.
+- [x] Validar linhas encontradas, válidas, novas, duplicadas, inválidas, base antes/depois e canais.
+- [x] Confirmar a existência de `masterXlsx`, `masterCsv` e `reportMarkdown`.
+- [x] Entregar o relatório em português com os três arquivos obrigatórios anexados.
+
+> Execução `20260820-090431`: `NO_CHANGES`; 20.781 linhas encontradas, 20.777 válidas, zero novos registros, 743 duplicatas internas, 20.034 já existentes, quatro inválidas e zero remoções. A base permaneceu em 20.034 Leads e o dashboard não sofreu alterações. XLSX, CSV e relatório Markdown foram validados.
+
+## Atualização manual do dashboard — 20/08/2026
+
+- [x] Executar a rotina oficial de consolidação e importação de Leads.
+- [x] Ler o JSON e o relatório Markdown gerados.
+- [x] Validar novos registros, duplicatas, inválidos, canais e base antes/depois.
+- [x] Confirmar a contagem final persistida e a integridade dos artefatos.
+- [x] Entregar o relatório da atualização com XLSX, CSV e Markdown anexados.
+
+> Execução `20260820-095046`: dashboard atualizado com 974 novos registros detectados e 29 registros removidos da fonte. A substituição idempotente levou a base de 20.034 para 20.979 Leads, contagem confirmada diretamente no banco. Foram validadas 21.725 linhas, 746 duplicatas internas, 20.005 registros já existentes e quatro inválidos; XLSX, CSV e relatório Markdown íntegros.
+
+## Finalização — conversão e Real × Pace — 20/08/2026
+
+- [x] Revisar o estado atual das alterações e confirmar ausência do painel redundante.
+- [x] Validar visualmente tabelas e gráfico em desktop e mobile.
+- [x] Reexecutar testes, TypeScript e build na versão final.
+- [x] Marcar os requisitos originais como concluídos e revisar o TODO completo.
+- [x] Salvar checkpoint restaurável e entregar a versão finalizada.
+
+## Execução agendada obrigatória de Leads — 20/08/2026 — segunda rodada
+
+- [x] Executar exatamente o comando oficial e gravar `/tmp/mg-leads-scheduled-result.json`.
+- [x] Ler o JSON resultante e o `reportMarkdown` indicado.
+- [x] Validar linhas encontradas, válidas, novas, duplicadas, inválidas, base antes/depois e canais.
+- [x] Confirmar a existência e integridade de `masterXlsx`, `masterCsv` e `reportMarkdown`.
+- [x] Entregar o relatório em português com os três arquivos obrigatórios anexados.
+
+> Execução `20260820-100242`: `NO_CHANGES`; 21.729 linhas encontradas, 21.725 válidas, zero novos registros, 746 duplicatas internas, 20.979 já existentes, quatro inválidas e zero remoções. A base permaneceu em 20.979 Leads e o dashboard não sofreu alterações. XLSX, CSV e relatório Markdown foram validados.
+
+## Retomada final dos ajustes do dashboard — 20/08/2026
+
+- [x] Gerar uma prévia auditável das tabelas e do gráfico com dados reais atualizados.
+- [x] Confirmar ordenação decrescente de conversão e valores sem taxa no final.
+- [x] Confirmar visualmente as linhas Real acumulado e Pace acumulado.
+- [x] Confirmar que o painel redundante não aparece na composição final.
+- [x] Concluir validações técnicas, revisar o TODO e salvar checkpoint.

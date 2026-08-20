@@ -1,4 +1,5 @@
 import React from "react";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -233,6 +234,25 @@ describe("vendas semanais na experiência de concessionárias", () => {
       salesCoverageLeads: 50,
       salesCoveragePercent: 55.56,
     });
+  });
+
+  it("ordena estados por melhor conversão e mantém valores indisponíveis no final", () => {
+    const rows = [
+      { stateCode: "SP", stateName: "São Paulo", leads: 100, sales: 10, conversionRatePercent: 10 },
+      { stateCode: "PR", stateName: "Paraná", leads: 100, sales: 5, conversionRatePercent: 5 },
+      { stateCode: "XX", stateName: "Sem taxa", leads: 100, sales: 0, conversionRatePercent: null },
+    ] as any;
+
+    expect(sortStatePerformanceRanking(rows, "conversion", "desc").map(row => row.stateCode)).toEqual(["SP", "PR", "XX"]);
+    expect(sortStatePerformanceRanking(rows, "conversion", "asc").map(row => row.stateCode)).toEqual(["PR", "SP", "XX"]);
+  });
+
+  it("remove o painel redundante da composição final do dashboard", () => {
+    const source = readFileSync(new URL("./WeeklySalesPanel.tsx", import.meta.url), "utf8");
+
+    expect(source).not.toContain("<WeeklySalesMetricsTable");
+    expect(source).toContain("<DealerTargetTrackingPanel");
+    expect(source).toContain("<WeeklySalesStateRanking");
   });
 
   it("renderiza o ranking estadual e a abertura dos dealers com status de cobertura", () => {

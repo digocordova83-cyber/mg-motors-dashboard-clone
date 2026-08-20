@@ -14,6 +14,7 @@ import {
   LeadSummaryCards,
   LeadsExportButton,
   LeadsError,
+  buildCumulativeLeadPaceSeries,
   formatDailyBarTotal,
   formatDealerLabel,
   invalidateLeadImportCaches,
@@ -24,6 +25,20 @@ import {
 } from "./LeadsTab";
 
 describe("interface de Leads", () => {
+  it("calcula acumulado real e pace linear pela meta mensal sem inventar referência ausente", () => {
+    const daily = [
+      { date: "2026-08-01", total: 100, rollingAverage7d: 100, values: { Site: 100, Meta: 0 } },
+      { date: "2026-08-02", total: 150, rollingAverage7d: 125, values: { Site: 100, Meta: 50 } },
+      { date: "2026-08-03", total: 50, rollingAverage7d: 100, values: { Site: 0, Meta: 50 } },
+    ];
+
+    const paced = buildCumulativeLeadPaceSeries(daily, 3_100, 31);
+    expect(paced.map(point => point.accumulatedActual)).toEqual([100, 250, 300]);
+    expect(paced.map(point => point.accumulatedPace)).toEqual([100, 200, 300]);
+    expect(paced[1]).toMatchObject({ Site: 100, Meta: 50, total: 150, media7d: 125 });
+    expect(buildCumulativeLeadPaceSeries(daily, null, 31).every(point => point.accumulatedPace === null)).toBe(true);
+  });
+
   it("exibe Leads em qualificação para concessionárias sem identificação e placeholders", () => {
     for (const value of ["Indisponível", "Unavailable", "Outros", "Outro", "N/A", "Não informado", "Sem concessionária", "  "]) {
       expect(formatDealerLabel(value)).toBe("Leads em qualificação");
@@ -66,6 +81,11 @@ describe("interface de Leads", () => {
     expect(source).toContain('data-testid="channel-lower-layout"');
     expect(source).toContain('data.mediaInvestment ? "xl:grid-cols-2" : ""');
     expect(source).toContain('data-testid="daily-channel-summary"');
+    expect(source).toContain('dataKey="accumulatedActual"');
+    expect(source).toContain('dataKey="accumulatedPace"');
+    expect(source).toContain('yAxisId="cumulative"');
+    expect(source).toContain("Real acumulado");
+    expect(source).toContain("Pace acumulado");
     expect(source).toContain('data-testid="channel-target-grid"');
     expect(source).toContain('data-testid="channel-target-card"');
     expect(source).toContain("h-[320px] min-w-[720px] flex-1");

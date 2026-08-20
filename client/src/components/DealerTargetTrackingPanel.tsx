@@ -13,7 +13,7 @@ type LeadGeographicCpl = NonNullable<LeadAnalytics["geographicCpl"]>;
 type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
 type DealerTargetTracking = NonNullable<WeeklySalesMetrics["targets"]>;
 export type DealerTargetProgress = DealerTargetTracking["dealers"][number];
-export type DealerTargetSortKey = "leadAchievement" | "salesAchievement" | "leadGap" | "salesGap";
+export type DealerTargetSortKey = "conversion" | "leadAchievement" | "salesAchievement" | "leadGap" | "salesGap";
 type SortDirection = "asc" | "desc";
 type Locale = "pt-BR" | "en-US";
 
@@ -64,6 +64,17 @@ export function sortDealerTargetProgress(
   direction: SortDirection,
 ) {
   const multiplier = direction === "asc" ? 1 : -1;
+  if (sortKey === "conversion") {
+    return [...rows].sort((left, right) => {
+      const leftValue = left.actualConversionRatePercent;
+      const rightValue = right.actualConversionRatePercent;
+      if (leftValue === null) return rightValue === null ? left.dealerName.localeCompare(right.dealerName, "pt-BR") : 1;
+      if (rightValue === null) return -1;
+      return (leftValue - rightValue) * multiplier ||
+        right.leadsActual - left.leadsActual ||
+        left.dealerName.localeCompare(right.dealerName, "pt-BR");
+    });
+  }
   const valueFor = (row: DealerTargetProgress) => {
     if (sortKey === "leadAchievement") return row.leadAchievementPercent;
     if (sortKey === "salesAchievement") return row.salesAchievementPercent ?? -1;
@@ -135,8 +146,8 @@ export function DealerTargetTrackingPanel({
   locale?: Locale;
 }) {
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<DealerTargetSortKey>("leadAchievement");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortKey, setSortKey] = useState<DealerTargetSortKey>("conversion");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const rows = useMemo(() => {
     const query = fold(search);
     return sortDealerTargetProgress(tracking.dealers, sortKey, sortDirection).filter(row =>
@@ -188,6 +199,7 @@ export function DealerTargetTrackingPanel({
         </label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <select value={sortKey} onChange={event => setSortKey(event.target.value as DealerTargetSortKey)} aria-label={ui(locale, "Ordenar metas por", "Sort targets by")} className="h-9 rounded-md border border-[#273247] bg-[#101827] px-3 text-[10px] text-slate-300 outline-none focus:border-[#e2212d]">
+            <option value="conversion">{ui(locale, "Melhor conversão", "Best conversion")}</option>
             <option value="leadAchievement">{ui(locale, "Atingimento de Leads", "Lead achievement")}</option>
             <option value="salesAchievement">{ui(locale, `Atingimento de ${MTD_RETAIL_ORDER_LABEL}`, `${MTD_RETAIL_ORDER_LABEL} achievement`)}</option>
             <option value="leadGap">{ui(locale, "Gap de Leads", "Lead gap")}</option>
@@ -205,8 +217,8 @@ export function DealerTargetTrackingPanel({
           const cpl = cplByDealer.get(fold(row.dealerName));
           return (
             <article key={row.dealerKey} className="rounded-lg border border-[#1c2738] bg-[#0a111d] p-3">
-              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words text-[10px] font-semibold text-slate-200">{row.dealerName}</p><p className="mt-0.5 text-[9px] text-slate-600">{row.stateCode}</p></div><span className={`shrink-0 text-xs font-semibold ${achievementTone(row.leadAchievementPercent)}`}>{formatNumber(row.leadAchievementPercent, locale)}%</span></div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-[9px]"><div><p className="text-slate-600">Leads</p><p className="mt-1 font-medium text-sky-300">{formatInteger(row.leadsActual, locale)} / {formatInteger(row.leadTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.leadGap, locale)}</p></div><div><p className="text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 font-medium text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)} / {formatInteger(row.salesTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.salesGap, locale)}</p></div><div><p className="text-slate-600">{ui(locale, "Investimento alocado", "Allocated investment")}</p><p className="mt-1 font-medium text-slate-200">{cpl?.investment == null ? "—" : formatCurrency(cpl.investment, locale)}</p></div><div><p className="text-slate-600">{ui(locale, "CPL estimado", "Estimated CPL")}</p><p className="mt-1 font-medium text-emerald-300">{cpl?.estimatedCpl == null ? "—" : formatCurrency(cpl.estimatedCpl, locale)}</p></div></div>
+              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="break-words text-[10px] font-semibold text-slate-200">{row.dealerName}</p><p className="mt-0.5 text-[9px] text-slate-600">{row.stateCode}</p></div><div className="shrink-0 text-right" data-testid={`dealer-mobile-conversion-${row.dealerKey}`}><p className="text-[8px] uppercase tracking-[0.08em] text-slate-600">{ui(locale, "Conversão", "Conversion")}</p><p className="mt-0.5 text-xs font-semibold text-emerald-300">{row.actualConversionRatePercent === null ? "—" : `${formatNumber(row.actualConversionRatePercent, locale)}%`}</p></div></div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-[9px]"><div><p className="text-slate-600">Leads</p><p className="mt-1 font-medium text-sky-300">{formatInteger(row.leadsActual, locale)} / {formatInteger(row.leadTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.leadGap, locale)} • {ui(locale, "Ating.", "Achiev.")} {formatNumber(row.leadAchievementPercent, locale)}%</p></div><div><p className="text-slate-600">{MTD_RETAIL_ORDER_LABEL}</p><p className="mt-1 font-medium text-white">{row.salesActual === null ? "—" : formatInteger(row.salesActual, locale)} / {formatInteger(row.salesTarget, locale)}</p><p className="mt-0.5 text-slate-600">{gapLabel(row.salesGap, locale)}</p></div><div><p className="text-slate-600">{ui(locale, "Investimento alocado", "Allocated investment")}</p><p className="mt-1 font-medium text-slate-200">{cpl?.investment == null ? "—" : formatCurrency(cpl.investment, locale)}</p></div><div><p className="text-slate-600">{ui(locale, "CPL estimado", "Estimated CPL")}</p><p className="mt-1 font-medium text-emerald-300">{cpl?.estimatedCpl == null ? "—" : formatCurrency(cpl.estimatedCpl, locale)}</p></div></div>
             </article>
           );
         })}

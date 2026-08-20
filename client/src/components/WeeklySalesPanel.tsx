@@ -202,8 +202,19 @@ export function sortStatePerformanceRanking(
   direction: DealerRankingSortDirection,
 ) {
   const multiplier = direction === "asc" ? 1 : -1;
+  if (sortKey === "conversion") {
+    return [...rows].sort((left, right) => {
+      const leftValue = left.conversionRatePercent;
+      const rightValue = right.conversionRatePercent;
+      if (leftValue === null) return rightValue === null ? left.stateName.localeCompare(right.stateName, "pt-BR") : 1;
+      if (rightValue === null) return -1;
+      return (leftValue - rightValue) * multiplier ||
+        right.leads - left.leads ||
+        right.sales - left.sales ||
+        left.stateName.localeCompare(right.stateName, "pt-BR");
+    });
+  }
   const valueFor = (row: StatePerformanceRankingRow) => {
-    if (sortKey === "conversion") return row.conversionRatePercent ?? -1;
     return sortKey === "sales" ? row.sales : row.leads;
   };
   return [...rows].sort((left, right) =>
@@ -479,10 +490,19 @@ export function WeeklySalesStateDealerTable({
   const dealers = [...state.dealers]
     .map(dealer => ({ dealer, values: dealer.weeks[selectedWeek] }))
     .filter(row => (row.values?.leads ?? 0) > 0 || (row.values?.sales ?? 0) > 0)
-    .sort((left, right) =>
-      (right.values?.leads ?? 0) - (left.values?.leads ?? 0) ||
-      left.dealer.dealerName.localeCompare(right.dealer.dealerName, "pt-BR"),
-    );
+    .sort((left, right) => {
+      const leftConversion = left.values?.conversionRatePercent;
+      const rightConversion = right.values?.conversionRatePercent;
+      if (leftConversion === null || leftConversion === undefined) {
+        if (rightConversion !== null && rightConversion !== undefined) return 1;
+      } else if (rightConversion === null || rightConversion === undefined) {
+        return -1;
+      } else if (rightConversion !== leftConversion) {
+        return rightConversion - leftConversion;
+      }
+      return (right.values?.leads ?? 0) - (left.values?.leads ?? 0) ||
+        left.dealer.dealerName.localeCompare(right.dealer.dealerName, "pt-BR");
+    });
 
   return (
     <div className="min-w-0">
@@ -555,7 +575,7 @@ export function WeeklySalesStateRanking({
   locale?: Locale;
 }) {
   const [expandedStateCode, setExpandedStateCode] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<StateRankingSortKey>("leads");
+  const [sortKey, setSortKey] = useState<StateRankingSortKey>("conversion");
   const [sortDirection, setSortDirection] = useState<DealerRankingSortDirection>("desc");
   const rows = useMemo(
     () => sortStatePerformanceRanking(buildStatePerformanceRanking(metrics, selectedWeek), sortKey, sortDirection),
@@ -1732,13 +1752,6 @@ export function WeeklySalesPanel({
               />
             </div>
           </div>
-          <WeeklySalesMetricsTable
-            metrics={metrics.data}
-            selectedWeek={rankingWeek}
-            locale={locale}
-            channelHistoryDealerNames={channelHistoryDealerNames}
-            onViewChannelHistory={onViewChannelHistory}
-          />
         </>
       ) : (
         <div className="grid min-h-52 place-items-center rounded-xl border border-[#1e293b] bg-[#0d1421] px-6 text-center">
