@@ -14,10 +14,13 @@ describe("política de navegação do dashboard", () => {
 });
 
 describe("interface de campanhas Google Ads ativas", () => {
-  it("explicita que a tabela considera somente campanhas ENABLED", () => {
+  it("separa a tabela atual ENABLED do histórico completo do período", () => {
     expect(homeSource).toContain("Performance por Campanha Ativa");
     expect(homeSource).toContain("Somente campanhas ENABLED no Google Ads");
-    expect(homeSource).toContain("data.metadata.campaignCount");
+    expect(homeSource).toContain("data.metadata.activeCampaignCount");
+    expect(homeSource).toContain("data.activeCampaigns.slice(0, 15)");
+    expect(homeSource).toContain("const topCampaigns = data.campaigns.slice(0, 15)");
+    expect(homeSource).toContain("[...data.daily].reverse()");
   });
 });
 

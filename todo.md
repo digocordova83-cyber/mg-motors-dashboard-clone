@@ -2398,3 +2398,16 @@
 - [x] Inspecionar a aba em desktop e mobile e salvar checkpoint restaurável.
 
 > Auditoria Windsor 01–20/08: 25 campanhas `ENABLED` com R$ 46.325,69 e 75 campanhas `REMOVED` com R$ 265.048,53. A aba agora usa somente campanhas cujo status mais recente é `ENABLED`. Refresh ao vivo confirmado até 20/08: 74 linhas ativas, 25 campanhas, zero status inativo, R$ 46.325,69 de investimento, 234,4 conversões, CPA de R$ 197,63 e KPIs reconciliados. Interface atualizada para explicitar o filtro. Validação: 308 testes em 52 arquivos, TypeScript e build aprovados; logs atuais sem erros de runtime. A captura automática confirmou a tela protegida; a lista autenticada foi validada pelo contrato ao vivo e pelas regressões.
+
+## Correção — histórico completo e campanhas atuais ativas — 21/08/2026
+
+- [x] Restaurar todas as campanhas que rodaram no período selecionado nos KPIs históricos de investimento, conversões, CPA, CTR, CPC e impressões.
+- [x] Restaurar todas as campanhas do período nas séries diárias, produtos, regiões e rankings Top 10 de CPA.
+- [x] Manter o filtro de status `ENABLED` somente nas áreas que representam campanhas atualmente ativas.
+- [x] Separar explicitamente os contratos de dados históricos e atuais para impedir novo vazamento de regras.
+- [x] Atualizar os rótulos da interface para não sugerir que o histórico está filtrado por status atual.
+- [x] Criar regressões que comprovem histórico completo e universo atual somente `ENABLED`.
+- [x] Reconciliar os dois universos com o Windsor, executar testes, TypeScript e build.
+- [x] Validar a interface e salvar checkpoint restaurável.
+
+> Verificação Windsor ao vivo para 01–20/08: histórico completo com 1.316 linhas, 100 campanhas (`REMOVED` e `ENABLED`), R$ 311.374,21 investidos, 3.168,5 conversões e CPA de R$ 98,27. Universo operacional atual: 74 linhas, 25 campanhas, somente `ENABLED`, zero inativas. KPIs históricos reconciliados integralmente com a série diária; 14 campanhas hoje inativas aparecem nos rankings por terem rodado no período, conforme a regra corrigida. Validação: 308 testes em 52 arquivos, TypeScript e build aprovados; interface protegida renderizada sem erro.

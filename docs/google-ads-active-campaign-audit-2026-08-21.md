@@ -1,4 +1,4 @@
-# Auditoria de campanhas Google Ads ativas — 21/08/2026
+# Auditoria Google Ads — histórico do período e campanhas atuais — 21/08/2026
 
 **Fonte:** Windsor.ai, conector `google_ads`, conta MG Motors `535-798-6801`.
 
@@ -8,8 +8,16 @@
 |---|---:|---:|
 | ENABLED | 25 | R$ 46.325,69 |
 | REMOVED | 75 | R$ 265.048,53 |
+| **Histórico completo** | **100** | **R$ 311.374,21** |
 
-O campo oficial validado foi `campaign_status`; a documentação retornada pelo próprio conector informa que campanhas novas usam `ENABLED` como status ativo. A aba Google Ads deve exibir e agregar apenas campanhas cujo status mais recente seja `ENABLED`.
+O campo oficial validado foi `campaign_status`; a documentação retornada pelo próprio conector informa que campanhas novas usam `ENABLED` como status ativo. A regra correta é separar dois universos:
+
+| Contexto da aba | Regra |
+|---|---|
+| Valores, conversões, CPA, CTR, CPC, impressões, séries, produtos, regiões e rankings | Todas as campanhas que rodaram no período selecionado, independentemente do status atual |
+| Performance operacional atual, insights e recomendações | Somente campanhas cujo status mais recente é `ENABLED` |
+
+Assim, campanhas removidas preservam integralmente o histórico financeiro e de performance do mês, mas não aparecem como campanhas atuais nem geram novas recomendações operacionais.
 
 ## Campanhas ENABLED encontradas
 

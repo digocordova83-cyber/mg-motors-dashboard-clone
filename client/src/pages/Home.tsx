@@ -623,8 +623,8 @@ function OverviewTab({ data, correctionVisible, locale }: { data: DashboardData;
         title={ui(locale, "Performance por Campanha Ativa", "Active Campaign Performance")}
         subtitle={ui(
           locale,
-          `Somente campanhas ENABLED no Google Ads, ordenadas pelo investimento do período • ${data.metadata.campaignCount} ativas`,
-          `Only ENABLED Google Ads campaigns, ordered by investment in the period • ${data.metadata.campaignCount} active`,
+          `Somente campanhas ENABLED no Google Ads, ordenadas pelo investimento do período • ${data.metadata.activeCampaignCount} ativas`,
+          `Only ENABLED Google Ads campaigns, ordered by investment in the period • ${data.metadata.activeCampaignCount} active`,
         )}
       >
         <div className="overflow-x-auto">
@@ -633,7 +633,7 @@ function OverviewTab({ data, correctionVisible, locale }: { data: DashboardData;
               <tr><th className="px-5 py-3">{ui(locale, "Saúde", "Health")}</th><th className="px-3 py-3">Google Ads</th><th className="px-3 py-3">{ui(locale, "Campanha", "Campaign")}</th><th className="px-3 py-3">{ui(locale, "Produto", "Product")}</th><th className="px-3 py-3 text-right">{ui(locale, "Investimento", "Investment")}</th><th className="px-3 py-3 text-right">{ui(locale, "Conversões", "Conversions")}</th><th className="px-3 py-3 text-right">CPA</th><th className="px-5 py-3 text-right">CTR</th></tr>
             </thead>
             <tbody className="divide-y divide-[#182231]">
-              {data.campaigns.slice(0, 15).map(campaign => (
+              {data.activeCampaigns.slice(0, 15).map(campaign => (
                 <tr key={campaign.campaignId} className="transition-colors hover:bg-white/[0.02]">
                   <td className="px-5 py-3"><StatusBadge status={campaign.status} locale={locale} /></td>
                   <td className="px-3 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-semibold ${campaign.googleStatus === "ENABLED" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-slate-500/20 bg-slate-500/10 text-slate-400"}`}>{localizeGoogleStatus(locale, campaign.googleStatus)}</span></td>

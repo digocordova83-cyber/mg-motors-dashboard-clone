@@ -24,7 +24,7 @@ export async function verifyGoogleAdsActiveCampaigns(
   const dashboard = await loadDashboardData(period.dateFrom, period.dateTo, {
     forceRefresh: true,
   });
-  const inactiveCampaigns = dashboard.campaigns.filter(
+  const inactiveCurrentCampaigns = dashboard.activeCampaigns.filter(
     campaign => campaign.googleStatus !== "ENABLED",
   );
   const dailyTotals = dashboard.daily.reduce(
@@ -36,6 +36,18 @@ export async function verifyGoogleAdsActiveCampaigns(
     }),
     { investment: 0, conversions: 0, clicks: 0, impressions: 0 },
   );
+  const historicalCampaignIds = new Set(
+    dashboard.campaigns.map(campaign => campaign.campaignId),
+  );
+  const rankedCampaignIds = new Set([
+    ...dashboard.rankings.best.map(campaign => campaign.campaignId),
+    ...dashboard.rankings.worst.map(campaign => campaign.campaignId),
+  ]);
+  const historicalInactiveCampaignIds = new Set(
+    dashboard.campaigns
+      .filter(campaign => campaign.googleStatus !== "ENABLED")
+      .map(campaign => campaign.campaignId),
+  );
 
   const output = {
     verifiedAt: new Date().toISOString(),
@@ -43,19 +55,37 @@ export async function verifyGoogleAdsActiveCampaigns(
     source: dashboard.metadata.source,
     updatedAt: dashboard.metadata.updatedAt,
     dataThroughDate: dashboard.metadata.lastClosedDate,
-    rowCount: dashboard.metadata.rowCount,
-    campaignCount: dashboard.metadata.campaignCount,
-    inactiveCampaignCount: inactiveCampaigns.length,
+    historical: {
+      rowCount: dashboard.metadata.rowCount,
+      campaignCount: dashboard.metadata.campaignCount,
+      campaignStatuses: Array.from(
+        new Set(dashboard.campaigns.map(campaign => campaign.googleStatus)),
+      ),
+      campaigns: dashboard.campaigns.map(campaign => ({
+        id: campaign.campaignId,
+        name: campaign.campaign,
+        status: campaign.googleStatus,
+        spend: campaign.spend,
+      })),
+      summary: dashboard.summary,
+    },
+    current: {
+      rowCount: dashboard.metadata.activeRowCount,
+      campaignCount: dashboard.metadata.activeCampaignCount,
+      inactiveCampaignCount: inactiveCurrentCampaigns.length,
+      campaignStatuses: Array.from(
+        new Set(dashboard.activeCampaigns.map(campaign => campaign.googleStatus)),
+      ),
+      campaigns: dashboard.activeCampaigns.map(campaign => ({
+        id: campaign.campaignId,
+        name: campaign.campaign,
+        status: campaign.googleStatus,
+        spend: campaign.spend,
+      })),
+    },
     campaignStatuses: Array.from(
       new Set(dashboard.campaigns.map(campaign => campaign.googleStatus)),
     ),
-    campaigns: dashboard.campaigns.map(campaign => ({
-      id: campaign.campaignId,
-      name: campaign.campaign,
-      status: campaign.googleStatus,
-      spend: campaign.spend,
-    })),
-    summary: dashboard.summary,
     reconciled: {
       investment:
         Math.abs(dashboard.summary.investment - round(dailyTotals.investment)) <=
@@ -67,21 +97,41 @@ export async function verifyGoogleAdsActiveCampaigns(
       clicks: dashboard.summary.clicks === round(dailyTotals.clicks),
       impressions:
         dashboard.summary.impressions === round(dailyTotals.impressions),
+      currentIsHistoricalSubset: dashboard.activeCampaigns.every(campaign =>
+        historicalCampaignIds.has(campaign.campaignId),
+      ),
+      rankingsUseHistoricalUniverse: Array.from(rankedCampaignIds).every(
+        campaignId => historicalCampaignIds.has(campaignId),
+      ),
+      historicalInactiveCampaignsInRankings: Array.from(
+        rankedCampaignIds,
+      ).filter(campaignId => historicalInactiveCampaignIds.has(campaignId))
+        .length,
     },
   };
 
-  if (output.inactiveCampaignCount > 0) {
+  if (output.current.inactiveCampaignCount > 0) {
     throw new Error(
-      `A aba ainda contém campanhas inativas: ${inactiveCampaigns
+      `A área de campanhas atuais ainda contém campanhas inativas: ${inactiveCurrentCampaigns
         .map(campaign => `${campaign.campaignId}:${campaign.googleStatus}`)
         .join(", ")}`,
     );
   }
-  if (output.campaignCount === 0) {
+  if (output.current.campaignCount === 0) {
     throw new Error("A fonte não retornou campanhas ativas para o período");
   }
-  if (Object.values(output.reconciled).some(value => !value)) {
-    throw new Error("Os KPIs ativos não reconciliaram com a série diária");
+  if (output.historical.campaignCount < output.current.campaignCount) {
+    throw new Error("O histórico não pode conter menos campanhas que o universo atual");
+  }
+  if (
+    !output.reconciled.investment ||
+    !output.reconciled.conversions ||
+    !output.reconciled.clicks ||
+    !output.reconciled.impressions ||
+    !output.reconciled.currentIsHistoricalSubset ||
+    !output.reconciled.rankingsUseHistoricalUniverse
+  ) {
+    throw new Error("Os KPIs históricos não reconciliaram com a série diária");
   }
 
   return output;

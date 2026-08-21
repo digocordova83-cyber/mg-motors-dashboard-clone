@@ -300,7 +300,6 @@ export function aggregateCampaigns(rows: AnalyticsRow[], goals: GoalConfig[], av
         status,
       };
     })
-    .filter(campaign => campaign.googleStatus === "ENABLED")
     .sort((left, right) => right.spend - left.spend);
 }
 

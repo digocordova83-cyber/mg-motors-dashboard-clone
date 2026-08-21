@@ -37,7 +37,7 @@ const baseRow: GoogleAdsRow = {
 };
 
 describe("buildDashboardData", () => {
-  it("mantém somente campanhas cujo status mais recente é ENABLED", () => {
+  it("mantém o histórico completo e separa campanhas cujo status mais recente é ENABLED", () => {
     const rows: GoogleAdsRow[] = [
       { ...baseRow, campaign_id: "active", campaign: "BBRO>MG4_PMax_SP", date: "2026-08-01" },
       { ...baseRow, campaign_id: "active", campaign: "BBRO>MG4_PMax_SP", date: "2026-08-02", spend: 200 },
@@ -55,10 +55,21 @@ describe("buildDashboardData", () => {
 
     expect(filtered).toHaveLength(2);
     expect(new Set(filtered.map(row => row.campaign_id))).toEqual(new Set(["active"]));
-    expect(result.summary.investment).toBe(300);
-    expect(result.campaigns).toHaveLength(1);
-    expect(result.campaigns[0]).toMatchObject({ campaignId: "active", googleStatus: "ENABLED" });
-    expect(result.metadata.campaignCount).toBe(1);
+    expect(result.summary.investment).toBe(1_000);
+    expect(result.daily.reduce((sum, day) => sum + day.spend, 0)).toBe(1_000);
+    expect(result.campaigns).toHaveLength(2);
+    expect(result.campaigns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ campaignId: "active", googleStatus: "ENABLED" }),
+        expect.objectContaining({ campaignId: "removed", googleStatus: "REMOVED" }),
+      ]),
+    );
+    expect(result.activeCampaigns).toHaveLength(1);
+    expect(result.activeCampaigns[0]).toMatchObject({ campaignId: "active", googleStatus: "ENABLED" });
+    expect(result.metadata.campaignCount).toBe(2);
+    expect(result.metadata.activeCampaignCount).toBe(1);
+    expect(result.metadata.rowCount).toBe(4);
+    expect(result.metadata.activeRowCount).toBe(2);
   });
 
   it("calcula métricas ponderadas sem somar CTR ou CPC de linhas", () => {

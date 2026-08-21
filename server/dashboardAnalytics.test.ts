@@ -168,7 +168,7 @@ describe("comparativos diários", () => {
 });
 
 describe("segmentações e rankings", () => {
-  it("exclui campanhas removidas mesmo quando possuem investimento histórico", () => {
+  it("mantém campanhas removidas quando possuem investimento histórico no período", () => {
     const campaigns = aggregateCampaigns(
       [
         row({ campaign_id: "active", campaign: "BBRO>MG4_PMax_SP", spend: 300 }),
@@ -183,8 +183,14 @@ describe("segmentações e rankings", () => {
       55,
     );
 
-    expect(campaigns).toHaveLength(1);
-    expect(campaigns[0]).toMatchObject({ campaignId: "active", googleStatus: "ENABLED" });
+    expect(campaigns).toHaveLength(2);
+    expect(campaigns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ campaignId: "active", googleStatus: "ENABLED" }),
+        expect.objectContaining({ campaignId: "removed", googleStatus: "REMOVED" }),
+      ]),
+    );
+    expect(campaigns.reduce((sum, campaign) => sum + campaign.spend, 0)).toBe(1_200);
   });
 
   it("concilia totais e exclui CPA sem amostra mínima", () => {

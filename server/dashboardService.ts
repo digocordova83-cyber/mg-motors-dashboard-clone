@@ -341,8 +341,9 @@ export function buildDashboardData(
   goals: GoalConfig[] = [],
   historyRows: GoogleAdsRow[] = rows,
 ) {
-  rows = filterActiveGoogleAdsRows(rows);
-  historyRows = filterActiveGoogleAdsRows(historyRows);
+  const activeHistoryRows = filterActiveGoogleAdsRows(historyRows);
+  const activeCampaignIds = new Set(activeHistoryRows.map(row => row.campaign_id));
+  const activeRows = rows.filter(row => activeCampaignIds.has(row.campaign_id));
 
   const totals = rows.reduce(
     (acc, row) => {
@@ -396,8 +397,23 @@ export function buildDashboardData(
     optimizationType: getOptimizationType(campaign.campaign),
   }));
 
+  const activeTotals = activeRows.reduce(
+    (acc, row) => {
+      acc.spend += row.spend;
+      acc.conversions += row.conversions;
+      return acc;
+    },
+    { spend: 0, conversions: 0 },
+  );
+  const activeAverageCpa = round(safeDivide(activeTotals.spend, activeTotals.conversions));
+  const activeCampaignAnalytics = aggregateCampaigns(activeRows, goals, activeAverageCpa);
+  const activeCampaigns = activeCampaignAnalytics.map(campaign => ({
+    ...campaign,
+    optimizationType: getOptimizationType(campaign.campaign),
+  }));
+
   const statusOrder: Record<CampaignHealth, number> = { Crítico: 0, Atenção: 1, Saudável: 2 };
-  const insights = campaigns
+  const insights = activeCampaigns
     .filter(campaign => campaign.status !== "Saudável")
     .sort((left, right) => statusOrder[left.status] - statusOrder[right.status] || right.cpa - left.cpa)
     .slice(0, 8)
@@ -406,11 +422,11 @@ export function buildDashboardData(
       campaignId: campaign.campaignId,
       campaign: campaign.campaign,
       cpa: campaign.cpa,
-      averageCpa: summary.cpa,
-      ratio: summary.cpa > 0 ? round(campaign.cpa / summary.cpa, 1) : 0,
-      message:
-        campaign.status === "Crítico"
-          ? `CPA em ${summary.cpa > 0 ? round(campaign.cpa / summary.cpa, 1) : 0}x a média do período.`
+        averageCpa: activeAverageCpa,
+        ratio: activeAverageCpa > 0 ? round(campaign.cpa / activeAverageCpa, 1) : 0,
+        message:
+          campaign.status === "Crítico"
+          ? `CPA em ${activeAverageCpa > 0 ? round(campaign.cpa / activeAverageCpa, 1) : 0}x a média das campanhas ativas.`
           : "CPA acima da faixa de atenção do período.",
     }));
 
@@ -424,7 +440,11 @@ export function buildDashboardData(
   const rankings = buildRankings(campaignAnalytics);
   const productPerformance = buildProductPerformance(campaignAnalytics);
   const regionPerformance = buildRegionPerformance(campaignAnalytics, summary.cpa);
-  const recommendationEngine = buildRecommendations(campaignAnalytics, summary.cpa, pacing);
+  const recommendationEngine = buildRecommendations(
+    activeCampaignAnalytics,
+    activeAverageCpa,
+    pacing,
+  );
 
   return {
     account: { id: MG_MOTORS_ACCOUNT_ID, name: MG_MOTORS_ACCOUNT_NAME, datasource: "google_ads" },
@@ -433,6 +453,7 @@ export function buildDashboardData(
     summary,
     daily,
     campaigns,
+    activeCampaigns,
     insights,
     pacing,
     dailyComparison,
@@ -457,6 +478,8 @@ export function buildDashboardData(
       rowCount: rows.length,
       historyRowCount: historyRows.length,
       campaignCount: campaigns.length,
+      activeRowCount: activeRows.length,
+      activeCampaignCount: activeCampaigns.length,
       lastClosedDate,
       cacheTtlSeconds: CACHE_TTL_MS / 1000,
     },
