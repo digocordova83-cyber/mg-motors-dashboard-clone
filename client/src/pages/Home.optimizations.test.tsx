@@ -13,6 +13,14 @@ describe("política de navegação do dashboard", () => {
   });
 });
 
+describe("interface de campanhas Google Ads ativas", () => {
+  it("explicita que a tabela considera somente campanhas ENABLED", () => {
+    expect(homeSource).toContain("Performance por Campanha Ativa");
+    expect(homeSource).toContain("Somente campanhas ENABLED no Google Ads");
+    expect(homeSource).toContain("data.metadata.campaignCount");
+  });
+});
+
 describe("interface aprofundada de Otimizações", () => {
   it("expõe parâmetros de origem e destino, estratégias, evidências, impacto, risco e execução", () => {
     expect(homeSource).toContain("Alteração recomendada");

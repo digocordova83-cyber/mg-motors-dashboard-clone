@@ -619,7 +619,14 @@ function OverviewTab({ data, correctionVisible, locale }: { data: DashboardData;
         ) : <EmptyState title={ui(locale, "Nenhum alerta no período", "No alerts in this period")} description={ui(locale, "As campanhas estão dentro da faixa de CPA esperada.", "Campaigns are within the expected CPA range.")} />}
       </Panel>
 
-      <Panel title={ui(locale, "Performance por Campanha", "Performance by Campaign")} subtitle={ui(locale, "Campanhas ativas ou com investimento, ordenadas pelo gasto do período", "Active campaigns or campaigns with spend, ordered by investment in the period")}>
+      <Panel
+        title={ui(locale, "Performance por Campanha Ativa", "Active Campaign Performance")}
+        subtitle={ui(
+          locale,
+          `Somente campanhas ENABLED no Google Ads, ordenadas pelo investimento do período • ${data.metadata.campaignCount} ativas`,
+          `Only ENABLED Google Ads campaigns, ordered by investment in the period • ${data.metadata.campaignCount} active`,
+        )}
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1020px] text-left text-xs">
             <thead className="border-b border-[#1b2535] bg-[#0a101b] text-[9px] uppercase tracking-[0.1em] text-slate-600">

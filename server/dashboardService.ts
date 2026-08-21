@@ -21,6 +21,7 @@ import {
 
 export const MG_MOTORS_ACCOUNT_ID = "535-798-6801";
 export const MG_MOTORS_ACCOUNT_NAME = "MG Motors";
+export const ACTIVE_GOOGLE_ADS_CAMPAIGN_STATUS = "ENABLED";
 export const TAG_CORRECTION_DATE = "2026-07-15";
 const WINDSOR_API_URL = "https://connectors.windsor.ai/google_ads";
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -111,6 +112,28 @@ const normalizedSnapshot = normalizeRows(snapshotRows);
 
 function filterByDate(rows: GoogleAdsRow[], dateFrom: string, dateTo: string) {
   return rows.filter(row => row.date >= dateFrom && row.date <= dateTo);
+}
+
+export function filterActiveGoogleAdsRows(rows: GoogleAdsRow[]) {
+  const latestStatusByCampaign = new Map<string, { date: string; status: string }>();
+
+  for (const row of rows) {
+    const current = latestStatusByCampaign.get(row.campaign_id);
+    if (!current || row.date >= current.date) {
+      latestStatusByCampaign.set(row.campaign_id, {
+        date: row.date,
+        status: row.campaign_status.trim().toUpperCase(),
+      });
+    }
+  }
+
+  const activeCampaignIds = new Set(
+    Array.from(latestStatusByCampaign.entries())
+      .filter(([, value]) => value.status === ACTIVE_GOOGLE_ADS_CAMPAIGN_STATUS)
+      .map(([campaignId]) => campaignId),
+  );
+
+  return rows.filter(row => activeCampaignIds.has(row.campaign_id));
 }
 
 function buildWindsorDateChunks(dateFrom: string, dateTo: string) {
@@ -318,6 +341,9 @@ export function buildDashboardData(
   goals: GoalConfig[] = [],
   historyRows: GoogleAdsRow[] = rows,
 ) {
+  rows = filterActiveGoogleAdsRows(rows);
+  historyRows = filterActiveGoogleAdsRows(historyRows);
+
   const totals = rows.reduce(
     (acc, row) => {
       acc.spend += row.spend;

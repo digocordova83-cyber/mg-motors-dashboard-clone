@@ -168,6 +168,25 @@ describe("comparativos diários", () => {
 });
 
 describe("segmentações e rankings", () => {
+  it("exclui campanhas removidas mesmo quando possuem investimento histórico", () => {
+    const campaigns = aggregateCampaigns(
+      [
+        row({ campaign_id: "active", campaign: "BBRO>MG4_PMax_SP", spend: 300 }),
+        row({
+          campaign_id: "removed",
+          campaign: "MG4_PMax_SP",
+          spend: 900,
+          campaign_status: "REMOVED",
+        }),
+      ],
+      goals,
+      55,
+    );
+
+    expect(campaigns).toHaveLength(1);
+    expect(campaigns[0]).toMatchObject({ campaignId: "active", googleStatus: "ENABLED" });
+  });
+
   it("concilia totais e exclui CPA sem amostra mínima", () => {
     const campaigns = aggregateCampaigns(
       [

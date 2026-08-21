@@ -2346,3 +2346,55 @@
 - [x] Registrar e entregar o resultado da verificação manual.
 
 > O e-mail `Daily Sales Planning Report 260820` foi localizado em 20/08/2026 às 17:04 UTC e informava MTD de 399. O PDF recebido foi diagnosticado com 29 linhas: 26 dealers, duas regiões e um TOTAL; Semana 4; 399 MTD Retail Orders; reconciliação integral. Importação `420001` concluída para 2026-08 com 26 de 26 dealers conciliados, zero unmatched, zero erros e idempotência confirmada. Aviso preservado: `TECAR GOIÂNIA` sem MTD Retail Order informado na Semana 4.
+
+## Consulta de acessos do site via Google Analytics — 20/08/2026
+
+- [x] Identificar a propriedade Google Analytics da MG disponível na fonte conectada.
+- [x] Extrair sessões e usuários por dia no mês atual.
+- [x] Calcular total, média diária e, se houver cobertura, média mensal recente.
+- [x] Validar período, dias com dados e diferença entre sessões e usuários.
+- [x] Entregar uma leitura executiva sem estimar dados ausentes.
+
+> Fonte: propriedade GA4 `MG MOTOR` (`544963048`) via Windsor. Agosto de 01–19/08: 281.919 sessões, 208.853 usuários ativos e 543.336 visualizações; média de 14.837,84 sessões e 28.596,63 visualizações por dia. Julho completo: 303.062 sessões, 218.038 usuários ativos e 581.353 visualizações; média de 9.776,19 sessões por dia. O ritmo diário de sessões em agosto está 51,78% acima de julho; projeção simples, não realizada, de 459.973 sessões no mês se o ritmo for mantido. Junho retornou sem dados na propriedade conectada.
+
+## Execução agendada obrigatória de Leads — 20/08/2026 — terceira rodada
+
+- [x] Executar exatamente o comando oficial e gravar `/tmp/mg-leads-scheduled-result.json`.
+- [x] Ler o JSON resultante e o `reportMarkdown` indicado.
+- [x] Validar linhas encontradas, válidas, novas, duplicadas, inválidas, base antes/depois e canais.
+- [x] Confirmar a existência e integridade de `masterXlsx`, `masterCsv` e `reportMarkdown`.
+- [x] Entregar o relatório em português com os três arquivos obrigatórios anexados.
+
+> Execução `20260821-090441`: `NO_CHANGES`; 21.748 linhas encontradas, 21.744 válidas, zero novos registros, 746 duplicatas internas, 20.998 já existentes, quatro inválidas e zero remoções. A base permaneceu em 20.998 Leads e o dashboard não sofreu alterações. XLSX íntegro, CSV com 21.745 linhas incluindo cabeçalho e relatório Markdown validados.
+
+## Atualização manual do dashboard — 21/08/2026
+
+- [x] Executar a rotina oficial de consolidação e importação de Leads.
+- [x] Ler o JSON e o relatório Markdown gerados.
+- [x] Validar novos registros, duplicatas, inválidos, canais e base antes/depois.
+- [x] Confirmar a contagem final persistida e a integridade dos artefatos.
+- [x] Entregar o relatório da atualização com XLSX, CSV e Markdown anexados.
+
+> Execução `20260821-095639`: dashboard atualizado com 551 novos registros e zero remoções. A base passou de 20.998 para 21.549 Leads, contagem confirmada diretamente no banco. Foram encontradas 22.300 linhas, sendo 22.296 válidas, 747 duplicatas internas, 20.998 registros já existentes e quatro inválidos. XLSX íntegro, CSV com 22.297 linhas incluindo cabeçalho e relatório Markdown validados.
+
+## Nova atualização manual do dashboard — 21/08/2026
+
+- [x] Executar a rotina oficial de consolidação e importação de Leads.
+- [x] Ler o JSON e o relatório Markdown gerados.
+- [x] Validar novos registros, duplicatas, inválidos, canais e base antes/depois.
+- [x] Confirmar a contagem final persistida e a integridade dos artefatos.
+- [x] Entregar o relatório da atualização com XLSX, CSV e Markdown anexados.
+
+> Execução `20260821-104511`: dashboard atualizado com 62 novos registros e zero remoções. A base passou de 21.549 para 21.611 Leads, contagem confirmada diretamente no banco. Foram encontradas 22.363 linhas, sendo 22.359 válidas, 748 duplicatas internas, 21.549 registros já existentes e quatro inválidos. XLSX íntegro, CSV com 22.360 linhas incluindo cabeçalho e relatório Markdown validados.
+
+## Google Ads somente com campanhas atuais ativas — 21/08/2026
+
+- [x] Auditar no Windsor os valores e campos de status das campanhas atuais da conta MG Motors.
+- [x] Identificar no serviço do Google Ads onde campanhas pausadas, encerradas ou antigas entram nas agregações.
+- [x] Aplicar filtro canônico de status ativo no backend, preservando o período e os contratos existentes.
+- [x] Garantir que KPIs, séries, tabelas e rankings da aba usem somente campanhas ativas.
+- [x] Atualizar regressões de serviço, router e interface.
+- [x] Validar totais com a fonte Windsor, executar TypeScript, testes e build.
+- [x] Inspecionar a aba em desktop e mobile e salvar checkpoint restaurável.
+
+> Auditoria Windsor 01–20/08: 25 campanhas `ENABLED` com R$ 46.325,69 e 75 campanhas `REMOVED` com R$ 265.048,53. A aba agora usa somente campanhas cujo status mais recente é `ENABLED`. Refresh ao vivo confirmado até 20/08: 74 linhas ativas, 25 campanhas, zero status inativo, R$ 46.325,69 de investimento, 234,4 conversões, CPA de R$ 197,63 e KPIs reconciliados. Interface atualizada para explicitar o filtro. Validação: 308 testes em 52 arquivos, TypeScript e build aprovados; logs atuais sem erros de runtime. A captura automática confirmou a tela protegida; a lista autenticada foi validada pelo contrato ao vivo e pelas regressões.

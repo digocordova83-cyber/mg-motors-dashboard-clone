@@ -11,6 +11,7 @@ vi.mock("./db", () => dbMocks);
 import {
   buildDashboardData,
   clearDashboardCache,
+  filterActiveGoogleAdsRows,
   getGoogleAdsRows,
   type GoogleAdsRow,
 } from "./dashboardService";
@@ -36,6 +37,30 @@ const baseRow: GoogleAdsRow = {
 };
 
 describe("buildDashboardData", () => {
+  it("mantém somente campanhas cujo status mais recente é ENABLED", () => {
+    const rows: GoogleAdsRow[] = [
+      { ...baseRow, campaign_id: "active", campaign: "BBRO>MG4_PMax_SP", date: "2026-08-01" },
+      { ...baseRow, campaign_id: "active", campaign: "BBRO>MG4_PMax_SP", date: "2026-08-02", spend: 200 },
+      { ...baseRow, campaign_id: "removed", campaign: "MG4_PMax_SP", date: "2026-08-01", spend: 300 },
+      { ...baseRow, campaign_id: "removed", campaign: "MG4_PMax_SP", date: "2026-08-02", spend: 400, campaign_status: "REMOVED" },
+    ];
+
+    const filtered = filterActiveGoogleAdsRows(rows);
+    const result = buildDashboardData(
+      rows,
+      { source: "test", updatedAt: "2026-08-03T00:00:00.000Z", cacheHit: false },
+      "2026-08-01",
+      "2026-08-02",
+    );
+
+    expect(filtered).toHaveLength(2);
+    expect(new Set(filtered.map(row => row.campaign_id))).toEqual(new Set(["active"]));
+    expect(result.summary.investment).toBe(300);
+    expect(result.campaigns).toHaveLength(1);
+    expect(result.campaigns[0]).toMatchObject({ campaignId: "active", googleStatus: "ENABLED" });
+    expect(result.metadata.campaignCount).toBe(1);
+  });
+
   it("calcula métricas ponderadas sem somar CTR ou CPC de linhas", () => {
     const rows: GoogleAdsRow[] = [
       baseRow,
