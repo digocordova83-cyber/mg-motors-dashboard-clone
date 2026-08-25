@@ -2453,3 +2453,12 @@
 - [x] Gerar uma cópia transparente do logo MG enviado, preservando o desenho vermelho e removendo somente o fundo branco.
 - [x] Armazenar o novo asset transparente e substituir a referência no dashboard.
 - [x] Validar visualmente login e cabeçalho, executar testes e build e salvar checkpoint.
+
+
+## Atualização integral da base até D-1 — 25/08/2026
+
+- [x] Executar sincronização oficial de Leads via Google Sheets, com deduplicação e relatório de alterações.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads até o último dia fechado disponível, preservando snapshots válidos quando houver defasagem. Google ficou com snapshot real até 23/08 porque a Windsor não disponibilizou 24/08; Meta e TikTok concluíram 24/08.
+- [x] Conferir o último MTD Retail Order disponível e importar somente arquivo novo ou idempotente. Lote 480001 de 24/08 já estava importado e permaneceu idempotente.
+- [x] Reconciliar totais, datas de cobertura, dealers, estados, investimento, CPL e ROAS disponível por canal. ROAS financeiro não foi calculado porque as fontes desta rotina não fornecem receita atribuída; nenhum valor foi inferido.
+- [x] Validar dashboard, testes, TypeScript e build; registrar o resultado e salvar checkpoint restaurável. Validação final: 309 testes, TypeScript e build aprovados.
