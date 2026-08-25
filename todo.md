@@ -2439,3 +2439,10 @@
 - [x] Validar Leads, MTD Retail Order, anúncios, dashboard, TypeScript, testes e build.
 - [x] Registrar o diagnóstico e salvar checkpoint restaurável antes da entrega.
 - [x] Quando o Google ao vivo retornar somente até o último dia fechado, servir o snapshot persistente mais recente ao período solicitado, preservando a indicação de cobertura parcial e mantendo o refresh como falho até D-1 completo.
+
+
+## Correção do logo MG — 25/08/2026
+
+- [x] Armazenar a imagem MG enviada como asset persistente do dashboard.
+- [x] Substituir a referência quebrada do logo no cabeçalho e manter alt text acessível.
+- [x] Validar a renderização do logo no dashboard, executar testes e build e salvar checkpoint.
