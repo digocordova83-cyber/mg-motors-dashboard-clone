@@ -355,6 +355,38 @@ export async function getDashboardDataSnapshot<T>(input: {
   return payload == null ? undefined : { ...record, payload };
 }
 
+export async function getLatestDashboardDataSnapshot<T>(input: {
+  source: DashboardRefreshSource;
+  periodFrom: string;
+  periodTo: string;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const records = await db
+    .select()
+    .from(dashboardDataSnapshots)
+    .where(
+      and(
+        eq(dashboardDataSnapshots.source, input.source),
+        lte(dashboardDataSnapshots.periodFrom, input.periodFrom),
+        gte(dashboardDataSnapshots.dataThroughDate, input.periodFrom),
+        lte(dashboardDataSnapshots.dataThroughDate, input.periodTo),
+      ),
+    )
+    .orderBy(
+      desc(dashboardDataSnapshots.dataThroughDate),
+      desc(dashboardDataSnapshots.refreshedAt),
+      desc(dashboardDataSnapshots.id),
+    )
+    .limit(1);
+  const record = records[0];
+  if (!record) return undefined;
+
+  const payload = parseDashboardSnapshotPayload<T>(record.payload);
+  return payload == null ? undefined : { ...record, payload };
+}
+
 export async function upsertDashboardDataSnapshot(input: {
   source: DashboardRefreshSource;
   periodFrom: string;

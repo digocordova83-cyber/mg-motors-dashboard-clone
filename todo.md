@@ -2426,3 +2426,16 @@
 - [x] Entregar relatório consolidado com contagens, fontes, cobertura D-1 e eventuais limitações reais.
 
 - [x] Recuperar a atualização D-1 de Meta Ads após o timeout da consulta integrada, sem substituir o snapshot válido anterior.
+
+
+## Atualização D-1 e diagnóstico do Google Ads — 25/08/2026
+
+> Diagnóstico confirmado: ao solicitar 01–24/08, a Windsor retornou dados somente até 23/08. O contrato rejeitou corretamente a série parcial; como não havia snapshot persistente exato da janela 01–24/08, o fallback antigo retornava zero linhas e a aba ficava vazia. A correção recupera o snapshot persistente mais recente com sobreposição, serve os dados reais até 23/08 e mantém explícita a cobertura parcial; o refresh continua `FAILED` até a fonte entregar 24/08, evitando declarar uma atualização inexistente.
+
+- [x] Registrar o incidente de Google Ads sem dados e identificar o último snapshot válido.
+- [x] Revisar configuração da fonte Windsor, logs, cache, intervalo D-1 e contratos de importação do Google Ads.
+- [x] Executar refresh D-1 de Google Ads, Meta Ads e TikTok Ads e separar falha da fonte de falha de montagem da interface.
+- [x] Corrigir a causa identificada ou preservar explicitamente o snapshot anterior sem substituir dados válidos por resposta parcial.
+- [x] Validar Leads, MTD Retail Order, anúncios, dashboard, TypeScript, testes e build.
+- [x] Registrar o diagnóstico e salvar checkpoint restaurável antes da entrega.
+- [x] Quando o Google ao vivo retornar somente até o último dia fechado, servir o snapshot persistente mais recente ao período solicitado, preservando a indicação de cobertura parcial e mantendo o refresh como falho até D-1 completo.

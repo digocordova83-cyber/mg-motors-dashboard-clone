@@ -16,6 +16,7 @@ import {
 import {
   getCampaignGoals,
   getDashboardDataSnapshot,
+  getLatestDashboardDataSnapshot,
   upsertDashboardDataSnapshot,
 } from "./db";
 
@@ -192,14 +193,21 @@ async function fetchWindsorRows(dateFrom: string, dateTo: string) {
 
 async function readPersistentGoogleAdsRows(dateFrom: string, dateTo: string) {
   try {
-    const snapshot = await getDashboardDataSnapshot<GoogleAdsCachePayload>({
+    const exactSnapshot = await getDashboardDataSnapshot<GoogleAdsCachePayload>({
       source: "GOOGLE_ADS",
       periodFrom: dateFrom,
       periodTo: dateTo,
     });
-    if (!snapshot || snapshot.dataThroughDate < dateTo) return undefined;
+    const snapshot =
+      exactSnapshot ??
+      (await getLatestDashboardDataSnapshot<GoogleAdsCachePayload>({
+        source: "GOOGLE_ADS",
+        periodFrom: dateFrom,
+        periodTo: dateTo,
+      }));
+    if (!snapshot) return undefined;
 
-    const rows = normalizeRows(snapshot.payload.rows);
+    const rows = filterByDate(normalizeRows(snapshot.payload.rows), dateFrom, dateTo);
     if (rows.length === 0) return undefined;
     const entry: CacheEntry = {
       rows,

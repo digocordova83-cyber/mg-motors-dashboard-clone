@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const dbMocks = vi.hoisted(() => ({
   getCampaignGoals: vi.fn(),
   getDashboardDataSnapshot: vi.fn(),
+  getLatestDashboardDataSnapshot: vi.fn(),
   upsertDashboardDataSnapshot: vi.fn(),
 }));
 
@@ -152,6 +153,7 @@ describe("cache Windsor.ai", () => {
     clearDashboardCache();
     dbMocks.getCampaignGoals.mockReset().mockResolvedValue([]);
     dbMocks.getDashboardDataSnapshot.mockReset().mockResolvedValue(undefined);
+    dbMocks.getLatestDashboardDataSnapshot.mockReset().mockResolvedValue(undefined);
     dbMocks.upsertDashboardDataSnapshot.mockReset().mockResolvedValue(undefined);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("indisponível")));
   });
@@ -262,6 +264,34 @@ describe("cache Windsor.ai", () => {
 
     expect(result.source).toBe("windsor-snapshot");
     expect(result.rows.length).toBeGreaterThan(0);
+    expect(dbMocks.upsertDashboardDataSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("usa o último snapshot persistente com sobreposição quando Windsor ainda não fechou o dia solicitado", async () => {
+    dbMocks.getLatestDashboardDataSnapshot.mockResolvedValue({
+      dataThroughDate: "2026-08-23",
+      refreshedAt: Date.parse("2026-08-24T08:30:00.000Z"),
+      payload: {
+        rows: [{ ...baseRow, date: "2026-08-23" }],
+        updatedAt: "2026-08-24T08:30:00.000Z",
+      },
+    });
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ ...baseRow, date: "2026-08-23" }] }),
+    } as Response);
+
+    const result = await getGoogleAdsRows("2026-08-01", "2026-08-24", {
+      forceRefresh: true,
+    });
+
+    expect(result.source).toBe("persistent-snapshot");
+    expect(result.rows).toEqual([expect.objectContaining({ date: "2026-08-23" })]);
+    expect(dbMocks.getLatestDashboardDataSnapshot).toHaveBeenCalledWith({
+      source: "GOOGLE_ADS",
+      periodFrom: "2026-08-01",
+      periodTo: "2026-08-24",
+    });
     expect(dbMocks.upsertDashboardDataSnapshot).not.toHaveBeenCalled();
   });
 
