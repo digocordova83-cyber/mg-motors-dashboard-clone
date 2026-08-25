@@ -2462,3 +2462,10 @@
 - [x] Conferir o último MTD Retail Order disponível e importar somente arquivo novo ou idempotente. Lote 480001 de 24/08 já estava importado e permaneceu idempotente.
 - [x] Reconciliar totais, datas de cobertura, dealers, estados, investimento, CPL e ROAS disponível por canal. ROAS financeiro não foi calculado porque as fontes desta rotina não fornecem receita atribuída; nenhum valor foi inferido.
 - [x] Validar dashboard, testes, TypeScript e build; registrar o resultado e salvar checkpoint restaurável. Validação final: 309 testes, TypeScript e build aprovados.
+
+
+## Favicon com logo MG — 25/08/2026
+
+- [x] Localizar a configuração atual de favicon e confirmar o asset transparente persistente.
+- [x] Aplicar o logo MG transparente como favicon do dashboard com referência acessível.
+- [x] Validar carregamento no navegador, executar testes e build e salvar checkpoint. HTML e asset responderam corretamente, captura visual concluída, 309 testes, TypeScript e build aprovados.
