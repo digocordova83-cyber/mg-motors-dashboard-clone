@@ -2446,3 +2446,10 @@
 - [x] Armazenar a imagem MG enviada como asset persistente do dashboard.
 - [x] Substituir a referência quebrada do logo no cabeçalho e manter alt text acessível.
 - [x] Validar a renderização do logo no dashboard, executar testes e build e salvar checkpoint.
+
+
+## Fundo transparente do logo MG — 25/08/2026
+
+- [x] Gerar uma cópia transparente do logo MG enviado, preservando o desenho vermelho e removendo somente o fundo branco.
+- [x] Armazenar o novo asset transparente e substituir a referência no dashboard.
+- [x] Validar visualmente login e cabeçalho, executar testes e build e salvar checkpoint.

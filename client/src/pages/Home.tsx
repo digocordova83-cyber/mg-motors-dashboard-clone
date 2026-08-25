@@ -229,7 +229,7 @@ function formatMetric(value: number, type: "currency" | "number" | "percent", lo
   return formatNumber(value, locale);
 }
 
-const MG_LOGO_URL = "/manus-storage/mg-logo_0e0e8964.png";
+const MG_LOGO_URL = "/manus-storage/mg-logo-transparent-exact_cdfbeb6c.png";
 
 function MgLogo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const sizeClass = size === "lg" ? "h-16 w-auto max-w-[230px] sm:h-[72px]" : size === "sm" ? "h-8 w-auto max-w-[145px]" : "h-11 w-auto max-w-[180px]";
