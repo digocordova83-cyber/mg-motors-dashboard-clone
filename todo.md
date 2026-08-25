@@ -2411,3 +2411,18 @@
 - [x] Validar a interface e salvar checkpoint restaurável.
 
 > Verificação Windsor ao vivo para 01–20/08: histórico completo com 1.316 linhas, 100 campanhas (`REMOVED` e `ENABLED`), R$ 311.374,21 investidos, 3.168,5 conversões e CPA de R$ 98,27. Universo operacional atual: 74 linhas, 25 campanhas, somente `ENABLED`, zero inativas. KPIs históricos reconciliados integralmente com a série diária; 14 campanhas hoje inativas aparecem nos rankings por terem rodado no período, conforme a regra corrigida. Validação: 308 testes em 52 arquivos, TypeScript e build aprovados; interface protegida renderizada sem erro.
+
+> Refresh D-1 executado em 25/08/2026 para 23/08: Google Ads concluído via `windsor-live` (1.867 linhas, 100 campanhas, R$ 399.225,50, 5.121 conversões); TikTok Ads concluído via `windsor-live` (7 dias, R$ 4.154,92, 111 Leads); Meta Ads teve timeout na execução integrada, mas foi recuperado em consulta dedicada via `windsor-live` (7 dias, R$ 22.028,99, 2.443 Leads, atualização até 23/08). Leads sincronizados via Google Sheets (22.689 linhas após substituição da base; 2.469 novos registros; 20.220 já armazenados; 704 repetições internas; 2 linhas inválidas reportadas). MTD Retail Order importado do `260824DailySalesPlanningReport.pdf`: lote 480001, semana 4, 523 vendas, 26 dealers conciliados, zero unmatched; reprocessamento idempotente confirmado.
+
+## Atualização D-1 com MTD Retail Order, Google Ads e TikTok Ads — 24/08/2026
+
+- [x] Inspecionar o PDF `260824DailySalesPlanningReport.pdf` e confirmar a tabela Retail, competência, semana e data de referência.
+- [x] Executar a prévia oficial do importador e validar linhas, totais, regiões, dealers e eventuais avisos.
+- [x] Atualizar Google Ads até o último dia fechado disponível, preservando histórico completo e restringindo apenas as áreas operacionais a campanhas `ENABLED`.
+- [x] Atualizar TikTok Ads até o último dia fechado disponível, sem aceitar resposta parcial ou inventar métricas.
+- [x] Importar o PDF de MTD Retail Order somente após reconciliação e confirmar idempotência.
+- [x] Reconciliar Leads, MTD Retail Order, Google Ads, TikTok Ads, investimento/CPL e última atualização do dashboard.
+- [x] Executar testes, TypeScript, build e validação da interface; registrar os resultados e salvar checkpoint restaurável.
+- [x] Entregar relatório consolidado com contagens, fontes, cobertura D-1 e eventuais limitações reais.
+
+- [x] Recuperar a atualização D-1 de Meta Ads após o timeout da consulta integrada, sem substituir o snapshot válido anterior.
