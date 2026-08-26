@@ -192,6 +192,7 @@ const CHANNEL_BY_KEY = new Map<string, string>([
   ["MERCADO LIVRE", "Mercado Livre"],
   ["UOL", "UOL"],
   ["TIKTOK", "TikTok"],
+  ["TIKTOK LIVE", "TikTok Live"],
   ["PROXY", "Proxy"],
 ]);
 
@@ -395,7 +396,9 @@ function normalizeRow(
   const normalizedSourceChannel = normalizeLeadChannel(sourceChannelRaw);
   const channel = normalizedSourceChannel === "TikTok"
     ? "TikTok"
-    : isMg4UrbanLeadModel(model)
+    : normalizedSourceChannel === "TikTok Live"
+      ? "TikTok Live"
+      : isMg4UrbanLeadModel(model)
       ? "Campanha Urban"
       : sourceChannel;
   const correctedDate = correctKnownLeadDateAnomaly({

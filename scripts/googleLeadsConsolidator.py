@@ -21,6 +21,7 @@ DEFAULT_SOURCE_URL = (
 )
 SOURCE_SHEET_GROUPS = (
     ("Site", ("Site",)),
+    ("TikTok Live", ("Tiktok - Live", "TikTok - Live", "Tiktok Live", "TikTok Live")),
     ("TikTok", ("TikTok", "Tikok")),
     ("Meta", ("Meta",)),
     ("Weebmotors", ("Weebmotors",)),
@@ -186,12 +187,18 @@ def build_record(
     phone: str,
     channel: str,
     source_channel: str,
+    allow_unavailable_dimensions: bool = False,
 ) -> tuple[dict[str, str], dict[str, str]]:
     model = normalize_model(model_source)
+    if allow_unavailable_dimensions and not model:
+        model = "Indisponível"
     cleaned_phone = clean_phone(phone)
+    normalized_dealer = dealer.strip() or ("Indisponível" if allow_unavailable_dimensions else "")
     resolved_channel = (
         "TikTok"
         if folded(source_channel) == "TIKTOK"
+        else "TikTok Live"
+        if folded(source_channel) == "TIKTOK LIVE"
         else "Campanha Urban"
         if model == "MG4 URBAN"
         else channel
@@ -201,7 +208,7 @@ def build_record(
         "Modelo": model,
         "Região ou Estado": region,
         "Cidade": city,
-        "Concessionaria": dealer,
+        "Concessionaria": normalized_dealer,
         "Nome": name,
         "Email": email,
         "Telefone": cleaned_phone,
@@ -212,13 +219,13 @@ def build_record(
         "Modelo": model,
         "Região/Estado": region,
         "Cidade": city,
-        "Concessionaria": dealer,
+        "Concessionaria": normalized_dealer,
         "Nome": name,
         "Email": email,
         "Telefone": cleaned_phone,
         "Canal": resolved_channel,
         "Data Corrigida": corrected_date,
-        "Concessionarias corrijida": dealer,
+        "Concessionarias corrijida": normalized_dealer,
         "Canal de Origem": source_channel,
     }
     return master, import_row
@@ -290,6 +297,38 @@ def map_meta(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, 
             source_channel="Meta",
         ),
         model_source=lambda row: row_value(row, form_name),
+        corrected_date_source=lambda row: row_value(row, source_date),
+    )
+
+
+def map_tiktok_live(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, str]], list[MappingIssue], int]:
+    source_date = resolve_column(frame, "Date", "Data")
+    model = resolve_column(frame, "Modelo", "Model")
+    city = resolve_column(frame, "City", "Cidade")
+    region = resolve_column(frame, "State (Province)", "State", "Estado")
+    name = resolve_column(frame, "Name", "Nome")
+    phone = resolve_column(frame, "Phone", "Telefone")
+    email = resolve_column(frame, "E-mail", "Email")
+
+    return map_rows(
+        "TikTok Live",
+        frame,
+        empty_columns=(source_date, name, phone, email, city, region),
+        mapper=lambda row: build_record(
+            source_date=row_value(row, source_date),
+            corrected_date=parse_date(row_value(row, source_date), dayfirst=True),
+            model_source=row_value(row, model),
+            region=row_value(row, region),
+            city=row_value(row, city),
+            dealer="",
+            name=row_value(row, name),
+            email=row_value(row, email),
+            phone=row_value(row, phone),
+            channel="TikTok Live",
+            source_channel="TikTok Live",
+            allow_unavailable_dimensions=True,
+        ),
+        model_source=lambda row: row_value(row, model),
         corrected_date_source=lambda row: row_value(row, source_date),
     )
 
@@ -490,6 +529,7 @@ SHEET_MAPPERS: dict[
     Callable[[pd.DataFrame], tuple[list[dict[str, str]], list[dict[str, str]], list[MappingIssue], int]],
 ] = {
     "Site": map_site,
+    "TikTok Live": map_tiktok_live,
     "TikTok": map_tiktok,
     "Meta": map_meta,
     "Weebmotors": map_weebmotors,

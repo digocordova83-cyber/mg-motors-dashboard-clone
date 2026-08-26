@@ -114,6 +114,26 @@ describe("parseLeadCsv", () => {
     expect(result.channels).toContainEqual({ value: "TikTok", count: 1 });
   });
 
+  it("preserva TikTok Live como canal próprio com dimensões ausentes explicitamente indisponíveis", () => {
+    const result = parseLeadCsv(
+      csvWithSourceChannel(
+        "24/08/2026,Indisponível,SP,São Paulo,Indisponível,Cliente Live,live@example.com,+5511999990002,TikTok Live,24/08/2026,Indisponível,TikTok Live",
+      ),
+    );
+
+    expect(result.invalidRows).toBe(0);
+    expect(result.records[0]).toMatchObject({
+      channel: "TikTok Live",
+      channelRaw: "TikTok Live",
+      sourceChannel: "TikTok Live",
+      model: "Indisponível",
+      dealerName: "Indisponível",
+      region: "SP",
+      phone: "5511999990002",
+    });
+    expect(result.channels).toContainEqual({ value: "TikTok Live", count: 1 });
+  });
+
   it("corrige para 01/07 somente a assinatura exata dos 18 Leads do Mercado Livre", () => {
     const exactKnownOccurrence = [
       "Tue Jun 01 2026 00:00:00 GMT-0400 (Chile Standard Time)",

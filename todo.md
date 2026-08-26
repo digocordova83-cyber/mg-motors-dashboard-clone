@@ -2469,3 +2469,22 @@
 - [x] Localizar a configuração atual de favicon e confirmar o asset transparente persistente.
 - [x] Aplicar o logo MG transparente como favicon do dashboard com referência acessível.
 - [x] Validar carregamento no navegador, executar testes e build e salvar checkpoint. HTML e asset responderam corretamente, captura visual concluída, 309 testes, TypeScript e build aprovados.
+
+
+## Atualização da base de vendas — Daily Sales Planning Report 25/08/2026
+
+- [x] Inspecionar o PDF recebido e confirmar competência, semana de referência e tabela Retail. Relatório 25/08, Semana 5, MTD Retail Order 549.
+- [x] Executar a prévia oficial, validando linhas, totais, dealers conciliados e avisos. Prévia sem erros e reconciliação aprovada; o alias de IGUATU FORTALEZA foi corrigido antes do reprocessamento.
+- [x] Importar o lote de MTD Retail Order e confirmar idempotência em uma segunda execução. Lote 510001, 29 linhas, reprocessado com zero unmatched após a correção de alias.
+- [x] Reconciliar o total de vendas por dealer/estado e validar o dashboard, testes e build. 549 vendas, 26 dealers matched, 2 regiões e total por dealer/estado reconciliado.
+- [x] Registrar o resultado e salvar checkpoint restaurável.
+- [x] Corrigir o alias de origem `IGUATU FORTALEZA` para o dealer oficial `IGUAUTO FORTALEZA`, reprocessar o lote com segurança e confirmar zero unmatched. Canonical final do dashboard: `IGUALTO - MG FORTALEZA`; lote 510001 com 26/26 dealers matched.
+
+
+## Atualização de Leads e novo canal TikTok Live — 25/08/2026
+
+- [x] Confirmar como `TikTok Live` aparece na fonte de Leads e distinguir o canal da mídia TikTok Ads paga. A fonte real possui a aba `Tiktok - Live` com 31 linhas; `Tikok` permanece TikTok Ads com 198 linhas.
+- [x] Atualizar tipos, normalização e contagens de canais para aceitar `TikTok Live` sem quebrar canais existentes.
+- [x] Executar a sincronização oficial de Leads com deduplicação e registrar novos, existentes, inválidos e duplicados. Resultado: 31 novos, 22.921 existentes na primeira execução; segunda execução idempotente com zero novos.
+- [x] Garantir que TikTok Live entre nos totais, séries diárias, distribuição, filtros e tabelas sem duplicação. Reconciliação de 01–24/08: 11.310 Leads, TikTok Live 31, TikTok Ads 198 e totais por canal/modelo/região/dealer iguais.
+- [x] Validar dashboard, testes, TypeScript e build e salvar checkpoint restaurável. 52 arquivos e 311 testes aprovados; TypeScript e build aprovados.

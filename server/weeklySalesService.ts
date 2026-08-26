@@ -670,6 +670,8 @@ export async function importWeeklySalesCsv(input: {
   competencePolicy?: WeeklySalesCompetencePolicy;
   /** Uso interno: prévia reconciliada cujo hash deve ser idêntico ao arquivo original. */
   parsedOverride?: WeeklySalesCsvPreview;
+  /** Uso interno: permite reprocessar um lote concluído após correção de alias, sem alterar a idempotência padrão. */
+  reprocessCompleted?: boolean;
 }): Promise<WeeklySalesImportResult> {
   const actor = input.actor.trim();
   if (!actor) throw new Error("Usuário responsável pela importação não identificado.");
@@ -708,7 +710,7 @@ export async function importWeeklySalesCsv(input: {
   }
 
   const existing = await findImportByIdentity(parsed.fileHash, competence);
-  if (existing?.status === "COMPLETED") {
+  if (existing?.status === "COMPLETED" && !input.reprocessCompleted) {
     return {
       ...preview,
       importId: existing.id,

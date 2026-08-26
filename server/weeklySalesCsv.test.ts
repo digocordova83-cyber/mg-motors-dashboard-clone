@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { parseWeeklySalesCsv, type WeeklySalesWeek } from "./weeklySalesCsv";
+import {
+  parseWeeklySalesCsv,
+  resolveWeeklySalesCanonicalDealer,
+  type WeeklySalesWeek,
+} from "./weeklySalesCsv";
 
 const HEADER = [
   "REGION",
@@ -102,6 +106,13 @@ describe("Weekly Target Achievement CSV", () => {
     expect(preview.summary.dealersWithoutWeek4Sales).toBe(1);
     expect(preview.rows[0]?.weeks["4"]?.retail).toBeNull();
     expect(preview.warnings).toContain("HG ARACAJU: Semana 4 sem MTD Retail Order informado.");
+  });
+
+  it("concilia o nome de origem IGUATU FORTALEZA ao canonical do dashboard", () => {
+    expect(resolveWeeklySalesCanonicalDealer("IGUATU FORTALEZA")).toEqual({
+      canonicalDealer: "IGUALTO - MG FORTALEZA",
+      explicitMapping: true,
+    });
   });
 
   it("rejeita arquivo cujo total da última semana preenchida não reconcilia", () => {
