@@ -36,6 +36,7 @@ import type { AppRouter } from "../../../server/routers";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type LeadAnalytics = RouterOutputs["leads"]["analytics"];
 type LeadGeographicCpl = NonNullable<LeadAnalytics["geographicCpl"]>;
+type MetaBudgetPlan = NonNullable<NonNullable<LeadAnalytics["mediaInvestment"]>["metaBudgetPlan"]>;
 type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
 type WeeklySalesDealer = WeeklySalesMetrics["dealers"][number];
 type WeeklySalesState = WeeklySalesMetrics["states"][number];
@@ -76,6 +77,7 @@ type WeeklySalesPanelProps = {
   dateTo: string;
   locale?: Locale;
   geographicCpl?: LeadGeographicCpl | null;
+  metaBudgetPlan?: MetaBudgetPlan | null;
   canImportLeads?: boolean;
   channelHistoryDealerNames?: ReadonlySet<string>;
   onViewChannelHistory?: (dealerName: string) => void;
@@ -1376,6 +1378,7 @@ export function WeeklySalesPanel({
   dateTo,
   locale = "pt-BR",
   geographicCpl,
+  metaBudgetPlan,
   canImportLeads = false,
   channelHistoryDealerNames,
   onViewChannelHistory,
@@ -1714,7 +1717,7 @@ export function WeeklySalesPanel({
         <>
           <WeeklySalesSummaryCards metrics={metrics.data} locale={locale} />
           {metrics.data.targets ? (
-            <DealerTargetTrackingPanel tracking={metrics.data.targets} geographicCpl={geographicCpl} locale={locale} />
+            <DealerTargetTrackingPanel tracking={metrics.data.targets} geographicCpl={geographicCpl} metaBudgetPlan={metaBudgetPlan} locale={locale} />
           ) : (
             <div className="grid min-h-32 place-items-center rounded-xl border border-dashed border-[#263247] bg-[#0d1421] px-5 text-center">
               <div>

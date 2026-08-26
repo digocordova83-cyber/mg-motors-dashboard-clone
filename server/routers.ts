@@ -51,7 +51,9 @@ import {
 } from "./leadsService";
 import { exportLeadsBase } from "./leadsExportService";
 import {
+  applyAugustMetaBudget,
   buildLeadMediaInvestmentReference,
+  getAugustMetaBudgetPlan,
   loadPaidMediaInvestmentMeasurements,
 } from "./leadMediaInvestmentService";
 import { buildLeadGeographicCplReference } from "./leadGeographicCplService";
@@ -351,22 +353,28 @@ export const appRouter = router({
             ? getDealerTargetsForCompetence(input.dateTo.slice(0, 7))
             : Promise.resolve(null),
         ]);
-        const mediaInvestment = measurements
+        const metaBudgetPlan = getAugustMetaBudgetPlan(analytics.dateFrom, analytics.dateTo);
+        const effectiveMeasurements = measurements
+          ? applyAugustMetaBudget(measurements, metaBudgetPlan)
+          : null;
+        const mediaInvestment = effectiveMeasurements
           ? buildLeadMediaInvestmentReference({
               dateFrom: analytics.dateFrom,
               dateTo: analytics.dateTo,
               channelLeads: analytics.channels,
-              measurements,
+              measurements: effectiveMeasurements,
+              metaBudgetPlan,
             })
           : null;
-        const geographicCpl = measurements && dealerTargets?.length
+        const geographicCpl = effectiveMeasurements && dealerTargets?.length
           ? buildLeadGeographicCplReference({
               dateFrom: analytics.dateFrom,
               dateTo: analytics.dateTo,
               competence: input.dateTo.slice(0, 7),
               dealerAudit: analytics.dealerAudit,
               dealerTargets,
-              measurements,
+              measurements: effectiveMeasurements,
+              metaBudgetPlan,
             })
           : null;
         return { ...analytics, mediaInvestment, geographicCpl };

@@ -2488,3 +2488,12 @@
 - [x] Executar a sincronização oficial de Leads com deduplicação e registrar novos, existentes, inválidos e duplicados. Resultado: 31 novos, 22.921 existentes na primeira execução; segunda execução idempotente com zero novos.
 - [x] Garantir que TikTok Live entre nos totais, séries diárias, distribuição, filtros e tabelas sem duplicação. Reconciliação de 01–24/08: 11.310 Leads, TikTok Live 31, TikTok Ads 198 e totais por canal/modelo/região/dealer iguais.
 - [x] Validar dashboard, testes, TypeScript e build e salvar checkpoint restaurável. 52 arquivos e 311 testes aprovados; TypeScript e build aprovados.
+
+
+## Meta sem investimento e CPL; novo orçamento de Leads em agosto — 25/08/2026
+
+- [x] Localizar todos os campos de investimento e CPL exibidos ou calculados na aba Meta.
+- [x] Retirar da aba Meta investimento, custo e CPL, mantendo somente volume e métricas de entrega não financeiras. A aba principal e o inventário de criativos mostram somente volume/entrega.
+- [x] Atualizar a configuração de agosto para investimento total de BRL 187.200,00, distribuído uniformemente em 31 dias. Diária: BRL 6.038,71; 01–24/08: BRL 144.929,03.
+- [x] Recalcular o investimento acumulado e o CPL da aba Leads sempre até o último dia fechado D-1, sem alterar o volume real de Leads. Meta usa o orçamento planejado acumulado por dias do período; volumes permanecem reais.
+- [x] Validar reconciliação, testes, TypeScript, build, interface e salvar checkpoint restaurável. 314 testes, TypeScript, build, captura visual e auditoria de rótulos financeiros aprovados.

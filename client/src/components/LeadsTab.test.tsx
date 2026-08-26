@@ -111,6 +111,8 @@ describe("interface de Leads", () => {
     expect(source).toContain("data.mediaInvestment.paidMediaLeads");
     expect(source).toContain("data.mediaInvestment.estimatedOverallCpl");
     expect(source).toContain("Investimento total ÷ Leads de Site + Meta + TikTok");
+    expect(source).toContain("Meta (orçamento planejado)");
+    expect(source).toContain("data.mediaInvestment.metaBudgetPlan");
     expect(source).toContain("Webmotors e Mercado Livre não entram neste cálculo");
   });
 

@@ -9,9 +9,7 @@ import {
   AlertTriangle,
   BarChart3,
   CalendarDays,
-  CircleDollarSign,
   Eye,
-  Gauge,
   ImageIcon,
   Loader2,
   MapPin,
@@ -29,7 +27,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  ComposedChart,
   Legend,
   Line,
   Pie,
@@ -66,16 +63,12 @@ export const META_ADS_COPY = {
     title: "Performance de Mídia Social",
     period: "Período",
     month: "Mês",
-    investment: "Investimento",
     leads: "Leads",
-    cpl: "CPL Médio",
     reach: "Alcance",
     ctr: "CTR",
     clicks: "Cliques",
-    spendLeadsTitle: "Evolução diária — investimento e Leads",
-    spendLeadsSubtitle: "Leitura diária da conta Meta Ads vinculada ao Windsor.ai",
-    dailyCplTitle: "Evolução diária do CPL",
-    dailyCplSubtitle: "Custo por Lead calculado exclusivamente pela série diária",
+    leadsTrendTitle: "Evolução diária de Leads",
+    leadsTrendSubtitle: "Volume diário da conta Meta Ads vinculada ao Windsor.ai",
     modelsTitle: "Performance por modelo",
     modelsSubtitle: "Modelo identificado no nome dos criativos, conjuntos e campanhas",
     model: "Modelo",
@@ -109,7 +102,7 @@ export const META_ADS_COPY = {
     errorDescription: "A conexão com o Windsor.ai pode estar temporariamente indisponível.",
     emptyTitle: "Sem dados no período",
     emptyDescription: "Selecione outro intervalo para consultar a conta vinculada.",
-    regionalNote: "O detalhamento regional da fonte não disponibiliza Leads por região. Por isso, esta leitura compara alcance, impressões e investimento sem inferir CPL regional.",
+    regionalNote: "O detalhamento regional da fonte não disponibiliza Leads por região. Por isso, esta leitura compara alcance, impressões e cliques, sem inferir resultados regionais.",
     female: "Mulheres",
     male: "Homens",
     unknown: "Não informado",
@@ -130,16 +123,12 @@ export const META_ADS_COPY = {
     title: "Social Media Performance",
     period: "Period",
     month: "Month",
-    investment: "Spend",
     leads: "Leads",
-    cpl: "Average CPL",
     reach: "Reach",
     ctr: "CTR",
     clicks: "Clicks",
-    spendLeadsTitle: "Daily trend — spend and Leads",
-    spendLeadsSubtitle: "Daily reading from the Meta Ads account connected to Windsor.ai",
-    dailyCplTitle: "Daily CPL trend",
-    dailyCplSubtitle: "Cost per Lead calculated exclusively from the daily series",
+    leadsTrendTitle: "Daily Leads trend",
+    leadsTrendSubtitle: "Daily volume from the Meta Ads account connected to Windsor.ai",
     modelsTitle: "Performance by model",
     modelsSubtitle: "Vehicle model identified from creative, ad set and campaign names",
     model: "Model",
@@ -173,7 +162,7 @@ export const META_ADS_COPY = {
     errorDescription: "The Windsor.ai connection may be temporarily unavailable.",
     emptyTitle: "No data for this period",
     emptyDescription: "Select another date range to query the connected account.",
-    regionalNote: "The regional source breakdown does not provide Leads by region. This view therefore compares reach, impressions and spend without inferring regional CPL.",
+    regionalNote: "The regional source breakdown does not provide Leads by region. This view therefore compares reach, impressions and clicks without inferring regional results.",
     female: "Women",
     male: "Men",
     unknown: "Not reported",
@@ -213,15 +202,6 @@ function formatLongDate(value: string, locale: Locale) {
 
 function formatNumber(value: number, locale: Locale, maximumFractionDigits = 1) {
   return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
-}
-
-function formatCurrency(value: number, locale: Locale, compact = false) {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "BRL",
-    notation: compact && Math.abs(value) >= 10_000 ? "compact" : "standard",
-    maximumFractionDigits: compact && Math.abs(value) >= 10_000 ? 1 : 2,
-  }).format(value);
 }
 
 export function formatMetaAdsStatus(status: string, locale: Locale) {
@@ -296,10 +276,7 @@ function MetaTooltip({ active, payload, label, locale }: { active?: boolean; pay
     <div className="rounded-lg border border-[#2a364b] bg-[#080d16]/95 p-3 text-[10px] shadow-2xl backdrop-blur">
       {label ? <p className="mb-2 font-semibold text-slate-300">{/^\d{4}-\d{2}-\d{2}$/.test(label) ? formatLongDate(label, locale) : label}</p> : null}
       <div className="space-y-1.5">
-        {payload.map(item => {
-          const currencyMetric = item.name?.toLowerCase().includes("invest") || item.name?.toLowerCase().includes("spend") || item.name?.includes("CPL");
-          return <div key={`${item.name}-${item.value}`} className="flex items-center justify-between gap-5"><span style={{ color: item.color }}>{item.name}</span><strong className="text-slate-200">{currencyMetric ? formatCurrency(Number(item.value ?? 0), locale) : formatNumber(Number(item.value ?? 0), locale)}</strong></div>;
-        })}
+        {payload.map(item => <div key={`${item.name}-${item.value}`} className="flex items-center justify-between gap-5"><span style={{ color: item.color }}>{item.name}</span><strong className="text-slate-200">{formatNumber(Number(item.value ?? 0), locale)}</strong></div>)}
       </div>
     </div>
   );
@@ -411,20 +388,18 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
   if (!data?.daily.length) return <main className="mx-auto max-w-[1680px] px-4 py-8"><Panel title={t.title} subtitle={`${t.period}: ${formatLongDate(dateFrom, locale)} — ${formatLongDate(dateTo, locale)} • ${t.cutoff}: ${formatLongDate(FALLBACK_TO, locale)}`}><MetaAdsEmptyState title={t.emptyTitle} description={t.emptyDescription} /></Panel></main>;
 
   const metricCards = [
-    { title: t.investment, value: formatCurrency(data.summary.spend, locale), subtitle: `${data.account.name} • ${t.period.toLowerCase()}`, icon: <CircleDollarSign className="h-4 w-4" />, accent: "#e2212d" },
     { title: t.leads, value: formatNumber(data.summary.leads, locale), subtitle: "actions_lead", icon: <Target className="h-4 w-4" />, accent: "#38bdf8" },
-    { title: t.cpl, value: formatCurrency(data.summary.cpl, locale), subtitle: `${t.investment} ÷ ${t.leads}`, icon: <Gauge className="h-4 w-4" />, accent: "#a78bfa" },
     { title: t.reach, value: formatNumber(data.summary.reach, locale), subtitle: currencySubtitle, icon: <Eye className="h-4 w-4" />, accent: "#10b981" },
     { title: t.ctr, value: `${formatNumber(data.summary.ctr, locale, 2)}%`, subtitle: `${formatNumber(data.summary.clicks, locale)} ${t.clicks.toLowerCase()}`, icon: <MousePointerClick className="h-4 w-4" />, accent: "#f59e0b" },
     { title: t.clicks, value: formatNumber(data.summary.clicks, locale), subtitle: `${formatNumber(data.summary.impressions, locale)} ${t.impressions.toLowerCase()}`, icon: <TrendingUp className="h-4 w-4" />, accent: "#60a5fa" },
   ];
 
   const insightCards = [
-    data.highlights.topAudience ? { label: t.audienceInsight, value: data.highlights.topAudience.name, metric: `${formatNumber(data.highlights.topAudience.leads, locale)} ${t.leads} • CPL ${data.highlights.topAudience.cpl == null ? "—" : formatCurrency(data.highlights.topAudience.cpl, locale)}`, icon: <UsersRound className="h-3.5 w-3.5 text-[#e2212d]" /> } : null,
+    data.highlights.topAudience ? { label: t.audienceInsight, value: data.highlights.topAudience.name, metric: `${formatNumber(data.highlights.topAudience.leads, locale)} ${t.leads}`, icon: <UsersRound className="h-3.5 w-3.5 text-[#e2212d]" /> } : null,
     data.highlights.topGender ? { label: t.genderInsight, value: formatMetaAdsGender(data.highlights.topGender.gender, locale), metric: `${formatNumber(data.highlights.topGender.leads, locale)} ${t.leads}`, icon: <UsersRound className="h-3.5 w-3.5 text-[#38bdf8]" /> } : null,
     data.highlights.topAge ? { label: t.ageInsight, value: data.highlights.topAge.age, metric: `${formatNumber(data.highlights.topAge.leads, locale)} ${t.leads}`, icon: <BarChart3 className="h-3.5 w-3.5 text-[#a78bfa]" /> } : null,
     data.highlights.topRegionByReach ? { label: t.regionInsight, value: data.highlights.topRegionByReach.region, metric: `${formatNumber(data.highlights.topRegionByReach.reach, locale)} ${t.reach.toLowerCase()}`, icon: <MapPin className="h-3.5 w-3.5 text-[#10b981]" /> } : null,
-    data.highlights.topCreative ? { label: t.creativeInsight, value: data.highlights.topCreative.name, metric: `${formatNumber(data.highlights.topCreative.leads, locale)} ${t.leads} • CPL ${data.highlights.topCreative.cpl == null ? "—" : formatCurrency(data.highlights.topCreative.cpl, locale)}`, icon: <ImageIcon className="h-3.5 w-3.5 text-[#f59e0b]" /> } : null,
+    data.highlights.topCreative ? { label: t.creativeInsight, value: data.highlights.topCreative.name, metric: `${formatNumber(data.highlights.topCreative.leads, locale)} ${t.leads}`, icon: <ImageIcon className="h-3.5 w-3.5 text-[#f59e0b]" /> } : null,
   ].filter(Boolean) as Array<{ label: string; value: string; metric: string; icon: ReactNode }>;
 
   return (
@@ -459,12 +434,9 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{metricCards.map(card => <MetricCard key={card.title} {...card} />)}</div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-        <Panel title={t.spendLeadsTitle} subtitle={t.spendLeadsSubtitle}>
-          <div className="h-[350px] px-2 pb-4 pt-5 sm:px-4"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={data.daily} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} /><YAxis yAxisId="money" tickFormatter={value => formatCurrency(Number(value), locale, true)} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={68} /><YAxis yAxisId="leads" orientation="right" tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={38} /><Tooltip content={<MetaTooltip locale={locale} />} /><Legend wrapperStyle={{ fontSize: 10, color: "#94a3b8" }} /><Bar yAxisId="money" dataKey="spend" name={t.investment} fill="#e2212d" radius={[4, 4, 0, 0]} maxBarSize={26} /><Line yAxisId="leads" type="monotone" dataKey="leads" name={t.leads} stroke="#38bdf8" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} /></ComposedChart></ResponsiveContainer></div>
-        </Panel>
-        <Panel title={t.dailyCplTitle} subtitle={t.dailyCplSubtitle}>
-          <div className="h-[350px] px-2 pb-4 pt-5 sm:px-4"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data.daily} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}><defs><linearGradient id="meta-cpl-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a78bfa" stopOpacity={0.35} /><stop offset="100%" stopColor="#a78bfa" stopOpacity={0.02} /></linearGradient></defs><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} /><YAxis tickFormatter={value => formatCurrency(Number(value), locale, true)} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={68} /><Tooltip content={<MetaTooltip locale={locale} />} /><Area type="monotone" dataKey="cpl" name="CPL" stroke="#a78bfa" strokeWidth={2.5} fill="url(#meta-cpl-gradient)" connectNulls /></AreaChart></ResponsiveContainer></div>
+      <div className="grid gap-4">
+        <Panel title={t.leadsTrendTitle} subtitle={t.leadsTrendSubtitle}>
+          <div className="h-[350px] px-2 pb-4 pt-5 sm:px-4"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data.daily} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} /><YAxis tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={48} /><Tooltip content={<MetaTooltip locale={locale} />} /><Area type="monotone" dataKey="leads" name={t.leads} stroke="#38bdf8" strokeWidth={2.5} fill="#38bdf8" fillOpacity={0.12} connectNulls /></AreaChart></ResponsiveContainer></div>
         </Panel>
       </div>
 
@@ -473,12 +445,12 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
           <div className="h-[340px] px-2 pb-4 pt-5"><ResponsiveContainer width="100%" height="100%"><BarChart data={data.models} layout="vertical" margin={{ top: 0, right: 24, left: 12, bottom: 0 }}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" horizontal={false} /><XAxis type="number" tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} /><YAxis type="category" dataKey="model" tick={{ fill: "#94a3b8", fontSize: 10 }} tickLine={false} axisLine={false} width={72} /><Tooltip content={<MetaTooltip locale={locale} />} /><Bar dataKey="leads" name={t.leads} radius={[0, 5, 5, 0]} maxBarSize={28}>{data.models.map(item => <Cell key={item.model} fill={MODEL_COLORS[item.model] ?? MODEL_COLORS.Outros} />)}</Bar></BarChart></ResponsiveContainer></div>
         </Panel>
         <Panel title={t.campaignsTitle} subtitle={t.campaignsSubtitle}>
-          <DataTable emptyLabel={t.noItems} columns={[t.campaignsTitle, t.investment, t.leads, "CPL", t.reach, "Status"]} rows={data.campaigns.slice(0, 10).map(item => [<div><p className="max-w-[320px] truncate font-medium text-slate-200">{item.name}</p><p className="mt-0.5 text-[8px] text-slate-700">{item.objective || item.id}</p></div>, formatCurrency(item.spend, locale), formatNumber(item.leads, locale), item.cpl == null ? "—" : formatCurrency(item.cpl, locale), formatNumber(item.reach, locale), <span className={`rounded-full border px-2 py-1 text-[8px] font-semibold ${item.status.includes("ACTIVE") ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-slate-600/30 bg-slate-500/10 text-slate-500"}`}>{formatMetaAdsStatus(item.status, locale)}</span>])} />
+          <DataTable emptyLabel={t.noItems} columns={[t.campaignsTitle, t.leads, t.reach, "Status"]} rows={data.campaigns.slice(0, 10).map(item => [<div><p className="max-w-[320px] truncate font-medium text-slate-200">{item.name}</p><p className="mt-0.5 text-[8px] text-slate-700">{item.objective || item.id}</p></div>, formatNumber(item.leads, locale), formatNumber(item.reach, locale), <span className={`rounded-full border px-2 py-1 text-[8px] font-semibold ${item.status.includes("ACTIVE") ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-slate-600/30 bg-slate-500/10 text-slate-500"}`}>{formatMetaAdsStatus(item.status, locale)}</span>])} />
         </Panel>
       </div>
 
       <Panel title={t.audiencesTitle} subtitle={t.audiencesSubtitle} className="mt-4">
-        <DataTable emptyLabel={t.noItems} columns={[t.audiencesTitle, t.investment, t.leads, "CPL", t.reach, t.period]} rows={data.audiences.slice(0, 12).map(item => [<div className="max-w-[470px]"><p className="font-medium text-slate-200">{item.name}</p><p className="mt-1 line-clamp-2 text-[8px] leading-4 text-slate-600">{item.targetingSummary.map(summary => translateMetaAdsTargeting(summary, locale)).join(" • ") || t.unknown}</p></div>, formatCurrency(item.spend, locale), formatNumber(item.leads, locale), item.cpl == null ? "—" : formatCurrency(item.cpl, locale), formatNumber(item.reach, locale), item.status.includes("ACTIVE") ? t.active : formatMetaAdsStatus(item.status, locale)])} />
+        <DataTable emptyLabel={t.noItems} columns={[t.audiencesTitle, t.leads, t.reach, t.period]} rows={data.audiences.slice(0, 12).map(item => [<div className="max-w-[470px]"><p className="font-medium text-slate-200">{item.name}</p><p className="mt-1 line-clamp-2 text-[8px] leading-4 text-slate-600">{item.targetingSummary.map(summary => translateMetaAdsTargeting(summary, locale)).join(" • ") || t.unknown}</p></div>, formatNumber(item.leads, locale), formatNumber(item.reach, locale), item.status.includes("ACTIVE") ? t.active : formatMetaAdsStatus(item.status, locale)])} />
       </Panel>
 
       <MetaCreativeInventoryPanel locale={locale} performanceCreatives={data.creatives} />

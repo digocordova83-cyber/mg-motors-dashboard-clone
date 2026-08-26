@@ -4,6 +4,7 @@ import type {
   PaidMediaChannel,
   PaidMediaMeasurement,
   PaidMediaSourceStatus,
+  MetaBudgetPlan,
 } from "./leadMediaInvestmentService";
 
 type GeographicPaidChannel = PaidMediaChannel;
@@ -38,7 +39,9 @@ export type LeadGeographicCplReference = {
   dateFrom: string;
   dateTo: string;
   competence: string;
-  formula: "ACTUAL_CHANNEL_SPEND_ALLOCATED_BY_DEALER_CHANNEL_TARGET_SHARE";
+  formula:
+    | "ACTUAL_CHANNEL_SPEND_ALLOCATED_BY_DEALER_CHANNEL_TARGET_SHARE"
+    | "AUGUST_META_BUDGET_AND_CHANNEL_TARGET_SHARE";
   stateDefinition: "DEALER_OPERATIONAL_STATE";
   allSourcesAvailable: boolean;
   status: PaidMediaSourceStatus;
@@ -143,6 +146,7 @@ export function buildLeadGeographicCplReference(input: {
   dealerAudit: LeadDealerAudit;
   dealerTargets: GeographicCplDealerTarget[];
   measurements: PaidMediaMeasurements;
+  metaBudgetPlan?: MetaBudgetPlan | null;
 }): LeadGeographicCplReference {
   const status = resolveStatus(input.measurements);
   const allSourcesAvailable = status === "AVAILABLE";
@@ -258,7 +262,9 @@ export function buildLeadGeographicCplReference(input: {
     dateFrom: input.dateFrom,
     dateTo: input.dateTo,
     competence: input.competence,
-    formula: "ACTUAL_CHANNEL_SPEND_ALLOCATED_BY_DEALER_CHANNEL_TARGET_SHARE",
+    formula: input.metaBudgetPlan
+      ? "AUGUST_META_BUDGET_AND_CHANNEL_TARGET_SHARE"
+      : "ACTUAL_CHANNEL_SPEND_ALLOCATED_BY_DEALER_CHANNEL_TARGET_SHARE",
     stateDefinition: "DEALER_OPERATIONAL_STATE",
     allSourcesAvailable,
     status,

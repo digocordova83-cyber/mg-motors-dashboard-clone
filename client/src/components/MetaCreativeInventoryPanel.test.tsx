@@ -141,7 +141,7 @@ describe("MetaCreativeInventoryPanel", () => {
       <MetaCreativeInventoryPanel
         locale="pt-BR"
         performanceCreatives={[
-          { adId: "ad-1", creativeId: "creative-1", spend: 972.81, leads: 113, cpl: 8.61 },
+              { adId: "ad-1", creativeId: "creative-1", spend: 972.81, leads: 113, cpl: 8.61 },
         ] as never}
       />,
     );
@@ -157,7 +157,9 @@ describe("MetaCreativeInventoryPanel", () => {
     expect(html).toContain("Carrossel");
     expect(html).toContain("Campanha pausada");
     expect(html).toContain("MG4 Cold | Público Segmentado");
-    expect(html).toContain("R$ 972,81");
+    expect(html).toContain(">113<");
+    expect(html).not.toContain("R$ 972,81");
+    expect(html).not.toContain("CPL");
     expect(html).toContain("Abrir publicação");
     expect(html).toContain("Ver cartões do carrossel");
     expect(html).toContain("A fonte retornou 40 linhas, consolidadas em 40 anúncios únicos");

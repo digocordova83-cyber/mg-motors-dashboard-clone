@@ -4,7 +4,7 @@ import {
   buildLeadGeographicCplReference,
   type GeographicCplDealerTarget,
 } from "./leadGeographicCplService";
-import type { PaidMediaMeasurement } from "./leadMediaInvestmentService";
+import type { PaidMediaMeasurement, MetaBudgetPlan } from "./leadMediaInvestmentService";
 
 function measurement(
   channel: "Site" | "Meta" | "TikTok",
@@ -132,6 +132,35 @@ describe("CPL estimado por estado e dealer", () => {
     ]);
     expect(result.dealers.reduce((sum, dealer) => sum + dealer.availableInvestment, 0)).toBe(1_300);
     expect(result.states.reduce((sum, state) => sum + state.availableInvestment, 0)).toBe(1_300);
+  });
+
+  it("identifica a verba Meta planejada de agosto na referência geográfica", () => {
+    const metaBudgetPlan: MetaBudgetPlan = {
+      competence: "2026-08",
+      monthlyBudget: 187_200,
+      calendarDays: 31,
+      dateFrom: "2026-08-01",
+      dateTo: "2026-08-24",
+      elapsedDays: 24,
+      dailyBudget: 6_038.71,
+      periodBudget: 144_929.03,
+    };
+    const result = buildLeadGeographicCplReference({
+      dateFrom: "2026-08-01",
+      dateTo: "2026-08-24",
+      competence: "2026-08",
+      dealerAudit,
+      dealerTargets: targets,
+      measurements: {
+        Site: measurement("Site", 1_000),
+        Meta: measurement("Meta", 144_929.03),
+        TikTok: measurement("TikTok", 100),
+      },
+      metaBudgetPlan,
+    });
+
+    expect(result.formula).toBe("AUGUST_META_BUDGET_AND_CHANNEL_TARGET_SHARE");
+    expect(result.channels.find(channel => channel.channel === "Meta")?.investment).toBe(144_929.03);
   });
 
   it("não publica CPL consolidado quando alguma plataforma tem cobertura parcial", () => {

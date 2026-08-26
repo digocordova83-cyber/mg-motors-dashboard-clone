@@ -5,6 +5,22 @@ import { loadTikTokAdsData } from "./tiktokAdsService";
 export type PaidMediaChannel = "Site" | "Meta" | "TikTok";
 export type PaidMediaSourceStatus = "AVAILABLE" | "PARTIAL" | "UNAVAILABLE";
 
+export const AUGUST_META_MONTHLY_BUDGET = 187_200;
+export const AUGUST_META_BUDGET_CALENDAR_DAYS = 31;
+const AUGUST_START = "2026-08-01";
+const AUGUST_END = "2026-08-31";
+
+export type MetaBudgetPlan = {
+  competence: "2026-08";
+  monthlyBudget: number;
+  calendarDays: number;
+  dateFrom: string;
+  dateTo: string;
+  elapsedDays: number;
+  dailyBudget: number;
+  periodBudget: number;
+};
+
 export type PaidMediaMeasurement = {
   channel: PaidMediaChannel;
   platform: "Google Ads" | "Meta Ads" | "TikTok Ads";
@@ -19,12 +35,15 @@ export type PaidMediaMeasurement = {
 export type LeadMediaInvestmentReference = {
   dateFrom: string;
   dateTo: string;
-  formula: "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS";
+  formula:
+    | "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS"
+    | "AUGUST_META_MONTHLY_BUDGET_RATE_DIVIDED_BY_CALENDAR_DAYS";
   totalInvestment: number | null;
   availableInvestment: number;
   paidMediaLeads: number;
   estimatedOverallCpl: number | null;
   allSourcesAvailable: boolean;
+  metaBudgetPlan: MetaBudgetPlan | null;
   channels: Array<
     PaidMediaMeasurement & {
       leads: number;
@@ -64,6 +83,47 @@ function unavailableMeasurement(
 function statusForCoverage(dataThroughDate: string | null, dateTo: string): PaidMediaSourceStatus {
   if (!dataThroughDate) return "PARTIAL";
   return dataThroughDate >= dateTo ? "AVAILABLE" : "PARTIAL";
+}
+
+function countCalendarDays(dateFrom: string, dateTo: string) {
+  const from = new Date(`${dateFrom}T00:00:00.000Z`);
+  const to = new Date(`${dateTo}T00:00:00.000Z`);
+  return Math.floor((to.getTime() - from.getTime()) / 86_400_000) + 1;
+}
+
+export function getAugustMetaBudgetPlan(dateFrom: string, dateTo: string): MetaBudgetPlan | null {
+  if (dateFrom < AUGUST_START || dateTo > AUGUST_END || dateFrom > dateTo) return null;
+  const elapsedDays = countCalendarDays(dateFrom, dateTo);
+  return {
+    competence: "2026-08",
+    monthlyBudget: AUGUST_META_MONTHLY_BUDGET,
+    calendarDays: AUGUST_META_BUDGET_CALENDAR_DAYS,
+    dateFrom,
+    dateTo,
+    elapsedDays,
+    dailyBudget: round(AUGUST_META_MONTHLY_BUDGET / AUGUST_META_BUDGET_CALENDAR_DAYS),
+    periodBudget: round(
+      (AUGUST_META_MONTHLY_BUDGET * elapsedDays) / AUGUST_META_BUDGET_CALENDAR_DAYS,
+    ),
+  };
+}
+
+export function applyAugustMetaBudget(
+  measurements: PaidMediaMeasurements,
+  plan: MetaBudgetPlan | null,
+): PaidMediaMeasurements {
+  if (!plan) return measurements;
+  return {
+    ...measurements,
+    Meta: {
+      ...measurements.Meta,
+      investment: plan.periodBudget,
+      source: "august-meta-budget-plan",
+      dataThroughDate: plan.dateTo,
+      status: "AVAILABLE",
+      error: null,
+    },
+  };
 }
 
 export async function loadPaidMediaInvestmentMeasurements(
@@ -129,6 +189,7 @@ export function buildLeadMediaInvestmentReference(input: {
   dateTo: string;
   channelLeads: Array<{ value: string; leads: number }>;
   measurements: PaidMediaMeasurements;
+  metaBudgetPlan?: MetaBudgetPlan | null;
 }): LeadMediaInvestmentReference {
   const leadsByChannel = new Map(input.channelLeads.map(item => [item.value, item.leads]));
   const channels = (["Site", "Meta", "TikTok"] as const).map(channel => {
@@ -153,7 +214,9 @@ export function buildLeadMediaInvestmentReference(input: {
   return {
     dateFrom: input.dateFrom,
     dateTo: input.dateTo,
-    formula: "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS",
+    formula: input.metaBudgetPlan
+      ? "AUGUST_META_MONTHLY_BUDGET_RATE_DIVIDED_BY_CALENDAR_DAYS"
+      : "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS",
     totalInvestment,
     availableInvestment,
     paidMediaLeads,
@@ -162,6 +225,7 @@ export function buildLeadMediaInvestmentReference(input: {
         ? round(totalInvestment / paidMediaLeads)
         : null,
     allSourcesAvailable,
+    metaBudgetPlan: input.metaBudgetPlan ?? null,
     channels,
   };
 }

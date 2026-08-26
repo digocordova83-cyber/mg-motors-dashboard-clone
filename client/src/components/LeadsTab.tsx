@@ -251,13 +251,14 @@ export function ChannelMediaReference({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-slate-100">{formatCategoryLabel(reference.channel, locale)}</p>
-          <p className="mt-1 text-[9px] text-slate-600">{reference.platform}</p>
+          <p className="mt-1 text-[9px] text-slate-600">{reference.source === "august-meta-budget-plan" ? ui(locale, "Orçamento planejado de agosto", "August planned budget") : reference.platform}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-semibold text-white">{formatInteger(reference.leads, locale)}</p>
           <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads</p>
         </div>
       </div>
+      {reference.source === "august-meta-budget-plan" ? <p className="mt-2 text-[8px] font-medium text-sky-300">{ui(locale, "Acumulado até D-1", "Accumulated through D-1")} • {reference.dataThroughDate ? formatDate(reference.dataThroughDate, locale) : "—"}</p> : null}
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-md border border-[#1b2637] bg-[#0d1624] px-3 py-2.5">
           <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
@@ -1382,7 +1383,7 @@ export function LeadsTab({
             <LeadPanel
               className="flex h-full flex-col"
               title={ui(locale, "Investimento e CPL de mídia paga", "Paid media investment and CPL")}
-              subtitle={ui(locale, "Google/Site, Meta e TikTok no mesmo período D-1.", "Google/Site, Meta, and TikTok in the same D-1 period.")}
+              subtitle={data.mediaInvestment.metaBudgetPlan ? ui(locale, `Google/Site e TikTok por fonte; Meta com orçamento planejado de ${formatCurrency(data.mediaInvestment.metaBudgetPlan.monthlyBudget, locale)} ÷ ${data.mediaInvestment.metaBudgetPlan.calendarDays} dias, acumulado até D-1.`, `Google/Site and TikTok from source data; Meta uses a planned ${formatCurrency(data.mediaInvestment.metaBudgetPlan.monthlyBudget, locale)} budget ÷ ${data.mediaInvestment.metaBudgetPlan.calendarDays} days, accumulated through D-1.`) : ui(locale, "Google/Site, Meta e TikTok no mesmo período D-1.", "Google/Site, Meta, and TikTok in the same D-1 period.")}
               action={<span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] font-semibold text-emerald-300">{ui(locale, "3 canais pagos", "3 paid channels")}</span>}
             >
               <div data-testid="paid-media-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2">
@@ -1414,7 +1415,9 @@ export function LeadsTab({
                     <div className="min-w-0">
                       <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#ff8c93]">{ui(locale, "CPL geral estimado", "Estimated overall CPL")}</p>
                       <p className="mt-1.5 text-[9px] leading-4 text-slate-500">
-                        {ui(locale, "Investimento total ÷ Leads de Site + Meta + TikTok", "Total investment ÷ Site + Meta + TikTok Leads")}
+                        {data.mediaInvestment.metaBudgetPlan
+                          ? ui(locale, "Google/Site + Meta (orçamento planejado) + TikTok ÷ Leads de Site + Meta + TikTok", "Google/Site + Meta (planned budget) + TikTok ÷ Site + Meta + TikTok Leads")
+                          : ui(locale, "Investimento total ÷ Leads de Site + Meta + TikTok", "Total investment ÷ Site + Meta + TikTok Leads")}
                       </p>
                     </div>
                     <p className="shrink-0 text-2xl font-semibold text-white">
@@ -1424,9 +1427,11 @@ export function LeadsTab({
                 </div>
 
                 <p className={`mt-2 text-[8px] leading-4 ${data.mediaInvestment.allSourcesAvailable ? "text-slate-600" : "text-amber-300/80"}`}>
-                  {data.mediaInvestment.allSourcesAvailable
-                    ? ui(locale, "Google Ads + Meta Ads + TikTok Ads reconciliados. Webmotors e Mercado Livre não entram neste cálculo.", "Google Ads + Meta Ads + TikTok Ads reconciled. Webmotors and Mercado Livre are excluded from this calculation.")
-                    : ui(locale, `Cobertura parcial. Investimento disponível: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}.`, `Partial coverage. Available investment: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}.`)}
+                  {data.mediaInvestment.metaBudgetPlan
+                    ? ui(locale, `Meta usa orçamento planejado de agosto; Google/Site e TikTok usam os dados disponíveis. Webmotors e Mercado Livre não entram neste cálculo.${data.mediaInvestment.allSourcesAvailable ? "" : ` Cobertura parcial: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)} disponível.`}`, `Meta uses the August planned budget; Google/Site and TikTok use available source data. Webmotors and Mercado Livre are excluded from this calculation.${data.mediaInvestment.allSourcesAvailable ? "" : ` Partial coverage: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)} available.`}`)
+                    : data.mediaInvestment.allSourcesAvailable
+                      ? ui(locale, "Google Ads + Meta Ads + TikTok Ads reconciliados. Webmotors e Mercado Livre não entram neste cálculo.", "Google Ads + Meta Ads + TikTok Ads reconciled. Webmotors and Mercado Livre are excluded from this calculation.")
+                      : ui(locale, `Cobertura parcial. Investimento disponível: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}.`, `Partial coverage. Available investment: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)}.`)}
                 </p>
               </div>
             </LeadPanel>
@@ -1455,6 +1460,7 @@ export function LeadsTab({
         dateTo={dateTo}
         locale={locale}
         geographicCpl={data.geographicCpl}
+        metaBudgetPlan={data.mediaInvestment?.metaBudgetPlan}
         canImportLeads={canImportLeads}
         channelHistoryDealerNames={channelHistoryDealerNames}
         onViewChannelHistory={dealerName => {

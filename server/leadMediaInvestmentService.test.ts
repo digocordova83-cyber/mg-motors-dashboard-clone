@@ -11,7 +11,11 @@ vi.mock("./metaAdsService", () => ({ loadMetaAdsData: mediaMocks.meta }));
 vi.mock("./tiktokAdsService", () => ({ loadTikTokAdsData: mediaMocks.tiktok }));
 
 import {
+  applyAugustMetaBudget,
+  AUGUST_META_BUDGET_CALENDAR_DAYS,
+  AUGUST_META_MONTHLY_BUDGET,
   buildLeadMediaInvestmentReference,
+  getAugustMetaBudgetPlan,
   loadPaidMediaInvestmentMeasurements,
   type PaidMediaMeasurement,
 } from "./leadMediaInvestmentService";
@@ -35,6 +39,49 @@ function measurement(
 }
 
 describe("referência de investimento e CPL por canal", () => {
+  it("rateia BRL 187.200,00 por 31 dias e acumula somente até o D-1", () => {
+    const plan = getAugustMetaBudgetPlan("2026-08-01", "2026-08-24");
+    expect(AUGUST_META_MONTHLY_BUDGET).toBe(187_200);
+    expect(AUGUST_META_BUDGET_CALENDAR_DAYS).toBe(31);
+    expect(plan).toMatchObject({
+      competence: "2026-08",
+      elapsedDays: 24,
+      dailyBudget: 6038.71,
+      periodBudget: 144929.03,
+    });
+
+    const measurements = {
+      Site: measurement("Site", 10_000),
+      Meta: measurement("Meta", 5_000),
+      TikTok: measurement("TikTok", 2_000),
+    };
+    const effective = applyAugustMetaBudget(measurements, plan);
+    expect(effective.Meta).toMatchObject({
+      investment: 144929.03,
+      source: "august-meta-budget-plan",
+      dataThroughDate: "2026-08-24",
+      status: "AVAILABLE",
+    });
+
+    const result = buildLeadMediaInvestmentReference({
+      dateFrom: "2026-08-01",
+      dateTo: "2026-08-24",
+      channelLeads: [
+        { value: "Site", leads: 1_000 },
+        { value: "Meta", leads: 2_000 },
+        { value: "TikTok", leads: 500 },
+      ],
+      measurements: effective,
+      metaBudgetPlan: plan,
+    });
+    expect(result.formula).toBe("AUGUST_META_MONTHLY_BUDGET_RATE_DIVIDED_BY_CALENDAR_DAYS");
+    expect(result.channels.find(item => item.channel === "Meta")).toMatchObject({
+      leads: 2_000,
+      referenceCpl: 72.46,
+    });
+    expect(result.metaBudgetPlan).toEqual(plan);
+  });
+
   beforeEach(() => {
     mediaMocks.google.mockReset();
     mediaMocks.meta.mockReset();

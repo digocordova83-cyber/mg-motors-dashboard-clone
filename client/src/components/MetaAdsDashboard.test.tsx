@@ -1,4 +1,5 @@
 import React from "react";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -44,6 +45,20 @@ describe("interface Meta Ads", () => {
     const targeting = "Interesses: veículos elétricos";
     expect(translateMetaAdsTargeting(targeting, "pt-BR")).toBe(targeting);
     expect(translateMetaAdsTargeting(targeting, "en-US")).toBe("Interests: veículos elétricos");
+  });
+
+  it("não mantém investimento ou CPL na aba Meta, somente métricas de volume e entrega", () => {
+    const source = readFileSync(new URL("./MetaAdsDashboard.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain('title: t.leads');
+    expect(source).toContain('dataKey="leads"');
+    expect(source).not.toContain("t.investment");
+    expect(source).not.toContain("t.cpl");
+    expect(source).not.toContain('dataKey="spend"');
+    expect(source).not.toContain('dataKey="cpl"');
+    expect(source).not.toContain("formatCurrency");
+    expect(source).not.toContain("Investimento");
+    expect(source).not.toContain("CPL");
   });
 
   it("renderiza estados explícitos de carregamento em ambos os idiomas", () => {

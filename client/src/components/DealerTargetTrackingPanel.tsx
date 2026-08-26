@@ -10,6 +10,7 @@ import type { AppRouter } from "../../../server/routers";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type LeadAnalytics = RouterOutputs["leads"]["analytics"];
 type LeadGeographicCpl = NonNullable<LeadAnalytics["geographicCpl"]>;
+type MetaBudgetPlan = NonNullable<NonNullable<LeadAnalytics["mediaInvestment"]>["metaBudgetPlan"]>;
 type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
 type DealerTargetTracking = NonNullable<WeeklySalesMetrics["targets"]>;
 export type DealerTargetProgress = DealerTargetTracking["dealers"][number];
@@ -139,10 +140,12 @@ function SummaryCard({
 export function DealerTargetTrackingPanel({
   tracking,
   geographicCpl,
+  metaBudgetPlan,
   locale = "pt-BR",
 }: {
   tracking: DealerTargetTracking;
   geographicCpl?: LeadGeographicCpl | null;
+  metaBudgetPlan?: MetaBudgetPlan | null;
   locale?: Locale;
 }) {
   const [search, setSearch] = useState("");
@@ -174,8 +177,12 @@ export function DealerTargetTrackingPanel({
           <p className="mt-1 max-w-3xl text-[11px] leading-5 text-slate-600">
             {ui(
               locale,
-              `TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1. Investimento e CPL são estimados pela participação das metas de cada canal.`,
-              `Monthly TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers. Investment and CPL are estimated from each channel target share.`,
+              metaBudgetPlan
+                ? `TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1. CPL estimado pela participação das metas; Meta usa orçamento de agosto rateado em ${metaBudgetPlan.calendarDays} dias.`
+                : `TOTAL DEALER e ${MTD_RETAIL_ORDER_LABEL} do plano mensal versus Leads atribuídos às ${formatInteger(summary.dealers, locale)} concessionárias no período D-1. Investimento e CPL são estimados pela participação das metas de cada canal.`,
+              metaBudgetPlan
+                ? `Monthly TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers. Estimated CPL uses target shares; Meta uses the August budget allocated across ${metaBudgetPlan.calendarDays} days.`
+                : `Monthly TOTAL DEALER and ${MTD_RETAIL_ORDER_LABEL} targets versus D-1 Leads assigned to the ${formatInteger(summary.dealers, locale)} dealers. Investment and CPL are estimated from each channel target share.`,
             )}
           </p>
         </div>

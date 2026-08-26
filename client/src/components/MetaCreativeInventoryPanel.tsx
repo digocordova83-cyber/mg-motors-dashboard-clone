@@ -33,7 +33,7 @@ const COPY = {
   "pt-BR": {
     title: "Inventário completo de criativos",
     subtitle:
-      "Todos os anúncios acessíveis da conta, inclusive sem investimento ou impressão no período selecionado.",
+      "Todos os anúncios acessíveis da conta, inclusive sem métricas no período selecionado.",
     loading: "Carregando o inventário completo do Meta Ads...",
     loadingDetail: "A primeira atualização pode levar até um minuto; os KPIs acima continuam disponíveis.",
     errorTitle: "Não foi possível carregar o inventário de criativos",
@@ -78,14 +78,12 @@ const COPY = {
     openVideoPreview: "Abrir prévia de vídeo",
     performancePeriod: "Desempenho no período selecionado",
     leads: "Leads",
-    spend: "Investimento",
-    cpl: "CPL",
     noPerformance: "Sem desempenho reportado no período selecionado",
   },
   "en-US": {
     title: "Complete creative inventory",
     subtitle:
-      "All accessible ads in the account, including ads without spend or impressions in the selected period.",
+      "All accessible ads in the account, including ads without reported metrics in the selected period.",
     loading: "Loading the complete Meta Ads inventory...",
     loadingDetail: "The first refresh can take up to one minute; the KPIs above remain available.",
     errorTitle: "Creative inventory could not be loaded",
@@ -130,8 +128,6 @@ const COPY = {
     openVideoPreview: "Open video preview",
     performancePeriod: "Performance in selected period",
     leads: "Leads",
-    spend: "Spend",
-    cpl: "CPL",
     noPerformance: "No performance reported in the selected period",
   },
 } as const;
@@ -146,14 +142,6 @@ function formatDateTime(value: string, locale: Locale) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function formatCurrency(value: number, locale: Locale) {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 2,
-  }).format(value);
 }
 
 function formatNumber(value: number, locale: Locale) {
@@ -284,10 +272,9 @@ function CreativeCard({
         {performance ? (
           <div className="mt-4 border-t border-[#1b2535] pt-3">
             <p className="text-[8px] uppercase tracking-[0.12em] text-slate-700">{t.performancePeriod}</p>
-            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-              <div><p className="text-[8px] text-slate-700">{t.leads}</p><p className="mt-1 text-[11px] font-semibold text-slate-300">{formatNumber(performance.leads, locale)}</p></div>
-              <div><p className="text-[8px] text-slate-700">{t.cpl}</p><p className="mt-1 text-[11px] font-semibold text-slate-300">{performance.cpl == null ? "—" : formatCurrency(performance.cpl, locale)}</p></div>
-              <div><p className="text-[8px] text-slate-700">{t.spend}</p><p className="mt-1 text-[11px] font-semibold text-slate-300">{formatCurrency(performance.spend, locale)}</p></div>
+            <div className="mt-2 text-center">
+              <p className="text-[8px] text-slate-700">{t.leads}</p>
+              <p className="mt-1 text-[11px] font-semibold text-slate-300">{formatNumber(performance.leads, locale)}</p>
             </div>
           </div>
         ) : (
