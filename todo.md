@@ -2524,3 +2524,11 @@
 - [x] Atualizar títulos, período, valores, fórmulas, status e referências de agosto sem inventar dados. August workbook values preserved; Actual Investment remains blank because no payment/proof data was supplied.
 - [x] Reconciliar subtotais, comissão, net, actual investment e total consolidado entre os quatro blocos. Gross: Line-up BRL 751,000; Urban BRL 200,000; Magazine BRL 50,000; Media Save BRL 99,000; consolidated gross BRL 1,100,000; commission BRL 40,040; net BRL 1,059,960.
 - [x] Validar visualmente a planilha e entregar a versão atualizada em Excel, preservando a estrutura original. PDF render validated without cuts in the four financial blocks; formulas, widths and notes verified.
+
+
+## Separação da apresentação e limpeza do dashboard — 26/08/2026
+
+- [x] Manter a estrutura financeira de agosto exclusivamente na apresentação independente. Presentation created with the approved visual standard.
+- [x] Após a validação final do deck, remover do projeto do dashboard os scripts, exports e documentos financeiros criados somente para essa entrega. Temporary scripts and artifacts removed.
+- [x] Confirmar que a remoção não afeta o runtime, os dados operacionais, as permissões ou as integrações do dashboard. Dashboard operational state preserved.
+- [x] Aplicar em todos os slides o padrão visual aprovado: fundo branco, cabeçalhos navy, acentos vermelho MG, tabelas financeiras limpas e consistência com o PDF de julho e o Executive Summary. Presentation `qC9VVlEaOpbd5AcqFdA52e` ready.
