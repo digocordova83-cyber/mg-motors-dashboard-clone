@@ -2506,3 +2506,12 @@
 - [x] Conferir o último MTD Retail Order disponível e importar somente lote novo ou idempotente. Lote 510001 de 25/08 permaneceu ativo e idempotente.
 - [x] Reconciliar totais, canais, TikTok Live, datas de cobertura, dealers, estados, investimento/CPL planejado e alertas de fonte. Período 01–25/08: 11.565 Leads; Meta 6.807, Site 2.681, Webmotors 1.466, Mercado Livre 382, TikTok 198 e TikTok Live 31. MTD Retail Order: 549 vendas, 26 dealers matched e zero unmatched.
 - [x] Validar dashboard, testes, TypeScript e build; salvar checkpoint restaurável e entregar o resumo. 314 testes, TypeScript e build aprovados.
+
+
+## Refresh da base com dados mais recentes — 26/08/2026
+
+- [x] Executar a sincronização oficial de Leads, mantendo deduplicação e TikTok Live separado. Execução 20260826-102212: 16 novos, 23.207 existentes, 705 duplicidades internas, 2 inválidos; base final 23.223 Leads.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads e registrar a data efetiva de cada fonte. Meta e TikTok concluíram 25/08; Google preservou snapshot até 23/08 por falta de cobertura Windsor para 25/08.
+- [x] Conferir o último MTD Retail Order disponível, importando apenas lote novo ou idempotente. Lote 510001 de 25/08 confirmado sem nova gravação e idempotente.
+- [x] Reconciliar totais por período, canal, dealer e estado, sem estimar dados ausentes. 01–25/08: 11.565 Leads e 549 MTD Retail Orders; soma por canal/modelo/região e vendas por dealer/estado conciliadas, zero unmatched.
+- [x] Validar testes, TypeScript, build e salvar checkpoint restaurável. 314 testes, TypeScript e build aprovados.
