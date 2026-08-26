@@ -2497,3 +2497,12 @@
 - [x] Atualizar a configuração de agosto para investimento total de BRL 187.200,00, distribuído uniformemente em 31 dias. Diária: BRL 6.038,71; 01–24/08: BRL 144.929,03.
 - [x] Recalcular o investimento acumulado e o CPL da aba Leads sempre até o último dia fechado D-1, sem alterar o volume real de Leads. Meta usa o orçamento planejado acumulado por dias do período; volumes permanecem reais.
 - [x] Validar reconciliação, testes, TypeScript, build, interface e salvar checkpoint restaurável. 314 testes, TypeScript, build, captura visual e auditoria de rótulos financeiros aprovados.
+
+
+## Novo refresh integral da base até D-1 — 26/08/2026
+
+- [x] Executar a automação oficial de Leads com deduplicação e relatório de alterações. Execução 20260826-090040: 23.914 linhas-fonte, 23.912 válidas, 255 novos registros, 705 duplicidades internas, 22.952 já existentes e 2 inválidos; base passou para 23.207 Leads.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads até o último dia fechado disponível, preservando snapshots válidos e a regra histórica/operacional do Google. Meta e TikTok concluíram até 25/08; Google preservou snapshot real até 23/08 porque a fonte não entregou cobertura completa de 25/08.
+- [x] Conferir o último MTD Retail Order disponível e importar somente lote novo ou idempotente. Lote 510001 de 25/08 permaneceu ativo e idempotente.
+- [x] Reconciliar totais, canais, TikTok Live, datas de cobertura, dealers, estados, investimento/CPL planejado e alertas de fonte. Período 01–25/08: 11.565 Leads; Meta 6.807, Site 2.681, Webmotors 1.466, Mercado Livre 382, TikTok 198 e TikTok Live 31. MTD Retail Order: 549 vendas, 26 dealers matched e zero unmatched.
+- [x] Validar dashboard, testes, TypeScript e build; salvar checkpoint restaurável e entregar o resumo. 314 testes, TypeScript e build aprovados.
