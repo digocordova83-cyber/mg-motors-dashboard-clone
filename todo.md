@@ -2515,3 +2515,12 @@
 - [x] Conferir o último MTD Retail Order disponível, importando apenas lote novo ou idempotente. Lote 510001 de 25/08 confirmado sem nova gravação e idempotente.
 - [x] Reconciliar totais por período, canal, dealer e estado, sem estimar dados ausentes. 01–25/08: 11.565 Leads e 549 MTD Retail Orders; soma por canal/modelo/região e vendas por dealer/estado conciliadas, zero unmatched.
 - [x] Validar testes, TypeScript, build e salvar checkpoint restaurável. 314 testes, TypeScript e build aprovados.
+
+
+## Atualização de Resultados de mídia, Leads e vendas — Agosto de 2026
+
+- [x] Localizar a planilha-base/estrutura de julho e validar quais dados reais de agosto estão disponíveis. Base: July digital plan reference plus the supplied August harmonized workbook.
+- [x] Separar a seção financeira em Digital Line-up, Digital Urban, Off — Magazine e Consolidated Summary.
+- [x] Atualizar títulos, período, valores, fórmulas, status e referências de agosto sem inventar dados. August workbook values preserved; Actual Investment remains blank because no payment/proof data was supplied.
+- [x] Reconciliar subtotais, comissão, net, actual investment e total consolidado entre os quatro blocos. Gross: Line-up BRL 751,000; Urban BRL 200,000; Magazine BRL 50,000; Media Save BRL 99,000; consolidated gross BRL 1,100,000; commission BRL 40,040; net BRL 1,059,960.
+- [x] Validar visualmente a planilha e entregar a versão atualizada em Excel, preservando a estrutura original. PDF render validated without cuts in the four financial blocks; formulas, widths and notes verified.
