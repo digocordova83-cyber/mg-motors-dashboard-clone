@@ -2574,3 +2574,12 @@
 - [x] Executar a prévia oficial antes da escrita e validar eventuais dealers unmatched. Reconciliação aprovada, 26/26 dealers matched e zero avisos.
 - [x] Importar ou reprocessar o lote somente com reconciliação aprovada e confirmar idempotência. Lote 540001, 29 linhas inseridas; segunda execução NO_CHANGES.
 - [x] Reconciliar o MTD Retail Order com Leads e vendas por dealer/estado no dashboard atualizado. Totais por dealer e estado conciliados com 560 MTD Retail Orders.
+
+## Correção da seção financeira do deck — 27/08/2026
+
+- [x] Usar exclusivamente os três prints financeiros confirmados como fonte dos valores e status do deck.
+- [x] Remover toda referência a Media Save/Saving da apresentação de agosto.
+- [x] Corrigir Google Ads para status PAID no bloco Digital Line-up e no bloco Digital Urban.
+- [x] Atualizar o consolidado para Digital Total + Off: BRL 1.067.804,20 gross, BRL 41.741,67 commission e BRL 1.001.800,03 net.
+- [x] Otimizar `cover.html` em uma única edição completa, preservando o template do relatório de julho.
+- [x] Renderizar e validar o deck completo antes da apresentação final. As 17 páginas foram renderizadas em 1280 × 720 e o Financial Check foi corrigido sem overflow na coluna Status.
