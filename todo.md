@@ -2609,3 +2609,27 @@
 - [x] Incluir no slide financeiro consolidado os campos Mídia Total, Comissão Total, Recebíveis em Aberto, Agency Fee e Total Payment BBRO.
 - [x] Deixar explícito que Total Payment BBRO corresponde ao Agency Fee mensal somado à Comissão Total.
 - [x] Validar o novo resumo financeiro, atualizar a apresentação completa e entregar a versão final.
+
+## Coerência financeira do Executive Summary — 27/08/2026
+
+- [x] Atualizar o Executive Summary para eliminar valores financeiros anteriores e refletir a recalibração do escopo Digital.
+- [x] Manter a separação entre a remuneração BBRO, os recebíveis em aberto e os indicadores operacionais de Leads e MTD Retail Order.
+- [x] Validar visualmente, reapresentar o deck completo e entregar a versão coerente.
+
+## Correção do Agency Fee — 27/08/2026
+
+- [x] Alterar o Agency Fee mensal de BRL 64.552,00 para BRL 64.551,95 nos slides financeiros e alinhar o Executive Summary ao pagamento BBRO arredondado.
+- [x] Atualizar o Total Payment BBRO para BRL 106.551,95, mantendo a comissão digital de BRL 42.000,00.
+- [x] Validar e reapresentar o deck completo com os valores corrigidos.
+
+## Solicitação de adiantamento Google Ads — 27/08/2026
+
+- [x] Inserir um slide executivo solicitando adiantamento de R$ 295.000 para Google Ads antes da virada de mês.
+- [x] Explicitar que o objetivo é preservar a continuidade das campanhas sem caracterizar o valor como investimento realizado.
+- [x] Validar a nova página, reapresentar o deck completo e entregar a versão final.
+
+## Remoção de Off — Magazine — 27/08/2026
+
+- [x] Remover o slide Off — Magazine e qualquer referência a Off dos resumos financeiros do deck.
+- [x] Atualizar o Financial Check e o Executive Summary para apresentarem exclusivamente Digital Total Gross, comissão e net.
+- [x] Validar a sequência revisada, concluir o pedido de adiantamento Google Ads e reapresentar o deck completo.
