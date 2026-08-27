@@ -2532,3 +2532,45 @@
 - [x] Após a validação final do deck, remover do projeto do dashboard os scripts, exports e documentos financeiros criados somente para essa entrega. Temporary scripts and artifacts removed.
 - [x] Confirmar que a remoção não afeta o runtime, os dados operacionais, as permissões ou as integrações do dashboard. Dashboard operational state preserved.
 - [x] Aplicar em todos os slides o padrão visual aprovado: fundo branco, cabeçalhos navy, acentos vermelho MG, tabelas financeiras limpas e consistência com o PDF de julho e o Executive Summary. Presentation `qC9VVlEaOpbd5AcqFdA52e` ready.
+
+## Correção fiel do layout do Executive Summary — 26/08/2026
+
+- [x] Comparar cada slide de agosto com a página correspondente do PPTX original de julho em alta resolução.
+- [x] Replicar grid, proporções, tipografia, cores, cabeçalhos, rodapés e densidade visual sem reinterpretar o template.
+- [x] Preservar somente os dados atualizados de agosto, mantendo títulos e estrutura visual compatíveis com julho.
+- [x] Validar visualmente todas as páginas lado a lado com a referência e corrigir qualquer desalinhamento ou overflow. Seis páginas renderizadas em 1280 × 720 sem cortes ou sobreposições.
+- [x] Apresentar o deck completo corrigido com todos os slides da estrutura original.
+
+## Ampliação do Summary final com Financial Check — 26/08/2026
+
+- [x] Manter os seis slides de resultados mensais no layout fiel ao PPTX de julho.
+- [x] Adicionar um slide consolidado de Financial Check com gross, comissão, net e status de actual investment.
+- [x] Adicionar um slide financeiro separado para Digital Line-up.
+- [x] Adicionar um slide financeiro separado para Digital Urban.
+- [x] Adicionar um slide financeiro separado para Off — Magazine.
+- [x] Reforçar a apresentação com dados de mídia, Leads, MTD Retail Order, rede e metodologia sem sobrecarregar o layout.
+- [x] Validar a soma financeira dos quatro blocos e a consistência visual de todo o deck final. Dez páginas renderizadas em 1280 × 720; gross R$ 1.100.000, comissão R$ 40.040 e net R$ 1.059.960 reconciliados.
+
+## Réplica integral do relatório de julho para agosto — 26/08/2026
+
+- [x] Mapear visualmente e textualmente as 15 páginas do PDF `Resultados_de_mídia,_Leads_e_vendas_—_Julho_de_2026.pdf`.
+- [x] Reproduzir a mesma ordem editorial, grids, fontes, cores, tabelas, gráficos, barras e rodapés, com duas páginas financeiras adicionais solicitadas para Digital Urban e Off — Magazine.
+- [x] Substituir somente os dados de julho pelos resultados completos e auditados de agosto, fechados até 25/08/2026.
+- [x] Incorporar o Financial Check no mesmo sistema visual, sem descaracterizar a estrutura do relatório mensal.
+- [x] Comparar página por página com o PDF definitivo e corrigir a composição do encerramento para o campo navy integral da referência.
+- [x] Validar as 17 páginas em 1280 × 720, sem cortes, sobreposições ou conteúdo fora do canvas, antes da apresentação final.
+
+## Atualização da base do dashboard — 26/08/2026
+
+- [x] Executar a sincronização oficial de Leads com deduplicação, mantendo TikTok Live separado. Execução 20260827-091634: 376 novos Leads, 713 duplicidades internas, 6 inválidos e base atualizada para 23.599 registros.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads para o último dia fechado disponível e registrar a cobertura real. As três fontes retornaram dados Windsor-live até 26/08/2026.
+- [x] Conferir o último MTD Retail Order disponível e importar somente lote novo ou idempotente. O PDF de 26/08 foi importado no lote 540001 e a reexecução confirmou idempotência.
+- [x] Reconciliar Leads, MTD Retail Order, canais, dealers, estados, CPL planejado e alertas de cobertura. 01–26/08: 11.957 Leads, 560 MTD Retail Orders, 26 dealers conciliados e zero unmatched.
+- [x] Validar testes, TypeScript e build, salvar checkpoint restaurável e entregar o resumo. Validação: 314 testes, TypeScript e build aprovados.
+
+## MTD Retail Order — Daily Sales Planning Report 26/08/2026
+
+- [x] Inspecionar o PDF recebido e confirmar competência, semana, totais e dealers da tabela Retail. Competência 2026-08, semana 5 e 560 MTD Retail Orders.
+- [x] Executar a prévia oficial antes da escrita e validar eventuais dealers unmatched. Reconciliação aprovada, 26/26 dealers matched e zero avisos.
+- [x] Importar ou reprocessar o lote somente com reconciliação aprovada e confirmar idempotência. Lote 540001, 29 linhas inseridas; segunda execução NO_CHANGES.
+- [x] Reconciliar o MTD Retail Order com Leads e vendas por dealer/estado no dashboard atualizado. Totais por dealer e estado conciliados com 560 MTD Retail Orders.
