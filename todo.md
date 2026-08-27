@@ -2597,3 +2597,15 @@
 - [x] Consolidar Digital Line-up e Digital Urban em um único slide financeiro no padrão visual do print de referência, preservando todos os valores e status aprovados.
 - [x] Remover a página financeira individual de Digital Urban e reorganizar a sequência do deck; o Financial Check permanece com os valores e a nomenclatura dos prints aprovados, sem alteração de base.
 - [x] Renderizar e validar o deck reorganizado, incluindo a apresentação integral das páginas restantes.
+
+## Recalibração de Digital Total Gross — 27/08/2026
+
+- [x] Atualizar o slide consolidado Digital Line-up + Urban para Digital Total Gross de BRL 1.050.000,00, alocando integralmente a diferença em Publya Display.
+- [x] Recalcular no próprio slide a comissão de 4% e o net, mantendo todos os demais canais e valores inalterados.
+- [x] Renderizar, validar a coerência financeira e reapresentar o deck completo.
+
+## Resumo de remuneração BBRO — 27/08/2026
+
+- [x] Incluir no slide financeiro consolidado os campos Mídia Total, Comissão Total, Recebíveis em Aberto, Agency Fee e Total Payment BBRO.
+- [x] Deixar explícito que Total Payment BBRO corresponde ao Agency Fee mensal somado à Comissão Total.
+- [x] Validar o novo resumo financeiro, atualizar a apresentação completa e entregar a versão final.
