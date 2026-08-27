@@ -2583,3 +2583,17 @@
 - [x] Atualizar o consolidado para Digital Total + Off: BRL 1.067.804,20 gross, BRL 41.741,67 commission e BRL 1.001.800,03 net.
 - [x] Otimizar `cover.html` em uma única edição completa, preservando o template do relatório de julho.
 - [x] Renderizar e validar o deck completo antes da apresentação final. As 17 páginas foram renderizadas em 1280 × 720 e o Financial Check foi corrigido sem overflow na coluna Status.
+
+## Atualização integral do deck pelo último dashboard — 27/08/2026
+
+- [x] Exportar um snapshot auditável do dashboard atualizado, incluindo Leads, MTD Retail Order, mídia, canais, modelos, dealers e cobertura por fonte.
+- [x] Comparar cada métrica do deck com o snapshot e mapear as páginas que precisam de atualização.
+- [x] Atualizar todos os slides afetados mantendo o template do relatório de julho e os valores financeiros aprovados pelo usuário.
+- [x] Otimizar `sales.html` em uma única edição HTML completa, sem múltiplas edições no arquivo.
+- [x] Renderizar as páginas atualizadas, validar totais/layout e apresentar o deck completo.
+
+## Consolidação financeira Line-up + Urban — 27/08/2026
+
+- [x] Consolidar Digital Line-up e Digital Urban em um único slide financeiro no padrão visual do print de referência, preservando todos os valores e status aprovados.
+- [x] Remover a página financeira individual de Digital Urban e reorganizar a sequência do deck; o Financial Check permanece com os valores e a nomenclatura dos prints aprovados, sem alteração de base.
+- [x] Renderizar e validar o deck reorganizado, incluindo a apresentação integral das páginas restantes.
