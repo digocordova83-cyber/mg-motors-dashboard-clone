@@ -2633,3 +2633,10 @@
 - [x] Remover o slide Off — Magazine e qualquer referência a Off dos resumos financeiros do deck.
 - [x] Atualizar o Financial Check e o Executive Summary para apresentarem exclusivamente Digital Total Gross, comissão e net.
 - [x] Validar a sequência revisada, concluir o pedido de adiantamento Google Ads e reapresentar o deck completo.
+
+## Atualização de Leads e MTD Retail Order — 27/08/2026
+
+- [x] Revisar os procedimentos oficiais de sincronização da base de Leads e de prévia/importação de MTD Retail Order.
+- [x] Executar a sincronização oficial da base de Leads, registrar novos registros, duplicidades, inválidos e idempotência.
+- [x] Validar e importar o PDF `260827DailySalesPlanningReport.pdf`, conferindo competência, semana, total, dealers e conciliação.
+- [x] Reconciliar o dashboard, executar testes e entregar o relatório final da atualização.
