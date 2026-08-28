@@ -2654,3 +2654,9 @@
 - [x] Recriar o slide Digital Line-up com a mesma estrutura visual do mês anterior, mantendo o detalhamento por publisher e os valores atuais de agosto.
 - [x] Recriar o Payment Summary com a mesma equação visual, excluindo Google já pago e sem reintroduzir o saldo removido de BRL 25.512,17.
 - [x] Renderizar as duas páginas, validar layout e cálculos e reapresentar o deck completo.
+
+## Ajuste da carga inicial Google — 28/08/2026
+
+- [x] Registrar a carga inicial de R$ 30.000 e a comissão histórica de 4% (R$ 1.200) não cobrada no mês anterior.
+- [x] Reduzir o valor líquido disponível para nova carga Google de R$ 412.800 para R$ 411.600, mantendo a comissão regular de agosto separada.
+- [x] Atualizar a remuneração BBRO para incluir o ajuste histórico, validar os dois slides e reapresentar o deck completo.
