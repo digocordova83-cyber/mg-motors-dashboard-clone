@@ -2660,3 +2660,9 @@
 - [x] Registrar a carga inicial de R$ 30.000 e a comissão histórica de 4% (R$ 1.200) não cobrada no mês anterior.
 - [x] Reduzir o valor líquido disponível para nova carga Google de R$ 412.800 para R$ 411.600, mantendo a comissão regular de agosto separada.
 - [x] Atualizar a remuneração BBRO para incluir o ajuste histórico, validar os dois slides e reapresentar o deck completo.
+
+## Pagamento líquido aos veículos — 28/08/2026
+
+- [x] Recolocar no Payment Summary o valor líquido devido aos publishers não pagos, seguindo a estrutura visual do mês anterior.
+- [x] Separar BRL 595.200,00 para veículos e BRL 90.551,95 de remuneração BBRO, evitando dupla contagem das comissões.
+- [x] Atualizar o total geral a pagar para BRL 685.751,95, renderizar e reapresentar o deck completo.
