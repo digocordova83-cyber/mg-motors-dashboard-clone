@@ -2672,3 +2672,9 @@
 - [x] Alterar o valor solicitado para Google em setembro de R$ 295.000 para R$ 279.853.
 - [x] Atualizar todas as referências do slide de continuidade sem modificar os valores financeiros de agosto.
 - [x] Renderizar, validar e reapresentar o deck completo.
+
+## Summary de mídia sem comprovantes financeiros — 28/08/2026
+
+- [x] Criar uma versão independente e concisa da apresentação contendo somente resultados de mídia, Leads e MTD Retail Order.
+- [x] Excluir slides de pagamento, comprovantes, remuneração BBRO, valores a veículos e solicitações de adiantamento.
+- [x] Reconciliar o recorte mais recente disponível, renderizar, validar e apresentar o summary completo.
