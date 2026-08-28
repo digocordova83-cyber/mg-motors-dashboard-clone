@@ -2648,3 +2648,9 @@
 - [x] Validar o novo total pendente de BBRO, renderizar o slide e reapresentar o deck completo.
 
 - [x] Corrigir o agrupamento solicitado: apresentar o resumo financeiro por publisher, e não por channel.
+
+## Réplica dos slides financeiros do mês anterior — 28/08/2026
+
+- [x] Recriar o slide Digital Line-up com a mesma estrutura visual do mês anterior, mantendo o detalhamento por publisher e os valores atuais de agosto.
+- [x] Recriar o Payment Summary com a mesma equação visual, excluindo Google já pago e sem reintroduzir o saldo removido de BRL 25.512,17.
+- [x] Renderizar as duas páginas, validar layout e cálculos e reapresentar o deck completo.
