@@ -2640,3 +2640,11 @@
 - [x] Executar a sincronização oficial da base de Leads, registrar novos registros, duplicidades, inválidos e idempotência.
 - [x] Validar e importar o PDF `260827DailySalesPlanningReport.pdf`, conferindo competência, semana, total, dealers e conciliação.
 - [x] Reconciliar o dashboard, executar testes e entregar o relatório final da atualização.
+
+## Remuneração BBRO por canal — 28/08/2026
+
+- [x] Reorganizar o resumo do slide Digital Line-up por canal e remover todas as menções a Total Outstanding Receivables de BRL 25.512,17; o agrupamento final solicitado foi por publisher.
+- [x] Exibir a remuneração BBRO como Agency Fee mensal mais comissão digital, deduzindo explicitamente a comissão Google Ads já paga.
+- [x] Validar o novo total pendente de BBRO, renderizar o slide e reapresentar o deck completo.
+
+- [x] Corrigir o agrupamento solicitado: apresentar o resumo financeiro por publisher, e não por channel.
