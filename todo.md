@@ -2666,3 +2666,9 @@
 - [x] Recolocar no Payment Summary o valor líquido devido aos publishers não pagos, seguindo a estrutura visual do mês anterior.
 - [x] Separar BRL 595.200,00 para veículos e BRL 90.551,95 de remuneração BBRO, evitando dupla contagem das comissões.
 - [x] Atualizar o total geral a pagar para BRL 685.751,95, renderizar e reapresentar o deck completo.
+
+## Adiantamento Google para setembro — 28/08/2026
+
+- [x] Alterar o valor solicitado para Google em setembro de R$ 295.000 para R$ 279.853.
+- [x] Atualizar todas as referências do slide de continuidade sem modificar os valores financeiros de agosto.
+- [x] Renderizar, validar e reapresentar o deck completo.
