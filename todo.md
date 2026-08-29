@@ -2678,3 +2678,9 @@
 - [x] Criar uma versão independente e concisa da apresentação contendo somente resultados de mídia, Leads e MTD Retail Order.
 - [x] Excluir slides de pagamento, comprovantes, remuneração BBRO, valores a veículos e solicitações de adiantamento.
 - [x] Reconciliar o recorte mais recente disponível, renderizar, validar e apresentar o summary completo.
+
+## Summary exclusivo de comprovantes financeiros — 28/08/2026
+
+- [x] Criar uma apresentação independente contendo somente controles, pagamentos e comprovantes financeiros aprovados.
+- [x] Incluir Digital Total, detalhamento por publisher, pagamentos líquidos aos veículos, remuneração BBRO, ajuste histórico Google e carga de setembro.
+- [x] Excluir Leads, MTD Retail Order e métricas de performance de mídia; renderizar, validar e apresentar o summary financeiro.
