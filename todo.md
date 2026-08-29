@@ -2690,3 +2690,15 @@
 - [x] Inspecionar a estrutura e os registros da nova aba Interlagos na planilha oficial de Leads.
 - [x] Implementar o mapeamento da aba na rotina oficial, preservando concessionária de origem e regras de modelo, telefone e deduplicação.
 - [x] Executar a atualização, reconciliar o novo canal Interlagos, validar idempotência e testar o dashboard.
+
+## Digital Summary completo até 28/08/2026 — 29/08/2026
+
+- [x] Atualizar e reconciliar Google Ads, Meta Ads, TikTok Ads, Leads e MTD Retail Order no recorte até 28/08/2026.
+- [x] Criar uma versão client-ready mais completa, com investimento, entrega, cliques, conversões, eficiência, campanhas, canais, modelos, dealers e resultado comercial.
+- [x] Excluir comprovantes, pagamentos, remuneração BBRO e demais controles financeiros; renderizar, validar e apresentar o deck completo.
+
+## Memória dos padrões de apresentação — 29/08/2026
+
+- [x] Registrar Digital Summary como o padrão client-ready de resultados sem comprovantes ou controles financeiros.
+- [x] Registrar Digital Check como o padrão financeiro separado, baseado somente em valores e comprovantes aprovados.
+- [x] Documentar regras de conteúdo, cálculo, nomenclatura, cobertura e sistema visual para reutilização nas próximas apresentações.
