@@ -21,6 +21,7 @@ DEFAULT_SOURCE_URL = (
 )
 SOURCE_SHEET_GROUPS = (
     ("Site", ("Site",)),
+    ("Interlagos", ("Interlagos",)),
     ("TikTok Live", ("Tiktok - Live", "TikTok - Live", "Tiktok Live", "TikTok Live")),
     ("TikTok", ("TikTok", "Tikok")),
     ("Meta", ("Meta",)),
@@ -263,6 +264,38 @@ def map_site(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, 
         ),
         model_source=lambda row: row_value(row, model),
         corrected_date_source=lambda row: row_value(row, source_date) or row_value(row, timestamp),
+    )
+
+
+def map_interlagos(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, str]], list[MappingIssue], int]:
+    source_date = resolve_column(frame, "created_at")
+    model = resolve_column(frame, "interest_model")
+    region = resolve_column(frame, "state")
+    city = resolve_column(frame, "city_label")
+    dealer = resolve_column(frame, "dealership_label")
+    name = resolve_column(frame, "name")
+    email = resolve_column(frame, "email")
+    phone = resolve_column(frame, "phone_e164")
+    return map_rows(
+        "Interlagos",
+        frame,
+        empty_columns=(source_date, name, email, phone, model),
+        mapper=lambda row: build_record(
+            source_date=row_value(row, source_date),
+            corrected_date=parse_date(row_value(row, source_date), dayfirst=False),
+            model_source=row_value(row, model),
+            region=row_value(row, region),
+            city=row_value(row, city),
+            dealer=row_value(row, dealer),
+            name=row_value(row, name),
+            email=row_value(row, email),
+            phone=row_value(row, phone),
+            channel="Interlagos",
+            source_channel="Interlagos",
+            allow_unavailable_dimensions=True,
+        ),
+        model_source=lambda row: row_value(row, model),
+        corrected_date_source=lambda row: row_value(row, source_date),
     )
 
 
@@ -529,6 +562,7 @@ SHEET_MAPPERS: dict[
     Callable[[pd.DataFrame], tuple[list[dict[str, str]], list[dict[str, str]], list[MappingIssue], int]],
 ] = {
     "Site": map_site,
+    "Interlagos": map_interlagos,
     "TikTok Live": map_tiktok_live,
     "TikTok": map_tiktok,
     "Meta": map_meta,

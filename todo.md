@@ -2684,3 +2684,9 @@
 - [x] Criar uma apresentação independente contendo somente controles, pagamentos e comprovantes financeiros aprovados.
 - [x] Incluir Digital Total, detalhamento por publisher, pagamentos líquidos aos veículos, remuneração BBRO, ajuste histórico Google e carga de setembro.
 - [x] Excluir Leads, MTD Retail Order e métricas de performance de mídia; renderizar, validar e apresentar o summary financeiro.
+
+## Integração da aba Interlagos — 29/08/2026
+
+- [x] Inspecionar a estrutura e os registros da nova aba Interlagos na planilha oficial de Leads.
+- [x] Implementar o mapeamento da aba na rotina oficial, preservando concessionária de origem e regras de modelo, telefone e deduplicação.
+- [x] Executar a atualização, reconciliar o novo canal Interlagos, validar idempotência e testar o dashboard.

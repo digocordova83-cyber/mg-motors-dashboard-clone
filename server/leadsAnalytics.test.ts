@@ -103,6 +103,30 @@ describe("buildLeadAnalytics", () => {
     });
   });
 
+  it("expõe Interlagos como canal final inclusive para MG4 Urban", () => {
+    const rows = [
+      row("2026-08-27", "Campanha Urban", "Dealer A", "MG4 URBAN", "SP", "Interlagos"),
+      row("2026-08-27", "Interlagos", LEADS_UNAVAILABLE, "Indisponível", LEADS_UNAVAILABLE, "Interlagos"),
+    ];
+    const result = buildLeadAnalytics({
+      rows,
+      pacingRows: rows,
+      channelTargetRows: rows,
+      dateFrom: "2026-08-27",
+      dateTo: "2026-08-27",
+      competence: "2026-08",
+      goal: 100,
+    });
+
+    expect(result.channels).toContainEqual(expect.objectContaining({ value: "Interlagos", leads: 2 }));
+    expect(result.channels.some(item => item.value === "Campanha Urban")).toBe(false);
+    expect(result.channelOrder).toContain("Interlagos");
+    expect(result.daily[0]?.values.Interlagos).toBe(2);
+    expect(result.mg4UrbanSourceChannels).toContainEqual(
+      expect.objectContaining({ value: "Interlagos", leads: 1 }),
+    );
+  });
+
   it("calcula totais e série empilhada sem dupla contagem, incluindo dias zerados", () => {
     const rows = [
       row("2026-07-01", "Site", "Dealer A"),
