@@ -2720,3 +2720,9 @@
 - [x] Executar a sincronização oficial da base de Leads e registrar novos registros, duplicidades e linhas inválidas.
 - [x] Reexecutar a rotina para confirmar idempotência e reconciliar os totais do dashboard.
 - [x] Validar o resultado e comunicar a atualização concluída.
+
+## Atualização manual de Leads — 31/08/2026
+
+- [x] Executar a sincronização oficial da base de Leads e registrar novos registros, duplicidades e linhas inválidas.
+- [x] Reexecutar a rotina para confirmar idempotência e reconciliar os totais do dashboard.
+- [x] Validar o resultado e comunicar a atualização concluída.
