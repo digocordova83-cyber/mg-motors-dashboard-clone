@@ -2726,3 +2726,11 @@
 - [x] Executar a sincronização oficial da base de Leads e registrar novos registros, duplicidades e linhas inválidas.
 - [x] Reexecutar a rotina para confirmar idempotência e reconciliar os totais do dashboard.
 - [x] Validar o resultado e comunicar a atualização concluída.
+
+## Atualização de MTD Retail Order — 31/08/2026
+
+- [x] Validar o PDF `260831DailySalesPlanningReport.pdf`, incluindo competência, lote, semana, totais e dealers.
+- [x] Importar o relatório no dashboard e confirmar reconciliação de concessionárias.
+- [x] Confirmar idempotência, validar o resultado e comunicar a atualização.
+
+- [x] Executar uma importação alternativa auditável com a tabela W5 validada visualmente, preservando as semanas 1–4 da última importação conciliada.
