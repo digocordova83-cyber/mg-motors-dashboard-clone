@@ -2702,3 +2702,15 @@
 - [x] Registrar Digital Summary como o padrão client-ready de resultados sem comprovantes ou controles financeiros.
 - [x] Registrar Digital Check como o padrão financeiro separado, baseado somente em valores e comprovantes aprovados.
 - [x] Documentar regras de conteúdo, cálculo, nomenclatura, cobertura e sistema visual para reutilização nas próximas apresentações.
+
+## Atualização manual de Leads — 29/08/2026
+
+- [x] Executar a sincronização oficial da base de Leads e registrar novos registros, duplicidades e linhas inválidas.
+- [x] Reexecutar a rotina para confirmar idempotência e reconciliar os totais do dashboard.
+- [x] Validar o resultado e comunicar a atualização concluída.
+
+## Atualização de MTD Retail Order — 28/08/2026
+
+- [x] Validar o PDF `260828DailySalesPlanningReport.pdf`, incluindo competência, lote, semana, totais e dealers.
+- [x] Importar o relatório no dashboard e confirmar reconciliação de concessionárias.
+- [x] Reexecutar a importação para idempotência, validar o resultado e comunicar a atualização.
