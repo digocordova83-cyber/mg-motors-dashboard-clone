@@ -2714,3 +2714,9 @@
 - [x] Validar o PDF `260828DailySalesPlanningReport.pdf`, incluindo competência, lote, semana, totais e dealers.
 - [x] Importar o relatório no dashboard e confirmar reconciliação de concessionárias.
 - [x] Reexecutar a importação para idempotência, validar o resultado e comunicar a atualização.
+
+## Atualização manual de Leads — 30/08/2026
+
+- [x] Executar a sincronização oficial da base de Leads e registrar novos registros, duplicidades e linhas inválidas.
+- [x] Reexecutar a rotina para confirmar idempotência e reconciliar os totais do dashboard.
+- [x] Validar o resultado e comunicar a atualização concluída.
