@@ -2758,3 +2758,18 @@
 - [x] Verificar o estado atual dos serviços, dependências e módulos de importação após a reinicialização do ambiente.
 - [x] Restaurar o fluxo necessário e executar a atualização oficial das bases disponíveis.
 - [x] Confirmar reconciliação, idempotência e estabilidade antes de comunicar o resultado.
+
+## Digital Summary — fechamento de agosto de 2026
+
+- [x] Auditar o deck client-ready aprovado e preservar exatamente seu padrão visual e sua separação de conteúdo financeiro.
+- [x] Coletar e reconciliar os dados finais de Google Ads, Meta Ads, TikTok Ads, Leads e MTD Retail Order até 31/08/2026.
+- [x] Atualizar todos os slides afetados com os números de fechamento mensal, campanhas, canais, modelos, dealers e estados.
+- [x] Validar consistência numérica, legibilidade e ausência de comprovantes, pagamentos ou remuneração BBRO.
+- [x] Apresentar a versão final do Digital Summary de agosto ao usuário.
+
+## Reprocessamento de MTD Retail Order após o fechamento do summary
+
+- [x] Validar o PDF `260831DailySalesPlanningReport.pdf` anexado como fonte final de agosto.
+- [x] Usar os 660 MTD Retail Orders reconciliados no fechamento da apresentação.
+- [x] Reprocessar o PDF no dashboard somente após concluir e apresentar o arquivo.
+- [x] Confirmar 26/26 dealers conciliados, zero unmatched e nenhuma duplicação na reexecução.
