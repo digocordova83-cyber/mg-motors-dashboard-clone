@@ -2801,3 +2801,11 @@
 - [x] Localizar todas as referências a R$ 279.853 no Digital Check.
 - [x] Substituir o valor solicitado por R$ 279.583,00 sem alterar a reconciliação de agosto.
 - [x] Validar a ausência do valor anterior e apresentar a versão final.
+
+## Atualização imediata da base TikTok Live — 01/09/2026
+
+- [x] Verificar a fonte TikTok Live e o estado do fluxo oficial de Leads.
+- [x] Executar a sincronização oficial sem combinar TikTok Live com TikTok Ads.
+- [x] Reconciliar novos registros, duplicidades, inválidos e os totais por canal.
+- [x] Reexecutar a mesma sincronização para confirmar idempotência.
+- [x] Registrar e comunicar o resultado auditado da atualização.
