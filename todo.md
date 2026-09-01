@@ -2850,9 +2850,9 @@
 
 ## Recriação do PPTX no padrão Digital Check — 01/09/2026
 
-- [ ] Analisar integralmente o PPTX enviado, incluindo conteúdo, estrutura e design.
-- [ ] Analisar o Digital Check oficial como referência de tipografia, cores, tabelas e hierarquia.
-- [ ] Mapear cada página do arquivo de origem para o layout correspondente do novo padrão.
-- [ ] Recriar todos os slides preservando números e conteúdo do arquivo enviado.
-- [ ] Validar legibilidade, consistência visual e reconciliação das informações.
-- [ ] Apresentar a versão final no padrão Digital Check.
+- [x] Tarefa pausada por solicitação explícita do usuário antes da execução; a análise integral do PPTX não foi concluída.
+- [x] Referência visual do Digital Check identificada, sem prosseguir para a adaptação enquanto a tarefa estiver pausada.
+- [x] Mapeamento página a página adiado até novo pedido explícito do usuário.
+- [x] Recriação dos slides não executada, conforme pausa solicitada.
+- [x] Validação visual e numérica não aplicável enquanto o trabalho permanecer pausado.
+- [x] Entrega final não aplicável; retomar somente após nova autorização do usuário.
