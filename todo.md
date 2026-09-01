@@ -2838,3 +2838,21 @@
 - [x] Editar cada slide afetado uma única vez e otimizar `cover.html` em uma única operação.
 - [x] Validar cálculos, idioma, legibilidade e consistência da apresentação completa.
 - [x] Apresentar a versão final com todos os slides do outline original.
+
+## Digital Summary com plano NET de R$ 1.008.000 — 01/09/2026
+
+- [x] Mapear todos os slides que usam investimento, CPA, CPL, CPC, CPM ou participação.
+- [x] Aplicar exatamente os valores NET do print: Google, Meta, TikTok, Display, YouTube, Webmotors e Mercado Livre.
+- [x] Recalcular todas as métricas dependentes e o total líquido de R$ 1.008.000,00.
+- [x] Remover qualquer referência aos valores aprovados anteriores ou ao realizado Windsor quando usado como investimento.
+- [x] Validar idioma, números, layout e reconciliação do deck completo.
+- [x] Apresentar a versão final atualizada ao usuário.
+
+## Recriação do PPTX no padrão Digital Check — 01/09/2026
+
+- [ ] Analisar integralmente o PPTX enviado, incluindo conteúdo, estrutura e design.
+- [ ] Analisar o Digital Check oficial como referência de tipografia, cores, tabelas e hierarquia.
+- [ ] Mapear cada página do arquivo de origem para o layout correspondente do novo padrão.
+- [ ] Recriar todos os slides preservando números e conteúdo do arquivo enviado.
+- [ ] Validar legibilidade, consistência visual e reconciliação das informações.
+- [ ] Apresentar a versão final no padrão Digital Check.
