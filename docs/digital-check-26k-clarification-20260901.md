@@ -16,3 +16,19 @@ O valor de **R$ 26.000,00** não era uma nova cobrança nem um valor destinado a
 Embora matematicamente correto, o agregado estava ambíguo. O slide foi corrigido para exibir **R$ 24.800,00 como comissões correntes devidas** e identificar separadamente o **ajuste histórico de R$ 1.200,00**. A remuneração total da BBRO permanece reconciliada em **R$ 90.551,95**, calculada como R$ 64.551,95 de agency fee + R$ 24.800,00 de comissões correntes + R$ 1.200,00 de ajuste histórico.
 
 A versão corrigida do Digital Check foi apresentada em `manus-slides://ztFUjR8I2MJFehurO6mEaI`.
+
+## Tratamento final aprovado pelo usuário
+
+O usuário determinou a remoção integral do ajuste histórico de **R$ 1.200,00** de todo o Digital Check. A versão final não contém esse valor nem referências ao ajuste. Os totais foram recalculados da seguinte forma:
+
+| Indicador final | Valor |
+| --- | ---: |
+| Comissão Google já paga | **R$ 17.200,00** |
+| Comissões correntes de Publya, Webmotors e Mercado Livre | **R$ 24.800,00** |
+| Agency fee | **R$ 64.551,95** |
+| Remuneração BBRO pendente | **R$ 89.351,95** |
+| Valores líquidos aos três veículos pendentes | **R$ 595.200,00** |
+| Total a pagar | **R$ 684.551,95** |
+| Valor líquido/disponível Google | **R$ 412.800,00** |
+
+A apresentação deixa explícito em todas as páginas financeiras afetadas que a comissão Google de R$ 17.200,00 já foi paga e não faz parte do pedido atual. A versão final foi apresentada em `manus-slides://dZojJ1gVTvbXczIqD4wtBh`.

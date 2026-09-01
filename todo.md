@@ -2787,3 +2787,11 @@
 - [x] Reconciliar o valor com os dados financeiros aprovados e documentar sua origem.
 - [x] Corrigir a apresentação se o valor estiver incorreto ou ambíguo.
 - [x] Validar e apresentar a conclusão ao usuário.
+
+## Remoção integral do ajuste Google de R$ 1.200 — 01/09/2026
+
+- [x] Mapear e remover todas as referências ao ajuste de R$ 1.200 no Digital Check.
+- [x] Recalcular remuneração BBRO, total a pagar e saldo Google sem o ajuste histórico.
+- [x] Confirmar que não havia slide específico do ajuste e que nenhuma renumeração era necessária.
+- [x] Deixar explícito que a comissão Google de R$ 17.200 já foi paga.
+- [x] Validar e apresentar a versão final corrigida.
