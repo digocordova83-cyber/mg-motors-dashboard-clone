@@ -2773,3 +2773,10 @@
 - [x] Usar os 660 MTD Retail Orders reconciliados no fechamento da apresentação.
 - [x] Reprocessar o PDF no dashboard somente após concluir e apresentar o arquivo.
 - [x] Confirmar 26/26 dealers conciliados, zero unmatched e nenhuma duplicação na reexecução.
+
+## Prestação de contas de marketplaces no summary — 01/09/2026
+
+- [x] Reconciliar as entregas mensais de Webmotors e Mercado Livre por volume, participação e modelo.
+- [x] Adicionar ao deck uma página específica comprovando as entregas dos dois canais.
+- [x] Validar os totais contra os 14.237 Leads de agosto e excluir conteúdo financeiro.
+- [x] Apresentar a versão revisada do Media, Leads & Sales Performance.

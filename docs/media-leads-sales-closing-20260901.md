@@ -29,6 +29,8 @@ O deck **Media, Leads & Sales Performance — August 2026** foi atualizado em 12
 
 Após a validação final, o deck foi reapresentado com a metodologia da conversão explicitada: **4,85% sobre 13.615 Leads comparáveis ao relatório de vendas**, enquanto o total do dashboard permanece em 14.237 Leads. A versão final é `manus-slides://j4mCW7JfOrKs6HhRn0LOXU`.
 
+Em atendimento à solicitação posterior, foi adicionada uma página específica de prestação de contas dos marketplaces. **Webmotors entregou 1.470 Leads**, equivalentes a 10,32% do mês e média de 47,4 por dia; **Mercado Livre entregou 464 Leads**, equivalentes a 3,25% e média de 14,9 por dia. Juntos, os canais entregaram **1.934 Leads**, 13,58% da demanda mensal, com 100% dos registros associados a um modelo válido. A versão revisada tem 13 páginas e está disponível em `manus-slides://Q0gJd5wAsJhfnlH2hBcNCv`.
+
 ## Recuperação do projeto
 
 O checkout íntegro foi restaurado a partir do checkpoint validado da integração Interlagos, preservando as auditorias posteriores. Os módulos `server/_core/index.ts`, `server/db.ts`, `server/leadsImportService.ts`, o lockfile e o patch do Wouter foram recuperados. As dependências foram reinstaladas com o pnpm 10.4.1 fixado pelo projeto; **53 arquivos de teste e 316 testes passaram**, a verificação TypeScript foi aprovada, o build de produção foi concluído e o servidor de desenvolvimento voltou ao estado `running`.
