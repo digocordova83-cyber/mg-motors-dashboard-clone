@@ -2820,3 +2820,11 @@
 - [x] Substituir 660 por 646 vendas e recalcular atingimento, diferença versus target e conversão.
 - [x] Validar a apresentação completa e excluir conteúdo financeiro.
 - [x] Apresentar a versão final revisada ao usuário.
+
+## Relatório pocket de mídia — 17 a 28/08/2026
+
+- [x] Consultar Google Ads, Meta Ads e TikTok Ads no período exato de 17 a 28/08/2026.
+- [x] Reconciliar investimento, impressões, cliques, resultados e indicadores de eficiência.
+- [x] Criar uma apresentação pocket em português, sem projeções ou dados mensais reaproveitados.
+- [x] Validar o recorte temporal, os cálculos e a legibilidade de todos os slides.
+- [x] Apresentar a versão final ao usuário.
