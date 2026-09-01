@@ -2795,3 +2795,9 @@
 - [x] Confirmar que não havia slide específico do ajuste e que nenhuma renumeração era necessária.
 - [x] Deixar explícito que a comissão Google de R$ 17.200 já foi paga.
 - [x] Validar e apresentar a versão final corrigida.
+
+## Atualização do valor Google do próximo mês — 01/09/2026
+
+- [x] Localizar todas as referências a R$ 279.853 no Digital Check.
+- [x] Substituir o valor solicitado por R$ 279.583,00 sem alterar a reconciliação de agosto.
+- [x] Validar a ausência do valor anterior e apresentar a versão final.
