@@ -2828,3 +2828,13 @@
 - [x] Criar uma apresentação pocket em português, sem projeções ou dados mensais reaproveitados.
 - [x] Validar o recorte temporal, os cálculos e a legibilidade de todos os slides.
 - [x] Apresentar a versão final ao usuário.
+
+## Digital Summary integralmente em inglês e novos investimentos — 01/09/2026
+
+- [x] Auditar todos os 17 slides e mapear textos em português e métricas dependentes.
+- [x] Atualizar Meta para R$ 187.200, TikTok para R$ 28.000, Mercado Livre para R$ 76.800 e Webmotors para R$ 178.413.
+- [x] Recalcular CPL e demais indicadores derivados com os volumes reais de Leads.
+- [x] Converter 100% do conteúdo visível para inglês, preservando design, estrutura e identidade MG.
+- [x] Editar cada slide afetado uma única vez e otimizar `cover.html` em uma única operação.
+- [x] Validar cálculos, idioma, legibilidade e consistência da apresentação completa.
+- [x] Apresentar a versão final com todos os slides do outline original.
