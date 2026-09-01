@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-08-13T12:00:00.000Z",
+  "sources": [
+    "Dealers_atualizado.xlsx",
+    "https://mgmotoroficial.com.br/mg-care/concessionarias",
+    "Auditoria de cidade, estado e período da base de Leads"
+  ],
+  "mappings": [
+    { "sourceKey": "MEGAMIT ALPHAVILLE", "canonical": "Baltic Shopping Tamboré" },
+    { "sourceKey": "BALTIC ALPHAVILLE SP", "canonical": "Baltic Shopping Tamboré" },
+    { "sourceKey": "INGLATERRA SHOPPING SALVADOR BA", "canonical": "Indiana Salvador - 3966031" },
+    { "sourceKey": "INGLATERRA SALVADOR SHOPPING", "canonical": "Indiana Salvador - 3966031" },
+    { "sourceKey": "INGLATERRA IGUATEMI", "canonical": "Indiana Salvador - 3966031" },
+    { "sourceKey": "DS AUTOMOTOR", "canonical": "DÃO SILVEIRA NATAL" },
+    { "sourceKey": "DAO SILVEIRA NATAL MIDWAY MALL", "canonical": "DÃO SILVEIRA NATAL" },
+    { "sourceKey": "BARIGUI FLORIANOPOLIS SC", "canonical": "BARIGUI - FLORIPA" },
+    { "sourceKey": "DRSUL PORTO ALEGRE RS", "canonical": "DRSUL - PORTO ALEGRE" },
+    { "sourceKey": "IGUAUTO SHOPPING FORTALEZA CE", "canonical": "IGUALTO - MG FORTALEZA" },
+    { "sourceKey": "IGUAUTO FORTALEZA CE", "canonical": "IGUALTO - MG FORTALEZA" },
+    { "sourceKey": "SINAL SAO PAULO SP", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "SINAL SAO PAULO", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "SINAL AV EUROPA SP", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "EUROVILLE BH BARAO MG", "canonical": "EUROVILLE - BH BARÃO" },
+    { "sourceKey": "EUROVILLE BH SHOPPING MG", "canonical": "EUROVILLE - BH BARÃO" },
+    { "sourceKey": "POTENZA RECREIO RJ", "canonical": "POTENZA - RECREIO" },
+    { "sourceKey": "TECAR BOUGAINVILLE SHOPPING", "canonical": "TECAR SHOPPING - GOIÂNIA" },
+    { "sourceKey": "TECAR GOIANIA 3966943", "canonical": "TECAR SHOPPING - GOIÂNIA" },
+    { "sourceKey": "STEFANINI CAMPINAS SP", "canonical": "STEFANINI - CAMPINAS" },
+    { "sourceKey": "TORIBA CEASA SP", "canonical": "TORIBA - CEASA" },
+    { "sourceKey": "TORIBA SAO PAULO", "canonical": "TORIBA - CEASA" },
+    { "sourceKey": "JRCA MACEIO", "canonical": "JRCA" },
+    { "sourceKey": "SAVOL SAO CAETANO", "canonical": "SAVOL ZL/SP" },
+    { "sourceKey": "SAVOL SAO CAETANO SP", "canonical": "SAVOL ZL/SP" },
+    { "sourceKey": "SAVOL ZL SAO PAULO SP", "canonical": "SAVOL ZL/SP" },
+    { "sourceKey": "VEGA LONGWALL AUTOMOTORES", "canonical": "VEGA LONGWALL" },
+    { "sourceKey": "ONNE SAO JOSE DO RIO PRETO SP", "canonical": "ONNE - SÃO JOSÉ DO RIO PRETO" },
+    { "sourceKey": "ONNE RIBEIRAO PRETO SP", "canonical": "ONNE - RIBEIRÃO PRETO" },
+    { "sourceKey": "ORVEL SHOPPING VITORIA", "canonical": "ORVEL - VITÓRIA" },
+    { "sourceKey": "AUTOBRAND RECIFE RECIFE PE", "canonical": "AUTOBRAND RECIFE" },
+    { "sourceKey": "AUTOMEC SOROCABA SOROCABA SP", "canonical": "AUTOMEC SOROCABA" },
+    { "sourceKey": "BALTIC GUARULHOS GUARULHOS SP", "canonical": "BALTIC GUARULHOS" },
+    { "sourceKey": "EUROVILLE JUIZ DE FORA JUIZ DE FORA MG", "canonical": "EUROVILLE JUIZ DE FORA" },
+    { "sourceKey": "EUROVILLE JUIZ DE FORA MG", "canonical": "EUROVILLE JUIZ DE FORA" },
+    { "sourceKey": "EUROVILLE UBERLANDIA UBERLANDIA MG", "canonical": "EUROVILLE UBERLANDIA" },
+    { "sourceKey": "EUROVILLE UBERLANDIA MG", "canonical": "EUROVILLE UBERLANDIA" },
+    { "sourceKey": "HG ARACAJU ARACAJU SE", "canonical": "HG ARACAJU" },
+    { "sourceKey": "JAVEP BAURU SP", "canonical": "JAVEP/SP" },
+    { "sourceKey": "LA FONTAINE JOINVILLE JOINVILLE SC", "canonical": "LA FONTAINE JOINVILLE" },
+    { "sourceKey": "SINAL AV EUROPA SAO PAULO SP", "canonical": "SINAL AV EUROPA" },
+    { "sourceKey": "STEFANINI PIRACICABA SP", "canonical": "STEFANINI - PIRACICABA" }
+  ],
+  "qualificationKeys": [
+    "IG",
+    "FB",
+    "TEST LEAD DUMMY DATA FOR EM QUAL CONCESSIONARIA GOSTARIA DE SER ATENDIDO"
+  ],
+  "additionalOfficialLeadDealerLocations": [
+    { "name": "CANOPUS PANTANAL SHOPPING", "operationalArea": "CUIABA/MT" }
+  ],
+  "additionalOfficialLeadDealerKeys": [
+    "CANOPUS PANTANAL SHOPPING"
+  ]
+}
