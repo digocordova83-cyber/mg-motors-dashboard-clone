@@ -2856,3 +2856,12 @@
 - [x] Recriação dos slides não executada, conforme pausa solicitada.
 - [x] Validação visual e numérica não aplicável enquanto o trabalho permanecer pausado.
 - [x] Entrega final não aplicável; retomar somente após nova autorização do usuário.
+
+## Recriação ativa do novo PPTX no padrão Digital Check — 01/09/2026
+
+- [x] Analisar integralmente `pasted_file_LXwB84_Prestaçãodecontas-MG.pptx`, incluindo conteúdo, design, notas e ativos.
+- [x] Comparar cada página com o padrão visual oficial do Digital Check.
+- [x] Mapear e preservar todos os valores, comprovantes, legendas e informações do arquivo original.
+- [x] Recriar todas as páginas com a identidade visual, hierarquia e composição do Digital Check.
+- [x] Validar reconciliação numérica, legibilidade e consistência visual do deck completo.
+- [x] Apresentar a versão final ao usuário.
