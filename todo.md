@@ -2734,3 +2734,27 @@
 - [x] Confirmar idempotência, validar o resultado e comunicar a atualização.
 
 - [x] Executar uma importação alternativa auditável com a tabela W5 validada visualmente, preservando as semanas 1–4 da última importação conciliada.
+
+## Atualização manual da base de Leads — 01/09/2026
+
+- [x] Executar a sincronização oficial da base de Leads e registrar novos registros, duplicidades e linhas inválidas.
+- [x] Reexecutar a rotina para confirmar idempotência e reconciliar os totais do dashboard.
+- [x] Validar o resultado e comunicar a atualização concluída.
+
+## Recuperação e atualização completa do dashboard — 01/09/2026
+
+- [ ] Restaurar dependências e arquivos de projeto ausentes após a reinicialização do ambiente.
+- [x] Executar a rotina oficial de atualização da base de Leads e validar a substituição transacional.
+- [x] Confirmar idempotência, reconciliação e estabilidade do dashboard antes de comunicar o resultado.
+
+## Off Media Check — 01/09/2026
+
+- [x] Criar uma apresentação financeira independente para Off, mantendo o padrão visual aprovado do Digital Check.
+- [x] Incluir exclusivamente Globo Magazine, Gross BRL 24.262,50, comissão de 4%, net e fee mensal Off de BRL 91.500,00.
+- [x] Separar pagamento líquido ao veículo de remuneração BBRO, validar a equação e apresentar o Off Media Check completo.
+
+## Atualização imediata do dashboard — 01/09/2026
+
+- [x] Verificar o estado atual dos serviços, dependências e módulos de importação após a reinicialização do ambiente.
+- [x] Restaurar o fluxo necessário e executar a atualização oficial das bases disponíveis.
+- [x] Confirmar reconciliação, idempotência e estabilidade antes de comunicar o resultado.

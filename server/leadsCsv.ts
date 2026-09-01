@@ -185,7 +185,6 @@ export function normalizeLeadRegion(value: string): string {
 
 const CHANNEL_BY_KEY = new Map<string, string>([
   ["SITE", "Site"],
-  ["INTERLAGOS", "Interlagos"],
   ["META", "Meta"],
   ["WEEBMOTORS", "Webmotors"],
   ["WEBMOTORS", "Webmotors"],

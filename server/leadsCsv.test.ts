@@ -95,30 +95,6 @@ describe("parseLeadCsv", () => {
     expect(result.records[0].rawPayload.sourceChannel).toBe("Site");
   });
 
-  it("preserva Interlagos como origem e permite sua redistribuição analítica", () => {
-    const result = parseLeadCsv(
-      csvWithSourceChannel(
-        "2026-08-27 13:51:04,MG4 URBAN,SP,Espírito Santo do Pinhal,Stefanini — Campinas/SP,Fernando,fernando@example.com,+5519992003396,Campanha Urban,27/08/2026,Stefanini — Campinas/SP,interlagos",
-        "2026-08-27 13:52:06,Indisponível,,,Indisponível,Herico,herico@example.com,+5555973565040,Interlagos,27/08/2026,Indisponível,Interlagos",
-      ),
-    );
-
-    expect(result.invalidRows).toBe(0);
-    expect(result.records[0]).toMatchObject({
-      channel: "Campanha Urban",
-      sourceChannel: "Interlagos",
-      model: "MG4 URBAN",
-      dealerName: "Stefanini — Campinas/SP",
-      phone: "5519992003396",
-    });
-    expect(result.records[1]).toMatchObject({
-      channel: "Interlagos",
-      sourceChannel: "Interlagos",
-      model: "Indisponível",
-      dealerName: "Indisponível",
-    });
-  });
-
   it("normaliza TikTok como procedência e canal analítico separado para MG4 URBAN", () => {
     const result = parseLeadCsv(
       csvWithSourceChannel(
