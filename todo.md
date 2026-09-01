@@ -2809,3 +2809,14 @@
 - [x] Reconciliar novos registros, duplicidades, inválidos e os totais por canal.
 - [x] Reexecutar a mesma sincronização para confirmar idempotência.
 - [x] Registrar e comunicar o resultado auditado da atualização.
+
+## Summary com todas as origens e check-ins de veículos — 01/09/2026
+
+- [x] Reconciliar todas as origens de Leads de agosto após a atualização TikTok Live.
+- [x] Atualizar os slides de Leads com todos os canais e totais finais.
+- [x] Criar uma seção de check-ins/evidências para Google, Meta e Webmotors.
+- [x] Exibir no Google a informação auditável de cerca de 700 anúncios.
+- [x] Inserir os prints enviados sem distorção e com identificação da fonte.
+- [x] Substituir 660 por 646 vendas e recalcular atingimento, diferença versus target e conversão.
+- [x] Validar a apresentação completa e excluir conteúdo financeiro.
+- [x] Apresentar a versão final revisada ao usuário.
