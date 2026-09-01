@@ -2780,3 +2780,10 @@
 - [x] Adicionar ao deck uma página específica comprovando as entregas dos dois canais.
 - [x] Validar os totais contra os 14.237 Leads de agosto e excluir conteúdo financeiro.
 - [x] Apresentar a versão revisada do Media, Leads & Sales Performance.
+
+## Investigação do valor de 26 mil no Digital Check — 01/09/2026
+
+- [x] Localizar todas as referências ao valor de 26 mil no Digital Check e identificar o slide afetado.
+- [x] Reconciliar o valor com os dados financeiros aprovados e documentar sua origem.
+- [x] Corrigir a apresentação se o valor estiver incorreto ou ambíguo.
+- [x] Validar e apresentar a conclusão ao usuário.
