@@ -2994,3 +2994,16 @@
 - [x] Mapear os canais de setembro em cada momento da jornada sem criar investimentos inexistentes.
 - [x] Manter os valores reconciliados de R$ 220.416,67, R$ 300.000,00 e R$ 279.583,00.
 - [x] Revisar visualmente a legibilidade e apresentar a versão final no padrão Carta à Rede.
+
+## Destaque do investimento total no slide
+
+- [x] Criar a versão intermediária com maior hierarquia visual do valor total de R$ 799.999,67.
+- [x] Preservar o mapa de canais e a reconciliação na versão intermediária antes da solicitação de remover valores.
+- [x] Revisar visualmente o rodapé intermediário, posteriormente substituído por solicitação do usuário.
+
+## Versão institucional do mapa — sem valores
+
+- [x] Remover os investimentos por etapa e o investimento total do slide.
+- [x] Manter o padrão Conectar, Considerar e Agir com os logos dos veículos e plataformas.
+- [x] Restaurar um rodapé institucional simples, sem referências financeiras.
+- [x] Revisar visualmente e apresentar a versão final sem valores.
