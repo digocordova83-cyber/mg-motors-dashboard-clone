@@ -2985,3 +2985,12 @@
 - [x] Distribuir o plano bruto de setembro em topo R$ 220.416,67, meio R$ 300.000,00 e fundo R$ 279.583,00.
 - [x] Confirmar que as três etapas reconciliam exatamente R$ 799.999,67.
 - [x] Revisar visualmente e apresentar a versão final no padrão Digital Summary.
+
+## Reformulação do funil — mapa de canais da Carta à Rede
+
+- [x] Substituir os trapézios pelo mapa horizontal de jornada mostrado na referência.
+- [x] Organizar as etapas como Conectar, Considerar e Agir em blocos laterais vermelhos.
+- [x] Usar logos reais dos veículos e plataformas em cada etapa, seguindo o padrão visual da referência.
+- [x] Mapear os canais de setembro em cada momento da jornada sem criar investimentos inexistentes.
+- [x] Manter os valores reconciliados de R$ 220.416,67, R$ 300.000,00 e R$ 279.583,00.
+- [x] Revisar visualmente a legibilidade e apresentar a versão final no padrão Carta à Rede.
