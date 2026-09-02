@@ -235,6 +235,8 @@ export function ChannelMediaReference({
   reference: LeadMediaChannelReference;
   locale: Locale;
 }) {
+  const hasAttributedLeads = reference.leadChannel !== null;
+  const isAugustNetPlan = reference.source === "august-net-media-plan";
   const coverageLabel =
     reference.status === "PARTIAL"
       ? ui(locale, "Cobertura parcial", "Partial coverage")
@@ -251,18 +253,18 @@ export function ChannelMediaReference({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold text-slate-100">{formatCategoryLabel(reference.channel, locale)}</p>
-          <p className="mt-1 text-[9px] text-slate-600">{reference.source === "august-meta-budget-plan" ? ui(locale, "Orçamento planejado de agosto", "August planned budget") : reference.platform}</p>
+          <p className="mt-1 text-[9px] text-slate-600">{isAugustNetPlan ? ui(locale, `Líquido · ${reference.platform}`, `Net · ${reference.platform}`) : reference.source === "august-meta-budget-plan" ? ui(locale, "Orçamento planejado de agosto", "August planned budget") : reference.platform}</p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-sm font-semibold text-white">{formatInteger(reference.leads, locale)}</p>
-          <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads</p>
+          <p className="text-sm font-semibold text-white">{hasAttributedLeads ? formatInteger(reference.leads, locale) : "—"}</p>
+          <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{hasAttributedLeads ? "Leads" : ui(locale, "Sem origem CRM", "No CRM source")}</p>
         </div>
       </div>
-      {reference.source === "august-meta-budget-plan" ? <p className="mt-2 text-[8px] font-medium text-sky-300">{ui(locale, "Acumulado até D-1", "Accumulated through D-1")} • {reference.dataThroughDate ? formatDate(reference.dataThroughDate, locale) : "—"}</p> : null}
+      {reference.source === "august-meta-budget-plan" || isAugustNetPlan ? <p className="mt-2 text-[8px] font-medium text-sky-300">{ui(locale, "Acumulado proporcional até D-1", "Pro-rated through D-1")} • {reference.dataThroughDate ? formatDate(reference.dataThroughDate, locale) : "—"}</p> : null}
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-md border border-[#1b2637] bg-[#0d1624] px-3 py-2.5">
           <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">
-            {ui(locale, "Investimento", "Investment")}
+            {ui(locale, isAugustNetPlan ? "Investimento líquido" : "Investimento", isAugustNetPlan ? "Net investment" : "Investment")}
           </p>
           <p className="mt-1.5 text-xs font-semibold text-slate-200">
             {reference.investment == null ? "—" : formatCurrency(reference.investment, locale)}
@@ -273,7 +275,7 @@ export function ChannelMediaReference({
             {ui(locale, "CPL de referência", "Reference CPL")}
           </p>
           <p className="mt-1.5 text-xs font-semibold text-emerald-300">
-            {reference.referenceCpl == null ? "—" : formatCurrency(reference.referenceCpl, locale)}
+            {reference.referenceCpl == null ? ui(locale, "Não atribuível", "Not attributable") : formatCurrency(reference.referenceCpl, locale)}
           </p>
         </div>
       </div>
@@ -1382,9 +1384,9 @@ export function LeadsTab({
           {data.mediaInvestment ? (
             <LeadPanel
               className="flex h-full flex-col"
-              title={ui(locale, "Investimento e CPL de mídia paga", "Paid media investment and CPL")}
-              subtitle={data.mediaInvestment.metaBudgetPlan ? ui(locale, `Google/Site e TikTok por fonte; Meta com orçamento planejado de ${formatCurrency(data.mediaInvestment.metaBudgetPlan.monthlyBudget, locale)} ÷ ${data.mediaInvestment.metaBudgetPlan.calendarDays} dias, acumulado até D-1.`, `Google/Site and TikTok from source data; Meta uses a planned ${formatCurrency(data.mediaInvestment.metaBudgetPlan.monthlyBudget, locale)} budget ÷ ${data.mediaInvestment.metaBudgetPlan.calendarDays} days, accumulated through D-1.`) : ui(locale, "Google/Site, Meta e TikTok no mesmo período D-1.", "Google/Site, Meta, and TikTok in the same D-1 period.")}
-              action={<span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] font-semibold text-emerald-300">{ui(locale, "3 canais pagos", "3 paid channels")}</span>}
+              title={ui(locale, "Investimento líquido e CPL por canal", "Net investment and CPL by channel")}
+              subtitle={data.mediaInvestment.netMediaPlan ? ui(locale, `Plano líquido de agosto: ${formatCurrency(data.mediaInvestment.netMediaPlan.monthlyNetInvestment, locale)}, proporcional ao período filtrado. O CPL aparece somente quando existe origem CRM correspondente.`, `August net plan: ${formatCurrency(data.mediaInvestment.netMediaPlan.monthlyNetInvestment, locale)}, pro-rated to the filtered period. CPL is shown only when a matching CRM source exists.`) : data.mediaInvestment.metaBudgetPlan ? ui(locale, `Google/Site e TikTok por fonte; Meta com orçamento planejado de ${formatCurrency(data.mediaInvestment.metaBudgetPlan.monthlyBudget, locale)} ÷ ${data.mediaInvestment.metaBudgetPlan.calendarDays} dias, acumulado até D-1.`, `Google/Site and TikTok from source data; Meta uses a planned ${formatCurrency(data.mediaInvestment.metaBudgetPlan.monthlyBudget, locale)} budget ÷ ${data.mediaInvestment.metaBudgetPlan.calendarDays} days, accumulated through D-1.`) : ui(locale, "Google/Site, Meta e TikTok no mesmo período D-1.", "Google/Site, Meta, and TikTok in the same D-1 period.")}
+              action={<span className="rounded-full border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1 text-[9px] font-semibold text-emerald-300">{ui(locale, `${data.mediaInvestment.channels.length} canais`, `${data.mediaInvestment.channels.length} channels`)}</span>}
             >
               <div data-testid="paid-media-grid" className="grid flex-1 content-start gap-2 p-3 sm:grid-cols-2">
                 {data.mediaInvestment.channels.map(reference => (
@@ -1397,16 +1399,17 @@ export function LeadsTab({
                   <div data-testid="paid-media-investment-total" className="rounded-lg border border-[#1c2738] bg-[#0d1624] p-3">
                     <div className="flex items-center gap-2">
                       <CircleDollarSign className="h-4 w-4 text-emerald-300" aria-hidden="true" />
-                      <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Investimento total", "Total investment")}</p>
+                      <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, data.mediaInvestment.netMediaPlan ? "Investimento líquido total" : "Investimento total", data.mediaInvestment.netMediaPlan ? "Total net investment" : "Total investment")}</p>
                     </div>
                     <p className="mt-2 text-sm font-semibold text-white">
                       {data.mediaInvestment.totalInvestment == null ? "—" : formatCurrency(data.mediaInvestment.totalInvestment, locale)}
                     </p>
+                    {data.mediaInvestment.netMediaPlan ? <p className="mt-1 text-[8px] text-slate-600">{formatCurrency(data.mediaInvestment.attributableInvestment, locale)} {ui(locale, "com origem CRM para CPL", "with a CRM source for CPL")}</p> : null}
                   </div>
                   <div className="rounded-lg border border-[#1c2738] bg-[#0d1624] p-3 text-right">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Leads dos canais pagos", "Paid-channel Leads")}</p>
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Leads com investimento atribuível", "Leads with attributable investment")}</p>
                     <p className="mt-2 text-sm font-semibold text-white">{formatInteger(data.mediaInvestment.paidMediaLeads, locale)}</p>
-                    <p className="mt-1 text-[8px] text-slate-600">Site + Meta + TikTok</p>
+                    <p className="mt-1 text-[8px] text-slate-600">{data.mediaInvestment.netMediaPlan ? "Site + Meta + TikTok Ads + Webmotors + Mercado Livre" : "Site + Meta + TikTok"}</p>
                   </div>
                 </div>
 
@@ -1415,7 +1418,9 @@ export function LeadsTab({
                     <div className="min-w-0">
                       <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#ff8c93]">{ui(locale, "CPL geral estimado", "Estimated overall CPL")}</p>
                       <p className="mt-1.5 text-[9px] leading-4 text-slate-500">
-                        {data.mediaInvestment.metaBudgetPlan
+                        {data.mediaInvestment.netMediaPlan
+                          ? ui(locale, "Investimento líquido atribuível ÷ Leads dos canais com origem CRM", "Attributable net investment ÷ Leads from channels with a CRM source")
+                          : data.mediaInvestment.metaBudgetPlan
                           ? ui(locale, "Google/Site + Meta (orçamento planejado) + TikTok ÷ Leads de Site + Meta + TikTok", "Google/Site + Meta (planned budget) + TikTok ÷ Site + Meta + TikTok Leads")
                           : ui(locale, "Investimento total ÷ Leads de Site + Meta + TikTok", "Total investment ÷ Site + Meta + TikTok Leads")}
                       </p>
@@ -1427,7 +1432,9 @@ export function LeadsTab({
                 </div>
 
                 <p className={`mt-2 text-[8px] leading-4 ${data.mediaInvestment.allSourcesAvailable ? "text-slate-600" : "text-amber-300/80"}`}>
-                  {data.mediaInvestment.metaBudgetPlan
+                  {data.mediaInvestment.netMediaPlan
+                    ? ui(locale, "Agosto usa valores líquidos aprovados por canal. Display e YouTube não têm origem CRM própria, portanto exibem investimento sem CPL atribuído.", "August uses approved net amounts by channel. Display and YouTube have no dedicated CRM source, so investment is shown without an attributed CPL.")
+                    : data.mediaInvestment.metaBudgetPlan
                     ? ui(locale, `Meta usa orçamento planejado de agosto; Google/Site e TikTok usam os dados disponíveis. Webmotors e Mercado Livre não entram neste cálculo.${data.mediaInvestment.allSourcesAvailable ? "" : ` Cobertura parcial: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)} disponível.`}`, `Meta uses the August planned budget; Google/Site and TikTok use available source data. Webmotors and Mercado Livre are excluded from this calculation.${data.mediaInvestment.allSourcesAvailable ? "" : ` Partial coverage: ${formatCurrency(data.mediaInvestment.availableInvestment, locale)} available.`}`)
                     : data.mediaInvestment.allSourcesAvailable
                       ? ui(locale, "Google Ads + Meta Ads + TikTok Ads reconciliados. Webmotors e Mercado Livre não entram neste cálculo.", "Google Ads + Meta Ads + TikTok Ads reconciled. Webmotors and Mercado Livre are excluded from this calculation.")

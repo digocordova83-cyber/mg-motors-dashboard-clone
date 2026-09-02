@@ -99,21 +99,24 @@ describe("interface de Leads", () => {
     expect(source).not.toContain("h-[350px] min-w-[760px]");
   });
 
-  it("separa investimento/CPL das metas e exibe o CPL geral estimado somente para os três canais pagos", () => {
+  it("separa investimento/CPL das metas e exibe os sete canais líquidos em agosto", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('data-testid="paid-media-investment-total"');
     expect(source).toContain('data-testid="channel-media-reference"');
     expect(source).toContain('data-testid="estimated-overall-cpl"');
     expect(source).toContain('data-testid="paid-media-summary"');
-    expect(source).toContain("Investimento e CPL de mídia paga");
+    expect(source).toContain("Investimento líquido e CPL por canal");
     expect(source).toContain("data.mediaInvestment.channels.map");
+    expect(source).toContain("data.mediaInvestment.channels.length");
     expect(source).toContain("data.mediaInvestment.paidMediaLeads");
     expect(source).toContain("data.mediaInvestment.estimatedOverallCpl");
-    expect(source).toContain("Investimento total ÷ Leads de Site + Meta + TikTok");
+    expect(source).toContain("Investimento líquido atribuível ÷ Leads dos canais com origem CRM");
+    expect(source).toContain("data.mediaInvestment.attributableInvestment");
     expect(source).toContain("Meta (orçamento planejado)");
     expect(source).toContain("data.mediaInvestment.metaBudgetPlan");
-    expect(source).toContain("Webmotors e Mercado Livre não entram neste cálculo");
+    expect(source).toContain("data.mediaInvestment.netMediaPlan");
+    expect(source).toContain("Display e YouTube não têm origem CRM própria");
   });
 
   it("renderiza investimento e CPL de referência com moeda brasileira", () => {
@@ -122,6 +125,7 @@ describe("interface de Leads", () => {
         locale="pt-BR"
         reference={{
           channel: "Site",
+          leadChannel: "Site",
           platform: "Google Ads",
           investment: 232_549,
           source: "persistent-snapshot",
@@ -143,6 +147,34 @@ describe("interface de Leads", () => {
     expect(html).toContain("R$ 232.549,00");
     expect(html).toContain("CPL de referência");
     expect(html).toContain("R$ 108,21");
+  });
+
+  it("exibe investimento líquido sem inventar CPL para canais sem origem CRM própria", () => {
+    const html = renderToStaticMarkup(
+      <ChannelMediaReference
+        locale="pt-BR"
+        reference={{
+          channel: "Display",
+          leadChannel: null,
+          platform: "Publya Display",
+          investment: 98_599.97,
+          source: "august-net-media-plan",
+          updatedAt: null,
+          dataThroughDate: "2026-08-31",
+          status: "AVAILABLE",
+          error: null,
+          leads: 0,
+          referenceCpl: null,
+        }}
+      />,
+    ).replaceAll("\u00a0", " ");
+
+    expect(html).toContain('data-channel="Display"');
+    expect(html).toContain("Líquido · Publya Display");
+    expect(html).toContain("Sem origem CRM");
+    expect(html).toContain("Investimento líquido");
+    expect(html).toContain("R$ 98.599,97");
+    expect(html).toContain("Não atribuível");
   });
 
   it("exibe meta, percentual, saldo e barra vermelha sem inventar meta para origens não mapeadas", () => {

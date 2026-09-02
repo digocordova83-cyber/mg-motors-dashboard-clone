@@ -14,8 +14,10 @@ import {
   applyAugustMetaBudget,
   AUGUST_META_BUDGET_CALENDAR_DAYS,
   AUGUST_META_MONTHLY_BUDGET,
+  AUGUST_NET_MEDIA_MONTHLY_TOTAL,
   buildLeadMediaInvestmentReference,
   getAugustMetaBudgetPlan,
+  getAugustNetMediaPlan,
   loadPaidMediaInvestmentMeasurements,
   type PaidMediaMeasurement,
 } from "./leadMediaInvestmentService";
@@ -39,6 +41,57 @@ function measurement(
 }
 
 describe("referência de investimento e CPL por canal", () => {
+  it("aplica os sete valores líquidos aprovados e reconcilia o total de agosto", () => {
+    const netPlan = getAugustNetMediaPlan("2026-08-01", "2026-08-31");
+    expect(AUGUST_NET_MEDIA_MONTHLY_TOTAL).toBe(1_008_000);
+    expect(netPlan).not.toBeNull();
+    expect(netPlan?.periodNetInvestment).toBe(1_008_000);
+    expect(netPlan?.channels).toEqual([
+      expect.objectContaining({ channel: "Site", monthlyNetInvestment: 412_800, periodNetInvestment: 412_800 }),
+      expect.objectContaining({ channel: "Meta", monthlyNetInvestment: 187_200, periodNetInvestment: 187_200 }),
+      expect.objectContaining({ channel: "TikTok", monthlyNetInvestment: 28_800, periodNetInvestment: 28_800 }),
+      expect.objectContaining({ channel: "Display", monthlyNetInvestment: 98_599.97, periodNetInvestment: 98_599.97 }),
+      expect.objectContaining({ channel: "YouTube", monthlyNetInvestment: 25_386.95, periodNetInvestment: 25_386.95 }),
+      expect.objectContaining({ channel: "Webmotors", monthlyNetInvestment: 178_413.08, periodNetInvestment: 178_413.08 }),
+      expect.objectContaining({ channel: "Mercado Livre", monthlyNetInvestment: 76_800, periodNetInvestment: 76_800 }),
+    ]);
+
+    const result = buildLeadMediaInvestmentReference({
+      dateFrom: "2026-08-01",
+      dateTo: "2026-08-31",
+      channelLeads: [
+        { value: "Site", leads: 3_498 },
+        { value: "Meta", leads: 8_215 },
+        { value: "TikTok", leads: 233 },
+        { value: "TikTok Live", leads: 180 },
+        { value: "Webmotors", leads: 1_470 },
+        { value: "Mercado Livre", leads: 464 },
+        { value: "Interlagos", leads: 326 },
+      ],
+      measurements: {
+        Site: measurement("Site", 1),
+        Meta: measurement("Meta", 1),
+        TikTok: measurement("TikTok", 1),
+      },
+      netMediaPlan: netPlan,
+    });
+
+    expect(result.formula).toBe("AUGUST_NET_MEDIA_PLAN_RATE_DIVIDED_BY_CALENDAR_DAYS");
+    expect(result.totalInvestment).toBe(1_008_000);
+    expect(result.availableInvestment).toBe(1_008_000);
+    expect(result.attributableInvestment).toBe(884_013.08);
+    expect(result.paidMediaLeads).toBe(13_880);
+    expect(result.estimatedOverallCpl).toBe(63.69);
+    expect(result.channels).toHaveLength(7);
+    expect(result.channels.find(item => item.channel === "Site")).toMatchObject({ leads: 3_498, referenceCpl: 118.01 });
+    expect(result.channels.find(item => item.channel === "Meta")).toMatchObject({ leads: 8_215, referenceCpl: 22.79 });
+    expect(result.channels.find(item => item.channel === "TikTok")).toMatchObject({ leads: 233, referenceCpl: 123.61 });
+    expect(result.channels.find(item => item.channel === "Webmotors")).toMatchObject({ leads: 1_470, referenceCpl: 121.37 });
+    expect(result.channels.find(item => item.channel === "Mercado Livre")).toMatchObject({ leads: 464, referenceCpl: 165.52 });
+    expect(result.channels.find(item => item.channel === "Display")).toMatchObject({ leadChannel: null, leads: 0, referenceCpl: null });
+    expect(result.channels.find(item => item.channel === "YouTube")).toMatchObject({ leadChannel: null, leads: 0, referenceCpl: null });
+  });
+
   it("rateia BRL 187.200,00 por 31 dias e acumula somente até o D-1", () => {
     const plan = getAugustMetaBudgetPlan("2026-08-01", "2026-08-24");
     expect(AUGUST_META_MONTHLY_BUDGET).toBe(187_200);
@@ -88,7 +141,7 @@ describe("referência de investimento e CPL por canal", () => {
     mediaMocks.tiktok.mockReset();
   });
 
-  it("calcula CPL sobre os Leads exibidos e soma apenas Google, Meta e TikTok", () => {
+  it("mantém o cálculo ao vivo restrito a Google, Meta e TikTok fora do plano líquido", () => {
     const result = buildLeadMediaInvestmentReference({
       dateFrom: "2026-08-01",
       dateTo: "2026-08-16",

@@ -3,12 +3,38 @@ import { loadMetaAdsData } from "./metaAdsService";
 import { loadTikTokAdsData } from "./tiktokAdsService";
 
 export type PaidMediaChannel = "Site" | "Meta" | "TikTok";
+export type LeadMediaInvestmentChannel =
+  | PaidMediaChannel
+  | "Display"
+  | "YouTube"
+  | "Webmotors"
+  | "Mercado Livre";
+export type LeadSourceInvestmentChannel =
+  | PaidMediaChannel
+  | "Webmotors"
+  | "Mercado Livre";
 export type PaidMediaSourceStatus = "AVAILABLE" | "PARTIAL" | "UNAVAILABLE";
 
 export const AUGUST_META_MONTHLY_BUDGET = 187_200;
 export const AUGUST_META_BUDGET_CALENDAR_DAYS = 31;
+export const AUGUST_NET_MEDIA_MONTHLY_TOTAL = 1_008_000;
 const AUGUST_START = "2026-08-01";
 const AUGUST_END = "2026-08-31";
+
+const AUGUST_NET_MEDIA_CHANNELS: ReadonlyArray<{
+  channel: LeadMediaInvestmentChannel;
+  leadChannel: LeadSourceInvestmentChannel | null;
+  platform: string;
+  monthlyNetInvestment: number;
+}> = [
+  { channel: "Site", leadChannel: "Site", platform: "Google Ads", monthlyNetInvestment: 412_800 },
+  { channel: "Meta", leadChannel: "Meta", platform: "Meta Ads", monthlyNetInvestment: 187_200 },
+  { channel: "TikTok", leadChannel: "TikTok", platform: "TikTok Ads", monthlyNetInvestment: 28_800 },
+  { channel: "Display", leadChannel: null, platform: "Publya Display", monthlyNetInvestment: 98_599.97 },
+  { channel: "YouTube", leadChannel: null, platform: "YouTube", monthlyNetInvestment: 25_386.95 },
+  { channel: "Webmotors", leadChannel: "Webmotors", platform: "Webmotors", monthlyNetInvestment: 178_413.08 },
+  { channel: "Mercado Livre", leadChannel: "Mercado Livre", platform: "Mercado Livre", monthlyNetInvestment: 76_800 },
+];
 
 export type MetaBudgetPlan = {
   competence: "2026-08";
@@ -21,9 +47,27 @@ export type MetaBudgetPlan = {
   periodBudget: number;
 };
 
+export type AugustNetMediaPlan = {
+  competence: "2026-08";
+  monthlyNetInvestment: number;
+  calendarDays: number;
+  dateFrom: string;
+  dateTo: string;
+  elapsedDays: number;
+  periodNetInvestment: number;
+  channels: Array<{
+    channel: LeadMediaInvestmentChannel;
+    leadChannel: LeadSourceInvestmentChannel | null;
+    platform: string;
+    monthlyNetInvestment: number;
+    periodNetInvestment: number;
+  }>;
+};
+
 export type PaidMediaMeasurement = {
-  channel: PaidMediaChannel;
-  platform: "Google Ads" | "Meta Ads" | "TikTok Ads";
+  channel: LeadMediaInvestmentChannel;
+  leadChannel?: LeadSourceInvestmentChannel | null;
+  platform: string;
   investment: number | null;
   source: string | null;
   updatedAt: string | null;
@@ -37,15 +81,19 @@ export type LeadMediaInvestmentReference = {
   dateTo: string;
   formula:
     | "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS"
-    | "AUGUST_META_MONTHLY_BUDGET_RATE_DIVIDED_BY_CALENDAR_DAYS";
+    | "AUGUST_META_MONTHLY_BUDGET_RATE_DIVIDED_BY_CALENDAR_DAYS"
+    | "AUGUST_NET_MEDIA_PLAN_RATE_DIVIDED_BY_CALENDAR_DAYS";
   totalInvestment: number | null;
   availableInvestment: number;
+  attributableInvestment: number;
   paidMediaLeads: number;
   estimatedOverallCpl: number | null;
   allSourcesAvailable: boolean;
   metaBudgetPlan: MetaBudgetPlan | null;
+  netMediaPlan: AugustNetMediaPlan | null;
   channels: Array<
     PaidMediaMeasurement & {
+      leadChannel: LeadSourceInvestmentChannel | null;
       leads: number;
       referenceCpl: number | null;
     }
@@ -65,11 +113,12 @@ function errorMessage(error: unknown) {
 
 function unavailableMeasurement(
   channel: PaidMediaChannel,
-  platform: PaidMediaMeasurement["platform"],
+  platform: string,
   error: unknown,
 ): PaidMediaMeasurement {
   return {
     channel,
+    leadChannel: channel,
     platform,
     investment: null,
     source: null,
@@ -108,6 +157,29 @@ export function getAugustMetaBudgetPlan(dateFrom: string, dateTo: string): MetaB
   };
 }
 
+export function getAugustNetMediaPlan(dateFrom: string, dateTo: string): AugustNetMediaPlan | null {
+  if (dateFrom < AUGUST_START || dateTo > AUGUST_END || dateFrom > dateTo) return null;
+  const elapsedDays = countCalendarDays(dateFrom, dateTo);
+  const channels = AUGUST_NET_MEDIA_CHANNELS.map(item => ({
+    ...item,
+    periodNetInvestment: round(
+      (item.monthlyNetInvestment * elapsedDays) / AUGUST_META_BUDGET_CALENDAR_DAYS,
+    ),
+  }));
+  return {
+    competence: "2026-08",
+    monthlyNetInvestment: AUGUST_NET_MEDIA_MONTHLY_TOTAL,
+    calendarDays: AUGUST_META_BUDGET_CALENDAR_DAYS,
+    dateFrom,
+    dateTo,
+    elapsedDays,
+    periodNetInvestment: round(
+      channels.reduce((sum, item) => sum + item.periodNetInvestment, 0),
+    ),
+    channels,
+  };
+}
+
 export function applyAugustMetaBudget(
   measurements: PaidMediaMeasurements,
   plan: MetaBudgetPlan | null,
@@ -140,6 +212,7 @@ export async function loadPaidMediaInvestmentMeasurements(
     googleResult.status === "fulfilled"
       ? {
           channel: "Site",
+          leadChannel: "Site",
           platform: "Google Ads",
           investment: round(googleResult.value.summary.investment),
           source: googleResult.value.metadata.source,
@@ -157,6 +230,7 @@ export async function loadPaidMediaInvestmentMeasurements(
     metaResult.status === "fulfilled"
       ? {
           channel: "Meta",
+          leadChannel: "Meta",
           platform: "Meta Ads",
           investment: round(metaResult.value.summary.spend),
           source: metaResult.value.metadata.source,
@@ -171,6 +245,7 @@ export async function loadPaidMediaInvestmentMeasurements(
     tiktokResult.status === "fulfilled"
       ? {
           channel: "TikTok",
+          leadChannel: "TikTok",
           platform: "TikTok Ads",
           investment: round(tiktokResult.value.summary.spend),
           source: tiktokResult.value.metadata.source,
@@ -190,13 +265,32 @@ export function buildLeadMediaInvestmentReference(input: {
   channelLeads: Array<{ value: string; leads: number }>;
   measurements: PaidMediaMeasurements;
   metaBudgetPlan?: MetaBudgetPlan | null;
+  netMediaPlan?: AugustNetMediaPlan | null;
 }): LeadMediaInvestmentReference {
   const leadsByChannel = new Map(input.channelLeads.map(item => [item.value, item.leads]));
-  const channels = (["Site", "Meta", "TikTok"] as const).map(channel => {
-    const measurement = input.measurements[channel];
-    const leads = leadsByChannel.get(channel) ?? 0;
+  const measurements: PaidMediaMeasurement[] = input.netMediaPlan
+    ? input.netMediaPlan.channels.map(item => ({
+        channel: item.channel,
+        leadChannel: item.leadChannel,
+        platform: item.platform,
+        investment: item.periodNetInvestment,
+        source: "august-net-media-plan",
+        updatedAt: null,
+        dataThroughDate: input.netMediaPlan?.dateTo ?? input.dateTo,
+        status: "AVAILABLE",
+        error: null,
+      }))
+    : (["Site", "Meta", "TikTok"] as const).map(channel => input.measurements[channel]);
+  const channels = measurements.map(measurement => {
+    const leadChannel = measurement.leadChannel ?? (
+      measurement.channel === "Site" || measurement.channel === "Meta" || measurement.channel === "TikTok"
+        ? measurement.channel
+        : null
+    );
+    const leads = leadChannel ? leadsByChannel.get(leadChannel) ?? 0 : 0;
     return {
       ...measurement,
+      leadChannel,
       leads,
       referenceCpl:
         measurement.investment != null && leads > 0
@@ -208,24 +302,34 @@ export function buildLeadMediaInvestmentReference(input: {
     channels.reduce((sum, item) => sum + (item.investment ?? 0), 0),
   );
   const paidMediaLeads = channels.reduce((sum, item) => sum + item.leads, 0);
+  const attributableInvestment = round(
+    channels.reduce(
+      (sum, item) => sum + (item.leadChannel ? item.investment ?? 0 : 0),
+      0,
+    ),
+  );
   const allSourcesAvailable = channels.every(item => item.status === "AVAILABLE");
   const totalInvestment = allSourcesAvailable ? availableInvestment : null;
 
   return {
     dateFrom: input.dateFrom,
     dateTo: input.dateTo,
-    formula: input.metaBudgetPlan
-      ? "AUGUST_META_MONTHLY_BUDGET_RATE_DIVIDED_BY_CALENDAR_DAYS"
-      : "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS",
+    formula: input.netMediaPlan
+      ? "AUGUST_NET_MEDIA_PLAN_RATE_DIVIDED_BY_CALENDAR_DAYS"
+      : input.metaBudgetPlan
+        ? "AUGUST_META_MONTHLY_BUDGET_RATE_DIVIDED_BY_CALENDAR_DAYS"
+        : "CHANNEL_INVESTMENT_DIVIDED_BY_CHANNEL_LEADS",
     totalInvestment,
     availableInvestment,
+    attributableInvestment,
     paidMediaLeads,
     estimatedOverallCpl:
       totalInvestment != null && paidMediaLeads > 0
-        ? round(totalInvestment / paidMediaLeads)
+        ? round(attributableInvestment / paidMediaLeads)
         : null,
     allSourcesAvailable,
     metaBudgetPlan: input.metaBudgetPlan ?? null,
+    netMediaPlan: input.netMediaPlan ?? null,
     channels,
   };
 }

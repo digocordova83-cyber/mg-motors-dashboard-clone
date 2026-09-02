@@ -2947,3 +2947,12 @@
 - [x] Exibir a distribuição por MG4, MG4 Urban, MG S5, MG Cyberster e não identificado.
 - [x] Manter o funil de mídia paga e os 660 MTD Retail Orders com a ressalva de atribuição agregada.
 - [x] Revisar legibilidade, reconciliação dos 14.386 Leads e apresentar a versão final.
+
+## Investimento líquido e CPL por canal — agosto de 2026
+
+- [x] Confirmar todos os valores líquidos de agosto apresentados pelo usuário e mapear cada valor ao canal correto.
+- [x] Incluir todos os canais aplicáveis no bloco “Investimento e CPL de mídia paga”.
+- [x] Calcular o CPL de referência com os Leads da mesma origem e do mesmo período, sem misturar TikTok Ads e TikTok Live.
+- [x] Ajustar o layout para acomodar os canais adicionais com boa leitura em desktop e mobile.
+- [x] Criar ou atualizar testes para valores, regras de canal e estados indisponíveis.
+- [x] Executar testes, TypeScript, build e validação visual antes da entrega.

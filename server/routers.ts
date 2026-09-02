@@ -54,6 +54,7 @@ import {
   applyAugustMetaBudget,
   buildLeadMediaInvestmentReference,
   getAugustMetaBudgetPlan,
+  getAugustNetMediaPlan,
   loadPaidMediaInvestmentMeasurements,
 } from "./leadMediaInvestmentService";
 import { buildLeadGeographicCplReference } from "./leadGeographicCplService";
@@ -354,6 +355,7 @@ export const appRouter = router({
             : Promise.resolve(null),
         ]);
         const metaBudgetPlan = getAugustMetaBudgetPlan(analytics.dateFrom, analytics.dateTo);
+        const netMediaPlan = getAugustNetMediaPlan(analytics.dateFrom, analytics.dateTo);
         const effectiveMeasurements = measurements
           ? applyAugustMetaBudget(measurements, metaBudgetPlan)
           : null;
@@ -364,6 +366,7 @@ export const appRouter = router({
               channelLeads: analytics.channels,
               measurements: effectiveMeasurements,
               metaBudgetPlan,
+              netMediaPlan,
             })
           : null;
         const geographicCpl = effectiveMeasurements && dealerTargets?.length
