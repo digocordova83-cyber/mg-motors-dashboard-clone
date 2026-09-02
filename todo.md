@@ -2873,3 +2873,11 @@
 - [x] Retirar a explicação de que a recarga Google ocorreu em dois pagamentos.
 - [x] Não adicionar justificativa técnica e preservar todos os valores e comprovantes originais.
 - [x] Validar e apresentar a versão final ajustada.
+
+## Prestação de contas integralmente em inglês — 02/09/2026
+
+- [x] Auditar os dez slides e mapear todo o texto editorial em português.
+- [x] Traduzir títulos, tabelas, indicadores, notas, legendas e rodapés para inglês.
+- [x] Preservar todos os valores, datas, notas fiscais e comprovantes originais.
+- [x] Validar ausência de texto editorial em português e consistência visual.
+- [x] Apresentar a versão final em inglês ao usuário.
