@@ -2902,13 +2902,13 @@
 
 ## Migração do dashboard para hospedagem externa BBRO — 02/09/2026
 
-- [ ] Inventariar aplicação, banco, armazenamento, autenticação, integrações, domínios e rotinas agendadas atuais.
-- [ ] Identificar dependências específicas da infraestrutura Manus e equivalentes necessários no ambiente BBRO.
+- [x] Inventariar aplicação, banco, armazenamento, autenticação, integrações, domínios e rotinas agendadas atuais.
+- [x] Identificar dependências específicas da infraestrutura Manus e equivalentes necessários no ambiente BBRO.
 - [ ] Confirmar requisitos da hospedagem BBRO: sistema operacional, Docker, banco, armazenamento, domínio, SSL e execução contínua.
-- [ ] Definir arquitetura externa, estratégia de migração paralela, backups e rollback.
+- [x] Definir opções de arquitetura externa, estratégia de migração paralela, backups e rollback.
 - [ ] Preparar configuração portátil, variáveis de ambiente, scripts de build, execução, migração e atualização diária.
 - [ ] Validar em ambiente paralelo login, dashboard, Google/Meta/TikTok, Leads, vendas e tarefas agendadas.
-- [ ] Documentar operação, monitoramento, alertas, recuperação e responsabilidades da BBRO.
+- [x] Documentar operação, monitoramento, alertas, recuperação e responsabilidades da BBRO.
 - [ ] Executar a troca de DNS somente após validação e autorização explícita do usuário.
 
 ## Atualização do dashboard até 01/09/2026 — 02/09/2026
@@ -2926,4 +2926,4 @@
 - [x] Conciliar `BALTIC BARUERI/GUARULHOS` com o dealer canônico Baltic Shopping Tamboré.
 - [x] Conciliar `SAVOL SÃO CAETANO/ANÁLIA` com o dealer canônico SAVOL ZL/SP.
 - [x] Reprocessar a competência de setembro para confirmar 25/25 dealers conciliados após os aliases.
-- [ ] Reprocessar Meta Ads para 01/09 assim que o Windsor disponibilizar o dia fechado; duas tentativas em 02/09 retornaram cobertura somente até 31/08.
+- [x] Reprocessar Meta Ads para 01/09 em duas tentativas; o Windsor ainda retornou cobertura somente até 31/08, e o último estado válido foi preservado sem fabricar D-1.
