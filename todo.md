@@ -2939,3 +2939,11 @@
 - [x] Criar apresentação executiva em português com fechamento de agosto, metodologia e principais leituras.
 - [x] Revisar todos os slides, validar os números contra a planilha e apresentar a versão final.
 - [x] Entregar a planilha e a apresentação com ressalvas claras sobre atribuição de vendas.
+
+## Funil de Leads compacto — máximo de 2 slides
+
+- [x] Condensar o fechamento de agosto em dois slides executivos, sem capa separada.
+- [x] Incluir 100% das fontes: Google Ads/Site, Meta Ads, TikTok Ads, TikTok Live, Webmotors, Mercado Livre e Interlagos.
+- [x] Exibir a distribuição por MG4, MG4 Urban, MG S5, MG Cyberster e não identificado.
+- [x] Manter o funil de mídia paga e os 660 MTD Retail Orders com a ressalva de atribuição agregada.
+- [x] Revisar legibilidade, reconciliação dos 14.386 Leads e apresentar a versão final.
