@@ -3014,3 +3014,10 @@
 - [x] Distribuir os logos dos veículos e plataformas nos níveis correspondentes sem comprometer a legibilidade.
 - [x] Manter o padrão clean da Carta à Rede e remover qualquer valor financeiro.
 - [x] Revisar visualmente a geometria e apresentar a versão final.
+
+## Layout exato da referência — mapa de canais
+
+- [x] Remover a silhueta em trapézios e reproduzir os três blocos retangulares empilhados da referência.
+- [x] Manter Conectar, Considerar e Agir à esquerda e os logos em linhas horizontais à direita.
+- [x] Preservar o visual clean, a hierarquia editorial e a ausência de valores financeiros.
+- [x] Revisar a semelhança visual e apresentar a versão final.
