@@ -5,20 +5,53 @@ import { MEDIA_PLANS, getMediaPlan } from "@/data/mediaPlans";
 import { MediaPlanDashboard, MediaPlanEmptyState } from "./MediaPlanDashboard";
 
 describe("Plano de Mídia Digital", () => {
-  it("oferece agosto como competência mais recente e preserva julho no histórico", () => {
-    const august = MEDIA_PLANS[0];
+  it("oferece setembro como competência mais recente e preserva agosto e julho no histórico", () => {
+    const september = MEDIA_PLANS[0];
+    const august = getMediaPlan("2026-08");
     const july = getMediaPlan("2026-07");
 
-    expect(MEDIA_PLANS.map((plan) => plan.month)).toEqual(["2026-08", "2026-07"]);
-    expect(august.month).toBe("2026-08");
-    expect(august.mode).toBe("FINANCIAL");
-    expect(august.sourceFile).toBe("controle-financeiro.xlsx");
-    expect(august.sourceSheet).toBe("Agosto");
-    expect(august.formulaCount).toBe(51);
-    expect(august.updatedAt).toBe("2026-08-05T14:26:45.000Z");
+    expect(MEDIA_PLANS.map((plan) => plan.month)).toEqual(["2026-09", "2026-08", "2026-07"]);
+    expect(september).toMatchObject({
+      month: "2026-09",
+      mode: "HYBRID",
+      sourceFile: "MG-SetembroMidia(1).xlsx",
+      sourceSheet: "Media Plan - Digital",
+      formulaCount: 556,
+      updatedAt: "2026-09-02T22:11:44.533Z",
+    });
+    expect(august?.month).toBe("2026-08");
+    expect(august?.mode).toBe("FINANCIAL");
     expect(july?.month).toBe("2026-07");
     expect(july?.mode).toBe("DELIVERY");
     expect(getMediaPlan("2099-12")).toBeNull();
+  });
+
+  it("reconcilia exatamente o plano híbrido de setembro por canal", () => {
+    const plan = getMediaPlan("2026-09")!;
+    const rowGross = plan.rows.reduce((sum, row) => sum + row.investment, 0);
+    const rowCommission = plan.rows.reduce((sum, row) => sum + (row.commission ?? 0), 0);
+    const rowNet = plan.rows.reduce((sum, row) => sum + (row.netInvestment ?? 0), 0);
+    const rowLeads = plan.rows.reduce((sum, row) => sum + (row.leads ?? 0), 0);
+
+    expect(plan.rows).toHaveLength(5);
+    expect(rowGross).toBeCloseTo(799_999.67, 2);
+    expect(rowCommission).toBeCloseTo(31_999.9868, 4);
+    expect(rowNet).toBeCloseTo(767_999.6832, 4);
+    expect(rowLeads).toBeCloseTo(9_998.956726, 5);
+    expect(plan.total).toMatchObject({
+      sourceRow: 13,
+      investment: 799_999.67,
+      commission: 31_999.9868,
+      netInvestment: 767_999.6832,
+      leads: 9_998.956726,
+      cpl: 76.8079815,
+    });
+    expect(plan.rows.find((row) => row.id === "sep-google")).toMatchObject({ investment: 279_583, netInvestment: 268_399.68, leads: 3116.577798, cpl: 86.12 });
+    expect(plan.rows.find((row) => row.id === "sep-meta")).toMatchObject({ investment: 300_000, netInvestment: 288_000, leads: 5328.39963, cpl: 54.05 });
+    expect(plan.contextItems).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "sep-executive-total", value: 894_999.67 }),
+      expect.objectContaining({ id: "sep-save", value: 99_000 }),
+    ]));
   });
 
   it("reconcilia exatamente o plano financeiro de agosto por linha e produto", () => {
@@ -95,9 +128,27 @@ describe("Plano de Mídia Digital", () => {
     expect(plan.rows.find((row) => row.id === "mg4-mercado-livre")).toMatchObject({ sourceRow: 22, investment: 30_000, leads: 55, cpl: 545.45 });
   });
 
-  it("renderiza agosto em modo financeiro sem fabricar projeções ausentes", () => {
+  it("renderiza setembro em modo híbrido com projeção, conciliação e valores complementares", () => {
     const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" />);
     const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" />);
+
+    expect(portuguese).toContain("Plano de Mídia — Setembro de 2026");
+    expect(portuguese).toContain("R$ 800.000");
+    expect(portuguese).toContain("R$ 768.000");
+    expect(portuguese).toContain("9.999");
+    expect(portuguese).toContain("R$ 76,81");
+    expect(portuguese).toContain("Reserva tática SAVE");
+    expect(portuguese).toContain("R$ 99.000");
+    expect(portuguese).toContain("Publya Programmatic Display");
+    expect(portuguese).toContain("As 556 fórmulas foram auditadas sem erros");
+    expect(english).toContain("Media Plan — September 2026");
+    expect(english).toContain("Tactical SAVE reserve");
+    expect(english).toContain("All 556 formulas were audited with no errors");
+  });
+
+  it("renderiza agosto em modo financeiro sem fabricar projeções ausentes", () => {
+    const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth="2026-08" />);
+    const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" initialMonth="2026-08" />);
 
     expect(portuguese).toContain("Plano de Mídia Digital — Agosto de 2026");
     expect(portuguese).toContain("Plano bruto");

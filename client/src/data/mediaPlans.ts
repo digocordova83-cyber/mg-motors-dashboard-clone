@@ -1,6 +1,15 @@
 export type MediaPlanFunnel = "AWARENESS" | "CONSIDERATION" | "CONVERSION";
-export type MediaPlanMode = "DELIVERY" | "FINANCIAL";
+export type MediaPlanMode = "DELIVERY" | "FINANCIAL" | "HYBRID";
 export type MediaPlanStatus = "PAID" | "PAYABLES" | "NOT_INFORMED";
+
+export type MediaPlanContextItem = {
+  id: string;
+  labelPt: string;
+  labelEn: string;
+  value: number;
+  notePt?: string;
+  noteEn?: string;
+};
 
 export type MediaPlanRow = {
   id: string;
@@ -58,6 +67,38 @@ export type MonthlyMediaPlan = {
   rows: MediaPlanRow[];
   totals: MediaPlanTotal[];
   total: MediaPlanTotal;
+  contextItems?: MediaPlanContextItem[];
+};
+
+const SEPTEMBER_2026: MonthlyMediaPlan = {
+  month: "2026-09",
+  titlePt: "Plano de Mídia — Setembro de 2026",
+  titleEn: "Media Plan — September 2026",
+  sourceFile: "MG-SetembroMidia(1).xlsx",
+  sourceSheet: "Media Plan - Digital",
+  formulaCount: 556,
+  updatedAt: "2026-09-02T22:11:44.533Z",
+  mode: "HYBRID",
+  sourceNotePt: "Fonte: MG-SetembroMidia(1).xlsx, recebida em 2 de setembro de 2026. As 556 fórmulas foram auditadas sem erros. O plano digital calculado fecha em R$ 799.999,67 brutos, R$ 767.999,68 líquidos e 9.998,96 Leads projetados. Revista, produção e reserva tática SAVE são exibidas separadamente porque não integram a projeção digital.",
+  sourceNoteEn: "Source: MG-SetembroMidia(1).xlsx, received on September 2, 2026. All 556 formulas were audited with no errors. The calculated digital plan reconciles to BRL 799,999.67 gross, BRL 767,999.68 net and 9,998.96 projected Leads. Magazine, production and tactical SAVE reserve are shown separately because they are not part of the digital projection.",
+  rows: [
+    { id: "sep-google", sourceRow: 5, funnel: "CONVERSION", channel: "Google Ads", publisher: "Google", product: "Line-up", objectivePt: "Leads / Conversão", objectiveEn: "Leads / Conversion", investment: 279583, commission: 11183.32, netInvestment: 268399.68, status: "NOT_INFORMED", leads: 3116.577798, cpl: 86.12 },
+    { id: "sep-webmotors", sourceRow: 6, funnel: "CONVERSION", channel: "Webmotors", publisher: "Webmotors", product: "Line-up", objectivePt: "Leads / Inventário", objectiveEn: "Leads / Inventory", investment: 110416.67, commission: 4416.6668, netInvestment: 106000.0032, status: "NOT_INFORMED", leads: 706.666688, cpl: 150 },
+    { id: "sep-publya", sourceRow: 7, funnel: "CONVERSION", channel: "Publya Programmatic Display", publisher: "Publya", product: "Line-up", objectivePt: "Leads / Geolocalização", objectiveEn: "Leads / Geolocation", investment: 30000, commission: 1200, netInvestment: 28800, status: "NOT_INFORMED", leads: 335.3126092, cpl: 85.89 },
+    { id: "sep-meta", sourceRow: 8, funnel: "CONVERSION", channel: "Meta Ads", publisher: "Publya", product: "Line-up", objectivePt: "Leads / Social", objectiveEn: "Leads / Social", investment: 300000, commission: 12000, netInvestment: 288000, status: "NOT_INFORMED", leads: 5328.39963, cpl: 54.05 },
+    { id: "sep-mercado-livre", sourceRow: 9, funnel: "CONVERSION", channel: "Mercado Livre Ads", publisher: "Mercado Livre", product: "Line-up", objectivePt: "Leads / Marketplace", objectiveEn: "Leads / Marketplace", investment: 80000, commission: 3200, netInvestment: 76800, status: "NOT_INFORMED", leads: 512, cpl: 150 },
+  ],
+  totals: [
+    { sourceRow: 11, label: "LINE-UP — MEDIA", product: "Line-up", investment: 799999.67, commission: 31999.9868, netInvestment: 767999.6832, leads: 9998.956726, cpl: 76.8079815 },
+  ],
+  total: { sourceRow: 13, label: "TOTAL DIGITAL", product: null, investment: 799999.67, commission: 31999.9868, netInvestment: 767999.6832, leads: 9998.956726, cpl: 76.8079815 },
+  contextItems: [
+    { id: "sep-digital", labelPt: "Mídia digital alocada", labelEn: "Allocated digital media", value: 799999.67, notePt: "Incluída na projeção", noteEn: "Included in projection" },
+    { id: "sep-magazine", labelPt: "Revista", labelEn: "Magazine", value: 25000, notePt: "Reserva mensal", noteEn: "Monthly reserve" },
+    { id: "sep-production", labelPt: "Produção", labelEn: "Production", value: 70000, notePt: "Filme e fotos IM6", noteEn: "IM6 film and photos" },
+    { id: "sep-executive-total", labelPt: "Orçamento total", labelEn: "Total budget", value: 894999.67, notePt: "Digital + revista + produção", noteEn: "Digital + magazine + production" },
+    { id: "sep-save", labelPt: "Reserva tática SAVE", labelEn: "Tactical SAVE reserve", value: 99000, notePt: "Exibida separadamente", noteEn: "Shown separately" },
+  ],
 };
 
 const AUGUST_2026: MonthlyMediaPlan = {
@@ -128,7 +169,7 @@ const JULY_2026: MonthlyMediaPlan = {
   total: { sourceRow: 25, label: "GERAL DIGITAL", product: null, investment: 1050000, impressions: 81345625, ctr: 0.0176, clicks: 1432512, visits: 524968, cvr: 0.019, leads: 10000, cpl: 105 },
 };
 
-export const MEDIA_PLANS: MonthlyMediaPlan[] = [AUGUST_2026, JULY_2026];
+export const MEDIA_PLANS: MonthlyMediaPlan[] = [SEPTEMBER_2026, AUGUST_2026, JULY_2026];
 
 export function getMediaPlan(month: string): MonthlyMediaPlan | null {
   return MEDIA_PLANS.find((plan) => plan.month === month) ?? null;

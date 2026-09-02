@@ -93,6 +93,8 @@ export function MediaPlanDashboard({
   const plan = getMediaPlan(selectedMonth);
   const isEnglish = locale === "en-US";
   const isFinancial = plan?.mode === "FINANCIAL";
+  const isHybrid = plan?.mode === "HYBRID";
+  const hasFinancialFields = isFinancial || isHybrid;
 
   useEffect(() => {
     if (plan?.updatedAt) onUpdatedAt?.(plan.updatedAt);
@@ -134,6 +136,7 @@ export function MediaPlanDashboard({
         eyebrow: "Official monthly planning",
         deliveryDescription: "Approved channel allocation, delivery assumptions and projected results.",
         financialDescription: "Approved gross allocation, commission, net media and actual investment recorded in the workbook.",
+        hybridDescription: "Official gross and net channel allocation with the projected Leads and CPL calculated in the workbook.",
         month: "Plan month",
         totalInvestment: "Planned media investment",
         leads: "Projected leads",
@@ -163,6 +166,7 @@ export function MediaPlanDashboard({
         eyebrow: "Planejamento mensal oficial",
         deliveryDescription: "Alocação aprovada por canal, premissas de entrega e resultados projetados.",
         financialDescription: "Alocação bruta aprovada, comissão, mídia líquida e investimento realizado registrados na planilha.",
+        hybridDescription: "Alocação oficial bruta e líquida por canal, com Leads e CPL projetados calculados na planilha.",
         month: "Competência do plano",
         totalInvestment: "Investimento planejado de mídia",
         leads: "Leads projetados",
@@ -196,6 +200,13 @@ export function MediaPlanDashboard({
         { label: copy.net, value: formatCurrency(plan.total.netInvestment ?? 0, locale), icon: CircleDollarSign },
         { label: copy.actual, value: formatCurrency(plan.total.actualInvestment ?? 0, locale), icon: Target },
       ]
+    : isHybrid
+      ? [
+          { label: copy.gross, value: formatCurrency(plan.total.investment, locale), icon: WalletCards },
+          { label: copy.net, value: formatCurrency(plan.total.netInvestment ?? 0, locale), icon: CircleDollarSign },
+          { label: copy.leads, value: formatNumber(plan.total.leads ?? 0, locale), icon: UsersRound },
+          { label: copy.cpl, value: formatCurrency(plan.total.cpl ?? 0, locale, 2), icon: Target },
+        ]
     : [
         { label: copy.totalInvestment, value: formatCurrency(plan.total.investment, locale), icon: WalletCards },
         { label: copy.leads, value: formatNumber(plan.total.leads ?? 0, locale), icon: UsersRound },
@@ -217,7 +228,7 @@ export function MediaPlanDashboard({
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f0525c]"><FileSpreadsheet className="h-4 w-4" />{copy.eyebrow}</div>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">{isEnglish ? plan.titleEn : plan.titlePt}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{isFinancial ? copy.financialDescription : copy.deliveryDescription}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{isFinancial ? copy.financialDescription : isHybrid ? copy.hybridDescription : copy.deliveryDescription}</p>
           </div>
           <label className="min-w-[240px] text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
             {copy.month}
@@ -236,8 +247,14 @@ export function MediaPlanDashboard({
           ))}
         </div>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500">
-          <span>{isEnglish ? "Line-up gross budget" : "Verba bruta Line-up"}: <strong className="text-slate-300">{formatCurrency(plan.totals[0]?.investment ?? 0, locale)}</strong></span>
-          <span>{isEnglish ? "Dedicated MG4 Urban gross budget" : "Verba bruta dedicada MG4 Urban"}: <strong className="text-slate-300">{formatCurrency(plan.totals[1]?.investment ?? 0, locale)}</strong></span>
+          {plan.contextItems?.length ? plan.contextItems.map((item) => (
+            <span key={item.id}>{isEnglish ? item.labelEn : item.labelPt}: <strong className="text-slate-300">{formatCurrency(item.value, locale)}</strong>{item.notePt ? <em className="ml-1 not-italic text-slate-600">· {isEnglish ? item.noteEn : item.notePt}</em> : null}</span>
+          )) : (
+            <>
+              <span>{isEnglish ? "Line-up gross budget" : "Verba bruta Line-up"}: <strong className="text-slate-300">{formatCurrency(plan.totals[0]?.investment ?? 0, locale)}</strong></span>
+              <span>{isEnglish ? "Dedicated MG4 Urban gross budget" : "Verba bruta dedicada MG4 Urban"}: <strong className="text-slate-300">{formatCurrency(plan.totals[1]?.investment ?? 0, locale)}</strong></span>
+            </>
+          )}
         </div>
       </section>
 
@@ -266,6 +283,8 @@ export function MediaPlanDashboard({
                   <div className="flex items-center justify-between gap-3"><strong className="text-sm text-white">{total.label}</strong><span className="text-xs font-semibold text-[#f0525c]">{formatPercent(total.investment / plan.total.investment, locale)}</span></div>
                   {isFinancial ? (
                     <div className="mt-3 grid grid-cols-3 gap-3 text-xs"><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.gross}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.investment, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.commission}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.commission ?? 0, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.net}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.netInvestment ?? 0, locale)}</strong></div></div>
+                  ) : isHybrid ? (
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4"><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.gross}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.investment, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.net}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.netInvestment ?? 0, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.leads}</span><strong className="mt-1 block text-slate-300">{formatNumber(total.leads ?? 0, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">CPL</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.cpl ?? 0, locale, 2)}</strong></div></div>
                   ) : (
                     <div className="mt-3 grid grid-cols-3 gap-3 text-xs"><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.investment}</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.investment, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">{copy.leads}</span><strong className="mt-1 block text-slate-300">{formatNumber(total.leads ?? 0, locale)}</strong></div><div><span className="block text-[9px] uppercase tracking-wider text-slate-600">CPL</span><strong className="mt-1 block text-slate-300">{formatCurrency(total.cpl ?? 0, locale, 2)}</strong></div></div>
                   )}
@@ -275,9 +294,9 @@ export function MediaPlanDashboard({
           </div>
 
           <div className="rounded-2xl border border-white/[0.07] bg-[#0a111d] p-5">
-            <h2 className="text-base font-semibold text-white">{isFinancial ? copy.reconciliation : copy.funnel}</h2>
+            <h2 className="text-base font-semibold text-white">{hasFinancialFields ? copy.reconciliation : copy.funnel}</h2>
             <div className="mt-4 space-y-4">
-              {isFinancial ? financialReconciliation.map((item) => (
+              {hasFinancialFields ? financialReconciliation.filter((item) => !isHybrid || item.label !== copy.actual).map((item) => (
                 <div key={item.label}>
                   <div className="flex items-center justify-between text-xs"><span className="font-medium text-slate-300">{item.label}</span><span className="text-slate-500">{formatCurrency(item.value, locale)}</span></div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]"><div className="h-full rounded-full bg-gradient-to-r from-[#9f1520] to-[#ef3340]" style={{ width: `${item.value === 0 ? 0 : Math.max(3, (item.value / plan.total.investment) * 100)}%` }} /></div>
@@ -302,6 +321,15 @@ export function MediaPlanDashboard({
               <tbody className="divide-y divide-white/[0.05] text-xs">
                 {plan.rows.map((row) => (
                   <tr key={row.id} className="transition-colors hover:bg-white/[0.02]"><td className="px-4 py-3 font-medium text-slate-200">{row.channel}</td><td className="px-4 py-3 text-slate-400">{row.publisher ?? "—"}</td><td className="px-4 py-3 text-slate-400">{row.product}</td><td className="px-4 py-3 text-right font-medium text-slate-200">{formatCurrency(row.investment, locale, 2)}</td><td className="px-4 py-3 text-right text-slate-400">{formatCurrency(row.commission ?? 0, locale, 2)}</td><td className="px-4 py-3 text-right text-slate-400">{formatCurrency(row.netInvestment ?? 0, locale, 2)}</td><td className="px-4 py-3 text-right text-slate-400">{formatCurrency(row.actualInvestment ?? 0, locale, 2)}</td><td className="px-4 py-3 text-slate-300">{statusLabel(row.status, locale)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          ) : isHybrid ? (
+            <table className="min-w-[1120px] w-full text-left">
+              <thead className="bg-[#070d16] text-[9px] uppercase tracking-[0.13em] text-slate-600"><tr><th className="px-4 py-3">{copy.channel}</th><th className="px-4 py-3">{copy.publisher}</th><th className="px-4 py-3">{copy.objective}</th><th className="px-4 py-3 text-right">{copy.gross}</th><th className="px-4 py-3 text-right">{copy.commission}</th><th className="px-4 py-3 text-right">{copy.net}</th><th className="px-4 py-3 text-right">{copy.leads}</th><th className="px-4 py-3 text-right">CPL</th></tr></thead>
+              <tbody className="divide-y divide-white/[0.05] text-xs">
+                {plan.rows.map((row) => (
+                  <tr key={row.id} className="transition-colors hover:bg-white/[0.02]"><td className="px-4 py-3 font-medium text-slate-200">{row.channel}</td><td className="px-4 py-3 text-slate-400">{row.publisher ?? "—"}</td><td className="px-4 py-3 text-slate-400">{isEnglish ? row.objectiveEn : row.objectivePt}</td><td className="px-4 py-3 text-right font-medium text-slate-200">{formatCurrency(row.investment, locale, 2)}</td><td className="px-4 py-3 text-right text-slate-400">{formatCurrency(row.commission ?? 0, locale, 2)}</td><td className="px-4 py-3 text-right text-slate-400">{formatCurrency(row.netInvestment ?? 0, locale, 2)}</td><td className="px-4 py-3 text-right text-slate-300">{row.leads == null ? "—" : formatNumber(row.leads, locale)}</td><td className="px-4 py-3 text-right text-slate-300">{row.cpl == null ? "—" : formatCurrency(row.cpl, locale, 2)}</td></tr>
                 ))}
               </tbody>
             </table>

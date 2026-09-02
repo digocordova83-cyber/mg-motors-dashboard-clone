@@ -2956,3 +2956,24 @@
 - [x] Ajustar o layout para acomodar os canais adicionais com boa leitura em desktop e mobile.
 - [x] Criar ou atualizar testes para valores, regras de canal e estados indisponíveis.
 - [x] Executar testes, TypeScript, build e validação visual antes da entrega.
+
+## Plano de Mídia — setembro de 2026
+
+- [x] Auditar todas as abas, fórmulas, valores e estruturas da planilha `MG-SetembroMidia(1).xlsx`.
+- [x] Extrair e reconciliar o plano oficial de setembro por canal, publisher, produto e objetivo.
+- [x] Mapear os dados ao modelo da aba Plano de Mídia sem alterar o histórico de agosto.
+- [x] Implementar setembro como competência disponível e selecionada na aba Plano de Mídia.
+- [x] Validar totais, percentuais, projeções, metas e eventuais divergências da planilha de origem.
+- [x] Criar ou atualizar testes para preservar agosto e comprovar os valores de setembro.
+- [x] Executar TypeScript, suíte completa, build e validação visual responsiva.
+- [ ] Registrar o resultado auditável e salvar checkpoint antes da entrega.
+
+## Slide institucional de funil — carta à rede de concessionários
+
+- [x] Escrever uma narrativa comercial de um slide, sem vincular a mensagem aos valores exatos do plano de mídia.
+- [x] Representar o topo do funil com programática e portais de grande repercussão nacional.
+- [x] Representar o meio do funil com Meta e TikTok para prospecção e geração de Leads qualificados.
+- [x] Representar o fundo do funil com remarketing e Google Search para públicos de alta propensão de compra.
+- [x] Criar uma apresentação de exatamente um slide no padrão visual MG para uso na carta à rede.
+- [x] Refazer o slide no mesmo padrão de layout, tipografia, hierarquia e acabamento do Digital Summary aprovado.
+- [x] Revisar legibilidade, mensagem comercial e aderência ao pedido antes da entrega ao Gui.
