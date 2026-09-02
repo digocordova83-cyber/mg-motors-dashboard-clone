@@ -2865,3 +2865,11 @@
 - [x] Recriar todas as páginas com a identidade visual, hierarquia e composição do Digital Check.
 - [x] Validar reconciliação numérica, legibilidade e consistência visual do deck completo.
 - [x] Apresentar a versão final ao usuário.
+
+## Ajustes finais da prestação de contas — 01/09/2026
+
+- [x] Restaurar o projeto de slides e localizar as páginas Google e BBRO afetadas.
+- [x] Remover todas as menções à diferença documental de R$ 0,05.
+- [x] Retirar a explicação de que a recarga Google ocorreu em dois pagamentos.
+- [x] Não adicionar justificativa técnica e preservar todos os valores e comprovantes originais.
+- [x] Validar e apresentar a versão final ajustada.
