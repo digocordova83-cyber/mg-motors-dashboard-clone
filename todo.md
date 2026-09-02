@@ -2904,12 +2904,12 @@
 
 - [x] Inventariar aplicação, banco, armazenamento, autenticação, integrações, domínios e rotinas agendadas atuais.
 - [x] Identificar dependências específicas da infraestrutura Manus e equivalentes necessários no ambiente BBRO.
-- [ ] Confirmar requisitos da hospedagem BBRO: sistema operacional, Docker, banco, armazenamento, domínio, SSL e execução contínua.
+- [x] Pausar a confirmação dos requisitos da hospedagem BBRO até uma solicitação explícita de retomada do usuário.
 - [x] Definir opções de arquitetura externa, estratégia de migração paralela, backups e rollback.
-- [ ] Preparar configuração portátil, variáveis de ambiente, scripts de build, execução, migração e atualização diária.
-- [ ] Validar em ambiente paralelo login, dashboard, Google/Meta/TikTok, Leads, vendas e tarefas agendadas.
+- [x] Adiar a preparação da configuração portátil e dos scripts externos enquanto a migração estiver pausada.
+- [x] Adiar a validação em ambiente paralelo enquanto a migração estiver pausada e sem infraestrutura BBRO confirmada.
 - [x] Documentar operação, monitoramento, alertas, recuperação e responsabilidades da BBRO.
-- [ ] Executar a troca de DNS somente após validação e autorização explícita do usuário.
+- [x] Manter o DNS e a produção atual inalterados enquanto a migração estiver pausada; qualquer cutover exigirá nova autorização explícita.
 
 ## Atualização do dashboard até 01/09/2026 — 02/09/2026
 
@@ -2966,7 +2966,7 @@
 - [x] Validar totais, percentuais, projeções, metas e eventuais divergências da planilha de origem.
 - [x] Criar ou atualizar testes para preservar agosto e comprovar os valores de setembro.
 - [x] Executar TypeScript, suíte completa, build e validação visual responsiva.
-- [ ] Registrar o resultado auditável e salvar checkpoint antes da entrega.
+- [x] Registrar o resultado auditável e salvar checkpoint antes da entrega.
 
 ## Slide institucional de funil — carta à rede de concessionários
 
