@@ -3007,3 +3007,10 @@
 - [x] Manter o padrão Conectar, Considerar e Agir com os logos dos veículos e plataformas.
 - [x] Restaurar um rodapé institucional simples, sem referências financeiras.
 - [x] Revisar visualmente e apresentar a versão final sem valores.
+
+## Funil visual real — Carta à Rede
+
+- [x] Transformar as três etapas em uma silhueta de funil: Conectar largo, Considerar intermediário e Agir estreito.
+- [x] Distribuir os logos dos veículos e plataformas nos níveis correspondentes sem comprometer a legibilidade.
+- [x] Manter o padrão clean da Carta à Rede e remover qualquer valor financeiro.
+- [x] Revisar visualmente a geometria e apresentar a versão final.
