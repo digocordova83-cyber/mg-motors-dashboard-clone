@@ -115,6 +115,16 @@ describe("Weekly Target Achievement CSV", () => {
     });
   });
 
+  it.each([
+    ["BALTIC BARUERI/GUARULHOS", "Baltic Shopping Tamboré"],
+    ["SAVOL SÃO CAETANO/ANÁLIA", "SAVOL ZL/SP"],
+  ])("concilia o nome composto %s ao canonical %s", (sourceName, canonicalDealer) => {
+    expect(resolveWeeklySalesCanonicalDealer(sourceName)).toEqual({
+      canonicalDealer,
+      explicitMapping: true,
+    });
+  });
+
   it("rejeita arquivo cujo total da última semana preenchida não reconcilia", () => {
     const preview = parseWeeklySalesCsv(
       csv(

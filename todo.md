@@ -2881,3 +2881,49 @@
 - [x] Preservar todos os valores, datas, notas fiscais e comprovantes originais.
 - [x] Validar ausência de texto editorial em português e consistência visual.
 - [x] Apresentar a versão final em inglês ao usuário.
+
+## Atualização da planilha MG para agosto — 02/09/2026
+
+- [x] Auditar todas as abas, fórmulas, células mescladas e elementos visuais do arquivo `MG-JULHO-AGENCIA.xlsx`.
+- [x] Identificar os campos de período, total de Leads, investimento e métricas dependentes.
+- [x] Atualizar o período para agosto, Leads para 883 e investimento total para R$ 106.000,00.
+- [x] Recalcular CPL e demais indicadores afetados, preservando fórmulas e formatação.
+- [x] Validar o arquivo final, ausência de erros e consistência entre abas.
+- [x] Entregar a planilha atualizada ao usuário.
+
+## Atualização do arquivo correto de projeção — agosto de 2026
+
+- [x] Auditar todas as abas, fórmulas, distribuição por mercado e canal e formatação do arquivo correto.
+- [x] Identificar como o total de Leads e investimento alimentam projeções, percentuais e CPLs.
+- [x] Atualizar o período para agosto, total de Leads para 883 e investimento para R$ 106.000,00.
+- [x] Recalcular e reconciliar todas as métricas e distribuições dependentes.
+- [x] Validar o arquivo final visual e programaticamente, sem alterar a estrutura aprovada.
+- [x] Entregar a versão correta atualizada ao usuário.
+
+## Migração do dashboard para hospedagem externa BBRO — 02/09/2026
+
+- [ ] Inventariar aplicação, banco, armazenamento, autenticação, integrações, domínios e rotinas agendadas atuais.
+- [ ] Identificar dependências específicas da infraestrutura Manus e equivalentes necessários no ambiente BBRO.
+- [ ] Confirmar requisitos da hospedagem BBRO: sistema operacional, Docker, banco, armazenamento, domínio, SSL e execução contínua.
+- [ ] Definir arquitetura externa, estratégia de migração paralela, backups e rollback.
+- [ ] Preparar configuração portátil, variáveis de ambiente, scripts de build, execução, migração e atualização diária.
+- [ ] Validar em ambiente paralelo login, dashboard, Google/Meta/TikTok, Leads, vendas e tarefas agendadas.
+- [ ] Documentar operação, monitoramento, alertas, recuperação e responsabilidades da BBRO.
+- [ ] Executar a troca de DNS somente após validação e autorização explícita do usuário.
+
+## Atualização do dashboard até 01/09/2026 — 02/09/2026
+
+- [x] Verificar o estado atual das rotinas oficiais de Leads, Google Ads, Meta Ads, TikTok Ads e vendas.
+- [x] Executar a prévia e a sincronização oficial de Leads com cobertura até 01/09/2026.
+- [x] Atualizar Google Ads e TikTok Ads com dados fechados D-1 e auditar a indisponibilidade da Meta em 01/09.
+- [x] Verificar se existe Daily Sales Planning Report posterior ao último lote válido antes de alterar MTD Retail Order.
+- [x] Reconciliar totais, duplicidades, inválidos, cobertura por fonte e eventuais falhas parciais.
+- [x] Reexecutar as rotinas aplicáveis para confirmar idempotência.
+- [x] Registrar o resultado auditável e comunicar a atualização ao usuário.
+- [x] Extrair e validar o `260901DailySalesPlanningReport.pdf`, incluindo total MTD Retail Order, target, semana e cobertura dos dealers.
+- [x] Importar o PDF de 01/09 pelo fluxo oficial somente após a reconciliação completa.
+- [x] Reprocessar o mesmo PDF para confirmar idempotência e ausência de novo lote ou linhas duplicadas.
+- [x] Conciliar `BALTIC BARUERI/GUARULHOS` com o dealer canônico Baltic Shopping Tamboré.
+- [x] Conciliar `SAVOL SÃO CAETANO/ANÁLIA` com o dealer canônico SAVOL ZL/SP.
+- [x] Reprocessar a competência de setembro para confirmar 25/25 dealers conciliados após os aliases.
+- [ ] Reprocessar Meta Ads para 01/09 assim que o Windsor disponibilizar o dia fechado; duas tentativas em 02/09 retornaram cobertura somente até 31/08.

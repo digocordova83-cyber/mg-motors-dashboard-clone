@@ -8,6 +8,11 @@
       "canonical": "Baltic Shopping Tamboré"
     },
     {
+      "source": "BALTIC BARUERI/GUARULHOS",
+      "sourceKey": "BALTIC BARUERI GUARULHOS",
+      "canonical": "Baltic Shopping Tamboré"
+    },
+    {
       "source": "INDIANA SALVADOR",
       "sourceKey": "INDIANA SALVADOR",
       "canonical": "Indiana Salvador - 3966031"
@@ -35,6 +40,11 @@
     {
       "source": "SAVOL - SÃO CAETANO",
       "sourceKey": "SAVOL SAO CAETANO",
+      "canonical": "SAVOL ZL/SP"
+    },
+    {
+      "source": "SAVOL SÃO CAETANO/ANÁLIA",
+      "sourceKey": "SAVOL SAO CAETANO ANALIA",
       "canonical": "SAVOL ZL/SP"
     },
     {
