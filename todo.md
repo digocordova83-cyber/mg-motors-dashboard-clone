@@ -2927,3 +2927,15 @@
 - [x] Conciliar `SAVOL SÃO CAETANO/ANÁLIA` com o dealer canônico SAVOL ZL/SP.
 - [x] Reprocessar a competência de setembro para confirmar 25/25 dealers conciliados após os aliases.
 - [x] Reprocessar Meta Ads para 01/09 em duas tentativas; o Windsor ainda retornou cobertura somente até 31/08, e o último estado válido foi preservado sem fabricar D-1.
+
+## Funil de Leads fechado de agosto de 2026 — apresentação e planilha
+
+- [x] Definir as etapas do funil exclusivamente com campos mensuráveis nas bases atuais.
+- [x] Extrair e reconciliar Leads de 01/08 a 31/08 por veículo, plataforma e combinação veículo × plataforma.
+- [x] Reconciliar a etapa de MTD Retail Order de agosto sem atribuir vendas a uma plataforma quando não houver chave individual segura.
+- [x] Calcular conversões, participações e rankings sem inventar etapas intermediárias ou atribuição de mídia.
+- [x] Criar planilha profissional com overview, funil por veículo, funil por plataforma, matriz veículo × plataforma e base metodológica.
+- [x] Validar fórmulas, totais, filtros, formatos e consistência visual da planilha.
+- [x] Criar apresentação executiva em português com fechamento de agosto, metodologia e principais leituras.
+- [x] Revisar todos os slides, validar os números contra a planilha e apresentar a versão final.
+- [x] Entregar a planilha e a apresentação com ressalvas claras sobre atribuição de vendas.
