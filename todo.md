@@ -2977,3 +2977,11 @@
 - [x] Criar uma apresentação de exatamente um slide no padrão visual MG para uso na carta à rede.
 - [x] Refazer o slide no mesmo padrão de layout, tipografia, hierarquia e acabamento do Digital Summary aprovado.
 - [x] Revisar legibilidade, mensagem comercial e aderência ao pedido antes da entrega ao Gui.
+
+## Ajuste do slide de funil — valores de setembro
+
+- [x] Corrigir o encaixe e a legibilidade das letras dentro dos três níveis do funil.
+- [x] Incluir exemplos de portais, como Webmotors, Mercado Livre e UOL/Quatro Rodas, sem atribuir verba inexistente.
+- [x] Distribuir o plano bruto de setembro em topo R$ 220.416,67, meio R$ 300.000,00 e fundo R$ 279.583,00.
+- [x] Confirmar que as três etapas reconciliam exatamente R$ 799.999,67.
+- [x] Revisar visualmente e apresentar a versão final no padrão Digital Summary.
