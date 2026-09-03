@@ -3021,3 +3021,15 @@
 - [x] Manter Conectar, Considerar e Agir à esquerda e os logos em linhas horizontais à direita.
 - [x] Preservar o visual clean, a hierarquia editorial e a ausência de valores financeiros.
 - [x] Revisar a semelhança visual e apresentar a versão final.
+
+## Atualização do dashboard até 02/09/2026 — 03/09/2026
+
+- [x] Verificar o estado atual das bases e a última cobertura válida de cada fonte.
+- [x] Executar a prévia e a atualização oficial de Leads com cobertura até 02/09/2026.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads pelo fluxo D-1, registrando eventuais atrasos por fonte.
+- [x] Verificar a disponibilidade do Daily Sales Planning Report posterior ao último lote válido.
+- [x] Preservar o último lote oficial de vendas porque não havia relatório posterior disponível; dealer, região e TOTAL permanecem reconciliados.
+- [x] Reexecutar as rotinas aplicáveis para comprovar idempotência.
+- [x] Executar testes, TypeScript e build após a atualização.
+- [x] Registrar base antes/depois, novos, duplicados, inválidos, cobertura e falhas parciais.
+- [x] Salvar checkpoint e comunicar o número de Leads de 02/09 no relatório final.
