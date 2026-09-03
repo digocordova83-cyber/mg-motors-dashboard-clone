@@ -3033,3 +3033,13 @@
 - [x] Executar testes, TypeScript e build após a atualização.
 - [x] Registrar base antes/depois, novos, duplicados, inválidos, cobertura e falhas parciais.
 - [x] Salvar checkpoint e comunicar o número de Leads de 02/09 no relatório final.
+
+## Digital Check compacto — aprovação do plano pelo Thiago
+
+- [x] Identificar e preservar a capa oficial do Digital Check.
+- [x] Identificar e preservar somente os slides Financial Overview e Publisher Detail enviados pelo usuário.
+- [x] Criar um slide documental com o e-mail de aprovação do plano pelo Thiago, sem alterar o conteúdo da evidência.
+- [x] Remover todos os demais slides da apresentação.
+- [x] Ordenar a versão final como capa, Financial Overview, Publisher Detail e aprovação por e-mail.
+- [x] Revisar valores, evidência, legibilidade e identidade visual do Digital Check.
+- [x] Apresentar a versão final compacta com quatro slides.
