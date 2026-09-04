@@ -3083,3 +3083,12 @@
 - [x] Inserir contratado, entregue, diferença e percentual de entrega quando existe meta contratada comprovada.
 - [x] Adicionar as novas evidências preservando o padrão visual do Digital Check.
 - [x] Revisar metodologia, privacidade, valores, legibilidade e apresentar a versão final.
+
+## Atualização de comprovantes — Webmotors, Meta Ads e Mercado Livre
+
+- [x] Validar os dois novos prints Webmotors e registrar as métricas atualizadas sem misturar versões anteriores.
+- [x] Validar o novo print Meta Ads e substituir a captura anterior na seção Publya / Meta Ads.
+- [x] Validar o novo PI do Mercado Livre e substituir integralmente a versão anterior.
+- [x] Alterar as referências financeiras do Mercado Livre para mostrar somente o valor líquido confirmado no novo PI.
+- [x] Preservar os demais slides, comprovantes e o padrão visual do Digital Check.
+- [x] Revisar legibilidade, coerência dos valores e apresentar a versão final atualizada.
