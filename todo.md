@@ -3063,3 +3063,12 @@
 - [x] Preservar os arquivos e comprovantes originais sem alterar seu conteúdo.
 - [x] Revisar valores, documentos, legibilidade e consistência visual da apresentação consolidada.
 - [x] Apresentar e entregar a versão final unificada.
+
+## Complemento documental — faturamento Mercado Livre
+
+- [x] Localizar e validar o PI correspondente ao Mercado Livre nos arquivos disponíveis.
+- [x] Adicionar o print do e-mail sobre o calendário de emissão das notas fiscais.
+- [x] Inserir o PI do Mercado Livre no mesmo slide ou em página imediatamente adjacente.
+- [x] Incluir texto em inglês informando a emissão no dia 10 e a solicitação de primeiro dia útil a partir de outubro.
+- [x] Preservar o padrão visual do Digital Check e o conteúdo original das evidências.
+- [x] Revisar legibilidade, ordem da seção e apresentar a versão atualizada.
