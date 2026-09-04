@@ -3051,3 +3051,15 @@
 - [x] Reexecutar o fluxo para comprovar idempotência, sem consultar mídia ou vendas.
 - [x] Registrar o total antes/depois, os Leads do último dia fechado, duplicidades e inválidos.
 - [x] Salvar checkpoint e comunicar a atualização exclusivamente da base de Leads.
+
+## Consolidação da Comprovação de Mídia e Financial Proof Summary
+
+- [x] Analisar integralmente os dois PPTX enviados e identificar slides, evidências e padrão visual.
+- [x] Definir a ordem consolidada sem duplicar conteúdo financeiro ou comprovantes.
+- [x] Manter capa, tipografia, cores, cabeçalhos e rodapés no padrão existente do Digital Check.
+- [x] Inserir o print de Meta Ads na seção Publya, identificando que corresponde à mídia Meta executada.
+- [x] Inserir em Autoesporte o boleto, a foto da revista e o PI enviados.
+- [x] Inserir os dois prints de Webmotors na seção correspondente.
+- [x] Preservar os arquivos e comprovantes originais sem alterar seu conteúdo.
+- [x] Revisar valores, documentos, legibilidade e consistência visual da apresentação consolidada.
+- [x] Apresentar e entregar a versão final unificada.
