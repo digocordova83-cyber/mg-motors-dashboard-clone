@@ -3043,3 +3043,11 @@
 - [x] Ordenar a versão final como capa, Financial Overview, Publisher Detail e aprovação por e-mail.
 - [x] Revisar valores, evidência, legibilidade e identidade visual do Digital Check.
 - [x] Apresentar a versão final compacta com quatro slides.
+
+## Atualização rápida e segura de Leads — 03/09/2026
+
+- [x] Executar a consolidação oficial da base de Leads e validar contagens antes de manter o resultado atualizado.
+- [x] Aplicar a atualização transacional pelo fluxo canônico de Leads.
+- [x] Reexecutar o fluxo para comprovar idempotência, sem consultar mídia ou vendas.
+- [x] Registrar o total antes/depois, os Leads do último dia fechado, duplicidades e inválidos.
+- [x] Salvar checkpoint e comunicar a atualização exclusivamente da base de Leads.
