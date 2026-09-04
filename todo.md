@@ -3092,3 +3092,12 @@
 - [x] Alterar as referências financeiras do Mercado Livre para mostrar somente o valor líquido confirmado no novo PI.
 - [x] Preservar os demais slides, comprovantes e o padrão visual do Digital Check.
 - [x] Revisar legibilidade, coerência dos valores e apresentar a versão final atualizada.
+
+## Novos comprovantes de performance — Mercado Livre
+
+- [x] Validar as métricas dos dois prints Mercado Livre para o período de 01 a 31/08/2026.
+- [x] Copiar os dois comprovantes originais para os ativos da apresentação sem edição de conteúdo.
+- [x] Criar dois slides de performance Mercado Livre no padrão visual do Digital Check para preservar a legibilidade dos prints.
+- [x] Exibir separadamente a frente de publicidade e a frente de geração de Leads, sem somar métricas incompatíveis.
+- [x] Preservar o novo PI, o valor líquido de R$ 76.800,00 e todos os demais slides.
+- [x] Revisar legibilidade, números e ordem da seção antes de apresentar a versão final.
