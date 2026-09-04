@@ -3072,3 +3072,14 @@
 - [x] Incluir texto em inglês informando a emissão no dia 10 e a solicitação de primeiro dia útil a partir de outubro.
 - [x] Preservar o padrão visual do Digital Check e o conteúdo original das evidências.
 - [x] Revisar legibilidade, ordem da seção e apresentar a versão atualizada.
+
+## Entrega contratada versus realizada — Webmotors e Mercado Livre
+
+- [x] Confirmar nas fontes oficiais a meta de 883 Leads da Webmotors e registrar que o PI do Mercado Livre não especifica meta contratada de Leads.
+- [x] Reconciliar os Leads entregues de Webmotors e Mercado Livre com a base canônica do dashboard.
+- [x] Verificar as evidências disponíveis de entrega; manter os prints Mídia360 e de veiculação e acrescentar as capturas reais da fonte oficial.
+- [x] Abrir a fonte oficial, filtrar Webmotors e Mercado Livre e produzir capturas reais da planilha, ocultando somente dados pessoais.
+- [x] Não usar tabelas, prints simulados ou imagens recriadas como evidência da base.
+- [x] Inserir contratado, entregue, diferença e percentual de entrega quando existe meta contratada comprovada.
+- [x] Adicionar as novas evidências preservando o padrão visual do Digital Check.
+- [x] Revisar metodologia, privacidade, valores, legibilidade e apresentar a versão final.
