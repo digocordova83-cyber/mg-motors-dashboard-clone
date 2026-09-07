@@ -3108,3 +3108,10 @@
 - [x] Aplicar a substituição transacional da base canônica de Leads.
 - [x] Reexecutar a rotina para comprovar idempotência e registrar totais por data e origem.
 - [x] Salvar checkpoint e comunicar o resultado da atualização.
+
+## Atualização exclusiva de vendas — relatório de 04/09/2026
+
+- [x] Validar o Daily Sales Planning Report e o lote de vendas mais recente.
+- [x] Importar a tabela Weekly Target Achievement — Retail pelo fluxo oficial.
+- [x] Reconciliar concessionárias, totais e reprocessamento idempotente.
+- [x] Salvar checkpoint e comunicar o resultado da atualização de vendas.
