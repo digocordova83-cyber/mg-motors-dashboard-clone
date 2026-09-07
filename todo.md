@@ -3101,3 +3101,10 @@
 - [x] Exibir separadamente a frente de publicidade e a frente de geração de Leads, sem somar métricas incompatíveis.
 - [x] Preservar o novo PI, o valor líquido de R$ 76.800,00 e todos os demais slides.
 - [x] Revisar legibilidade, números e ordem da seção antes de apresentar a versão final.
+
+## Atualização exclusiva de Leads — até ontem
+
+- [x] Executar a prévia oficial e validar a cobertura até o último dia fechado.
+- [x] Aplicar a substituição transacional da base canônica de Leads.
+- [x] Reexecutar a rotina para comprovar idempotência e registrar totais por data e origem.
+- [x] Salvar checkpoint e comunicar o resultado da atualização.
