@@ -3130,3 +3130,10 @@
 - [x] Redigir aprendizados, limitações de mensuração, riscos e plano de ação priorizado.
 - [x] Diagramar, compilar e verificar o relatório PDF profissional.
 - [x] Entregar o PDF com metodologia e ressalvas de fontes.
+
+## Revisão do relatório executivo — CPM e CPL por etapa de funil
+
+- [x] Reconciliar a classificação de topo, meio e fundo com as métricas efetivamente disponíveis.
+- [x] Corrigir a redação do relatório e detalhar CPM e CPL por etapa, sem inventar atribuição.
+- [x] Recompilar, verificar e revisar visualmente o PDF revisado.
+- [x] Entregar a versão revisada do PDF com as ressalvas metodológicas.
