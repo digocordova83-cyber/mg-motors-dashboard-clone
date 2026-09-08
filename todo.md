@@ -3151,4 +3151,4 @@
 - [x] Diferenciar explicitamente TikTok Ads de TikTok Orgânico e apresentar conexão pendente sem simular métricas.
 - [x] Cobrir normalização, comparativos, estados de ausência, idioma e seleção de mídia com testes Vitest.
 - [x] Validar dados reais, tipagem, suíte de testes, build e layout responsivo antes de salvar o checkpoint.
-- [ ] Entregar a nova área de Social Orgânico e seu checkpoint.
+- [x] Entregar a nova área de Social Orgânico e seu checkpoint.
