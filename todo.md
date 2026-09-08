@@ -3159,4 +3159,4 @@
 - [x] Ajustar thumbnails dos conteúdos para preservar a imagem inteira, sem recorte ou distorção, em desktop e mobile.
 - [x] Atualizar os testes de interface para refletir a visualização exclusiva do Instagram.
 - [x] Validar tipagem, testes, build e responsividade antes do checkpoint.
-- [ ] Entregar o ajuste de thumbnails e visibilidade em novo checkpoint.
+- [x] Entregar o ajuste de thumbnails e visibilidade em novo checkpoint.
