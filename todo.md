@@ -3122,3 +3122,11 @@
 - [x] Ocultar TikTok, TikTok Live, Interlagos e UOL somente da visualização e dos totais de setembro.
 - [x] Preservar os registros e a exibição integral dos canais no histórico e nas demais competências.
 - [x] Validar totais, testes e layout antes de salvar o checkpoint.
+
+## Relatório executivo MG Motors — resultados, custos e planejamento
+
+- [x] Inventariar fontes, períodos, métricas, custos e evidências auditáveis disponíveis.
+- [x] Reconciliar resultados de mídia, Leads, vendas, custos realizados e planos aprovados.
+- [x] Redigir aprendizados, limitações de mensuração, riscos e plano de ação priorizado.
+- [x] Diagramar, compilar e verificar o relatório PDF profissional.
+- [ ] Entregar o PDF com metodologia e ressalvas de fontes.
