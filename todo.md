@@ -3115,3 +3115,10 @@
 - [x] Importar a tabela Weekly Target Achievement — Retail pelo fluxo oficial.
 - [x] Reconciliar concessionárias, totais e reprocessamento idempotente.
 - [x] Salvar checkpoint e comunicar o resultado da atualização de vendas.
+
+## Exclusão visual de canais — setembro de 2026
+
+- [x] Mapear métricas, gráficos e tabelas de Leads afetados na competência de setembro.
+- [x] Ocultar TikTok, TikTok Live, Interlagos e UOL somente da visualização e dos totais de setembro.
+- [x] Preservar os registros e a exibição integral dos canais no histórico e nas demais competências.
+- [x] Validar totais, testes e layout antes de salvar o checkpoint.

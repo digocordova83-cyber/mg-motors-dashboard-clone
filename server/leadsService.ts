@@ -21,15 +21,27 @@ import {
 
 const MAX_ANALYTICS_RANGE_DAYS = 370;
 export const UOL_LEAD_CHANNEL_LAST_ACTIVE_DATE = "2026-07-31";
+export const SEPTEMBER_HIDDEN_LEAD_CHANNELS = ["TIKTOK", "TIKTOK LIVE", "INTERLAGOS"] as const;
+export const SEPTEMBER_LEAD_CHANNEL_HIDE_FROM = "2026-09-01";
 
 export function isLeadChannelActiveOnDate(channel: string, date: string): boolean {
-  return channel.trim().toLocaleUpperCase("pt-BR") !== "UOL" || date <= UOL_LEAD_CHANNEL_LAST_ACTIVE_DATE;
+  const normalizedChannel = channel.trim().toLocaleUpperCase("pt-BR");
+  if (normalizedChannel === "UOL") return date <= UOL_LEAD_CHANNEL_LAST_ACTIVE_DATE;
+  return !(
+    SEPTEMBER_HIDDEN_LEAD_CHANNELS.includes(
+      normalizedChannel as (typeof SEPTEMBER_HIDDEN_LEAD_CHANNELS)[number],
+    ) && date >= SEPTEMBER_LEAD_CHANNEL_HIDE_FROM
+  );
 }
 
-export function filterLeadRowsByChannelLifecycle<T extends Pick<LeadAnalyticsRow, "channel" | "correctedDate">>(
+export function filterLeadRowsByChannelLifecycle<
+  T extends Pick<LeadAnalyticsRow, "channel" | "correctedDate"> & Partial<Pick<LeadAnalyticsRow, "sourceChannel">>,
+>(
   rows: T[],
 ): T[] {
-  return rows.filter(row => isLeadChannelActiveOnDate(row.channel, row.correctedDate));
+  return rows.filter(row =>
+    isLeadChannelActiveOnDate(resolveLeadReportingChannel(row), row.correctedDate),
+  );
 }
 
 export function filterExpectedLeadChannelsByDate(channels: string[], date: string): string[] {
