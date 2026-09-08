@@ -3167,4 +3167,4 @@
 - [x] Identificar o perfil e as permissões efetivas do usuário Daniel.
 - [x] Criar ou alinhar o usuário `bbro` com as mesmas permissões de Daniel, armazenando a senha de forma segura.
 - [x] Validar autenticação e autorização do novo acesso sem registrar a senha em logs ou documentação.
-- [ ] Executar testes, revisar o checklist e salvar o checkpoint da alteração.
+- [x] Executar testes, revisar o checklist e salvar o checkpoint da alteração.
