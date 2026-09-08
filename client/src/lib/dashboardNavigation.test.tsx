@@ -28,6 +28,26 @@ describe("navegação modular do dashboard", () => {
     });
   });
 
+  it("resolve Social Orgânico como módulo próprio sem subaba", () => {
+    expect(resolveDashboardRoute("?module=social-organic")).toEqual({
+      module: "social-organic",
+      googleTab: "overview",
+    });
+
+    expect(
+      params(
+        buildDashboardSearch(
+          "?tab=history&campaign=123",
+          "social-organic",
+          "history",
+        ),
+      ),
+    ).toEqual({
+      campaign: "123",
+      module: "social-organic",
+    });
+  });
+
   it("resolve o histórico administrativo como módulo próprio sem subaba", () => {
     expect(resolveDashboardRoute("?module=access-history&tab=history")).toEqual({
       module: "access-history",

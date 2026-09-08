@@ -3137,3 +3137,18 @@
 - [x] Corrigir a redação do relatório e detalhar CPM e CPL por etapa, sem inventar atribuição.
 - [x] Recompilar, verificar e revisar visualmente o PDF revisado.
 - [x] Entregar a versão revisada do PDF com as ressalvas metodológicas.
+
+## Módulo — Social Orgânico via Windsor.ai
+
+- [x] Inspecionar a configuração Windsor e mapear contas, dimensões e métricas disponíveis para Instagram e TikTok orgânicos da MG.
+- [x] Definir contrato de dados que compare período selecionado e período anterior equivalente, sem gerar estimativas quando uma métrica não for disponibilizada.
+- [x] Criar módulo `Social Orgânico` no padrão visual do dashboard, com subabas separadas para Instagram e TikTok.
+- [x] Exibir crescimento de seguidores, alcance, impressões, engajamentos, taxa de engajamento e evolução diária quando fornecidos pela origem.
+- [x] Exibir variações absolutas e percentuais contra o período anterior equivalente, incluindo estados de indisponibilidade auditáveis.
+- [x] Exibir ranking de conteúdos por alcance e engajamento, com thumbnail somente quando a fonte disponibilizar URL válida.
+- [x] Traduzir integralmente o módulo para inglês conforme a preferência de idioma do usuário autenticado.
+- [x] Adicionar leitura Max com decomposição de interações, taxa de engajamento declarada, insights determinísticos e ressalvas sobre alcance diário não deduplicado.
+- [x] Diferenciar explicitamente TikTok Ads de TikTok Orgânico e apresentar conexão pendente sem simular métricas.
+- [x] Cobrir normalização, comparativos, estados de ausência, idioma e seleção de mídia com testes Vitest.
+- [x] Validar dados reais, tipagem, suíte de testes, build e layout responsivo antes de salvar o checkpoint.
+- [ ] Entregar a nova área de Social Orgânico e seu checkpoint.

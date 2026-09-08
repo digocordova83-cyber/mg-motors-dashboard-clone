@@ -62,6 +62,10 @@ import { loadMetaCreativeInventory } from "./metaCreativeInventory";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import { getTikTokAdsBounds, loadTikTokAdsData } from "./tiktokAdsService";
 import {
+  getSocialOrganicBounds,
+  loadSocialOrganicData,
+} from "./socialOrganicService";
+import {
   getWeeklySalesImportHistory,
   getWeeklySalesMetrics,
   importWeeklySalesCsv,
@@ -92,6 +96,7 @@ function createPermissionProcedure(permission: keyof DashboardPermissions) {
 const googleAdsProcedure = createPermissionProcedure("canAccessGoogleAds");
 const metaAdsProcedure = createPermissionProcedure("canAccessMetaAds");
 const tiktokAdsProcedure = createPermissionProcedure("canAccessMetaAds");
+const socialOrganicProcedure = createPermissionProcedure("canAccessMetaAds");
 const leadsProcedure = createPermissionProcedure("canAccessLeads");
 const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations");
 const historyProcedure = createPermissionProcedure("canAccessHistory");
@@ -500,6 +505,17 @@ export const appRouter = router({
       .input(dashboardPeriodSchema)
       .mutation(({ input }) =>
         loadTikTokAdsData(input.dateFrom, input.dateTo, { forceRefresh: true }),
+      ),
+  }),
+  socialOrganic: router({
+    bounds: socialOrganicProcedure.query(() => getSocialOrganicBounds()),
+    data: socialOrganicProcedure
+      .input(dashboardPeriodSchema)
+      .query(({ input }) => loadSocialOrganicData(input.dateFrom, input.dateTo)),
+    refresh: socialOrganicProcedure
+      .input(dashboardPeriodSchema)
+      .mutation(({ input }) =>
+        loadSocialOrganicData(input.dateFrom, input.dateTo, { forceRefresh: true }),
       ),
   }),
   dashboard: router({
