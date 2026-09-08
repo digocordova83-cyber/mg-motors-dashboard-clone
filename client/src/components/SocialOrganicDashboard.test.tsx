@@ -41,14 +41,13 @@ describe("interface Social Orgânico", () => {
     ).toBe("Percentage comparison unavailable");
   });
 
-  it("separa Instagram e TikTok e não reutiliza métricas de TikTok Ads", () => {
+  it("mantém somente Instagram visível sem reutilizar métricas de TikTok Ads", () => {
     const source = readFileSync(
       new URL("./SocialOrganicDashboard.tsx", import.meta.url),
       "utf8",
     );
-    expect(source).toContain('type Platform = "instagram" | "tiktok"');
-    expect(source).toContain("Connect TikTok Organic");
-    expect(source).toContain("dados pagos não são apresentados como orgânicos");
+    expect(source).toContain('data-testid="social-organic-platform-instagram"');
+    expect(source).not.toContain('data-testid="social-organic-platform-tiktok"');
     expect(source).not.toContain("trpc.tiktokAds.data");
   });
 
@@ -60,6 +59,8 @@ describe("interface Social Orgânico", () => {
     expect(source).toContain('type ContentSort = "reach" | "engagements"');
     expect(source).toContain("content.thumbnailUrl");
     expect(source).toContain("onError={() => setFailed(true)}");
+    expect(source).toContain("object-contain");
+    expect(source).not.toContain("object-cover");
     expect(source).toContain("Miniatura indisponível");
   });
 });

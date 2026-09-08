@@ -16,7 +16,6 @@ import {
   Instagram,
   Loader2,
   MessageCircle,
-  Music2,
   RefreshCcw,
   Share2,
   Sparkles,
@@ -44,7 +43,6 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type SocialOrganicData = RouterOutputs["socialOrganic"]["data"];
 type Content = SocialOrganicData["contents"][number];
 type Locale = "pt-BR" | "en-US";
-type Platform = "instagram" | "tiktok";
 type ContentSort = "reach" | "engagements";
 
 type Props = {
@@ -268,23 +266,13 @@ function OrganicTooltip({ active, payload, label, locale }: { active?: boolean; 
 
 function ContentImage({ content, alt, unavailable }: { content: Content; alt: string; unavailable: string }) {
   const [failed, setFailed] = useState(false);
-  if (!content.thumbnailUrl || failed) return <div className="grid h-[180px] place-items-center bg-[#090f19] text-center"><div><ImageIcon className="mx-auto h-8 w-8 text-slate-700" /><p className="mt-2 text-[9px] text-slate-700">{unavailable}</p></div></div>;
-  return <img src={content.thumbnailUrl} alt={alt} loading="lazy" onError={() => setFailed(true)} className="h-[180px] w-full object-cover" />;
-}
-
-function TikTokPending({ locale, connectUrl }: { locale: Locale; connectUrl: string }) {
-  const t = SOCIAL_ORGANIC_COPY[locale];
-  return (
-    <div className="grid min-h-[590px] place-items-center rounded-2xl border border-[#1d2737] bg-[#0d1421] px-5 py-14 text-center">
-      <div className="max-w-2xl"><span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] text-cyan-300"><Music2 className="h-8 w-8" /></span><p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-400">TikTok Organic • Windsor.ai</p><h2 className="mt-2 text-xl font-semibold text-white">{t.tiktokPending}</h2><p className="mx-auto mt-3 max-w-xl text-xs leading-6 text-slate-500">{t.tiktokPendingDescription}</p><div className="mx-auto mt-6 max-w-xl rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-4 py-3 text-left text-[10px] leading-5 text-amber-100/70"><AlertTriangle className="mr-2 inline h-3.5 w-3.5 text-amber-400" />{t.afterConnection}</div><a href={connectUrl} target="_blank" rel="noreferrer" className="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-cyan-500 px-5 text-xs font-semibold text-[#071016] transition-colors hover:bg-cyan-400 active:scale-[0.97]">{t.connectTikTok}<ExternalLink className="ml-2 h-4 w-4" /></a></div>
-    </div>
-  );
+  if (!content.thumbnailUrl || failed) return <div className="grid h-[220px] place-items-center bg-[#070c14] text-center"><div><ImageIcon className="mx-auto h-8 w-8 text-slate-700" /><p className="mt-2 text-[9px] text-slate-700">{unavailable}</p></div></div>;
+  return <div className="flex h-[220px] w-full items-center justify-center bg-[#070c14] p-2"><img src={content.thumbnailUrl} alt={alt} loading="lazy" onError={() => setFailed(true)} className="max-h-full max-w-full object-contain" /></div>;
 }
 
 export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props) {
   const t = SOCIAL_ORGANIC_COPY[locale];
   const utils = trpc.useUtils();
-  const [platform, setPlatform] = useState<Platform>("instagram");
   const [dateFrom, setDateFrom] = useState(FALLBACK_FROM);
   const [dateTo, setDateTo] = useState(FALLBACK_TO);
   const [preset, setPreset] = useState("30");
@@ -367,7 +355,7 @@ export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props)
       <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div><div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]"><Share2 className="h-3.5 w-3.5" />{t.eyebrow}</div><h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{t.title}</h1><p className="mt-1 max-w-3xl text-[11px] leading-5 text-slate-600">{t.subtitle}</p></div>
         <div className="flex flex-col gap-2 xl:items-end">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center"><div className="flex gap-1 rounded-lg border border-[#242f42] bg-[#0d1421] p-1">{(["instagram", "tiktok"] as Platform[]).map(item => { const Icon = item === "instagram" ? Instagram : Music2; return <button key={item} data-testid={`social-organic-platform-${item}`} type="button" onClick={() => setPlatform(item)} className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${platform === item ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}><Icon className="h-3.5 w-3.5" />{item === "instagram" ? t.instagram : t.tiktok}</button>; })}</div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center"><div data-testid="social-organic-platform-instagram" className="flex items-center gap-2 rounded-lg border border-[#e2212d]/40 bg-[#e2212d] px-3 py-2 text-[10px] font-semibold text-white"><Instagram className="h-3.5 w-3.5" />{t.instagram}</div>
             <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-[#242f42] bg-[#0d1421] p-1">{["7", "14", "30", "60"].map(value => <button key={value} type="button" onClick={() => applyPreset(value)} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold ${preset === value ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{value}d</button>)}<button type="button" onClick={() => applyPreset("month")} className={`rounded-md px-3 py-1.5 text-[10px] font-semibold ${preset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{t.month}</button></div>
             <div className="flex items-stretch rounded-lg border border-[#242f42] bg-[#0d1421]"><div className="flex cursor-pointer items-center gap-2 rounded-l-lg px-3 py-1.5 hover:bg-white/[0.03]" onClick={() => openNativeDatePicker(dateFromRef.current)}><CalendarDays className="h-3.5 w-3.5 text-slate-600" /><input ref={dateFromRef} aria-label={`${t.period} start`} type="date" min={bounds.data?.earliestDate} max={dateTo} value={dateFrom} onChange={event => updateFrom(event.target.value)} className="w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /></div><span className="flex items-center text-slate-700">—</span><div className="flex cursor-pointer items-center rounded-r-lg px-3 py-1.5 hover:bg-white/[0.03]" onClick={() => openNativeDatePicker(dateToRef.current)}><input ref={dateToRef} aria-label={`${t.period} end`} type="date" min={dateFrom} max={latestSelectableDate} value={dateTo} onChange={event => updateTo(event.target.value)} className="w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /></div></div>
             <Button variant="outline" size="sm" onClick={() => refresh.mutate(queryInput)} disabled={refresh.isPending} className="h-8 border-[#283349] bg-[#111827] text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><RefreshCcw className={`mr-1.5 h-3.5 w-3.5 ${refresh.isPending ? "animate-spin" : ""}`} />{t.refresh}</Button>
@@ -376,7 +364,7 @@ export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props)
         </div>
       </div>
 
-      {platform === "tiktok" ? <TikTokPending locale={locale} connectUrl={data.connection.tiktok.connectUrl} /> : <>
+      <>
         <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{metrics.map(metric => <MetricCard key={metric.title} {...metric} locale={locale} />)}</div>
         <div className="mb-4 flex items-start gap-2 rounded-xl border border-sky-500/15 bg-sky-500/[0.04] px-4 py-3 text-[10px] leading-5 text-sky-100/65"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />{t.dailyReachNote}</div>
 
@@ -396,7 +384,7 @@ export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props)
           <div className="flex flex-wrap items-center gap-4 border-b border-[#1b2535] bg-[#0a101b] px-4 py-3 text-[9px] text-slate-600"><span><strong className="text-slate-300">{formatNumber(data.contentComparison.published.current ?? 0, locale)}</strong> {t.published}</span><Delta comparison={data.contentComparison.published} locale={locale} /></div>
           {rankedContents.length ? <div className="grid gap-px bg-[#1b2535] sm:grid-cols-2 xl:grid-cols-4">{rankedContents.map((content, index) => <article key={content.id} className="min-w-0 bg-[#0d1421]"><div className="relative"><ContentImage content={content} alt={`${t.instagram} #${index + 1}`} unavailable={t.imageUnavailable} /><span className="absolute left-3 top-3 rounded-md border border-white/10 bg-[#080d16]/85 px-2 py-1 text-[9px] font-bold text-white backdrop-blur">#{index + 1}</span><span className="absolute right-3 top-3 rounded-md border border-white/10 bg-[#080d16]/85 px-2 py-1 text-[8px] font-semibold text-slate-300 backdrop-blur">{content.type}</span></div><div className="p-4"><p className="line-clamp-3 min-h-[60px] text-[11px] leading-5 text-slate-300">{content.caption || `${t.instagram} • ${content.type}`}</p><div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-[#090f19] p-3 text-center"><div><p className="text-[8px] text-slate-700">{t.reach}</p><p className="mt-1 text-[10px] font-semibold text-emerald-300">{formatNumber(content.reach, locale)}</p></div><div><p className="text-[8px] text-slate-700">{t.engagement}</p><p className="mt-1 text-[10px] font-semibold text-rose-300">{formatNumber(content.engagements, locale)}</p></div><div><p className="text-[8px] text-slate-700">ER</p><p className="mt-1 text-[10px] font-semibold text-amber-300">{content.engagementRate == null ? "—" : formatPercent(content.engagementRate, locale)}</p></div></div><div className="mt-3 flex items-center justify-between gap-3"><span className="text-[9px] text-slate-700">{content.timestamp ? new Date(content.timestamp).toLocaleDateString(locale) : "—"}</span>{content.permalink ? <a href={content.permalink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[9px] font-semibold text-sky-400 hover:text-sky-300">{t.openPost}<ExternalLink className="h-3 w-3" /></a> : null}</div></div></article>)}</div> : <div className="grid min-h-[260px] place-items-center text-xs text-slate-600">{t.emptyTitle}</div>}
         </Panel>
-      </>}
+      </>
     </main>
   );
 }

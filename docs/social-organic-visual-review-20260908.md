@@ -19,3 +19,9 @@ A versão mobile foi revisada em 390 px. Os filtros mantêm rolagem interna, os 
 ## Resultado
 
 As três vistas de risco — Instagram desktop, TikTok pendente desktop e Instagram mobile — foram aprovadas. As capturas ficam armazenadas na pasta local de revisão visual do projeto e não integram o pacote de produção.
+
+## Revisão adicional — thumbnails sem recorte
+
+Após solicitação do usuário, a área de imagem dos cards foi ampliada para 220 px e alterada de preenchimento com corte para encaixe proporcional integral. A revisão autenticada confirmou que imagens verticais, quadradas e horizontais agora aparecem completas, centralizadas e sem distorção; as áreas excedentes utilizam o fundo escuro do card.
+
+Em desktop, os oito conteúdos permanecem alinhados no grid de quatro colunas. Em mobile, o grid passa para uma coluna, preserva as imagens completas e não apresenta overflow horizontal. A subaba TikTok deixou de ser exibida; somente o indicador Instagram permanece visível, enquanto a preparação técnica do conector continua preservada no servidor para futura reativação.

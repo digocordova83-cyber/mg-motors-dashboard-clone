@@ -3152,3 +3152,11 @@
 - [x] Cobrir normalização, comparativos, estados de ausência, idioma e seleção de mídia com testes Vitest.
 - [x] Validar dados reais, tipagem, suíte de testes, build e layout responsivo antes de salvar o checkpoint.
 - [x] Entregar a nova área de Social Orgânico e seu checkpoint.
+
+## Ajustes — Social Orgânico
+
+- [x] Ocultar temporariamente a subaba TikTok e manter somente o Instagram visível até a conexão orgânica estar disponível.
+- [x] Ajustar thumbnails dos conteúdos para preservar a imagem inteira, sem recorte ou distorção, em desktop e mobile.
+- [x] Atualizar os testes de interface para refletir a visualização exclusiva do Instagram.
+- [x] Validar tipagem, testes, build e responsividade antes do checkpoint.
+- [ ] Entregar o ajuste de thumbnails e visibilidade em novo checkpoint.
