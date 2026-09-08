@@ -3129,4 +3129,4 @@
 - [x] Reconciliar resultados de mídia, Leads, vendas, custos realizados e planos aprovados.
 - [x] Redigir aprendizados, limitações de mensuração, riscos e plano de ação priorizado.
 - [x] Diagramar, compilar e verificar o relatório PDF profissional.
-- [ ] Entregar o PDF com metodologia e ressalvas de fontes.
+- [x] Entregar o PDF com metodologia e ressalvas de fontes.
