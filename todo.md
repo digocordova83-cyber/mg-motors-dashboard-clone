@@ -3160,3 +3160,11 @@
 - [x] Atualizar os testes de interface para refletir a visualização exclusiva do Instagram.
 - [x] Validar tipagem, testes, build e responsividade antes do checkpoint.
 - [x] Entregar o ajuste de thumbnails e visibilidade em novo checkpoint.
+
+## Acesso — Usuário BBRO
+
+- [x] Verificar se o usuário `bbro` já existe sem expor dados sensíveis.
+- [x] Identificar o perfil e as permissões efetivas do usuário Daniel.
+- [x] Criar ou alinhar o usuário `bbro` com as mesmas permissões de Daniel, armazenando a senha de forma segura.
+- [x] Validar autenticação e autorização do novo acesso sem registrar a senha em logs ou documentação.
+- [ ] Executar testes, revisar o checklist e salvar o checkpoint da alteração.
