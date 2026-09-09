@@ -12,14 +12,16 @@ describe("interface Social Orgânico", () => {
       currentFollowers: "Seguidores atuais",
       newFollowers: "Novos seguidores",
       contentTitle: "Conteúdos em destaque",
-      tiktokPending: "TikTok Orgânico ainda não está conectado",
+      netFollowerGrowth: "Crescimento líquido",
+      videoTitle: "Vídeos em destaque",
     });
     expect(SOCIAL_ORGANIC_COPY["en-US"]).toMatchObject({
       title: "Community and Content Intelligence",
       currentFollowers: "Current followers",
       newFollowers: "New followers",
       contentTitle: "Top content",
-      tiktokPending: "TikTok Organic is not connected yet",
+      netFollowerGrowth: "Net follower growth",
+      videoTitle: "Top videos",
     });
   });
 
@@ -41,13 +43,15 @@ describe("interface Social Orgânico", () => {
     ).toBe("Percentage comparison unavailable");
   });
 
-  it("mantém somente Instagram visível sem reutilizar métricas de TikTok Ads", () => {
+  it("exibe Instagram e TikTok Orgânico sem reutilizar métricas de TikTok Ads", () => {
     const source = readFileSync(
       new URL("./SocialOrganicDashboard.tsx", import.meta.url),
       "utf8",
     );
     expect(source).toContain('data-testid="social-organic-platform-instagram"');
-    expect(source).not.toContain('data-testid="social-organic-platform-tiktok"');
+    expect(source).toContain('data-testid="social-organic-platform-tiktok"');
+    expect(source).toContain('setPlatform("tiktok")');
+    expect(source).toContain("videoUnavailableDescription");
     expect(source).not.toContain("trpc.tiktokAds.data");
   });
 

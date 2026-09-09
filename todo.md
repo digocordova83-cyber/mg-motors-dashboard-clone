@@ -3168,3 +3168,16 @@
 - [x] Criar ou alinhar o usuário `bbro` com as mesmas permissões de Daniel, armazenando a senha de forma segura.
 - [x] Validar autenticação e autorização do novo acesso sem registrar a senha em logs ou documentação.
 - [x] Executar testes, revisar o checklist e salvar o checkpoint da alteração.
+
+## Reativação — TikTok Orgânico via Windsor
+
+- [x] Confirmar a nova conta TikTok Orgânico conectada e seus identificadores no Windsor.
+- [x] Auditar os campos reais disponíveis para seguidores, alcance, visualizações, engajamento, conteúdos, URLs e thumbnails.
+- [x] Validar cobertura temporal, granularidade e limitações da fonte sem usar dados de TikTok Ads.
+- [x] Atualizar o serviço para consultar e comparar períodos equivalentes do TikTok Orgânico.
+- [x] Normalizar KPIs e ranking de conteúdos sem inventar métricas indisponíveis.
+- [x] Reativar a subaba TikTok no Social Orgânico em português e inglês.
+- [x] Exibir thumbnails completas sem recorte quando a fonte fornecer mídia válida.
+- [x] Atualizar testes de serviço, interface, navegação e separação entre orgânico e mídia paga.
+- [x] Validar dados reais, desktop, mobile, tipagem, suíte completa e build.
+- [ ] Atualizar a documentação de fonte e salvar o checkpoint final.

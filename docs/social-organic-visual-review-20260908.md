@@ -8,9 +8,11 @@ As miniaturas de imagens, carrosséis e Reels foram exibidas corretamente usando
 
 O intervalo atual apresentou dados reais, enquanto novos seguidores do período anterior permaneceram explicitamente sem comparação percentual por causa da limitação de histórico do Instagram. Alcance, visualizações, interações e taxa de engajamento exibiram comparativos equivalentes normalmente.
 
-## TikTok Orgânico pendente
+## TikTok Orgânico conectado
 
-O estado pendente foi revisado em desktop. A subaba identifica explicitamente `TikTok Organic • Windsor.ai`, explica que a conta disponível hoje é TikTok Ads e informa que dados pagos não foram apresentados como orgânicos. O botão de conexão fica destacado, sem incluir números simulados ou substituir a origem correta.
+A subaba TikTok foi reativada após a conexão de `tiktok_organic` no Windsor. A revisão autenticada confirmou seguidores atuais, crescimento líquido, alcance diário somado, visualizações, interações, taxa de engajamento, comparativos equivalentes, séries diárias e destaques determinísticos. O módulo permanece totalmente separado de TikTok Ads.
+
+O Windsor ainda não retorna linhas válidas por vídeo. Por isso, o painel de vídeos informa a limitação da fonte e não fabrica ranking, links ou thumbnails. A interface está preparada para exibir as miniaturas completas assim que `video_id` e `video_thumbnail_url` forem fornecidos.
 
 ## Instagram mobile
 
@@ -18,10 +20,10 @@ A versão mobile foi revisada em 390 px. Os filtros mantêm rolagem interna, os 
 
 ## Resultado
 
-As três vistas de risco — Instagram desktop, TikTok pendente desktop e Instagram mobile — foram aprovadas. As capturas ficam armazenadas na pasta local de revisão visual do projeto e não integram o pacote de produção.
+As vistas de risco — Instagram desktop/mobile e TikTok Orgânico desktop/mobile — foram aprovadas. As capturas foram movidas para fora do projeto e não integram o pacote de produção.
 
 ## Revisão adicional — thumbnails sem recorte
 
 Após solicitação do usuário, a área de imagem dos cards foi ampliada para 220 px e alterada de preenchimento com corte para encaixe proporcional integral. A revisão autenticada confirmou que imagens verticais, quadradas e horizontais agora aparecem completas, centralizadas e sem distorção; as áreas excedentes utilizam o fundo escuro do card.
 
-Em desktop, os oito conteúdos permanecem alinhados no grid de quatro colunas. Em mobile, o grid passa para uma coluna, preserva as imagens completas e não apresenta overflow horizontal. A subaba TikTok deixou de ser exibida; somente o indicador Instagram permanece visível, enquanto a preparação técnica do conector continua preservada no servidor para futura reativação.
+Em desktop, os oito conteúdos do Instagram permanecem alinhados no grid de quatro colunas. Em mobile, o grid passa para uma coluna, preserva as imagens completas e não apresenta overflow horizontal. A subaba TikTok voltou a ser exibida e usa o mesmo componente de imagem proporcional; o ranking permanecerá vazio até a origem fornecer vídeos válidos.

@@ -19,16 +19,24 @@ Data de verificação: 08/09/2026. Corte operacional do dashboard: D-1.
 
 ## TikTok
 
-- O conector atualmente ligado à MG é `tiktok`, correspondente a TikTok Ads, conta `7668787778449719316`.
-- O conector correto para métricas orgânicas é `tiktok_organic` e não possui conta conectada no momento da auditoria.
-- O Windsor retornou erro explícito de ausência de conta ao consultar os campos de `tiktok_organic`.
-- Fluxo oficial de autorização informado pelo Windsor: `https://onboard.windsor.ai/connect?connector=tiktok_organic&next=/tiktok_organic/authorize`.
-- A interface deve exibir estado de conexão pendente e nunca apresentar TikTok Ads como se fosse TikTok Orgânico.
+- Nova verificação: 08/09/2026, após a sincronização informada pelo usuário.
+- O conector `tiktok_organic` passou a retornar a conta `MG Motor Brasil`, identificador `_000Yp1HuE6qKa98yQHXTVpA29y_auJ0C49W`.
+- O conector pago permanece separado como `tiktok`, conta `7668787778449719316`. Nenhum dado de TikTok Ads é reutilizado no módulo orgânico.
+- Endpoint REST validado para a aplicação: `https://connectors.windsor.ai/tiktok_organic`.
+- Campos diários confirmados: `date`, `total_followers_count`, `daily_total_followers`, `followers_count`, `daily_lost_followers`, `unique_video_views`, `video_views`, `engaged_audience`, `likes`, `comments`, `shares`, `profile_views` e `bio_link_clicks`.
+- Semântica de seguidores: `daily_total_followers` representa crescimento líquido diário; `followers_count` representa ganhos e `daily_lost_followers` representa perdas. O dashboard usa `daily_total_followers` no comparativo para não rotular ganhos brutos como crescimento.
+- Semântica de alcance: `unique_video_views` é a audiência diária alcançada. A soma no período é exibida como alcance diário somado, não como alcance único deduplicado do intervalo.
+- Interações: o total diário é calculado exclusivamente como curtidas + comentários + compartilhamentos. `engaged_audience` é preservado como audiência engajada, mas não é somado novamente às interações.
+- Perfil: `total_followers_count` e `videos_count` foram confirmados como campos atuais da conta.
+- Campos de vídeo catalogados pelo Windsor: `video_id`, `video_caption`, `video_create_datetime`, `video_views_count`, `video_reach`, `video_likes`, `video_comments`, `video_shares`, `video_favorites`, `video_new_followers`, `video_profile_views`, `video_share_url` e `video_thumbnail_url`, entre outros.
+- Limitação atual: as consultas por vídeo retornaram somente uma linha nula, embora a conta e as métricas diárias estejam disponíveis. Portanto, o dashboard não fabrica ranking nem thumbnails; exibe um estado transparente e está preparado para preencher a seção automaticamente quando o Windsor liberar linhas por vídeo.
+- Validação ao vivo pelo serviço do dashboard, período solicitado 01/09–08/09 com corte D-1 efetivo em 07/09: 117.518 seguidores atuais, crescimento líquido de 266, alcance diário somado de 20.455, 23.819 visualizações, 217 interações e taxa de engajamento de 1,06%. Esses valores são uma verificação técnica pontual e continuarão sendo atualizados pela consulta ao vivo.
 
 ## Decisões de produto
 
 - O módulo terá subabas independentes de Instagram e TikTok.
 - Instagram exibirá dados reais ao vivo, comparando o período selecionado com o período anterior equivalente.
-- TikTok exibirá estado indisponível enquanto `tiktok_organic` não estiver conectado, com orientação bilíngue e sem dados simulados.
+- TikTok exibirá dados reais ao vivo da conta `tiktok_organic`, comparando o período selecionado com o período anterior equivalente.
+- A seção de vídeos do TikTok exibirá ranking e thumbnails somente quando existirem linhas válidas de `video_id`; até lá, mostrará a limitação da fonte sem dados simulados.
 - Taxa de engajamento será calculada como interações divididas por alcance diário somado, com ressalva de que o denominador não é alcance único deduplicado do período.
 - Rankings de conteúdo serão ordenáveis por alcance e engajamento, usando miniatura apenas quando houver URL válida na origem.

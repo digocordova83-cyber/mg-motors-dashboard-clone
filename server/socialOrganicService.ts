@@ -7,10 +7,13 @@ import {
 
 export const INSTAGRAM_ORGANIC_ACCOUNT_ID = "28842093312063059";
 export const INSTAGRAM_ORGANIC_ACCOUNT_NAME = "mgmotorbrasil";
-export const TIKTOK_ORGANIC_CONNECT_URL =
-  "https://onboard.windsor.ai/connect?connector=tiktok_organic&next=/tiktok_organic/authorize";
+export const TIKTOK_ORGANIC_ACCOUNT_ID = "_000Yp1HuE6qKa98yQHXTVpA29y_auJ0C49W";
+export const TIKTOK_ORGANIC_ACCOUNT_NAME = "MG Motor Brasil";
+
+export type SocialOrganicPlatform = "instagram" | "tiktok";
 
 const WINDSOR_INSTAGRAM_API_URL = "https://connectors.windsor.ai/instagram";
+const WINDSOR_TIKTOK_ORGANIC_API_URL = "https://connectors.windsor.ai/tiktok_organic";
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const MAX_ROWS = "100000";
 
@@ -43,6 +46,56 @@ export const INSTAGRAM_ORGANIC_FIELDS = {
     "media_saved",
     "media_shares",
     "media_follows",
+  ],
+} as const;
+
+export const TIKTOK_ORGANIC_FIELDS = {
+  daily: [
+    "account_id",
+    "account_name",
+    "date",
+    "total_followers_count",
+    "daily_total_followers",
+    "followers_count",
+    "daily_lost_followers",
+    "unique_video_views",
+    "video_views",
+    "engaged_audience",
+    "likes",
+    "comments",
+    "shares",
+    "profile_views",
+    "bio_link_clicks",
+  ],
+  profile: [
+    "account_id",
+    "account_name",
+    "username",
+    "display_name",
+    "total_followers_count",
+    "videos_count",
+    "profile_deep_link",
+    "profile_image",
+  ],
+  media: [
+    "account_id",
+    "account_name",
+    "video_id",
+    "video_caption",
+    "video_create_datetime",
+    "video_views_count",
+    "video_reach",
+    "video_likes",
+    "video_comments",
+    "video_shares",
+    "video_favorites",
+    "video_new_followers",
+    "video_profile_views",
+    "video_average_time_watched",
+    "video_full_watched_rate",
+    "video_duration",
+    "video_share_url",
+    "video_thumbnail_url",
   ],
 } as const;
 
@@ -124,6 +177,7 @@ export function resolveSocialOrganicComparisonPeriod(dateFrom: string, dateTo: s
 }
 
 async function fetchWindsorRows(
+  platform: SocialOrganicPlatform,
   fields: readonly string[],
   options: { dateFrom?: string; dateTo?: string },
 ) {
@@ -138,19 +192,22 @@ async function fetchWindsorRows(
   if (options.dateFrom) params.set("date_from", options.dateFrom);
   if (options.dateTo) params.set("date_to", options.dateTo);
 
-  const response = await fetch(`${WINDSOR_INSTAGRAM_API_URL}?${params.toString()}`, {
+  const endpoint =
+    platform === "instagram" ? WINDSOR_INSTAGRAM_API_URL : WINDSOR_TIKTOK_ORGANIC_API_URL;
+  const response = await fetch(`${endpoint}?${params.toString()}`, {
     signal: AbortSignal.timeout(30_000),
     headers: { "User-Agent": "MG-Motors-Dashboard/1.0" },
   });
   if (!response.ok) {
-    throw new Error(`Windsor.ai Instagram respondeu HTTP ${response.status}`);
+    const sourceName = platform === "instagram" ? "Instagram" : "TikTok Orgânico";
+    throw new Error(`Windsor.ai ${sourceName} respondeu HTTP ${response.status}`);
   }
   return rowsFromPayload(await response.json());
 }
 
 async function fetchOptionalFollowerRows(dateFrom: string, dateTo: string) {
   try {
-    return await fetchWindsorRows(INSTAGRAM_ORGANIC_FIELDS.dailyFollowers, {
+    return await fetchWindsorRows("instagram", INSTAGRAM_ORGANIC_FIELDS.dailyFollowers, {
       dateFrom,
       dateTo,
     });
@@ -162,6 +219,75 @@ async function fetchOptionalFollowerRows(dateFrom: string, dateTo: string) {
     });
     return [];
   }
+}
+
+function isWithinPeriod(value: unknown, dateFrom: string, dateTo: string) {
+  const date = stringOrEmpty(value).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= dateFrom && date <= dateTo;
+}
+
+export function normalizeTikTokDailySourceRows(rows: SocialOrganicRawRow[]) {
+  return rows
+    .filter(row => stringOrEmpty(row.account_id) === TIKTOK_ORGANIC_ACCOUNT_ID)
+    .map(row => ({
+      account_id: row.account_id,
+      account_name: row.account_name,
+      date: row.date,
+      follower_count_1d: numberOrZero(row.daily_total_followers),
+      reach_1d: numberOrZero(row.unique_video_views),
+      total_interactions:
+        numberOrZero(row.likes) + numberOrZero(row.comments) + numberOrZero(row.shares),
+      accounts_engaged: numberOrZero(row.engaged_audience),
+      likes: numberOrZero(row.likes),
+      comments: numberOrZero(row.comments),
+      shares: numberOrZero(row.shares),
+      profile_views: numberOrZero(row.profile_views),
+      profile_links_taps: numberOrZero(row.bio_link_clicks),
+      views: numberOrZero(row.video_views),
+    }));
+}
+
+export function normalizeTikTokMediaSourceRows(rows: SocialOrganicRawRow[]) {
+  return rows
+    .filter(
+      row =>
+        stringOrEmpty(row.account_id) === TIKTOK_ORGANIC_ACCOUNT_ID &&
+        Boolean(stringOrEmpty(row.video_id)),
+    )
+    .map(row => ({
+      account_id: row.account_id,
+      media_id: row.video_id,
+      timestamp: row.video_create_datetime,
+      media_caption: row.video_caption,
+      media_type: "VIDEO",
+      media_product_type: "TIKTOK_VIDEO",
+      media_permalink: row.video_share_url,
+      media_thumbnail_url: row.video_thumbnail_url,
+      media_reach: row.video_reach,
+      media_views: row.video_views_count,
+      media_engagement:
+        numberOrZero(row.video_likes) +
+        numberOrZero(row.video_comments) +
+        numberOrZero(row.video_shares) +
+        numberOrZero(row.video_favorites),
+      media_like_count: row.video_likes,
+      media_comments_count: row.video_comments,
+      media_saved: row.video_favorites,
+      media_shares: row.video_shares,
+      media_follows: row.video_new_followers,
+    }));
+}
+
+function normalizeTikTokProfileRows(rows: SocialOrganicRawRow[]) {
+  return rows
+    .filter(row => stringOrEmpty(row.account_id) === TIKTOK_ORGANIC_ACCOUNT_ID)
+    .map(row => ({
+      account_id: row.account_id,
+      account_name: row.account_name,
+      username: row.username || row.display_name || row.account_name,
+      followers_count: row.total_followers_count,
+      media_count: row.videos_count,
+    }));
 }
 
 function mergeDailySourceRows(...groups: SocialOrganicRawRow[][]) {
@@ -178,7 +304,7 @@ function mergeDailySourceRows(...groups: SocialOrganicRawRow[][]) {
   return Array.from(merged.values());
 }
 
-async function fetchLiveBundle(dateFrom: string, dateTo: string) {
+async function fetchInstagramLiveBundle(dateFrom: string, dateTo: string) {
   const comparison = resolveSocialOrganicComparisonPeriod(dateFrom, dateTo);
   const [
     currentCore,
@@ -189,19 +315,19 @@ async function fetchLiveBundle(dateFrom: string, dateTo: string) {
     allPreviousMedia,
     allProfile,
   ] = await Promise.all([
-      fetchWindsorRows(INSTAGRAM_ORGANIC_FIELDS.dailyCore, { dateFrom, dateTo }),
-      fetchWindsorRows(INSTAGRAM_ORGANIC_FIELDS.dailyCore, {
+      fetchWindsorRows("instagram", INSTAGRAM_ORGANIC_FIELDS.dailyCore, { dateFrom, dateTo }),
+      fetchWindsorRows("instagram", INSTAGRAM_ORGANIC_FIELDS.dailyCore, {
         dateFrom: comparison.previousDateFrom,
         dateTo: comparison.previousDateTo,
       }),
       fetchOptionalFollowerRows(dateFrom, dateTo),
       fetchOptionalFollowerRows(comparison.previousDateFrom, comparison.previousDateTo),
-      fetchWindsorRows(INSTAGRAM_ORGANIC_FIELDS.media, { dateFrom, dateTo }),
-      fetchWindsorRows(INSTAGRAM_ORGANIC_FIELDS.media, {
+      fetchWindsorRows("instagram", INSTAGRAM_ORGANIC_FIELDS.media, { dateFrom, dateTo }),
+      fetchWindsorRows("instagram", INSTAGRAM_ORGANIC_FIELDS.media, {
         dateFrom: comparison.previousDateFrom,
         dateTo: comparison.previousDateTo,
       }),
-      fetchWindsorRows(INSTAGRAM_ORGANIC_FIELDS.profile, {}),
+      fetchWindsorRows("instagram", INSTAGRAM_ORGANIC_FIELDS.profile, {}),
     ]);
 
   const allCurrentDaily = mergeDailySourceRows(currentCore, currentFollowers);
@@ -221,12 +347,60 @@ async function fetchLiveBundle(dateFrom: string, dateTo: string) {
   return { currentDaily, previousDaily, currentMedia, previousMedia, profile };
 }
 
+async function fetchTikTokLiveBundle(dateFrom: string, dateTo: string) {
+  const comparison = resolveSocialOrganicComparisonPeriod(dateFrom, dateTo);
+  const [rawCurrentDaily, rawPreviousDaily, rawCurrentMedia, rawPreviousMedia, rawProfile] =
+    await Promise.all([
+      fetchWindsorRows("tiktok", TIKTOK_ORGANIC_FIELDS.daily, { dateFrom, dateTo }),
+      fetchWindsorRows("tiktok", TIKTOK_ORGANIC_FIELDS.daily, {
+        dateFrom: comparison.previousDateFrom,
+        dateTo: comparison.previousDateTo,
+      }),
+      fetchWindsorRows("tiktok", TIKTOK_ORGANIC_FIELDS.media, { dateFrom, dateTo }),
+      fetchWindsorRows("tiktok", TIKTOK_ORGANIC_FIELDS.media, {
+        dateFrom: comparison.previousDateFrom,
+        dateTo: comparison.previousDateTo,
+      }),
+      fetchWindsorRows("tiktok", TIKTOK_ORGANIC_FIELDS.profile, {}),
+    ]);
+
+  const currentDaily = normalizeTikTokDailySourceRows(rawCurrentDaily).filter(row =>
+    isWithinPeriod(row.date, dateFrom, dateTo),
+  );
+  const previousDaily = normalizeTikTokDailySourceRows(rawPreviousDaily).filter(row =>
+    isWithinPeriod(row.date, comparison.previousDateFrom, comparison.previousDateTo),
+  );
+  const currentMedia = normalizeTikTokMediaSourceRows(rawCurrentMedia).filter(row =>
+    isWithinPeriod(row.timestamp, dateFrom, dateTo),
+  );
+  const previousMedia = normalizeTikTokMediaSourceRows(rawPreviousMedia).filter(row =>
+    isWithinPeriod(row.timestamp, comparison.previousDateFrom, comparison.previousDateTo),
+  );
+  const profile = normalizeTikTokProfileRows(rawProfile);
+
+  if (!currentDaily.length) {
+    throw new Error("Windsor.ai não retornou dados orgânicos do TikTok para o período");
+  }
+  return { currentDaily, previousDaily, currentMedia, previousMedia, profile };
+}
+
+async function fetchLiveBundle(
+  platform: SocialOrganicPlatform,
+  dateFrom: string,
+  dateTo: string,
+) {
+  return platform === "instagram"
+    ? fetchInstagramLiveBundle(dateFrom, dateTo)
+    : fetchTikTokLiveBundle(dateFrom, dateTo);
+}
+
 async function loadBundle(
+  platform: SocialOrganicPlatform,
   dateFrom: string,
   dateTo: string,
   options: { forceRefresh?: boolean } = {},
 ): Promise<CacheEntry> {
-  const key = `${dateFrom}:${dateTo}`;
+  const key = `${platform}:${dateFrom}:${dateTo}`;
   const cached = cache.get(key);
   if (!options.forceRefresh && cached && cached.expiresAt > Date.now()) {
     return { ...cached, cacheHit: true };
@@ -237,7 +411,7 @@ async function loadBundle(
   if (pending) return { ...(await pending), cacheHit: true };
 
   const operation = (async (): Promise<CacheEntry> => {
-    const bundle = await fetchLiveBundle(dateFrom, dateTo);
+    const bundle = await fetchLiveBundle(platform, dateFrom, dateTo);
     const entry: CachedEntry = {
       bundle,
       updatedAt: new Date().toISOString(),
@@ -268,6 +442,7 @@ type DailyRow = {
   replies: number;
   reposts: number;
   profileLinkTaps: number;
+  profileViews: number;
   views: number;
   engagementRate: number | null;
 };
@@ -290,6 +465,7 @@ function normalizeDailyRows(rows: SocialOrganicRawRow[]): DailyRow[] {
       replies: 0,
       reposts: 0,
       profileLinkTaps: 0,
+      profileViews: 0,
       views: 0,
     };
     current.newFollowers += numberOrZero(row.follower_count_1d);
@@ -303,6 +479,7 @@ function normalizeDailyRows(rows: SocialOrganicRawRow[]): DailyRow[] {
     current.replies += numberOrZero(row.replies);
     current.reposts += numberOrZero(row.reposts);
     current.profileLinkTaps += numberOrZero(row.profile_links_taps);
+    current.profileViews += numberOrZero(row.profile_views);
     current.views += numberOrZero(row.views);
     daily.set(date, current);
   }
@@ -320,6 +497,7 @@ function normalizeDailyRows(rows: SocialOrganicRawRow[]): DailyRow[] {
       replies: round(row.replies),
       reposts: round(row.reposts),
       profileLinkTaps: round(row.profileLinkTaps),
+      profileViews: round(row.profileViews),
       views: round(row.views),
       engagementRate: safeRate(row.interactions, row.dailyReach),
     }))
@@ -344,6 +522,7 @@ function summarizeDaily(rows: DailyRow[]): PeriodSummary {
       acc.replies += row.replies;
       acc.reposts += row.reposts;
       acc.profileLinkTaps += row.profileLinkTaps;
+      acc.profileViews += row.profileViews;
       acc.views += row.views;
       return acc;
     },
@@ -359,6 +538,7 @@ function summarizeDaily(rows: DailyRow[]): PeriodSummary {
       replies: 0,
       reposts: 0,
       profileLinkTaps: 0,
+      profileViews: 0,
       views: 0,
     },
   );
@@ -442,6 +622,7 @@ function mergePublishedContentInteractions(
   summary: PeriodSummary,
   rows: ReturnType<typeof normalizeOrganicMedia>,
 ): PeriodSummary {
+  if (!rows.length) return summary;
   const contentInteractions = rows.reduce(
     (acc, media) => {
       acc.likes += media.likes;
@@ -466,6 +647,7 @@ export function buildSocialOrganicData(
   metadata: Pick<CacheEntry, "updatedAt" | "cacheHit">,
   dateFrom: string,
   dateTo: string,
+  platform: SocialOrganicPlatform = "instagram",
 ) {
   const comparisonPeriod = resolveSocialOrganicComparisonPeriod(dateFrom, dateTo);
   const daily = normalizeDailyRows(bundle.currentDaily);
@@ -488,18 +670,21 @@ export function buildSocialOrganicData(
   )[0] ?? null;
 
   return {
+    platform,
     connection: {
       instagram: { status: "connected" as const, connector: "instagram" },
       tiktok: {
-        status: "authorization-required" as const,
+        status: "connected" as const,
         connector: "tiktok_organic",
-        connectUrl: TIKTOK_ORGANIC_CONNECT_URL,
-        reason: "TikTok Orgânico ainda não está conectado no Windsor.ai",
       },
     },
     account: {
-      id: stringOrEmpty(profile.account_id) || INSTAGRAM_ORGANIC_ACCOUNT_ID,
-      username: stringOrEmpty(profile.username || profile.account_name) || INSTAGRAM_ORGANIC_ACCOUNT_NAME,
+      id:
+        stringOrEmpty(profile.account_id) ||
+        (platform === "instagram" ? INSTAGRAM_ORGANIC_ACCOUNT_ID : TIKTOK_ORGANIC_ACCOUNT_ID),
+      username:
+        stringOrEmpty(profile.username || profile.account_name) ||
+        (platform === "instagram" ? INSTAGRAM_ORGANIC_ACCOUNT_NAME : TIKTOK_ORGANIC_ACCOUNT_NAME),
       followersCurrent: round(numberOrZero(profile.followers_count)),
       mediaCountCurrent: round(numberOrZero(profile.media_count)),
       timezone: DASHBOARD_TIME_ZONE,
@@ -548,28 +733,36 @@ export function buildSocialOrganicData(
         previousMedia: previousContents.length,
       },
       definitions: {
-        newFollowers: "Novos seguidores reportados por dia; não representa crescimento líquido",
+        newFollowers:
+          platform === "instagram"
+            ? "Novos seguidores reportados por dia; não representa crescimento líquido"
+            : "Crescimento líquido diário de seguidores: ganhos menos perdas, conforme o TikTok",
         dailyReach: "Soma do alcance diário; não representa alcance único deduplicado do período",
         engagementRate: "Interações divididas pela soma do alcance diário",
-        followersCurrent: "Total atual do perfil, sem série histórica disponibilizada pela fonte",
-        interactionMix: "Curtidas, comentários, salvamentos e compartilhamentos dos conteúdos publicados no período",
+        followersCurrent: "Total atual do perfil reportado pela fonte",
+        interactionMix:
+          platform === "instagram"
+            ? "Curtidas, comentários, salvamentos e compartilhamentos dos conteúdos publicados no período"
+            : "Curtidas, comentários e compartilhamentos da série diária; visualizações de perfil reportadas separadamente",
       },
     },
   };
 }
 
 export async function loadSocialOrganicData(
+  platform: SocialOrganicPlatform,
   dateFrom: string,
   dateTo: string,
   options: { forceRefresh?: boolean } = {},
 ) {
   const period = resolveDashboardPeriod(dateFrom, dateTo);
-  const result = await loadBundle(period.dateFrom, period.dateTo, options);
+  const result = await loadBundle(platform, period.dateFrom, period.dateTo, options);
   return buildSocialOrganicData(
     result.bundle,
     { updatedAt: result.updatedAt, cacheHit: result.cacheHit },
     period.dateFrom,
     period.dateTo,
+    platform,
   );
 }
 
@@ -580,7 +773,7 @@ export function getSocialOrganicBounds() {
     latestDate,
     timezone: DASHBOARD_TIME_ZONE,
     instagramStatus: "connected" as const,
-    tiktokStatus: "authorization-required" as const,
+    tiktokStatus: "connected" as const,
   };
 }
 

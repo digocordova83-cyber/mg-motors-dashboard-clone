@@ -132,6 +132,9 @@ const dashboardPeriodSchema = z
       });
     }
   });
+const socialOrganicPeriodSchema = dashboardPeriodSchema.and(
+  z.object({ platform: z.enum(["instagram", "tiktok"]) }),
+);
 const leadsExportSchema = dashboardPeriodSchema.and(
   z.object({ locale: z.enum(["pt-BR", "en-US"]).default("pt-BR") }),
 );
@@ -510,12 +513,16 @@ export const appRouter = router({
   socialOrganic: router({
     bounds: socialOrganicProcedure.query(() => getSocialOrganicBounds()),
     data: socialOrganicProcedure
-      .input(dashboardPeriodSchema)
-      .query(({ input }) => loadSocialOrganicData(input.dateFrom, input.dateTo)),
+      .input(socialOrganicPeriodSchema)
+      .query(({ input }) =>
+        loadSocialOrganicData(input.platform, input.dateFrom, input.dateTo),
+      ),
     refresh: socialOrganicProcedure
-      .input(dashboardPeriodSchema)
+      .input(socialOrganicPeriodSchema)
       .mutation(({ input }) =>
-        loadSocialOrganicData(input.dateFrom, input.dateTo, { forceRefresh: true }),
+        loadSocialOrganicData(input.platform, input.dateFrom, input.dateTo, {
+          forceRefresh: true,
+        }),
       ),
   }),
   dashboard: router({

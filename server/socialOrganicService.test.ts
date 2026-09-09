@@ -3,6 +3,8 @@ import {
   buildMetricComparison,
   buildSocialOrganicData,
   normalizeOrganicMedia,
+  normalizeTikTokDailySourceRows,
+  normalizeTikTokMediaSourceRows,
   resolveSocialOrganicComparisonPeriod,
 } from "./socialOrganicService";
 
@@ -146,8 +148,118 @@ describe("Social Orgânico", () => {
     expect(data.comparisons.engagementRate.percentChange).toBe(100);
     expect(data.account.followersCurrent).toBe(50_000);
     expect(data.highlights.topByFollows?.id).toBe("post-1");
-    expect(data.connection.tiktok.status).toBe("authorization-required");
+    expect(data.connection.tiktok.status).toBe("connected");
     expect(data.metadata.definitions.newFollowers).toContain("não representa crescimento líquido");
     expect(data.metadata.definitions.dailyReach).toContain("não representa alcance único deduplicado");
+  });
+
+  it("normaliza TikTok Orgânico sem misturar dados pagos e preserva crescimento líquido", () => {
+    const daily = normalizeTikTokDailySourceRows([
+      {
+        account_id: "_000Yp1HuE6qKa98yQHXTVpA29y_auJ0C49W",
+        date: "2026-09-01",
+        daily_total_followers: 45,
+        followers_count: 85,
+        daily_lost_followers: 40,
+        unique_video_views: 19_132,
+        video_views: 20_082,
+        engaged_audience: 187,
+        likes: 133,
+        comments: 2,
+        shares: 12,
+        profile_views: 173,
+      },
+      { account_id: "conta-estranha", date: "2026-09-01", daily_total_followers: 999 },
+    ]);
+
+    expect(daily).toEqual([
+      expect.objectContaining({
+        follower_count_1d: 45,
+        reach_1d: 19_132,
+        views: 20_082,
+        total_interactions: 147,
+        accounts_engaged: 187,
+        profile_views: 173,
+      }),
+    ]);
+
+    const media = normalizeTikTokMediaSourceRows([
+      {
+        account_id: "_000Yp1HuE6qKa98yQHXTVpA29y_auJ0C49W",
+        video_id: "video-1",
+        video_thumbnail_url: "https://cdn.example.com/tiktok.jpg",
+        video_share_url: "https://www.tiktok.com/@mg/video/1",
+        video_reach: 1_000,
+        video_views_count: 1_200,
+        video_likes: 80,
+        video_comments: 4,
+        video_shares: 8,
+        video_favorites: 3,
+      },
+      {
+        account_id: "_000Yp1HuE6qKa98yQHXTVpA29y_auJ0C49W",
+        video_id: null,
+      },
+    ]);
+
+    expect(media).toEqual([
+      expect.objectContaining({
+        media_id: "video-1",
+        media_reach: 1_000,
+        media_views: 1_200,
+        media_engagement: 95,
+        media_thumbnail_url: "https://cdn.example.com/tiktok.jpg",
+      }),
+    ]);
+  });
+
+  it("mantém interações diárias do TikTok quando o Windsor ainda não retorna vídeos", () => {
+    const data = buildSocialOrganicData(
+      {
+        currentDaily: [
+          {
+            date: "2026-09-01",
+            follower_count_1d: 45,
+            reach_1d: 19_132,
+            total_interactions: 147,
+            accounts_engaged: 187,
+            likes: 133,
+            comments: 2,
+            shares: 12,
+            profile_views: 173,
+            views: 20_082,
+          },
+        ],
+        previousDaily: [],
+        currentMedia: [],
+        previousMedia: [],
+        profile: [
+          {
+            account_id: "_000Yp1HuE6qKa98yQHXTVpA29y_auJ0C49W",
+            account_name: "MG Motor Brasil",
+            followers_count: 117_511,
+            media_count: 384,
+          },
+        ],
+      },
+      { updatedAt: "2026-09-08T12:00:00.000Z", cacheHit: false },
+      "2026-09-01",
+      "2026-09-01",
+      "tiktok",
+    );
+
+    expect(data.platform).toBe("tiktok");
+    expect(data.summary).toMatchObject({
+      newFollowers: 45,
+      dailyReach: 19_132,
+      interactions: 147,
+      likes: 133,
+      comments: 2,
+      shares: 12,
+      profileViews: 173,
+    });
+    expect(data.contents).toEqual([]);
+    expect(data.account.followersCurrent).toBe(117_511);
+    expect(data.metadata.definitions.newFollowers).toContain("Crescimento líquido");
   });
 });
