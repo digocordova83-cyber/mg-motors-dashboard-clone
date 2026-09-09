@@ -3198,3 +3198,11 @@
 - [x] Preparar narrativa pocket no padrão aprovado de Digital Summary, com distinção entre plataforma, CRM e vendas.
 - [x] Criar slides em português com gráficos baseados em dados verificáveis e fontes internas declaradas.
 - [x] Revisar o deck, atualizar o checklist e entregar a apresentação final.
+
+## Revisão do Digital Summary Pocket — dealers e pacing
+
+- [x] Reconciliar a meta mensal de Leads e o pacing até 08/09 com a base canônica.
+- [x] Extrair os 10 melhores e os 10 piores dealers pelo MTD Retail Order da semana 2, distinguindo ausência de reporte de desempenho.
+- [x] Remover referências a TikTok e a valores de investimento do Digital Summary Pocket.
+- [x] Inserir pacing de Leads e os rankings de dealers no padrão visual aprovado, com fontes e ressalvas claras.
+- [x] Revisar, apresentar a versão atualizada e salvar o checkpoint correspondente.
