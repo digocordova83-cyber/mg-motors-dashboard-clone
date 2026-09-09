@@ -3191,3 +3191,10 @@
 - [x] Reexecutar os fluxos aplicáveis para comprovar idempotência e preservar o último snapshot válido em caso de fonte parcial.
 - [x] Validar dashboard, TypeScript, testes, build e totais consolidados antes do checkpoint.
 - [x] Salvar checkpoint e entregar o resumo com data de corte, Leads do último dia e vendas atualizadas.
+
+## Digital Summary Pocket — Setembro até 08/09/2026
+
+- [x] Reconciliar o corte de mídia, Leads canônicos e MTD Retail Order para a leitura até 08/09.
+- [x] Preparar narrativa pocket no padrão aprovado de Digital Summary, com distinção entre plataforma, CRM e vendas.
+- [x] Criar slides em português com gráficos baseados em dados verificáveis e fontes internas declaradas.
+- [x] Revisar o deck, atualizar o checklist e entregar a apresentação final.
