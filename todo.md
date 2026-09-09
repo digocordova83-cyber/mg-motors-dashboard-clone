@@ -3206,3 +3206,12 @@
 - [x] Remover referências a TikTok e a valores de investimento do Digital Summary Pocket.
 - [x] Inserir pacing de Leads e os rankings de dealers no padrão visual aprovado, com fontes e ressalvas claras.
 - [x] Revisar, apresentar a versão atualizada e salvar o checkpoint correspondente.
+
+## Refinamento visual — Digital Summary Pocket
+
+- [x] Analisar o PDF `August 2026 Digital Summary` fornecido como referência principal de layout.
+- [x] Comparar o Pocket com as páginas equivalentes dos Digital Summary já aprovados.
+- [x] Padronizar margens, tipografia, cabeçalhos, rodapés, cores e densidade visual em todas as páginas.
+- [x] Refinar gráficos de Leads, delivery de mídia e ranking de dealers para melhorar leitura em apresentação.
+- [x] Revisar visualmente todas as páginas e corrigir cortes, excesso de texto ou desalinhamentos.
+- [x] Apresentar a versão refinada e salvar o checkpoint final.
