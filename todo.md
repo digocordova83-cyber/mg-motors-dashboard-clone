@@ -3180,4 +3180,4 @@
 - [x] Exibir thumbnails completas sem recorte quando a fonte fornecer mídia válida.
 - [x] Atualizar testes de serviço, interface, navegação e separação entre orgânico e mídia paga.
 - [x] Validar dados reais, desktop, mobile, tipagem, suíte completa e build.
-- [ ] Atualizar a documentação de fonte e salvar o checkpoint final.
+- [x] Atualizar a documentação de fonte e salvar o checkpoint final.
