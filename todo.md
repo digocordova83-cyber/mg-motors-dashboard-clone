@@ -3190,4 +3190,4 @@
 - [x] Importar o relatório de vendas de 08/09 exclusivamente pelo importador oficial e reconciliar dealers, regiões e total Retail.
 - [x] Reexecutar os fluxos aplicáveis para comprovar idempotência e preservar o último snapshot válido em caso de fonte parcial.
 - [x] Validar dashboard, TypeScript, testes, build e totais consolidados antes do checkpoint.
-- [ ] Salvar checkpoint e entregar o resumo com data de corte, Leads do último dia e vendas atualizadas.
+- [x] Salvar checkpoint e entregar o resumo com data de corte, Leads do último dia e vendas atualizadas.
