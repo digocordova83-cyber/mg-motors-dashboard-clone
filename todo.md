@@ -3181,3 +3181,13 @@
 - [x] Atualizar testes de serviço, interface, navegação e separação entre orgânico e mídia paga.
 - [x] Validar dados reais, desktop, mobile, tipagem, suíte completa e build.
 - [x] Atualizar a documentação de fonte e salvar o checkpoint final.
+
+## Atualização do dashboard — Leads, mídia e vendas até 08/09/2026
+
+- [x] Auditar o Daily Sales Planning Report enviado e validar competência, semana, total Retail, dealers e avisos antes da escrita.
+- [x] Executar a atualização oficial da base canônica de Leads até 08/09/2026, preservando deduplicação, fontes e idempotência.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads até o último dia fechado, registrando a cobertura real de cada fonte.
+- [x] Importar o relatório de vendas de 08/09 exclusivamente pelo importador oficial e reconciliar dealers, regiões e total Retail.
+- [x] Reexecutar os fluxos aplicáveis para comprovar idempotência e preservar o último snapshot válido em caso de fonte parcial.
+- [x] Validar dashboard, TypeScript, testes, build e totais consolidados antes do checkpoint.
+- [ ] Salvar checkpoint e entregar o resumo com data de corte, Leads do último dia e vendas atualizadas.
