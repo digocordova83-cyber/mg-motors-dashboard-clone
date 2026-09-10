@@ -3223,4 +3223,4 @@
 - [x] Atualizar Google Ads, Meta Ads e TikTok Ads com cobertura até 09/09/2026.
 - [x] Preservar a última base oficial de vendas na ausência de novo PDF validado.
 - [x] Validar contagens, distribuição por canal, cobertura temporal, testes, tipagem e build.
-- [ ] Registrar a auditoria da atualização e salvar o checkpoint final.
+- [x] Registrar a auditoria da atualização e salvar o checkpoint final.
