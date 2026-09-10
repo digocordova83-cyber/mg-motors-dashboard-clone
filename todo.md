@@ -3215,3 +3215,12 @@
 - [x] Refinar gráficos de Leads, delivery de mídia e ranking de dealers para melhorar leitura em apresentação.
 - [x] Revisar visualmente todas as páginas e corrigir cortes, excesso de texto ou desalinhamentos.
 - [x] Apresentar a versão refinada e salvar o checkpoint final.
+
+## Atualização do dashboard — dados até 09/09/2026
+
+- [x] Executar a prévia oficial de Leads com corte até 09/09/2026.
+- [x] Aplicar a substituição canônica transacional da base de Leads e confirmar idempotência.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads com cobertura até 09/09/2026.
+- [x] Preservar a última base oficial de vendas na ausência de novo PDF validado.
+- [x] Validar contagens, distribuição por canal, cobertura temporal, testes, tipagem e build.
+- [ ] Registrar a auditoria da atualização e salvar o checkpoint final.
