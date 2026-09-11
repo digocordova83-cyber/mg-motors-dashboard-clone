@@ -3232,4 +3232,4 @@
 - [x] Atualizar Google Ads e TikTok Ads até 10/09 e registrar que Meta Ads permanece em 09/09 por atraso da fonte Windsor.
 - [x] Preservar a última base oficial de vendas na ausência de novo PDF validado.
 - [x] Validar contagens, distribuição por canal, cobertura temporal, testes, tipagem e build.
-- [ ] Registrar a auditoria da atualização e salvar o checkpoint final.
+- [x] Registrar a auditoria da atualização e salvar o checkpoint final.
