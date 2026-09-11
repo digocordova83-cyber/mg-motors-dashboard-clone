@@ -3233,3 +3233,21 @@
 - [x] Preservar a última base oficial de vendas na ausência de novo PDF validado.
 - [x] Validar contagens, distribuição por canal, cobertura temporal, testes, tipagem e build.
 - [x] Registrar a auditoria da atualização e salvar o checkpoint final.
+
+## Migração da fonte de Leads — nova planilha a partir de setembro
+
+- [x] Auditar acesso, abas, colunas, datas e volume da nova planilha Google informada pelo usuário — migração cancelada antes de qualquer alteração.
+- [x] Comparar o contrato da nova planilha com a fonte atual — cancelado; a nova fonte não foi aplicada.
+- [x] Adaptar o fluxo oficial para substituir somente os Leads a partir de 01/09/2026 — cancelado pelo usuário.
+- [x] Executar prévia com reconciliação — cancelado antes da escrita.
+- [x] Aplicar a substituição canônica transacional — não executado devido ao cancelamento.
+- [x] Validar o dashboard e documentar a nova fonte — dispensado após o cancelamento.
+- [x] Salvar o checkpoint final e comunicar os totais reconciliados da migração — encerrado sem alteração de dados.
+
+## Atualização da base canônica de setembro — fonte oficial vigente
+
+- [x] Baixar a fonte oficial atual e executar a prévia canônica de setembro.
+- [x] Aplicar a substituição transacional somente após a prévia aprovada.
+- [x] Reexecutar a mesma fonte para confirmar idempotência.
+- [x] Validar totais de setembro, último dia disponível e distribuição por canal.
+- [ ] Registrar a auditoria da atualização e salvar o checkpoint final.
