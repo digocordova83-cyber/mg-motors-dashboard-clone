@@ -3250,4 +3250,4 @@
 - [x] Aplicar a substituição transacional somente após a prévia aprovada.
 - [x] Reexecutar a mesma fonte para confirmar idempotência.
 - [x] Validar totais de setembro, último dia disponível e distribuição por canal.
-- [ ] Registrar a auditoria da atualização e salvar o checkpoint final.
+- [x] Registrar a auditoria da atualização e salvar o checkpoint final.
