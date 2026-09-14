@@ -3289,3 +3289,11 @@
 - [x] Validar o lote Retail Daily Sales FUP, totais, dealers e seleção do dashboard.
 - [x] Validar totais, cobertura, testes e build após a atualização.
 - [x] Registrar auditoria, concluir checklist e salvar checkpoint.
+
+## Digital Summary agosto — integração da seção de PR
+
+- [x] Analisar o PDF Digital Summary e o PPT MG PR Report para mapear páginas, proporções e ordem.
+- [x] Identificar as páginas de PR a incorporar sem reescrever textos, métricas ou conclusões.
+- [x] Preservar o layout original de cada arquivo e inserir a seção de PR em ordem coerente.
+- [x] Gerar o PDF consolidado e verificar páginas, orientação, legibilidade e integridade visual.
+- [x] Entregar o PDF final e registrar a conclusão no checklist.
