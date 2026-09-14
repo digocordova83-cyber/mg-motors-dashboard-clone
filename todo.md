@@ -3280,3 +3280,12 @@
 - [x] Importar o arquivo `260913 Daily Sales FUP`, validar o lote e confirmar a reexecução `NO_CHANGES`.
 - [x] Validar desktop, mobile, tipagem, suíte completa e build.
 - [x] Documentar a substituição do PDF pela planilha e salvar o checkpoint final.
+
+## Atualização operacional até 13/09/2026
+
+- [x] Confirmar a fonte vigente e o corte D-1 de Leads, mídia e Retail.
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads até 13/09 quando liberados pelo Windsor.
+- [x] Executar prévia, substituição canônica e prova de idempotência dos Leads pela fonte oficial vigente.
+- [x] Validar o lote Retail Daily Sales FUP, totais, dealers e seleção do dashboard.
+- [x] Validar totais, cobertura, testes e build após a atualização.
+- [x] Registrar auditoria, concluir checklist e salvar checkpoint.
