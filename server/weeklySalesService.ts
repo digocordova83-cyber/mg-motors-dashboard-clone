@@ -30,6 +30,7 @@ import {
   type WeeklySalesWeekMetrics,
 } from "./weeklySalesCsv";
 import { parseWeeklySalesPdf } from "./weeklySalesPdf";
+import { parseWeeklySalesXlsx } from "./weeklySalesXlsx";
 import {
   describeWeeklySalesFile,
   resolveWeeklySalesCompetenceWithPolicy,
@@ -237,7 +238,9 @@ async function parseWeeklySalesFile(
   bytes: Buffer,
   kind: WeeklySalesFileDescriptor["kind"],
 ): Promise<WeeklySalesCsvPreview> {
-  return kind === "PDF" ? parseWeeklySalesPdf(bytes) : parseWeeklySalesCsv(bytes);
+  if (kind === "PDF") return parseWeeklySalesPdf(bytes);
+  if (kind === "XLSX") return parseWeeklySalesXlsx(bytes);
+  return parseWeeklySalesCsv(bytes);
 }
 
 function monthBounds(competence: string): { dateFrom: string; dateTo: string } {

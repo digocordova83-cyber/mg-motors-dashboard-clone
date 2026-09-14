@@ -168,12 +168,14 @@ function metricsWithDealers(dealers: unknown[]) {
 }
 
 describe("vendas semanais na experiência de concessionárias", () => {
-  it("aceita CSV e PDF no seletor semanal e rejeita outros formatos", () => {
+  it("aceita XLSX, CSV e PDF no seletor semanal e rejeita outros formatos", () => {
+    expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".xlsx");
     expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".csv");
     expect(WEEKLY_SALES_FILE_ACCEPT).toContain(".pdf");
+    expect(isSupportedWeeklySalesFileName("260913_Daily_Sales_FUP.xlsx")).toBe(true);
     expect(isSupportedWeeklySalesFileName("weekly-sales.csv")).toBe(true);
     expect(isSupportedWeeklySalesFileName("Daily Sales Planning Report.PDF")).toBe(true);
-    expect(isSupportedWeeklySalesFileName("weekly-sales.xlsx")).toBe(false);
+    expect(isSupportedWeeklySalesFileName("weekly-sales.xls")).toBe(false);
   });
 
   it("identifica o período filtrado dos Leads e a última semana preenchida", () => {

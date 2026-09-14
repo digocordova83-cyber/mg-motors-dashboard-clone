@@ -5,14 +5,20 @@ const PDF_MIME_TYPES = new Set(["application/pdf", "application/x-pdf"]);
 const CSV_MIME_TYPES = new Set([
   "text/csv",
   "application/csv",
-  "application/vnd.ms-excel",
   "text/plain",
 ]);
-const GENERIC_MIME_TYPES = new Set(["application/octet-stream", "binary/octet-stream"]);
+const XLSX_MIME_TYPES = new Set([
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+const GENERIC_MIME_TYPES = new Set([
+  "application/octet-stream",
+  "binary/octet-stream",
+  "application/vnd.ms-excel",
+]);
 
 export type WeeklySalesFileDescriptor = {
   fileName: string;
-  kind: "CSV" | "PDF";
+  kind: "CSV" | "PDF" | "XLSX";
   contentType: string;
 };
 
@@ -81,6 +87,12 @@ function hasPdfSignature(bytes: Buffer): boolean {
   return bytes.length >= 5 && bytes.subarray(0, 5).toString("ascii") === "%PDF-";
 }
 
+function hasZipSignature(bytes: Buffer): boolean {
+  if (bytes.length < 4) return false;
+  const signature = bytes.subarray(0, 4).toString("hex");
+  return signature === "504b0304" || signature === "504b0506" || signature === "504b0708";
+}
+
 function assertLikelyCsv(bytes: Buffer): void {
   if (bytes.includes(0)) {
     throw new Error("O conteúdo do arquivo não corresponde a um CSV de texto válido.");
@@ -127,26 +139,34 @@ export function describeWeeklySalesFile(input: {
   const lowerName = fileName.toLocaleLowerCase("en-US");
   const extensionKind = lowerName.endsWith(".pdf")
     ? "PDF"
+    : lowerName.endsWith(".xlsx")
+      ? "XLSX"
     : lowerName.endsWith(".csv")
       ? "CSV"
       : null;
   const declaredMimeType = normalizeMimeType(input.declaredMimeType);
   const mimeKind = declaredMimeType && PDF_MIME_TYPES.has(declaredMimeType)
     ? "PDF"
+    : declaredMimeType && XLSX_MIME_TYPES.has(declaredMimeType)
+      ? "XLSX"
     : declaredMimeType && CSV_MIME_TYPES.has(declaredMimeType)
       ? "CSV"
       : null;
-  const signatureKind = hasPdfSignature(input.bytes) ? "PDF" : "CSV";
+  const signatureKind = hasPdfSignature(input.bytes)
+    ? "PDF"
+    : hasZipSignature(input.bytes)
+      ? "XLSX"
+      : "CSV";
 
   if (!extensionKind) {
-    throw new Error(`Selecione um arquivo de ${MTD_RETAIL_ORDER_LABEL} no formato CSV ou PDF.`);
+    throw new Error(`Selecione um arquivo de ${MTD_RETAIL_ORDER_LABEL} no formato XLSX, CSV ou PDF.`);
   }
   if (declaredMimeType && !mimeKind && !GENERIC_MIME_TYPES.has(declaredMimeType)) {
-    throw new Error(`O tipo de arquivo ${declaredMimeType} não é aceito. Envie um CSV ou PDF.`);
+    throw new Error(`O tipo de arquivo ${declaredMimeType} não é aceito. Envie um XLSX, CSV ou PDF.`);
   }
   if (extensionKind !== signatureKind || (mimeKind && mimeKind !== signatureKind)) {
     throw new Error(
-      "A extensão, o tipo e o conteúdo do arquivo não correspondem. Selecione o CSV ou PDF original.",
+      "A extensão, o tipo e o conteúdo do arquivo não correspondem. Selecione o XLSX, CSV ou PDF original.",
     );
   }
 
@@ -155,6 +175,14 @@ export function describeWeeklySalesFile(input: {
       fileName: fileName || "weekly-sales.pdf",
       kind: "PDF",
       contentType: "application/pdf",
+    };
+  }
+
+  if (signatureKind === "XLSX") {
+    return {
+      fileName: fileName || "daily-sales-fup.xlsx",
+      kind: "XLSX",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
   }
 

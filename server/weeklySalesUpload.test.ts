@@ -10,12 +10,13 @@ import {
 
 const PDF_BYTES = Buffer.from("%PDF-1.7\nretail-table");
 const CSV_BYTES = Buffer.from("Dealer;W1 TGT;W1 Retail\nDealer A;10;8\n", "utf8");
+const XLSX_BYTES = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00]);
 
 function asDataUrl(mimeType: string, bytes: Buffer): string {
   return `data:${mimeType};base64,${bytes.toString("base64")}`;
 }
 
-describe("upload de vendas semanais CSV/PDF", () => {
+describe("upload de vendas semanais XLSX/CSV/PDF", () => {
   it("decodifica o Data URL PDF real do navegador e preserva MIME e bytes", () => {
     const upload = decodeWeeklySalesBase64(asDataUrl("application/pdf", PDF_BYTES));
 
@@ -114,6 +115,20 @@ describe("upload de vendas semanais CSV/PDF", () => {
     });
   });
 
+  it("classifica XLSX pela assinatura ZIP, extensão e MIME oficial", () => {
+    expect(
+      describeWeeklySalesFile({
+        fileName: "260913_Daily_Sales_FUP.xlsx",
+        bytes: XLSX_BYTES,
+        declaredMimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+    ).toEqual({
+      fileName: "260913_Daily_Sales_FUP.xlsx",
+      kind: "XLSX",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+  });
+
   it.each([
     {
       label: "extensão PDF com conteúdo CSV",
@@ -146,7 +161,7 @@ describe("upload de vendas semanais CSV/PDF", () => {
         bytes: CSV_BYTES,
         declaredMimeType: "text/plain",
       }),
-    ).toThrow("Selecione um arquivo de MTD Retail Order no formato CSV ou PDF");
+    ).toThrow("Selecione um arquivo de MTD Retail Order no formato XLSX, CSV ou PDF");
   });
 
   it("rejeita conteúdo binário disfarçado de CSV", () => {

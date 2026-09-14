@@ -84,7 +84,7 @@ type WeeklySalesPanelProps = {
 };
 
 const MAX_WEEKLY_SALES_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-export const WEEKLY_SALES_FILE_ACCEPT = ".csv,text/csv,.pdf,application/pdf";
+export const WEEKLY_SALES_FILE_ACCEPT = ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.csv,text/csv,.pdf,application/pdf";
 export const DEALER_TARGETS_FILE_ACCEPT = ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const DEALER_RANKING_EXCLUDED_LABELS = new Set([
   "leads em qualificacao",
@@ -229,7 +229,7 @@ export function sortStatePerformanceRanking(
 
 export function isSupportedWeeklySalesFileName(fileName: string): boolean {
   const lowerName = fileName.toLocaleLowerCase("pt-BR");
-  return lowerName.endsWith(".csv") || lowerName.endsWith(".pdf");
+  return lowerName.endsWith(".xlsx") || lowerName.endsWith(".csv") || lowerName.endsWith(".pdf");
 }
 
 function ui(locale: Locale, pt: string, en: string) {
@@ -1496,7 +1496,7 @@ export function WeeklySalesPanel({
     if (!file) return;
     if (!isSupportedWeeklySalesFileName(file.name)) {
       setClientError(
-        ui(locale, "Selecione um arquivo com extensão .csv ou .pdf.", "Select a .csv or .pdf file."),
+        ui(locale, "Selecione a planilha Daily Sales FUP em .xlsx. CSV e PDF legados também são aceitos.", "Select the Daily Sales FUP .xlsx workbook. Legacy CSV and PDF files are also accepted."),
       );
       event.target.value = "";
       return;
@@ -1592,8 +1592,8 @@ export function WeeklySalesPanel({
               className="hidden"
               aria-label={ui(
                 locale,
-                `Selecionar CSV ou PDF de ${MTD_RETAIL_ORDER_LABEL}`,
-                `Select weekly ${MTD_RETAIL_ORDER_LABEL} CSV or PDF`,
+                `Selecionar planilha XLSX de ${MTD_RETAIL_ORDER_LABEL}`,
+                `Select weekly ${MTD_RETAIL_ORDER_LABEL} XLSX workbook`,
               )}
             />
             <Button
@@ -1611,7 +1611,9 @@ export function WeeklySalesPanel({
               {previewMutation.isPending
                 ? upload?.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
                   ? ui(locale, "Lendo PDF...", "Reading PDF...")
-                  : ui(locale, "Validando...", "Validating...")
+                  : upload?.fileName.toLocaleLowerCase("pt-BR").endsWith(".xlsx")
+                    ? ui(locale, "Lendo planilha...", "Reading workbook...")
+                    : ui(locale, "Validando...", "Validating...")
                 : ui(locale, `Importar ${MTD_RETAIL_ORDER_LABEL}`, `Import ${MTD_RETAIL_ORDER_LABEL}`)}
             </Button>
             <input
@@ -1767,8 +1769,8 @@ export function WeeklySalesPanel({
               {canImportLeads
                 ? ui(
                     locale,
-                    `Use “Importar ${MTD_RETAIL_ORDER_LABEL}” para enviar o CSV semanal ou o PDF Daily Sales Planning Report, revisar correspondências e confirmar a carga.`,
-                    `Use “Import ${MTD_RETAIL_ORDER_LABEL}” to upload the weekly CSV or Daily Sales Planning Report PDF, review dealer matches, and confirm the import.`,
+                    `Use “Importar ${MTD_RETAIL_ORDER_LABEL}” para enviar a planilha Daily Sales FUP, revisar correspondências e confirmar a carga. CSV e PDF permanecem disponíveis apenas para histórico e contingência.`,
+                    `Use “Import ${MTD_RETAIL_ORDER_LABEL}” to upload the Daily Sales FUP workbook, review dealer matches, and confirm the import. CSV and PDF remain available only for history and contingency.`,
                   )
                 : ui(locale, "Aguardando o upload manual pelo administrador responsável.", "Waiting for the responsible administrator to upload the file.")}
             </p>

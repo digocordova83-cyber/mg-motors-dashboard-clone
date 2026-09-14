@@ -3251,3 +3251,32 @@
 - [x] Reexecutar a mesma fonte para confirmar idempotência.
 - [x] Validar totais de setembro, último dia disponível e distribuição por canal.
 - [x] Registrar a auditoria da atualização e salvar o checkpoint final.
+
+## Nova fonte de Leads — Daily Sales FUP com upload direto
+
+- [x] Auditar todas as abas, cabeçalhos, fórmulas, períodos e totais da planilha `260913 Daily Sales FUP` — concluído; o arquivo é de vendas, não de Leads.
+- [x] Identificar a linha ou coluna autoritativa para o total de Leads — não aplicável após confirmação do usuário.
+- [x] Definir a regra de transição da fonte atual para a nova planilha — redirecionado para Retail por confirmação do usuário.
+- [x] Implementar parser de Leads — dispensado; a planilha não contém Leads.
+- [x] Implementar importação de Leads — dispensado.
+- [x] Atualizar scripts de Leads — dispensado.
+- [x] Adicionar upload direto de Leads — redirecionado para o módulo Retail.
+- [x] Atualizar o total de Leads — não aplicável.
+- [x] Criar testes de Leads — substituído pelo escopo Retail.
+- [x] Validar dados de Leads — não aplicável.
+- [x] Executar migração de Leads — não executada; nenhuma base de Leads foi alterada.
+
+## Nova fonte oficial de Retail — Daily Sales FUP
+
+- [x] Mapear a aba `WEEKLY_RET`, identificar a semana autoritativa e reconciliar o total com `DAILY_FUP`.
+- [x] Comparar os 26 dealers da planilha com o diretório canônico e registrar correspondências e exceções.
+- [x] Implementar parser XLSX com limpeza automática, validação estrutural e prévia sem escrita.
+- [x] Implementar importação transacional e idempotente usando o mesmo contrato de lotes Retail existente.
+- [x] Atualizar o script de linha de comando para aceitar `.xlsx` Daily Sales FUP.
+- [x] Adaptar o upload direto no dashboard para aceitar XLSX, exibir prévia e exigir confirmação.
+- [x] Restringir o upload às mesmas permissões administrativas já usadas no módulo de vendas.
+- [x] Atualizar textos e estados da interface para identificar a planilha como nova fonte oficial.
+- [x] Criar testes de parser, reconciliação, importação, idempotência, permissões e interface.
+- [x] Importar o arquivo `260913 Daily Sales FUP`, validar o lote e confirmar a reexecução `NO_CHANGES`.
+- [x] Validar desktop, mobile, tipagem, suíte completa e build.
+- [ ] Documentar a substituição do PDF pela planilha e salvar o checkpoint final.
