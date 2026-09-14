@@ -3279,4 +3279,4 @@
 - [x] Criar testes de parser, reconciliação, importação, idempotência, permissões e interface.
 - [x] Importar o arquivo `260913 Daily Sales FUP`, validar o lote e confirmar a reexecução `NO_CHANGES`.
 - [x] Validar desktop, mobile, tipagem, suíte completa e build.
-- [ ] Documentar a substituição do PDF pela planilha e salvar o checkpoint final.
+- [x] Documentar a substituição do PDF pela planilha e salvar o checkpoint final.
