@@ -3297,3 +3297,11 @@
 - [x] Preservar o layout original de cada arquivo e inserir a seção de PR em ordem coerente.
 - [x] Gerar o PDF consolidado e verificar páginas, orientação, legibilidade e integridade visual.
 - [x] Entregar o PDF final e registrar a conclusão no checklist.
+
+## Correção de Leads recentes — Webmotors e Mercado Livre
+
+- [x] Auditar a fonte oficial e a base canônica para identificar as datas e linhas ausentes de Webmotors e Mercado Livre.
+- [x] Corrigir o consolidado sem remover ou duplicar registros de outros canais.
+- [x] Executar prévia, substituição canônica e reexecução idempotente da base de Leads.
+- [x] Validar datas, totais, distribuição por canal, testes e dashboard.
+- [x] Documentar a correção, concluir o checklist e salvar checkpoint.
