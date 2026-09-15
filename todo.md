@@ -3359,3 +3359,19 @@
 - [x] Exibir Urban líquido de julho como N/D, sem aplicar comissão presumida ou estimativa.
 - [x] Atualizar Reconciliação e Fontes para a nova leitura exclusivamente líquida.
 - [x] Recalcular, renderizar e validar a versão líquida antes da entrega.
+
+## Validação de agosto pelo report summary — Excel de investimentos
+
+- [x] Inventariar os valores de investimento por canal exibidos no report summary final de agosto.
+- [x] Identificar e documentar se cada valor do summary é realizado, aprovado ou planejamento.
+- [x] Reconciliar o total e os canais de agosto antes de substituir qualquer valor no Excel.
+- [x] Atualizar a base exclusivamente líquida do Excel com a fonte correta de agosto.
+- [x] Recalcular, revisar visualmente e entregar a versão validada.
+
+## Investimento realizado — julho e agosto
+
+- [x] Usar somente valores efetivamente realizados/registrados nos reports de fechamento de julho e agosto.
+- [x] Reconciliar julho por canal ao total realizado apresentado no report final.
+- [x] Reconciliar agosto por canal aos registros reais do Digital Summary, sem usar NET de plano como realizado.
+- [x] Manter Urban realizado apenas quando houver comprovação por campanha ou canal; usar N/D nas lacunas.
+- [x] Atualizar, recalcular, revisar visualmente e entregar o Excel de realizado.
