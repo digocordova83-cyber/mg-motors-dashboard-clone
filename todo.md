@@ -3327,3 +3327,11 @@
 - [x] Gerar o Excel com fórmulas, abas de resumo, detalhe e rastreabilidade.
 - [x] Validar fórmulas, valores, totais e layout do arquivo final.
 - [x] Entregar o Excel e registrar a conclusão no checklist.
+
+## Refinamento visual — Excel de investimentos julho e agosto
+
+- [x] Reestruturar a aba Resumo com hierarquia executiva e melhor aproveitamento da página.
+- [x] Melhorar tipografia, espaçamento, proporções e leitura das tabelas Por Player e Urban.
+- [x] Reduzir a densidade visual da aba Rastreabilidade sem remover fontes ou ressalvas.
+- [x] Preservar exatamente os valores, fórmulas, comentários de fonte e convenções financeiras.
+- [x] Recalcular, validar e revisar visualmente todas as abas antes da nova entrega.
