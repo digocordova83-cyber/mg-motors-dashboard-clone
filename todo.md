@@ -3343,3 +3343,11 @@
 - [x] Limitar os textos técnicos da área executiva e mover notas, bases e fontes para uma aba de suporte.
 - [x] Manter fórmulas dinâmicas, comentários de fonte e os valores aprovados exatamente reconciliados.
 - [x] Renderizar e revisar visualmente a nova versão, iterando antes da entrega.
+
+## Reconstrução tabular profissional — Excel de investimentos
+
+- [x] Descartar a composição anterior e criar uma tabela financeira principal com colunas de negócio claramente agrupadas.
+- [x] Separar por mês as colunas Total NET, Urban bruto, Urban NET e participação Urban, sem duplicar informação.
+- [x] Adicionar comparativos mensais e totais em linhas próprias, com alinhamento, larguras e formatos financeiros consistentes.
+- [x] Criar abas de Reconciliação e Fontes sem poluir a tabela principal.
+- [x] Recalcular, renderizar e validar a planilha linha a linha antes da entrega.
