@@ -3351,3 +3351,11 @@
 - [x] Adicionar comparativos mensais e totais em linhas próprias, com alinhamento, larguras e formatos financeiros consistentes.
 - [x] Criar abas de Reconciliação e Fontes sem poluir a tabela principal.
 - [x] Recalcular, renderizar e validar a planilha linha a linha antes da entrega.
+
+## Versão somente valores líquidos — Excel de investimentos
+
+- [x] Remover todas as colunas e menções de valores brutos da tabela principal.
+- [x] Manter somente Total NET, Urban NET, participação Urban NET e comparativo líquido.
+- [x] Exibir Urban líquido de julho como N/D, sem aplicar comissão presumida ou estimativa.
+- [x] Atualizar Reconciliação e Fontes para a nova leitura exclusivamente líquida.
+- [x] Recalcular, renderizar e validar a versão líquida antes da entrega.
