@@ -3305,3 +3305,17 @@
 - [x] Executar prévia, substituição canônica e reexecução idempotente da base de Leads.
 - [x] Validar datas, totais, distribuição por canal, testes e dashboard.
 - [x] Documentar a correção, concluir o checklist e salvar checkpoint.
+
+## Atualização de Mercado Livre — setembro
+
+- [x] Auditar a versão atualizada da fonte Mercado Livre e medir a nova cobertura de setembro.
+- [x] Executar prévia e substituição canônica da base de Leads pela fonte oficial vigente.
+- [x] Confirmar totais por canal, última data e idempotência da atualização.
+- [x] Documentar o resultado, concluir o checklist e salvar checkpoint.
+
+## Sincronização de Leads até 13/09/2026
+
+- [x] Auditar a fonte oficial vigente, incluindo a cobertura atualizada de Mercado Livre.
+- [x] Executar prévia e sincronização canônica da base de Leads até o corte D-1.
+- [x] Validar total, distribuição por canal, última data disponível e idempotência.
+- [x] Documentar o resultado, concluir o checklist e salvar checkpoint.
