@@ -3335,3 +3335,11 @@
 - [x] Reduzir a densidade visual da aba Rastreabilidade sem remover fontes ou ressalvas.
 - [x] Preservar exatamente os valores, fórmulas, comentários de fonte e convenções financeiras.
 - [x] Recalcular, validar e revisar visualmente todas as abas antes da nova entrega.
+
+## Reconstrução 100% executiva — Excel de investimentos
+
+- [x] Reconstruir a planilha do zero com uma arquitetura executiva, sem reaproveitar o layout anterior.
+- [x] Criar uma aba principal compacta com KPIs, comparação mensal e visão total versus Urban por player.
+- [x] Limitar os textos técnicos da área executiva e mover notas, bases e fontes para uma aba de suporte.
+- [x] Manter fórmulas dinâmicas, comentários de fonte e os valores aprovados exatamente reconciliados.
+- [x] Renderizar e revisar visualmente a nova versão, iterando antes da entrega.
