@@ -3319,3 +3319,11 @@
 - [x] Executar prévia e sincronização canônica da base de Leads até o corte D-1.
 - [x] Validar total, distribuição por canal, última data disponível e idempotência.
 - [x] Documentar o resultado, concluir o checklist e salvar checkpoint.
+
+## Excel de investimentos — julho e agosto
+
+- [x] Inventariar os reports aprovados e as fontes dos valores por player e por frente Urban.
+- [x] Reconciliar os totais mensais e a alocação Urban com os reports apresentados.
+- [x] Gerar o Excel com fórmulas, abas de resumo, detalhe e rastreabilidade.
+- [x] Validar fórmulas, valores, totais e layout do arquivo final.
+- [x] Entregar o Excel e registrar a conclusão no checklist.
