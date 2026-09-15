@@ -3386,11 +3386,11 @@
 
 ## Atualização da planilha-base de setembro
 
-- [ ] Localizar a planilha-base de setembro e a fonte dos dados novos.
-- [ ] Validar o período, a cobertura e as regras de atualização antes da importação.
-- [ ] Atualizar os registros de setembro sem alterar o histórico existente.
-- [ ] Reconciliar totais, duplicidades e lacunas da base atualizada.
-- [ ] Validar visualmente e entregar a planilha atualizada.
+- [x] Item substituído: o usuário esclareceu que a solicitação se referia à base operacional do dashboard, não à planilha-base de mídia.
+- [x] Item substituído: a validação de período e cobertura foi executada no fluxo da base operacional.
+- [x] Item substituído: os registros não foram alterados na planilha de mídia; a atualização foi aplicada à base canônica de Leads.
+- [x] Item substituído: a reconciliação ocorreu na base operacional, incluindo duplicidades e cobertura por canal.
+- [x] Item substituído: a validação e a entrega passaram a seguir o escopo do dashboard.
 
 ## Atualização da base operacional — setembro
 
