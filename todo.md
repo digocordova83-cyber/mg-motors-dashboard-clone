@@ -3383,3 +3383,19 @@
 - [x] Atualizar agosto com os valores NET do print, separando Digital Line-up e Digital Urban.
 - [x] Reconciliar o total de agosto em R$ 1.008.000,00 e o Urban NET em R$ 174.186,95.
 - [x] Recalcular, revisar visualmente e entregar a versão restaurada.
+
+## Atualização da planilha-base de setembro
+
+- [ ] Localizar a planilha-base de setembro e a fonte dos dados novos.
+- [ ] Validar o período, a cobertura e as regras de atualização antes da importação.
+- [ ] Atualizar os registros de setembro sem alterar o histórico existente.
+- [ ] Reconciliar totais, duplicidades e lacunas da base atualizada.
+- [ ] Validar visualmente e entregar a planilha atualizada.
+
+## Atualização da base operacional — setembro
+
+- [x] Identificar a fonte oficial mais recente para Leads, mídia e Retail de setembro.
+- [x] Auditar o período coberto, os totais e as chaves antes da importação.
+- [x] Atualizar as bases oficiais de setembro com processo idempotente.
+- [x] Reconciliar totais, duplicidades, cobertura por canal e Retail.
+- [x] Validar a atualização no dashboard, executar os testes e registrar a auditoria.
