@@ -3375,3 +3375,11 @@
 - [x] Reconciliar agosto por canal aos registros reais do Digital Summary, sem usar NET de plano como realizado.
 - [x] Manter Urban realizado apenas quando houver comprovação por campanha ou canal; usar N/D nas lacunas.
 - [x] Atualizar, recalcular, revisar visualmente e entregar o Excel de realizado.
+
+## Restauração da versão anexada — agosto conforme print
+
+- [x] Restaurar a estrutura e o layout do Excel anexado pelo usuário.
+- [x] Preservar integralmente os valores e fórmulas de julho da versão anexada.
+- [x] Atualizar agosto com os valores NET do print, separando Digital Line-up e Digital Urban.
+- [x] Reconciliar o total de agosto em R$ 1.008.000,00 e o Urban NET em R$ 174.186,95.
+- [x] Recalcular, revisar visualmente e entregar a versão restaurada.
