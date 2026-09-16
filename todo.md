@@ -3466,3 +3466,13 @@
 - [x] Atualizar testes e validar o nome sugerido pelo navegador ao salvar em PDF.
 
 > Validação em 16/09/2026: o acionamento real do botão aplicou `MG Motors _ LEADS dashboard_16 Sept` no momento da impressão e restaurou o título original após o evento `afterprint`. Foram aprovados 344 testes, TypeScript e build de produção.
+
+## Padronização do investimento histórico e download direto do PDF
+
+- [x] Auditar os campos de investimento exibidos em julho, agosto e setembro e comparar com as planilhas anexadas.
+- [x] Definir um contrato único de campos para todos os meses, preservando os valores e o histórico já registrados.
+- [x] Atualizar julho para exibir a mesma estrutura de campos usada em agosto e setembro.
+- [x] Validar que a troca de competência mantém todos os meses acessíveis e coerentes.
+- [x] Item encerrado por solicitação do usuário: manter o fluxo atual do PDF sem adicionar download direto.
+- [x] Preservar o nome automático `MG Motors _ LEADS dashboard_DD Mon.pdf` já implementado.
+- [x] Atualizar testes e validar o histórico financeiro, TypeScript e build, sem novas alterações no PDF.

@@ -22,7 +22,7 @@ describe("Plano de Mídia Digital", () => {
     expect(august?.month).toBe("2026-08");
     expect(august?.mode).toBe("FINANCIAL");
     expect(july?.month).toBe("2026-07");
-    expect(july?.mode).toBe("DELIVERY");
+    expect(july?.mode).toBe("HYBRID");
     expect(getMediaPlan("2099-12")).toBeNull();
   });
 
@@ -112,20 +112,32 @@ describe("Plano de Mídia Digital", () => {
   it("mantém integralmente os dados de entrega da competência julho", () => {
     const plan = getMediaPlan("2026-07")!;
     const rowInvestment = plan.rows.reduce((sum, row) => sum + row.investment, 0);
+    const rowCommission = plan.rows.reduce((sum, row) => sum + (row.commission ?? 0), 0);
+    const rowNet = plan.rows.reduce((sum, row) => sum + (row.netInvestment ?? 0), 0);
     const rowImpressions = plan.rows.reduce((sum, row) => sum + (row.impressions ?? 0), 0);
     const rowClicks = plan.rows.reduce((sum, row) => sum + (row.clicks ?? 0), 0);
     const rowLeads = plan.rows.reduce((sum, row) => sum + (row.leads ?? 0), 0);
 
     expect(plan.rows).toHaveLength(15);
     expect(rowInvestment).toBe(1_050_000);
+    expect(rowCommission).toBe(42_000);
+    expect(rowNet).toBe(1_008_000);
     expect(rowImpressions).toBe(81_345_627);
     expect(Math.abs(rowImpressions - (plan.total.impressions ?? 0))).toBeLessThanOrEqual(2);
     expect(rowClicks).toBe(1_432_513);
     expect(Math.abs(rowClicks - (plan.total.clicks ?? 0))).toBeLessThanOrEqual(1);
     expect(rowLeads).toBe(10_000);
-    expect(plan.total).toMatchObject({ investment: 1_050_000, impressions: 81_345_625, clicks: 1_432_512, visits: 524_968, leads: 10_000, cpl: 105 });
-    expect(plan.rows.find((row) => row.id === "lineup-google-pmax")).toMatchObject({ investment: 300_000, cpm: 16.82, impressions: 17_835_910, leads: 6_173, cpl: 48.6 });
+    expect(plan.total).toMatchObject({ investment: 1_050_000, commission: 42_000, netInvestment: 1_008_000, impressions: 81_345_625, clicks: 1_432_512, visits: 524_968, leads: 10_000, cpl: 105 });
+    expect(plan.rows.find((row) => row.id === "lineup-google-pmax")).toMatchObject({ publisher: "Google", investment: 300_000, commission: 12_000, netInvestment: 288_000, status: "NOT_INFORMED", cpm: 16.82, impressions: 17_835_910, leads: 6_173, cpl: 48.6 });
     expect(plan.rows.find((row) => row.id === "mg4-mercado-livre")).toMatchObject({ sourceRow: 22, investment: 30_000, leads: 55, cpl: 545.45 });
+  });
+
+  it("mantém o mesmo contrato financeiro em julho, agosto e setembro", () => {
+    for (const plan of MEDIA_PLANS) {
+      expect(plan.total.commission).toBeTypeOf("number");
+      expect(plan.total.netInvestment).toBeTypeOf("number");
+      expect(plan.rows.every((row) => row.publisher && row.commission != null && row.netInvestment != null && row.status)).toBe(true);
+    }
   });
 
   it("renderiza setembro em modo híbrido com projeção, conciliação e valores complementares", () => {
@@ -134,6 +146,7 @@ describe("Plano de Mídia Digital", () => {
 
     expect(portuguese).toContain("Plano de Mídia — Setembro de 2026");
     expect(portuguese).toContain("R$ 800.000");
+    expect(portuguese).toContain("R$ 32.000");
     expect(portuguese).toContain("R$ 768.000");
     expect(portuguese).toContain("9.999");
     expect(portuguese).toContain("R$ 76,81");
@@ -157,7 +170,7 @@ describe("Plano de Mídia Digital", () => {
     expect(portuguese).toContain("R$ 1.050.000");
     expect(portuguese).toContain("R$ 42.000");
     expect(portuguese).toContain("R$ 1.008.000");
-    expect(portuguese).toContain("Não informado na planilha de agosto");
+    expect(portuguese).toContain("Não informado na fonte");
     expect(portuguese).toContain("A planilha não informa projeções");
     expect(english).toContain("Digital Media Plan — August 2026");
     expect(english).toContain("Plan gross");
@@ -166,17 +179,25 @@ describe("Plano de Mídia Digital", () => {
     expect(english).toContain("The workbook does not provide projected impressions");
   });
 
-  it("renderiza julho pelo seletor histórico com as métricas de entrega originais", () => {
+  it("renderiza julho com os mesmos campos financeiros e preserva as métricas históricas", () => {
     const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth="2026-07" />);
     const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" initialMonth="2026-07" />);
 
     expect(portuguese).toContain("Plano de Mídia Digital — Julho de 2026");
-    expect(portuguese).toContain("Investimento planejado de mídia");
+    expect(portuguese).toContain("Plano bruto");
+    expect(portuguese).toContain("Comissão de 4%");
+    expect(portuguese).toContain("Plano líquido de mídia");
+    expect(portuguese).toContain("Investimento realizado");
+    expect(portuguese).toContain("R$ 42.000");
+    expect(portuguese).toContain("R$ 1.008.000");
+    expect(portuguese).toContain("N/D");
     expect(portuguese).toContain("10.000");
     expect(portuguese).toContain("R$ 105,00");
-    expect(portuguese).toContain("reprojectados proporcionalmente para a meta de 10.000 Leads");
+    expect(portuguese).toContain("comissão e plano líquido foram calculados pela mesma regra de 4%");
     expect(english).toContain("Digital Media Plan — July 2026");
-    expect(english).toContain("Planned media investment");
+    expect(english).toContain("Plan gross");
+    expect(english).toContain("4% commission");
+    expect(english).toContain("Net media plan");
     expect(english).toContain("10,000");
     expect(english).toContain("R$105.00");
   });
