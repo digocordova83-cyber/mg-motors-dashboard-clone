@@ -3484,3 +3484,13 @@
 - [x] Exibir em agosto os mesmos quatro cards, sem alterar os valores ou a estrutura de setembro.
 - [x] Manter comissão e investimento realizado disponíveis apenas no detalhamento histórico aplicável.
 - [x] Atualizar testes e validar visualmente julho, agosto e setembro antes da entrega.
+
+## GitHub — tag de versão e integração contínua
+
+- [x] Auditar a branch principal, o remoto conectado e o estado de sincronização do repositório.
+- [x] Definir e publicar uma tag de versão para o checkpoint validado atual.
+- [x] Configurar GitHub Actions para executar testes, TypeScript e build em novos commits e pull requests.
+- [ ] Validar o workflow localmente e confirmar sua publicação na branch principal.
+- [ ] Registrar a tag, o commit e o status final da integração contínua.
+
+> Validação local do CI: `pnpm test:ci` aprovado com 54 arquivos e 340 testes determinísticos; `pnpm check` e `pnpm build` aprovados. A suíte de CI exclui apenas verificações que dependem de banco/Windsor reais (`server/windsor.secret.test.ts` e `server/optimizationWorkflow.test.ts`), mantendo a suíte completa disponível em `pnpm test` no ambiente com integrações.
