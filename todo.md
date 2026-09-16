@@ -3425,3 +3425,18 @@
 - [x] Gerar CSV completo com apenas os cinco campos solicitados e codificação compatível.
 - [x] Validar cabeçalhos, contagem de registros e ausência de duplicidades na exportação.
 - [x] Entregar o CSV de contatos ao usuário.
+
+## Atualização TikTok Live — setembro
+
+- [x] Localizar a planilha de TikTok Live atualizada enviada pelo usuário.
+- [x] Auditar schema, período, origem do canal e duplicidades antes da importação.
+- [x] Importar os registros válidos na base canônica preservando TikTok Live distinto de TikTok Ads.
+- [x] Reconciliar totais, cobertura e idempotência após a atualização.
+- [x] Validar tecnicamente e entregar o status da base atualizada.
+
+## Reativação TikTok Live — visualização de setembro
+
+- [x] Remover TikTok Live da regra histórica de canais ocultos em setembro.
+- [x] Manter TikTok Ads e Interlagos ocultos na visualização mensal, conforme regra anterior.
+- [x] Atualizar os testes de filtro de canais e da aba Leads.
+- [x] Validar que TikTok Live aparece separado em indicadores, gráficos e PDF diário.

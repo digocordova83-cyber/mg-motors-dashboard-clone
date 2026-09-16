@@ -40,17 +40,17 @@ describe("ciclo de vida dos canais de Leads", () => {
     expect(filterExpectedLeadChannelsByDate(channels, "2026-07-31")).not.toContain("Campanha Urban");
   });
 
-  it("oculta TikTok, TikTok Live e Interlagos somente a partir de setembro, sem afetar agosto", () => {
+  it("oculta TikTok e Interlagos em setembro, mantendo TikTok Live ativo quando há fonte publicada", () => {
     expect(SEPTEMBER_LEAD_CHANNEL_HIDE_FROM).toBe("2026-09-01");
     expect(isLeadChannelActiveOnDate("TikTok", "2026-08-31")).toBe(true);
     expect(isLeadChannelActiveOnDate("TikTok Live", "2026-08-31")).toBe(true);
     expect(isLeadChannelActiveOnDate("Interlagos", "2026-08-31")).toBe(true);
     expect(isLeadChannelActiveOnDate("TikTok", "2026-09-01")).toBe(false);
-    expect(isLeadChannelActiveOnDate("TikTok Live", "2026-09-01")).toBe(false);
+    expect(isLeadChannelActiveOnDate("TikTok Live", "2026-09-01")).toBe(true);
     expect(isLeadChannelActiveOnDate("Interlagos", "2026-09-01")).toBe(false);
   });
 
-  it("remove os canais ocultos dos indicadores de setembro usando o canal de origem quando houver", () => {
+  it("remove somente os canais ocultos dos indicadores de setembro usando o canal de origem quando houver", () => {
     const rows = [
       { correctedDate: "2026-09-01", channel: "TikTok", id: "tiktok" },
       { correctedDate: "2026-09-01", channel: "TikTok Live", id: "tiktok-live" },
@@ -61,14 +61,19 @@ describe("ciclo de vida dos canais de Leads", () => {
     ];
 
     expect(filterLeadRowsByChannelLifecycle(rows).map(row => row.id)).toEqual([
+      "tiktok-live",
       "meta",
       "tiktok-august",
     ]);
   });
 
-  it("não inclui os canais ocultos como canais esperados em setembro", () => {
+  it("inclui TikTok Live entre os canais esperados em setembro", () => {
     const channels = ["Site", "Meta", "TikTok", "TikTok Live", "Interlagos", "UOL"];
 
-    expect(filterExpectedLeadChannelsByDate(channels, "2026-09-06")).toEqual(["Site", "Meta"]);
+    expect(filterExpectedLeadChannelsByDate(channels, "2026-09-06")).toEqual([
+      "Site",
+      "Meta",
+      "TikTok Live",
+    ]);
   });
 });

@@ -21,7 +21,7 @@ import {
 
 const MAX_ANALYTICS_RANGE_DAYS = 370;
 export const UOL_LEAD_CHANNEL_LAST_ACTIVE_DATE = "2026-07-31";
-export const SEPTEMBER_HIDDEN_LEAD_CHANNELS = ["TIKTOK", "TIKTOK LIVE", "INTERLAGOS"] as const;
+export const SEPTEMBER_HIDDEN_LEAD_CHANNELS = ["TIKTOK", "INTERLAGOS"] as const;
 export const SEPTEMBER_LEAD_CHANNEL_HIDE_FROM = "2026-09-01";
 
 export function isLeadChannelActiveOnDate(channel: string, date: string): boolean {
