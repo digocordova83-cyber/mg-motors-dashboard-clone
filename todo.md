@@ -3417,3 +3417,11 @@
 - [x] Criar ou atualizar testes para conteúdo, filtros e exclusões do relatório.
 - [x] Validar visualmente a tela e a paginação de impressão em desktop.
 - [x] Executar testes, checagem de tipos e build antes da entrega.
+
+## Exportação completa de contatos de Leads
+
+- [x] Mapear Nome, E-mail, Telefone, Cidade e Estado na base canônica de Leads.
+- [x] Definir e aplicar deduplicação segura por contato sem criar ou alterar dados.
+- [x] Gerar CSV completo com apenas os cinco campos solicitados e codificação compatível.
+- [x] Validar cabeçalhos, contagem de registros e ausência de duplicidades na exportação.
+- [x] Entregar o CSV de contatos ao usuário.
