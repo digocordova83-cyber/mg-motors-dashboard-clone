@@ -3407,3 +3407,13 @@
 - [x] Reconciliar base total, período de setembro, canais e cobertura máxima.
 - [x] Reexecutar a fonte para confirmar idempotência e registrar a auditoria.
 - [x] Validar a atualização técnica e entregar o status ao usuário.
+
+## Relatório diário de Leads em PDF
+
+- [x] Mapear os indicadores, gráficos e tabelas atuais da aba Leads que devem compor o relatório.
+- [x] Criar botão de gerar/imprimir PDF respeitando o período selecionado na aba Leads.
+- [x] Excluir do PDF investimento, CPL e qualquer outra informação financeira.
+- [x] Incluir no relatório o total do período e os Leads do dia anterior, além dos recortes operacionais relevantes.
+- [x] Criar ou atualizar testes para conteúdo, filtros e exclusões do relatório.
+- [x] Validar visualmente a tela e a paginação de impressão em desktop.
+- [x] Executar testes, checagem de tipos e build antes da entrega.

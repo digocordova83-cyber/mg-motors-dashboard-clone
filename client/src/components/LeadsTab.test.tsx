@@ -23,6 +23,11 @@ import {
   resolveCsvImportPhase,
   resolveLeadsActionVisibility,
 } from "./LeadsTab";
+import {
+  activateLeadsDailyPrintMode,
+  LeadsDailyPrintReport,
+  LeadsDailyReportButton,
+} from "./LeadsDailyPrintReport";
 
 describe("interface de Leads", () => {
   it("calcula acumulado real e pace linear pela meta mensal sem inventar referência ausente", () => {
@@ -378,6 +383,48 @@ describe("interface de Leads", () => {
     expect(en).toContain("Export database");
     expect(pending).toContain("Gerando Excel...");
     expect(pending).toContain("disabled");
+  });
+
+  it("exibe o botão bilíngue do PDF diário e aciona a impressão", () => {
+    let printed = 0;
+    const pt = renderToStaticMarkup(
+      <LeadsDailyReportButton onPrint={() => { printed += 1; }} />,
+    );
+    const en = renderToStaticMarkup(
+      <LeadsDailyReportButton locale="en-US" onPrint={() => undefined} />,
+    );
+
+    expect(pt).toContain("Gerar PDF diário");
+    expect(pt).toContain('data-testid="leads-daily-report-button"');
+    expect(en).toContain("Generate daily PDF");
+    expect(printed).toBe(0);
+  });
+
+  it("ativa o modo de impressão de Leads e o remove após afterprint", () => {
+    const body = { dataset: {} as DOMStringMap };
+    let afterPrint: (() => void) | undefined;
+    let printCalls = 0;
+    activateLeadsDailyPrintMode({
+      body,
+      print: () => { printCalls += 1; },
+      addAfterPrintListener: listener => { afterPrint = listener; },
+    });
+
+    expect(body.dataset.printMode).toBe("leads-daily");
+    expect(printCalls).toBe(1);
+    afterPrint?.();
+    expect(body.dataset.printMode).toBeUndefined();
+  });
+
+  it("gera relatório operacional com indicadores, gráficos e tabelas sem conteúdo financeiro", () => {
+    const source = readFileSync(new URL("./LeadsDailyPrintReport.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain("Relatório diário de Leads");
+    expect(source).toContain('data-testid="leads-daily-print-chart"');
+    expect(source).toContain("Desempenho por canal");
+    expect(source).toContain("Leads por modelo");
+    expect(source).toContain("Distribuição por concessionária");
+    expect(source).not.toMatch(/investimento|investment|\bCPL\b|currency|mediaInvestment/i);
   });
 
   it("oculta todas as ações mutáveis no modo somente leitura de mgsales", () => {

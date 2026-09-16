@@ -11,6 +11,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { WeeklySalesPanel } from "./WeeklySalesPanel";
+import {
+  activateLeadsDailyPrintMode,
+  LeadsDailyPrintReport,
+  LeadsDailyReportButton,
+} from "./LeadsDailyPrintReport";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
@@ -1173,6 +1178,14 @@ export function LeadsTab({
     exportMutation.mutate({ dateFrom, dateTo, locale });
   }
 
+  function handleDailyReportPrint() {
+    activateLeadsDailyPrintMode({
+      body: document.body,
+      print: () => window.print(),
+      addAfterPrintListener: listener => window.addEventListener("afterprint", listener, { once: true }),
+    });
+  }
+
   if (analytics.isLoading) return <LeadsLoading locale={locale} />;
   if (analytics.error) return <LeadsError message={analytics.error.message} onRetry={() => analytics.refetch()} locale={locale} />;
   if (!analytics.data) return <LeadsError message={ui(locale, "A análise retornou sem dados.", "The analysis returned no data.")} onRetry={() => analytics.refetch()} locale={locale} />;
@@ -1197,6 +1210,7 @@ export function LeadsTab({
           <p className="mt-1 text-[10px] text-slate-700"><LeadFilterIdentity dateFrom={dateFrom} dateTo={dateTo} locale={locale} /></p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <LeadsDailyReportButton locale={locale} onPrint={handleDailyReportPrint} />
           {actionVisibility.canExport ? (
             <LeadsExportButton
               locale={locale}
@@ -1214,6 +1228,8 @@ export function LeadsTab({
           ) : null}
         </div>
       </div>
+
+      <LeadsDailyPrintReport analytics={data} dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
 
       {actionVisibility.canExport && exportMessage ? (
         <div role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">
