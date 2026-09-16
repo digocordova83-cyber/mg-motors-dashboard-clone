@@ -3450,3 +3450,10 @@
 - [x] Excluir investimento, CPL e qualquer outra informação financeira do PDF.
 - [x] Atualizar testes de conteúdo, estrutura e impressão.
 - [x] Gerar o PDF real e revisar todas as páginas antes da entrega.
+
+## Correção de marca — PDF diário de Leads
+
+- [x] Remover “Powered by emotion” de todas as páginas do relatório.
+- [x] Substituir o símbolo branco deformado por um logo MG completo e proporcional.
+- [x] Atualizar testes para impedir o retorno da assinatura removida e validar a marca correta.
+- [x] Exportar e revisar o PDF real após a correção visual.

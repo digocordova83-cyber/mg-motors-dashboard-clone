@@ -416,17 +416,21 @@ describe("interface de Leads", () => {
     expect(body.dataset.printMode).toBeUndefined();
   });
 
-  it("gera relatório operacional com indicadores, gráficos e tabelas sem conteúdo financeiro", () => {
+  it("gera relatório operacional com a marca MG correta e sem assinatura ou conteúdo financeiro", () => {
     const source = readFileSync(new URL("./LeadsDailyPrintReport.tsx", import.meta.url), "utf8");
 
     expect(source).toContain("Leads — Relatório Diário");
+    expect(source).toContain("/manus-storage/mg-logo-transparent-exact_cdfbeb6c.png");
+    expect(source).toContain('alt="MG Motor"');
+    expect(source).not.toContain("brightness-0 invert");
     expect(source).toContain('data-testid="leads-daily-print-chart"');
     expect(source).toContain("Leads por dia e canal");
     expect(source).toContain("Leads por modelo");
     expect(source).toContain("MG4 Urban por canal de origem");
     expect(source).toContain("Top 10 — Conversão");
     expect(source).toContain("Bottom 10 — Conversão");
-    expect(source).toContain("Powered by");
+    expect(source).not.toContain("Powered by");
+    expect(source).not.toContain(">emotion<");
     expect(source).not.toMatch(/investimento|investment|\bCPL\b|currency|mediaInvestment/i);
   });
 

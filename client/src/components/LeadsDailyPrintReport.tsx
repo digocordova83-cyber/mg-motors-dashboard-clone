@@ -103,7 +103,7 @@ function ReportLogo() {
     <img
       src={MG_LOGO_URL}
       alt="MG Motor"
-      className="h-[62px] w-[62px] object-contain brightness-0 invert"
+      className="h-[66px] w-[68px] object-contain"
     />
   );
 }
@@ -392,9 +392,8 @@ export function LeadsDailyPrintReport({
           </div>
           <ReportLogo />
         </div>
-        <div className="mt-auto flex items-end justify-between pb-1">
+        <div className="mt-auto flex items-end pb-1">
           <span className="text-[9px] uppercase tracking-[0.18em] text-slate-400">MG MOTOR | SÃO PAULO</span>
-          <div className="text-right"><p className="text-[27px] font-light tracking-[0.08em] text-white">Powered by</p><p className="-mt-1 text-[35px] font-semibold italic text-[#e2212d]">emotion</p></div>
         </div>
       </article>
 
