@@ -3399,3 +3399,11 @@
 - [x] Atualizar as bases oficiais de setembro com processo idempotente.
 - [x] Reconciliar totais, duplicidades, cobertura por canal e Retail.
 - [x] Validar a atualização no dashboard, executar os testes e registrar a auditoria.
+
+## Nova sincronização da base de Leads — setembro
+
+- [x] Executar a fonte oficial de Leads e identificar novos registros de setembro.
+- [x] Aplicar a sincronização transacional e idempotente na base canônica.
+- [x] Reconciliar base total, período de setembro, canais e cobertura máxima.
+- [x] Reexecutar a fonte para confirmar idempotência e registrar a auditoria.
+- [x] Validar a atualização técnica e entregar o status ao usuário.
