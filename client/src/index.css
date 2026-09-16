@@ -279,14 +279,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 8mm;
+    size: 16in 9in;
+    margin: 0;
   }
 
   body[data-print-mode="leads-daily"] {
     min-width: 0;
-    background: #ffffff !important;
-    color: #0f172a !important;
+    background: #000000 !important;
+    color: #ffffff !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
@@ -299,13 +299,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute !important;
     inset: 0 auto auto 0 !important;
     display: block !important;
-    width: 100% !important;
-    background: #ffffff !important;
+    width: 16in !important;
+    background: #000000 !important;
   }
 
   body[data-print-mode="leads-daily"] .leads-print-page {
     box-sizing: border-box;
-    min-height: 190mm;
+    width: 16in;
+    min-height: 9in;
+    height: 9in;
+    padding: 0.42in 0.56in 0.28in;
+    overflow: hidden;
+    background: #000000 !important;
     break-after: page;
     page-break-after: always;
   }

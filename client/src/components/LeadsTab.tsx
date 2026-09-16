@@ -1054,6 +1054,10 @@ export function LeadsTab({
   const queryInput = useMemo(() => ({ dateFrom, dateTo }), [dateFrom, dateTo]);
   const actionVisibility = resolveLeadsActionVisibility({ readOnly, canImportLeads });
   const analytics = trpc.leads.analytics.useQuery(queryInput, { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false, retry: 1 });
+  const weeklySalesForPrint = trpc.leads.weeklySalesMetrics.useQuery(
+    { competence: dateFrom.slice(0, 7), dateFrom, dateTo },
+    { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false, retry: 1 },
+  );
   const bounds = trpc.leads.bounds.useQuery(undefined, { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false });
   const history = trpc.leads.importHistory.useQuery(
     { limit: 6 },
@@ -1229,7 +1233,7 @@ export function LeadsTab({
         </div>
       </div>
 
-      <LeadsDailyPrintReport analytics={data} dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
+      <LeadsDailyPrintReport analytics={data} weeklySales={weeklySalesForPrint.data ?? null} dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
 
       {actionVisibility.canExport && exportMessage ? (
         <div role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-xs text-emerald-300">

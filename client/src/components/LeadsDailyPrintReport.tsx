@@ -1,11 +1,17 @@
-import React from "react";
 import { Button } from "@/components/ui/button";
 import type { inferRouterOutputs } from "@trpc/server";
 import { Printer } from "lucide-react";
+import React from "react";
 import type { AppRouter } from "../../../server/routers";
 
-type LeadAnalytics = inferRouterOutputs<AppRouter>["leads"]["analytics"];
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type LeadAnalytics = RouterOutputs["leads"]["analytics"];
+type WeeklySalesMetrics = RouterOutputs["leads"]["weeklySalesMetrics"];
 type Locale = "pt-BR" | "en-US";
+type Week = 1 | 2 | 3 | 4 | 5;
+
+const MG_LOGO_URL = "/manus-storage/mg-logo-transparent-exact_cdfbeb6c.png";
+const CHANNEL_COLORS = ["#e2212d", "#38bdf8", "#a78bfa", "#f59e0b", "#10b981", "#f472b6"];
 
 function ui(locale: Locale, pt: string, en: string) {
   return locale === "en-US" ? en : pt;
@@ -35,6 +41,27 @@ function formatShortDate(value: string, locale: Locale) {
 function formatCategory(value: string | null | undefined, locale: Locale) {
   const normalized = value?.trim() ?? "";
   return normalized || ui(locale, "Indisponível", "Unavailable");
+}
+
+function monthCode(value: string, locale: Locale) {
+  const date = new Date(`${value}T12:00:00`);
+  const month = new Intl.DateTimeFormat(locale, { month: "short" })
+    .format(date)
+    .replace(".", "")
+    .toLocaleUpperCase(locale);
+  return `${month}/${String(date.getFullYear()).slice(-2)}`;
+}
+
+function periodLabel(dateFrom: string, dateTo: string, locale: Locale) {
+  const from = new Date(`${dateFrom}T12:00:00`);
+  const to = new Date(`${dateTo}T12:00:00`);
+  const fromLabel = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "long" }).format(from);
+  const toLabel = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "long" }).format(to);
+  return `${fromLabel}  ~  ${toLabel}`;
+}
+
+function percent(value: number | null, locale: Locale) {
+  return value == null ? "—" : `${formatNumber(value, locale)}%`;
 }
 
 export function LeadsDailyReportButton({
@@ -71,203 +98,350 @@ export function activateLeadsDailyPrintMode(input: {
   return cleanup;
 }
 
-function DailyLeadVolumeChart({ daily, locale }: { daily: LeadAnalytics["daily"]; locale: Locale }) {
-  const width = 1000;
-  const height = 250;
-  const padding = { top: 24, right: 20, bottom: 38, left: 52 };
-  const plotWidth = width - padding.left - padding.right;
-  const plotHeight = height - padding.top - padding.bottom;
-  const maxValue = Math.max(...daily.flatMap(point => [point.total, point.rollingAverage7d]), 1);
-  const barSlot = plotWidth / Math.max(daily.length, 1);
-  const barWidth = Math.max(5, Math.min(24, barSlot * 0.58));
-  const x = (index: number) => padding.left + barSlot * index + barSlot / 2;
-  const y = (value: number) => padding.top + plotHeight - (value / maxValue) * plotHeight;
-  const linePoints = daily.map((point, index) => `${x(index)},${y(point.rollingAverage7d)}`).join(" ");
-  const tickStep = Math.max(1, Math.ceil(daily.length / 10));
-
+function ReportLogo() {
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label={ui(locale, "Gráfico diário de Leads", "Daily Leads chart")}
-      className="h-[250px] w-full"
-      data-testid="leads-daily-print-chart"
-    >
-      <title>{ui(locale, "Volume diário de Leads e média móvel de sete dias", "Daily Leads volume and seven-day rolling average")}</title>
-      {[0, 0.25, 0.5, 0.75, 1].map(fraction => {
-        const value = maxValue * fraction;
-        const gridY = y(value);
-        return (
-          <g key={fraction}>
-            <line x1={padding.left} x2={width - padding.right} y1={gridY} y2={gridY} stroke="#e2e8f0" strokeWidth="1" />
-            <text x={padding.left - 8} y={gridY + 4} textAnchor="end" fontSize="10" fill="#64748b">
-              {formatInteger(value, locale)}
-            </text>
-          </g>
-        );
-      })}
-      {daily.map((point, index) => {
-        const pointX = x(index);
-        const barY = y(point.total);
-        const barHeight = padding.top + plotHeight - barY;
-        return (
-          <g key={point.date}>
-            <rect x={pointX - barWidth / 2} y={barY} width={barWidth} height={barHeight} rx="2" fill="#14324a" />
-            {index % tickStep === 0 || index === daily.length - 1 ? (
-              <text x={pointX} y={height - 14} textAnchor="middle" fontSize="9" fill="#64748b">
-                {formatShortDate(point.date, locale)}
-              </text>
-            ) : null}
-          </g>
-        );
-      })}
-      {daily.length > 1 ? <polyline points={linePoints} fill="none" stroke="#e2212d" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" /> : null}
-      <g transform={`translate(${width - 285} 14)`}>
-        <rect width="12" height="8" y="-7" rx="1" fill="#14324a" />
-        <text x="18" y="0" fontSize="10" fill="#475569">{ui(locale, "Leads/dia", "Leads/day")}</text>
-        <line x1="105" x2="125" y1="-3" y2="-3" stroke="#e2212d" strokeWidth="3" />
-        <text x="132" y="0" fontSize="10" fill="#475569">{ui(locale, "Média móvel 7d", "7-day average")}</text>
-      </g>
-    </svg>
+    <img
+      src={MG_LOGO_URL}
+      alt="MG Motor"
+      className="h-[62px] w-[62px] object-contain brightness-0 invert"
+    />
   );
 }
 
-function PrintMetric({ label, value, detail }: { label: string; value: string; detail?: string }) {
+function ReportHeader({ dateFrom, dateTo, locale }: { dateFrom: string; dateTo: string; locale: Locale }) {
   return (
-    <div className="border border-slate-200 bg-slate-50 px-4 py-3">
-      <p className="text-[9px] font-bold uppercase tracking-[0.11em] text-slate-500">{label}</p>
-      <p className="mt-1 text-[22px] font-bold leading-none text-slate-950">{value}</p>
-      {detail ? <p className="mt-1.5 text-[9px] text-slate-500">{detail}</p> : null}
-    </div>
-  );
-}
-
-function PrintReportHeader({ dateFrom, dateTo, locale }: { dateFrom: string; dateTo: string; locale: Locale }) {
-  return (
-    <header className="mb-5 flex items-end justify-between border-b-4 border-[#e2212d] pb-3">
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#e2212d]">MG Motor Brasil</p>
-        <h1 className="mt-1 text-[26px] font-bold leading-none text-slate-950">{ui(locale, "Relatório diário de Leads", "Daily Leads Report")}</h1>
+    <header className="relative z-10 grid shrink-0 grid-cols-[1fr_auto] items-start">
+      <div className="pb-1">
+        <h1 className="text-[29px] font-medium uppercase leading-none tracking-[0.02em] text-white">
+          {ui(locale, "Gestão de Leads", "Leads Management")} — {monthCode(dateTo, locale)}
+        </h1>
+        <div className="mt-4 inline-flex min-w-[355px] items-center bg-[#d80b21] px-5 py-2 text-[15px] font-bold text-white">
+          <span className="mr-8 uppercase">{ui(locale, "Período:", "Data from:")}</span>
+          <span>{periodLabel(dateFrom, dateTo, locale)}</span>
+        </div>
       </div>
-      <div className="text-right text-[10px] leading-4 text-slate-600">
-        <p className="font-bold text-slate-900">{formatDate(dateFrom, locale)} — {formatDate(dateTo, locale)}</p>
-        <p>{ui(locale, "Base consolidada pelo campo Data Corrigida", "Database consolidated by Corrected Date")}</p>
-      </div>
+      <ReportLogo />
     </header>
   );
 }
 
-function PrintPageFooter({ page, locale }: { page: number; locale: Locale }) {
+function ReportFooter({ page, locale }: { page: number; locale: Locale }) {
   return (
-    <footer className="mt-4 flex items-center justify-between border-t border-slate-200 pt-2 text-[8px] text-slate-500">
-      <span>{ui(locale, "Uso interno — relatório operacional de Leads", "Internal use — operational Leads report")}</span>
+    <footer className="relative z-10 mt-auto flex shrink-0 items-end justify-between pt-2 text-[10px] text-slate-400">
+      <span>{ui(locale, "Fonte: Dashboard BBRO & Co", "Source: BBRO & Co dashboard")}</span>
       <span>{ui(locale, `Página ${page} de 4`, `Page ${page} of 4`)}</span>
     </footer>
   );
 }
 
+function MetricCard({ label, value, detail, accent }: { label: string; value: string; detail: string; accent: string }) {
+  return (
+    <div className="relative border border-[#1d2a3d] bg-[#0b1423] px-4 py-3">
+      <span className="absolute inset-x-0 top-0 h-[2px]" style={{ backgroundColor: accent }} />
+      <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
+      <p className="mt-2 text-[28px] font-semibold leading-none text-white">{value}</p>
+      <p className="mt-1.5 text-[11px] text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
+function StackedDailyChart({ analytics, locale }: { analytics: LeadAnalytics; locale: Locale }) {
+  const daily = analytics.daily;
+  const channels = analytics.channels.filter(channel => channel.leads > 0).slice(0, 6);
+  const width = 1380;
+  const height = 355;
+  const padding = { top: 30, right: 60, bottom: 58, left: 58 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const maxDaily = Math.max(...daily.map(point => point.total), 1);
+  let cumulative = 0;
+  const cumulativePoints = daily.map(point => {
+    cumulative += point.total;
+    return cumulative;
+  });
+  const goal = analytics.pacing.goal;
+  const pacePoints = daily.map(point => {
+    if (goal == null) return null;
+    const day = Number(point.date.slice(-2));
+    return (goal / analytics.pacing.daysInMonth) * day;
+  });
+  const maxCumulative = Math.max(
+    cumulativePoints.at(-1) ?? 1,
+    ...pacePoints.map(value => value ?? 0),
+    1,
+  );
+  const slot = plotWidth / Math.max(daily.length, 1);
+  const barWidth = Math.max(13, Math.min(38, slot * 0.63));
+  const x = (index: number) => padding.left + slot * index + slot / 2;
+  const yDaily = (value: number) => padding.top + plotHeight - (value / maxDaily) * plotHeight;
+  const yCumulative = (value: number) => padding.top + plotHeight - (value / maxCumulative) * plotHeight;
+  const actualPath = cumulativePoints.map((value, index) => `${x(index)},${yCumulative(value)}`).join(" ");
+  const pacePath = pacePoints
+    .map((value, index) => value == null ? null : `${x(index)},${yCumulative(value)}`)
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label={ui(locale, "Gráfico diário de Leads por canal", "Daily Leads chart by channel")}
+      className="h-[330px] w-full"
+      data-testid="leads-daily-print-chart"
+    >
+      <title>{ui(locale, "Volume diário por canal com acumulado real e pace", "Daily channel volume with cumulative actual and pace")}</title>
+      {[0, 0.25, 0.5, 0.75, 1].map(fraction => {
+        const gridY = yDaily(maxDaily * fraction);
+        return (
+          <g key={fraction}>
+            <line x1={padding.left} x2={width - padding.right} y1={gridY} y2={gridY} stroke="#1b2a3d" strokeDasharray="4 5" />
+            <text x={padding.left - 10} y={gridY + 4} textAnchor="end" fontSize="11" fill="#64748b">
+              {formatInteger(maxDaily * fraction, locale)}
+            </text>
+            <text x={width - padding.right + 10} y={gridY + 4} fontSize="11" fill="#64748b">
+              {formatInteger(maxCumulative * fraction, locale)}
+            </text>
+          </g>
+        );
+      })}
+      {daily.map((point, index) => {
+        let stacked = 0;
+        return (
+          <g key={point.date}>
+            {channels.map((channel, channelIndex) => {
+              const value = point.values[channel.value] ?? 0;
+              const segmentHeight = (value / maxDaily) * plotHeight;
+              const segmentY = padding.top + plotHeight - stacked - segmentHeight;
+              stacked += segmentHeight;
+              return (
+                <rect
+                  key={channel.value}
+                  x={x(index) - barWidth / 2}
+                  y={segmentY}
+                  width={barWidth}
+                  height={Math.max(segmentHeight, 0)}
+                  fill={CHANNEL_COLORS[channelIndex % CHANNEL_COLORS.length]}
+                />
+              );
+            })}
+            <text x={x(index)} y={yDaily(point.total) - 7} textAnchor="middle" fontSize="10" fontWeight="700" fill="#f8fafc">
+              {formatInteger(point.total, locale)}
+            </text>
+            <text x={x(index)} y={height - 30} textAnchor="middle" fontSize="10" fill="#64748b">
+              {formatShortDate(point.date, locale)}
+            </text>
+          </g>
+        );
+      })}
+      {daily.length > 1 ? (
+        <>
+          <polyline points={actualPath} fill="none" stroke="#f8fafc" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+          {pacePath ? <polyline points={pacePath} fill="none" stroke="#fb7185" strokeWidth="2.5" strokeDasharray="7 6" /> : null}
+        </>
+      ) : null}
+      <g transform={`translate(${padding.left} ${height - 6})`}>
+        {channels.map((channel, index) => (
+          <g key={channel.value} transform={`translate(${index * 150} 0)`}>
+            <rect width="12" height="9" y="-8" fill={CHANNEL_COLORS[index % CHANNEL_COLORS.length]} />
+            <text x="18" y="0" fontSize="10" fill="#cbd5e1">{channel.value}</text>
+          </g>
+        ))}
+        <g transform={`translate(${channels.length * 150} 0)`}>
+          <line x1="0" x2="22" y1="-4" y2="-4" stroke="#f8fafc" strokeWidth="3" />
+          <text x="28" y="0" fontSize="10" fill="#cbd5e1">{ui(locale, "Acumulado real", "Cumulative actual")}</text>
+        </g>
+        {pacePath ? (
+          <g transform={`translate(${channels.length * 150 + 155} 0)`}>
+            <line x1="0" x2="22" y1="-4" y2="-4" stroke="#fb7185" strokeWidth="2.5" strokeDasharray="6 4" />
+            <text x="28" y="0" fontSize="10" fill="#cbd5e1">{ui(locale, "Pace acumulado", "Cumulative pace")}</text>
+          </g>
+        ) : null}
+      </g>
+    </svg>
+  );
+}
+
+function ChannelCard({ channel, locale }: { channel: LeadAnalytics["channels"][number]; locale: Locale }) {
+  const aboveTarget = channel.remainingToTarget != null && channel.remainingToTarget < 0;
+  return (
+    <article className="border border-[#1d2a3d] bg-[#0b1423] p-3">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[15px] font-semibold text-white">{formatCategory(channel.value, locale)}</p>
+          <p className="mt-0.5 text-[10px] text-slate-500">{formatNumber(channel.dailyAverage, locale)} {ui(locale, "por dia", "per day")} · {formatNumber(channel.sharePercent, locale)}% {ui(locale, "do período", "of period")}</p>
+        </div>
+        <div className="text-right"><p className="text-[20px] font-semibold text-white">{formatInteger(channel.leads, locale)}</p><p className="text-[9px] uppercase tracking-[0.1em] text-slate-500">Leads</p></div>
+      </div>
+      <div className="mt-2 border-t border-[#1d2a3d] pt-2">
+        <p className="text-[9px] uppercase tracking-[0.11em] text-slate-500">{ui(locale, "Meta do canal", "Channel target")}</p>
+        <div className="mt-1 flex items-end justify-between gap-3">
+          <p className="text-[13px] text-slate-300">{formatInteger(channel.leads, locale)} / {channel.target == null ? "—" : formatInteger(channel.target, locale)}</p>
+          <p className="text-[13px] font-semibold text-[#ff8c93]">{percent(channel.achievementPercent, locale)}</p>
+        </div>
+        <div className="mt-1.5 h-1 overflow-hidden bg-[#182438]"><span className="block h-full bg-[#e2212d]" style={{ width: `${Math.min(channel.achievementPercent ?? 0, 100)}%` }} /></div>
+        <p className="mt-1.5 text-[10px] text-slate-500">
+          {channel.remainingToTarget == null
+            ? ui(locale, "Sem meta cadastrada", "No target available")
+            : aboveTarget
+              ? `${formatInteger(Math.abs(channel.remainingToTarget), locale)} ${ui(locale, "acima da meta", "above target")}`
+              : `${formatInteger(channel.remainingToTarget, locale)} ${ui(locale, "restantes", "remaining")}`}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+function HorizontalBreakdown({ title, subtitle, items, accent, locale }: { title: string; subtitle: string; items: LeadAnalytics["models"]; accent: string; locale: Locale }) {
+  const max = Math.max(...items.map(item => item.leads), 1);
+  return (
+    <section className="border border-[#1d2a3d] bg-[#0b1423]">
+      <div className="border-b border-[#1d2a3d] px-3 py-2.5"><h2 className="text-[14px] font-semibold text-white">{title}</h2><p className="mt-0.5 text-[10px] text-slate-500">{subtitle}</p></div>
+      <div className="space-y-2 px-3 py-2.5">
+        {items.slice(0, 7).map(item => (
+          <div key={item.value}>
+            <div className="flex items-center justify-between gap-4 text-[11px]"><span className="font-semibold text-slate-200">{formatCategory(item.value, locale)}</span><span className="text-slate-500">{formatInteger(item.leads, locale)} · {formatNumber(item.sharePercent, locale)}%</span></div>
+            <div className="mt-1 h-1 overflow-hidden bg-[#182438]"><span className="block h-full" style={{ width: `${(item.leads / max) * 100}%`, backgroundColor: accent }} /></div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+type RankingRow = { dealerName: string; sales: number; leads: number; conversionRatePercent: number };
+
+export function buildDailyReportConversionRankings(metrics: WeeklySalesMetrics | null | undefined) {
+  const week = (metrics?.referenceWeek ?? 5) as Week;
+  const excluded = new Set(["leads em qualificação", "indisponível", "unavailable", "outro", "outros"]);
+  const rows: RankingRow[] = metrics?.dealers.flatMap(dealer => {
+    const values = dealer.weeks[week];
+    const leads = values?.leads ?? 0;
+    const sales = values?.retail ?? null;
+    const normalized = dealer.dealerName.trim().toLocaleLowerCase("pt-BR");
+    if (dealer.matchStatus !== "MATCHED" || excluded.has(normalized) || sales == null || leads <= 0) return [];
+    return [{ dealerName: dealer.dealerName, sales, leads, conversionRatePercent: Math.round((sales / leads) * 10_000) / 100 }];
+  }) ?? [];
+  return {
+    week,
+    top: [...rows].sort((a, b) => b.conversionRatePercent - a.conversionRatePercent || b.sales - a.sales).slice(0, 10),
+    bottom: [...rows].sort((a, b) => a.conversionRatePercent - b.conversionRatePercent || b.sales - a.sales).slice(0, 10),
+  };
+}
+
+function RankingList({ title, subtitle, rows, tone, locale }: { title: string; subtitle: string; rows: RankingRow[]; tone: "top" | "bottom"; locale: Locale }) {
+  const max = Math.max(...rows.map(row => row.conversionRatePercent), 1);
+  const accent = tone === "top" ? "#21d4b4" : "#f59e0b";
+  const numberColor = tone === "top" ? "#34d399" : "#fb7185";
+  return (
+    <section className="border border-[#1d2a3d] bg-[#0b1423]">
+      <div className="border-b border-[#1d2a3d] px-4 py-2.5"><h2 className="text-[14px] font-semibold text-white">{title}</h2><p className="mt-0.5 text-[10px] text-slate-500">{subtitle}</p></div>
+      <div className="divide-y divide-[#182438] px-4">
+        {rows.map((row, index) => (
+          <div key={`${row.dealerName}-${index}`} className="py-2">
+            <div className="flex items-center justify-between gap-4 text-[10px]">
+              <p className="min-w-0 truncate font-semibold text-slate-100"><span className="mr-2 tabular-nums" style={{ color: numberColor }}>{String(index + 1).padStart(2, "0")}</span>{row.dealerName}</p>
+              <p className="shrink-0 text-slate-500">{formatInteger(row.sales, locale)} MTD Retail Order · {formatInteger(row.leads, locale)} Leads · <strong style={{ color: numberColor }}>{formatNumber(row.conversionRatePercent, locale)}%</strong></p>
+            </div>
+            <div className="mt-1.5 h-1 overflow-hidden bg-[#182438]"><span className="block h-full" style={{ width: `${(row.conversionRatePercent / max) * 100}%`, backgroundColor: accent }} /></div>
+          </div>
+        ))}
+        {!rows.length ? <p className="py-12 text-center text-[12px] text-slate-500">{ui(locale, "Ranking indisponível para o período", "Ranking unavailable for the period")}</p> : null}
+      </div>
+    </section>
+  );
+}
+
 export function LeadsDailyPrintReport({
   analytics,
+  weeklySales = null,
   dateFrom,
   dateTo,
   locale = "pt-BR",
 }: {
   analytics: LeadAnalytics;
+  weeklySales?: WeeklySalesMetrics | null;
   dateFrom: string;
   dateTo: string;
   locale?: Locale;
 }) {
-  const paceStatus = analytics.pacing.status === "AHEAD"
-    ? ui(locale, "Acima do ritmo", "Ahead of pace")
-    : analytics.pacing.status === "BEHIND"
-      ? ui(locale, "Abaixo do ritmo", "Behind pace")
-      : analytics.pacing.status === "ON_TRACK"
-        ? ui(locale, "No ritmo", "On pace")
-        : ui(locale, "Sem referência", "No benchmark");
   const peak = analytics.daily.reduce((value, point) => Math.max(value, point.total), 0);
-  const latestDay = analytics.daily.at(-1)?.total ?? 0;
+  const dealerShare = analytics.summary.totalLeads
+    ? (analytics.dealerAudit.summary.assignedLeads / analytics.summary.totalLeads) * 100
+    : 0;
   const qualificationShare = analytics.summary.totalLeads
     ? (analytics.dealerAudit.summary.unavailableLeads / analytics.summary.totalLeads) * 100
     : 0;
-  const dealerPageSize = Math.ceil(analytics.dealerAudit.dealers.length / 2);
-  const dealerPages = [
-    analytics.dealerAudit.dealers.slice(0, dealerPageSize),
-    analytics.dealerAudit.dealers.slice(dealerPageSize),
-  ];
+  const paceDifference = analytics.pacing.goal == null
+    ? null
+    : analytics.pacing.current - (analytics.pacing.goal / analytics.pacing.daysInMonth) * analytics.pacing.closedDays;
+  const rankings = buildDailyReportConversionRankings(weeklySales);
 
   return (
-    <section data-leads-print-root data-testid="leads-daily-print-report" className="bg-white text-slate-900">
-      <article className="leads-print-page">
-        <PrintReportHeader dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
-        <div className="grid grid-cols-5 gap-2">
-          <PrintMetric label={ui(locale, "Leads no período", "Period Leads")} value={formatInteger(analytics.summary.totalLeads, locale)} detail={`${analytics.summary.calendarDays} ${ui(locale, "dia(s)", "day(s)")}`} />
-          <PrintMetric label={ui(locale, "Leads no último dia", "Latest-day Leads")} value={formatInteger(latestDay, locale)} detail={formatDate(dateTo, locale)} />
-          <PrintMetric label={ui(locale, "Média diária", "Daily average")} value={formatNumber(analytics.summary.dailyAverage, locale)} detail={ui(locale, "Leads por dia", "Leads per day")} />
-          <PrintMetric label={ui(locale, "Pico diário", "Daily peak")} value={formatInteger(peak, locale)} detail={ui(locale, "Maior volume no período", "Highest period volume")} />
-          <PrintMetric label={ui(locale, "Canais ativos", "Active channels")} value={formatInteger(analytics.summary.activeChannels, locale)} detail={ui(locale, "Com pelo menos 1 Lead", "With at least 1 Lead")} />
-        </div>
-        <div className="mt-4 grid grid-cols-[1.7fr_1fr] gap-4">
-          <section className="border border-slate-200 p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div><h2 className="text-[13px] font-bold text-slate-950">{ui(locale, "Evolução diária", "Daily evolution")}</h2><p className="text-[9px] text-slate-500">{ui(locale, "Volume diário e média móvel de sete dias", "Daily volume and seven-day rolling average")}</p></div>
-              <span className="text-[9px] font-bold text-[#e2212d]">{paceStatus}</span>
+    <section data-leads-print-root data-testid="leads-daily-print-report" className="bg-black text-white">
+      <article className="leads-print-page flex flex-col bg-black">
+        <div className="h-[5px] w-[125px] bg-white" />
+        <div className="mt-12 flex items-start justify-between">
+          <div>
+            <h1 className="text-[35px] font-semibold uppercase tracking-[0.025em] text-white">
+              {ui(locale, "Leads — Relatório Diário", "Leads — Daily Report")} — {monthCode(dateTo, locale)}
+            </h1>
+            <div className="mt-5 inline-flex min-w-[355px] items-center bg-[#d80b21] px-5 py-2 text-[16px] font-bold text-white">
+              <span className="mr-8 uppercase">{ui(locale, "Período:", "Data from:")}</span>
+              <span>{periodLabel(dateFrom, dateTo, locale)}</span>
             </div>
-            <DailyLeadVolumeChart daily={analytics.daily} locale={locale} />
-          </section>
-          <section className="border border-slate-200 p-4">
-            <h2 className="text-[13px] font-bold text-slate-950">{ui(locale, "Pacing mensal", "Monthly pacing")}</h2>
-            <p className="mt-1 text-[9px] text-slate-500">{analytics.pacing.competence} · {ui(locale, "fechado até", "closed through")} {formatDate(analytics.pacing.asOfDate, locale)}</p>
-            <div className="mt-4 border-b border-slate-200 pb-3"><p className="text-[9px] uppercase text-slate-500">{ui(locale, "Atual / meta", "Current / goal")}</p><p className="mt-1 text-[24px] font-bold text-slate-950">{formatInteger(analytics.pacing.current, locale)} <span className="text-[13px] text-slate-400">/ {analytics.pacing.goal == null ? "—" : formatInteger(analytics.pacing.goal, locale)}</span></p></div>
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-[9px]">
-              <div><dt className="text-slate-500">{ui(locale, "Progresso", "Progress")}</dt><dd className="mt-0.5 font-bold text-slate-900">{analytics.pacing.progressPercent == null ? "—" : `${formatNumber(analytics.pacing.progressPercent, locale)}%`}</dd></div>
-              <div><dt className="text-slate-500">{ui(locale, "Projeção", "Projection")}</dt><dd className="mt-0.5 font-bold text-slate-900">{formatInteger(analytics.pacing.projection, locale)}</dd></div>
-              <div><dt className="text-slate-500">{ui(locale, "Média/dia", "Average/day")}</dt><dd className="mt-0.5 font-bold text-slate-900">{formatNumber(analytics.pacing.averagePerDay, locale)}</dd></div>
-              <div><dt className="text-slate-500">{ui(locale, "Necessário/dia", "Required/day")}</dt><dd className="mt-0.5 font-bold text-slate-900">{analytics.pacing.requiredPerDay == null ? "—" : formatNumber(analytics.pacing.requiredPerDay, locale)}</dd></div>
-              <div><dt className="text-slate-500">{ui(locale, "Restante", "Remaining")}</dt><dd className="mt-0.5 font-bold text-slate-900">{analytics.pacing.remainingToGoal == null ? "—" : formatInteger(analytics.pacing.remainingToGoal, locale)}</dd></div>
-              <div><dt className="text-slate-500">{ui(locale, "Dias restantes", "Days remaining")}</dt><dd className="mt-0.5 font-bold text-slate-900">{formatInteger(analytics.pacing.daysRemaining, locale)}</dd></div>
-            </dl>
-          </section>
+          </div>
+          <ReportLogo />
         </div>
-        <PrintPageFooter page={1} locale={locale} />
+        <div className="mt-auto flex items-end justify-between pb-1">
+          <span className="text-[9px] uppercase tracking-[0.18em] text-slate-400">MG MOTOR | SÃO PAULO</span>
+          <div className="text-right"><p className="text-[27px] font-light tracking-[0.08em] text-white">Powered by</p><p className="-mt-1 text-[35px] font-semibold italic text-[#e2212d]">emotion</p></div>
+        </div>
       </article>
 
-      <article className="leads-print-page">
-        <PrintReportHeader dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
-        <h2 className="text-[14px] font-bold text-slate-950">{ui(locale, "Desempenho por canal", "Performance by channel")}</h2>
-        <table className="mt-2 w-full border-collapse text-[9px]">
-          <thead><tr className="bg-[#14324a] text-white"><th className="px-3 py-2 text-left">{ui(locale, "Canal", "Channel")}</th><th className="px-3 py-2 text-right">Leads</th><th className="px-3 py-2 text-right">{ui(locale, "Participação", "Share")}</th><th className="px-3 py-2 text-right">{ui(locale, "Média/dia", "Average/day")}</th><th className="px-3 py-2 text-right">{ui(locale, "Meta", "Target")}</th><th className="px-3 py-2 text-right">{ui(locale, "Atingimento", "Achievement")}</th><th className="px-3 py-2 text-right">{ui(locale, "Saldo", "Gap")}</th></tr></thead>
-          <tbody>{analytics.channels.map((channel, index) => <tr key={channel.value} className={index % 2 ? "bg-slate-50" : "bg-white"}><td className="border-b border-slate-200 px-3 py-2 font-semibold">{formatCategory(channel.value, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right font-bold">{formatInteger(channel.leads, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right">{formatNumber(channel.sharePercent, locale)}%</td><td className="border-b border-slate-200 px-3 py-2 text-right">{formatNumber(channel.dailyAverage, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right">{channel.target == null ? "—" : formatInteger(channel.target, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right">{channel.achievementPercent == null ? "—" : `${formatNumber(channel.achievementPercent, locale)}%`}</td><td className="border-b border-slate-200 px-3 py-2 text-right">{channel.remainingToTarget == null ? "—" : formatInteger(channel.remainingToTarget, locale)}</td></tr>)}</tbody>
-        </table>
-        <div className="mt-5 grid grid-cols-2 gap-5">
-          <section><h2 className="text-[14px] font-bold text-slate-950">{ui(locale, "Leads por modelo", "Leads by model")}</h2><table className="mt-2 w-full text-[9px]"><thead><tr className="bg-slate-200"><th className="px-3 py-2 text-left">{ui(locale, "Modelo", "Model")}</th><th className="px-3 py-2 text-right">Leads</th><th className="px-3 py-2 text-right">%</th></tr></thead><tbody>{analytics.models.slice(0, 10).map(item => <tr key={item.value}><td className="border-b border-slate-200 px-3 py-2">{formatCategory(item.value, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right font-bold">{formatInteger(item.leads, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right">{formatNumber(item.sharePercent, locale)}%</td></tr>)}</tbody></table></section>
-          <section><h2 className="text-[14px] font-bold text-slate-950">{ui(locale, "MG4 Urban por origem", "MG4 Urban by source")}</h2><table className="mt-2 w-full text-[9px]"><thead><tr className="bg-slate-200"><th className="px-3 py-2 text-left">{ui(locale, "Origem", "Source")}</th><th className="px-3 py-2 text-right">Leads</th><th className="px-3 py-2 text-right">%</th></tr></thead><tbody>{analytics.mg4UrbanSourceChannels.length ? analytics.mg4UrbanSourceChannels.map(item => <tr key={item.value}><td className="border-b border-slate-200 px-3 py-2">{formatCategory(item.value, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right font-bold">{formatInteger(item.leads, locale)}</td><td className="border-b border-slate-200 px-3 py-2 text-right">{formatNumber(item.sharePercent, locale)}%</td></tr>) : <tr><td colSpan={3} className="px-3 py-6 text-center text-slate-500">{ui(locale, "Sem registros no período", "No records in this period")}</td></tr>}</tbody></table></section>
+      <article className="leads-print-page flex flex-col bg-black">
+        <ReportHeader dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <MetricCard label={ui(locale, "Total de Leads", "Total Leads")} value={formatInteger(analytics.summary.totalLeads, locale)} detail={`${analytics.summary.calendarDays} ${ui(locale, "dia(s) no período", "day(s) in period")}`} accent="#e2212d" />
+          <MetricCard label={ui(locale, "Leads nas concessionárias", "Leads in dealerships")} value={formatInteger(analytics.dealerAudit.summary.assignedLeads, locale)} detail={`${formatNumber(dealerShare, locale)}% ${ui(locale, "do total", "of total")}`} accent="#21d4b4" />
+          <MetricCard label={ui(locale, "Em qualificação / sem cobertura", "In qualification / no coverage")} value={formatInteger(analytics.dealerAudit.summary.unavailableLeads, locale)} detail={`${formatNumber(qualificationShare, locale)}% ${ui(locale, "do total", "of total")}`} accent="#38bdf8" />
         </div>
-        <PrintPageFooter page={2} locale={locale} />
+        <section className="mt-3 border border-[#1d2a3d] bg-[#0b1423]">
+          <div className="flex items-start justify-between px-4 pt-4"><div><h2 className="text-[15px] font-semibold text-white">{ui(locale, "Leads por dia e canal", "Leads by day and channel")}</h2><p className="mt-1 text-[11px] text-slate-500">{ui(locale, "Volume diário por canal com acumulado real versus pace planejado.", "Daily channel volume with cumulative actual versus planned pace.")}</p></div><div className="flex gap-2 text-[11px]"><span className="border border-[#263247] px-3 py-1 text-slate-300">{analytics.summary.calendarDays} {ui(locale, "dias", "days")}</span>{paceDifference == null ? null : <span className={`border px-3 py-1 ${paceDifference >= 0 ? "border-emerald-400/30 text-emerald-300" : "border-amber-400/30 text-amber-300"}`}>{paceDifference >= 0 ? "+" : ""}{formatInteger(paceDifference, locale)} vs pace</span>}</div></div>
+          <StackedDailyChart analytics={analytics} locale={locale} />
+          <div className="grid grid-cols-4 border-t border-[#1d2a3d]">
+            {[
+              [ui(locale, "Total do período", "Period total"), formatInteger(analytics.summary.totalLeads, locale)],
+              [ui(locale, "Média diária", "Daily average"), formatNumber(analytics.summary.dailyAverage, locale)],
+              [ui(locale, "Pico diário", "Daily peak"), formatInteger(peak, locale)],
+              [ui(locale, "Canais ativos", "Active channels"), formatInteger(analytics.summary.activeChannels, locale)],
+            ].map(([label, value]) => <div key={label} className="border-r border-[#1d2a3d] px-4 py-3 last:border-r-0"><p className="text-[10px] uppercase tracking-[0.1em] text-slate-500">{label}</p><p className="mt-1 text-[14px] font-semibold text-white">{value}</p></div>)}
+          </div>
+        </section>
+        <ReportFooter page={2} locale={locale} />
       </article>
 
-      {dealerPages.map((dealers, dealerPageIndex) => (
-        <article className="leads-print-page" key={`dealer-page-${dealerPageIndex + 1}`}>
-          <PrintReportHeader dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
-          {dealerPageIndex === 0 ? (
-            <div className="grid grid-cols-4 gap-2">
-              <PrintMetric label={ui(locale, "Concessionárias", "Dealers")} value={formatInteger(analytics.dealerAudit.summary.validDealers, locale)} />
-              <PrintMetric label={ui(locale, "Leads atribuídos", "Assigned Leads")} value={formatInteger(analytics.dealerAudit.summary.assignedLeads, locale)} detail={`${formatNumber(analytics.dealerAudit.summary.assignedSharePercent, locale)}% ${ui(locale, "do total", "of total")}`} />
-              <PrintMetric label={ui(locale, "Em qualificação", "In qualification")} value={formatInteger(analytics.dealerAudit.summary.unavailableLeads, locale)} detail={`${formatNumber(qualificationShare, locale)}% ${ui(locale, "do total", "of total")}`} />
-              <PrintMetric label={ui(locale, "Recebendo no último dia", "Receiving on latest day")} value={formatInteger(analytics.dealerAudit.summary.dealersReceivingOnLatestDay, locale)} detail={formatDate(analytics.dealerAudit.summary.latestDay, locale)} />
-            </div>
-          ) : null}
-          <h2 className={`${dealerPageIndex === 0 ? "mt-5" : "mt-2"} text-[14px] font-bold text-slate-950`}>
-            {dealerPageIndex === 0
-              ? ui(locale, "Distribuição por concessionária", "Distribution by dealer")
-              : ui(locale, "Distribuição por concessionária — continuação", "Distribution by dealer — continued")}
-          </h2>
-          <table className="mt-2 w-full border-collapse text-[8px]">
-            <thead><tr className="bg-[#14324a] text-white"><th className="px-2 py-2 text-left">{ui(locale, "Concessionária", "Dealer")}</th><th className="px-2 py-2 text-right">Leads</th><th className="px-2 py-2 text-right">%</th><th className="px-2 py-2 text-right">{ui(locale, "Média/dia", "Average/day")}</th><th className="px-2 py-2 text-right">{ui(locale, "Dias com Lead", "Days with Leads")}</th><th className="px-2 py-2 text-right">{ui(locale, "Último dia", "Latest day")}</th><th className="px-2 py-2 text-left">{ui(locale, "Último recebimento", "Latest receipt")}</th></tr></thead>
-            <tbody>{dealers.map((dealer, index) => <tr key={dealer.dealerName} className={index % 2 ? "bg-slate-50" : "bg-white"}><td className="border-b border-slate-200 px-2 py-1.5 font-semibold">{dealer.dealerName}</td><td className="border-b border-slate-200 px-2 py-1.5 text-right font-bold">{formatInteger(dealer.leads, locale)}</td><td className="border-b border-slate-200 px-2 py-1.5 text-right">{formatNumber(dealer.sharePercent, locale)}%</td><td className="border-b border-slate-200 px-2 py-1.5 text-right">{formatNumber(dealer.dailyAverage, locale)}</td><td className="border-b border-slate-200 px-2 py-1.5 text-right">{formatInteger(dealer.activeDays, locale)}</td><td className="border-b border-slate-200 px-2 py-1.5 text-right">{formatInteger(dealer.latestDayLeads, locale)}</td><td className="border-b border-slate-200 px-2 py-1.5">{formatDate(dealer.lastReceiptDate, locale)}</td></tr>)}</tbody>
-          </table>
-          <PrintPageFooter page={dealerPageIndex + 3} locale={locale} />
-        </article>
-      ))}
+      <article className="leads-print-page flex flex-col bg-black">
+        <ReportHeader dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
+        <div className="mt-4 grid min-h-0 flex-1 grid-cols-[1.03fr_0.97fr] gap-3">
+          <section className="grid content-start grid-cols-2 gap-2.5">
+            {analytics.channels.slice(0, 6).map(channel => <ChannelCard key={channel.value} channel={channel} locale={locale} />)}
+          </section>
+          <div className="grid content-start gap-3">
+            <HorizontalBreakdown title={ui(locale, "Leads por modelo", "Leads by model")} subtitle={ui(locale, "Classificação preservada da base de Leads.", "Classification preserved from the Leads database.")} items={analytics.models} accent="#e2212d" locale={locale} />
+            <HorizontalBreakdown title={ui(locale, "MG4 Urban por canal de origem", "MG4 Urban by source channel")} subtitle={ui(locale, "Origem preservada antes da classificação como Campanha Urban.", "Source preserved before classification as Urban Campaign.")} items={analytics.mg4UrbanSourceChannels} accent="#38bdf8" locale={locale} />
+          </div>
+        </div>
+        <ReportFooter page={3} locale={locale} />
+      </article>
+
+      <article className="leads-print-page flex flex-col bg-black">
+        <ReportHeader dateFrom={dateFrom} dateTo={dateTo} locale={locale} />
+        <div className="mt-4 grid min-h-0 flex-1 grid-cols-2 gap-3 pb-2">
+          <RankingList title={ui(locale, "Top 10 — Conversão", "Top 10 — Conversion")} subtitle={ui(locale, `Maiores taxas entre concessionárias elegíveis na Semana ${rankings.week}.`, `Highest rates among eligible dealers in Week ${rankings.week}.`)} rows={rankings.top} tone="top" locale={locale} />
+          <RankingList title={ui(locale, "Bottom 10 — Conversão", "Bottom 10 — Conversion")} subtitle={ui(locale, `Menores taxas entre concessionárias elegíveis na Semana ${rankings.week}.`, `Lowest rates among eligible dealers in Week ${rankings.week}.`)} rows={rankings.bottom} tone="bottom" locale={locale} />
+        </div>
+        <ReportFooter page={4} locale={locale} />
+      </article>
     </section>
   );
 }

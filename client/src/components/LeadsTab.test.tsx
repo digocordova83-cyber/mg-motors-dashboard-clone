@@ -419,11 +419,14 @@ describe("interface de Leads", () => {
   it("gera relatório operacional com indicadores, gráficos e tabelas sem conteúdo financeiro", () => {
     const source = readFileSync(new URL("./LeadsDailyPrintReport.tsx", import.meta.url), "utf8");
 
-    expect(source).toContain("Relatório diário de Leads");
+    expect(source).toContain("Leads — Relatório Diário");
     expect(source).toContain('data-testid="leads-daily-print-chart"');
-    expect(source).toContain("Desempenho por canal");
+    expect(source).toContain("Leads por dia e canal");
     expect(source).toContain("Leads por modelo");
-    expect(source).toContain("Distribuição por concessionária");
+    expect(source).toContain("MG4 Urban por canal de origem");
+    expect(source).toContain("Top 10 — Conversão");
+    expect(source).toContain("Bottom 10 — Conversão");
+    expect(source).toContain("Powered by");
     expect(source).not.toMatch(/investimento|investment|\bCPL\b|currency|mediaInvestment/i);
   });
 

@@ -3440,3 +3440,13 @@
 - [x] Manter TikTok Ads e Interlagos ocultos na visualização mensal, conforme regra anterior.
 - [x] Atualizar os testes de filtro de canais e da aba Leads.
 - [x] Validar que TikTok Live aparece separado em indicadores, gráficos e PDF diário.
+
+## Redesign do PDF diário de Leads — padrão de referência
+
+- [x] Analisar todas as páginas do PDF de referência e documentar layout, tipografia, cores e hierarquia.
+- [x] Mapear os indicadores atuais da aba Leads para a estrutura editorial do modelo.
+- [x] Redesenhar o relatório diário com o padrão visual da referência e identidade MG.
+- [x] Manter o total do período, os Leads do dia anterior, canais, modelos e concessionárias.
+- [x] Excluir investimento, CPL e qualquer outra informação financeira do PDF.
+- [x] Atualizar testes de conteúdo, estrutura e impressão.
+- [x] Gerar o PDF real e revisar todas as páginas antes da entrega.
