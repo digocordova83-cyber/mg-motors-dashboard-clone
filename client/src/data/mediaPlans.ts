@@ -105,13 +105,13 @@ const AUGUST_2026: MonthlyMediaPlan = {
   month: "2026-08",
   titlePt: "Plano de Mídia Digital — Agosto de 2026",
   titleEn: "Digital Media Plan — August 2026",
-  sourceFile: "controle-financeiro.xlsx",
-  sourceSheet: "Agosto",
+  sourceFile: "controle-financeiro.xlsx + MGPLANO-AGOSTO(1).xlsx",
+  sourceSheet: "Agosto + Resume Plan / Lead Projection",
   formulaCount: 51,
   updatedAt: "2026-08-05T14:26:45.000Z",
   mode: "FINANCIAL",
-  sourceNotePt: "Fonte: controle-financeiro.xlsx, aba Agosto, recebida em 5 de agosto de 2026. Foram preservados PLAN GROSS, comissão de 4%, NET, investimento realizado e status. A planilha não informa projeções de impressões, cliques, visitas, leads, CPL ou etapas do funil.",
-  sourceNoteEn: "Source: controle-financeiro.xlsx, August sheet, received on August 5, 2026. PLAN GROSS, 4% commission, NET, actual investment and status were preserved. The workbook does not provide projected impressions, clicks, visits, leads, CPL or funnel stages.",
+  sourceNotePt: "Fontes: controle-financeiro.xlsx, aba Agosto, para PLAN GROSS, comissão de 4%, NET, investimento realizado e status; e MGPLANO-AGOSTO(1).xlsx, abas Resume Plan e Lead Projection, para a meta de 12.000 Leads. O CPL superior padronizado usa Plano líquido ÷ Leads projetados. A fonte financeira não informa projeções por linha.",
+  sourceNoteEn: "Sources: controle-financeiro.xlsx, August sheet, for PLAN GROSS, 4% commission, NET, actual investment and status; and MGPLANO-AGOSTO(1).xlsx, Resume Plan and Lead Projection sheets, for the 12,000-Lead target. The standardized headline CPL uses Net plan ÷ Projected Leads. The financial source does not provide row-level projections.",
   rows: [
     { id: "aug-lineup-google", sourceRow: 10, channel: "Google Ads", publisher: "Google", product: "Line-up", investment: 350000, commission: 14000, netInvestment: 336000, actualInvestment: 0, status: "PAID" },
     { id: "aug-lineup-webmotors", sourceRow: 11, channel: "Webmotors", publisher: "Webmotors", product: "Line-up", investment: 170846.96, commission: 6833.8784, netInvestment: 164013.0816, actualInvestment: 0, status: "PAYABLES" },
@@ -131,7 +131,7 @@ const AUGUST_2026: MonthlyMediaPlan = {
     { sourceRow: 18, label: "LINE-UP", product: "Line-up", investment: 868555.26, commission: 34742.2104, netInvestment: 833813.0496, actualInvestment: 0 },
     { sourceRow: 27, label: "MG4 URBAN", product: "MG4 Urban", investment: 181444.74, commission: 7257.7896, netInvestment: 174186.9504, actualInvestment: 0 },
   ],
-  total: { sourceRow: 29, label: "GERAL DIGITAL", product: null, investment: 1050000, commission: 42000, netInvestment: 1008000, actualInvestment: 0 },
+  total: { sourceRow: 29, label: "GERAL DIGITAL", product: null, investment: 1050000, commission: 42000, netInvestment: 1008000, actualInvestment: 0, leads: 12000 },
 };
 
 const JULY_2026: MonthlyMediaPlan = {
@@ -143,8 +143,8 @@ const JULY_2026: MonthlyMediaPlan = {
   formulaCount: 0,
   updatedAt: "2026-07-21T19:13:56.000Z",
   mode: "HYBRID",
-  sourceNotePt: "Fonte: planilha enviada em 21 de julho de 2026, aba Página1. Os valores brutos e as premissas de entrega já registrados no dashboard foram preservados. Para padronizar o controle histórico, comissão e plano líquido foram calculados pela mesma regra de 4% usada em agosto e setembro. Investimento realizado não foi informado e permanece como N/D.",
-  sourceNoteEn: "Source: workbook supplied on July 21, 2026, sheet Página1. The gross values and delivery assumptions already registered in the dashboard were preserved. To standardize the historical control, commission and net plan were calculated using the same 4% rule applied in August and September. Actual investment was not reported and remains N/A.",
+  sourceNotePt: "Fonte: planilha enviada em 21 de julho de 2026, aba Página1. Os valores brutos e as premissas de entrega já registrados no dashboard foram preservados. Para padronizar o controle histórico, comissão e plano líquido foram calculados pela mesma regra de 4% usada em agosto e setembro. O CPL superior padronizado usa Plano líquido ÷ Leads projetados. Investimento realizado não foi informado e permanece como N/D.",
+  sourceNoteEn: "Source: workbook supplied on July 21, 2026, sheet Página1. The gross values and delivery assumptions already registered in the dashboard were preserved. To standardize the historical control, commission and net plan were calculated using the same 4% rule applied in August and September. The standardized headline CPL uses Net plan ÷ Projected Leads. Actual investment was not reported and remains N/A.",
   rows: [
     { id: "lineup-google-pmax", sourceRow: 5, funnel: "CONVERSION", channel: "Google PMAX", publisher: "Google", product: "Line-up", objectivePt: "Leads / Conversão", objectiveEn: "Leads / Conversion", investment: 300000, commission: 12000, netInvestment: 288000, status: "NOT_INFORMED", cpm: 16.82, impressions: 17835910, ctr: 0.025, clicks: 445898, connectRate: 0.35, visits: 156064, cvr: 0.0396, leads: 6173, cpl: 48.6 },
     { id: "lineup-google-search", sourceRow: 6, funnel: "CONVERSION", channel: "Google Search", publisher: "Google", product: "Line-up", objectivePt: "Leads / Intenção", objectiveEn: "Leads / Intent", investment: 70000, commission: 2800, netInvestment: 67200, status: "NOT_INFORMED", cpm: 33.33, impressions: 2100210, ctr: 0.05, clicks: 105011, connectRate: 0.4, visits: 42004, cvr: 0.0181, leads: 759, cpl: 92.23 },

@@ -72,6 +72,7 @@ describe("Plano de Mídia Digital", () => {
       commission: 42_000,
       netInvestment: 1_008_000,
       actualInvestment: 0,
+      leads: 12_000,
     });
     expect(plan.totals).toEqual([
       expect.objectContaining({ label: "LINE-UP", investment: 868_555.26, commission: 34_742.2104, netInvestment: 833_813.0496 }),
@@ -159,47 +160,54 @@ describe("Plano de Mídia Digital", () => {
     expect(english).toContain("All 556 formulas were audited with no errors");
   });
 
-  it("renderiza agosto em modo financeiro sem fabricar projeções ausentes", () => {
+  it("renderiza agosto com os mesmos quatro cards de setembro e a meta de Leads validada na planilha anexa", () => {
     const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth="2026-08" />);
     const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" initialMonth="2026-08" />);
 
     expect(portuguese).toContain("Plano de Mídia Digital — Agosto de 2026");
-    expect(portuguese).toContain("Plano bruto");
-    expect(portuguese).toContain("Comissão de 4%");
-    expect(portuguese).toContain("Plano líquido de mídia");
+    expect(portuguese).toContain('data-testid="media-plan-kpi-gross"');
+    expect(portuguese).toContain('data-testid="media-plan-kpi-net"');
+    expect(portuguese).toContain('data-testid="media-plan-kpi-leads"');
+    expect(portuguese).toContain('data-testid="media-plan-kpi-cpl"');
     expect(portuguese).toContain("R$ 1.050.000");
-    expect(portuguese).toContain("R$ 42.000");
     expect(portuguese).toContain("R$ 1.008.000");
-    expect(portuguese).toContain("Não informado na fonte");
-    expect(portuguese).toContain("A planilha não informa projeções");
+    expect(portuguese).toContain("12.000");
+    expect(portuguese).toContain("R$ 84,00");
+    expect(portuguese).toContain("MGPLANO-AGOSTO(1).xlsx");
     expect(english).toContain("Digital Media Plan — August 2026");
-    expect(english).toContain("Plan gross");
-    expect(english).toContain("4% commission");
     expect(english).toContain("R$1,050,000");
-    expect(english).toContain("The workbook does not provide projected impressions");
+    expect(english).toContain("12,000");
+    expect(english).toContain("R$84.00");
   });
 
-  it("renderiza julho com os mesmos campos financeiros e preserva as métricas históricas", () => {
+  it("renderiza julho com os mesmos quatro cards de setembro e preserva as métricas históricas", () => {
     const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth="2026-07" />);
     const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" initialMonth="2026-07" />);
 
     expect(portuguese).toContain("Plano de Mídia Digital — Julho de 2026");
-    expect(portuguese).toContain("Plano bruto");
-    expect(portuguese).toContain("Comissão de 4%");
-    expect(portuguese).toContain("Plano líquido de mídia");
-    expect(portuguese).toContain("Investimento realizado");
-    expect(portuguese).toContain("R$ 42.000");
+    expect(portuguese).toContain('data-testid="media-plan-kpi-gross"');
+    expect(portuguese).toContain('data-testid="media-plan-kpi-net"');
+    expect(portuguese).toContain('data-testid="media-plan-kpi-leads"');
+    expect(portuguese).toContain('data-testid="media-plan-kpi-cpl"');
     expect(portuguese).toContain("R$ 1.008.000");
     expect(portuguese).toContain("N/D");
     expect(portuguese).toContain("10.000");
-    expect(portuguese).toContain("R$ 105,00");
+    expect(portuguese).toContain("R$ 100,80");
     expect(portuguese).toContain("comissão e plano líquido foram calculados pela mesma regra de 4%");
     expect(english).toContain("Digital Media Plan — July 2026");
-    expect(english).toContain("Plan gross");
-    expect(english).toContain("4% commission");
-    expect(english).toContain("Net media plan");
     expect(english).toContain("10,000");
-    expect(english).toContain("R$105.00");
+    expect(english).toContain("R$100.80");
+  });
+
+  it("mantém exatamente os mesmos quatro cards superiores nas três competências", () => {
+    for (const month of ["2026-09", "2026-08", "2026-07"]) {
+      const html = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth={month} />);
+      expect(html.match(/data-testid="media-plan-kpi-/g)).toHaveLength(4);
+      expect(html).toContain('data-testid="media-plan-kpi-gross"');
+      expect(html).toContain('data-testid="media-plan-kpi-net"');
+      expect(html).toContain('data-testid="media-plan-kpi-leads"');
+      expect(html).toContain('data-testid="media-plan-kpi-cpl"');
+    }
   });
 
   it("renderiza estado vazio responsivo em português e inglês", () => {

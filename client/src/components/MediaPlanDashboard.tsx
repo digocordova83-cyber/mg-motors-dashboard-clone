@@ -6,7 +6,6 @@ import {
   FileSpreadsheet,
   Layers3,
   MousePointerClick,
-  ReceiptText,
   Target,
   WalletCards,
 } from "lucide-react";
@@ -107,8 +106,8 @@ export function MediaPlanDashboard({
 
   const copy = isEnglish
     ? {
-        eyebrow: "Official monthly planning",
-        financialDescription: "Standardized historical control with gross plan, commission, net plan and actual investment for every available month.",
+      eyebrow: "Official monthly planning",
+        financialDescription: "Official gross and net allocation by channel, with projected Leads and CPL calculated from each month's approved sources.",
         month: "Plan month",
         totalInvestment: "Planned media investment",
         leads: "Projected leads",
@@ -136,7 +135,7 @@ export function MediaPlanDashboard({
       }
     : {
         eyebrow: "Planejamento mensal oficial",
-        financialDescription: "Controle histórico padronizado com plano bruto, comissão, plano líquido e investimento realizado em todas as competências disponíveis.",
+        financialDescription: "Alocação oficial bruta e líquida por canal, com Leads e CPL projetados calculados conforme as fontes aprovadas de cada mês.",
         month: "Competência do plano",
         totalInvestment: "Investimento planejado de mídia",
         leads: "Leads projetados",
@@ -164,11 +163,14 @@ export function MediaPlanDashboard({
       };
 
   const unavailableValue = isEnglish ? "N/A" : "N/D";
+  const projectedCpl = plan.total.netInvestment != null && plan.total.leads != null && plan.total.leads > 0
+    ? plan.total.netInvestment / plan.total.leads
+    : plan.total.cpl;
   const kpis = [
-    { label: copy.gross, value: formatCurrency(plan.total.investment, locale), icon: WalletCards },
-    { label: copy.commission, value: plan.total.commission == null ? unavailableValue : formatCurrency(plan.total.commission, locale), icon: ReceiptText },
-    { label: copy.net, value: plan.total.netInvestment == null ? unavailableValue : formatCurrency(plan.total.netInvestment, locale), icon: CircleDollarSign },
-    { label: copy.actual, value: plan.total.actualInvestment == null ? unavailableValue : formatCurrency(plan.total.actualInvestment, locale), icon: Target },
+    { id: "gross", label: copy.gross, value: formatCurrency(plan.total.investment, locale), icon: WalletCards },
+    { id: "net", label: copy.net, value: plan.total.netInvestment == null ? unavailableValue : formatCurrency(plan.total.netInvestment, locale), icon: CircleDollarSign },
+    { id: "leads", label: copy.leads, value: plan.total.leads == null ? unavailableValue : formatNumber(plan.total.leads, locale), icon: Target },
+    { id: "cpl", label: copy.cpl, value: projectedCpl == null ? unavailableValue : formatCurrency(projectedCpl, locale, 2), icon: MousePointerClick },
   ];
 
   const financialReconciliation = [
@@ -196,16 +198,14 @@ export function MediaPlanDashboard({
         </div>
 
         <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {kpis.map(({ label, value, icon: Icon }) => (
-            <div key={label} className="rounded-2xl border border-white/[0.06] bg-[#070d16]/90 p-4">
+          {kpis.map(({ id, label, value, icon: Icon }) => (
+            <div key={id} data-testid={`media-plan-kpi-${id}`} className="rounded-2xl border border-white/[0.06] bg-[#070d16]/90 p-4">
               <div className="flex items-center justify-between"><span className="text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-500">{label}</span><Icon className="h-4 w-4 text-[#e2212d]" /></div>
               <div className="mt-3 text-xl font-semibold text-white">{value}</div>
             </div>
           ))}
         </div>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500">
-          {plan.total.leads != null && <span>{copy.leads}: <strong className="text-slate-300">{formatNumber(plan.total.leads, locale)}</strong></span>}
-          {plan.total.cpl != null && <span>{copy.cpl}: <strong className="text-slate-300">{formatCurrency(plan.total.cpl, locale, 2)}</strong></span>}
           {plan.total.impressions != null && <span>{copy.impressions}: <strong className="text-slate-300">{formatNumber(plan.total.impressions, locale)}</strong></span>}
           {plan.contextItems?.length ? plan.contextItems.map((item) => (
             <span key={item.id}>{isEnglish ? item.labelEn : item.labelPt}: <strong className="text-slate-300">{formatCurrency(item.value, locale)}</strong>{item.notePt ? <em className="ml-1 not-italic text-slate-600">· {isEnglish ? item.noteEn : item.notePt}</em> : null}</span>

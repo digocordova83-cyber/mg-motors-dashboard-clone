@@ -3476,3 +3476,11 @@
 - [x] Item encerrado por solicitação do usuário: manter o fluxo atual do PDF sem adicionar download direto.
 - [x] Preservar o nome automático `MG Motors _ LEADS dashboard_DD Mon.pdf` já implementado.
 - [x] Atualizar testes e validar o histórico financeiro, TypeScript e build, sem novas alterações no PDF.
+
+## Correção dos cards históricos — padrão de setembro
+
+- [x] Validar nas fontes de julho e agosto os valores de Leads projetados e CPL projetado.
+- [x] Exibir em julho os cards Plano bruto, Plano líquido de mídia, Leads projetados e CPL projetado.
+- [x] Exibir em agosto os mesmos quatro cards, sem alterar os valores ou a estrutura de setembro.
+- [x] Manter comissão e investimento realizado disponíveis apenas no detalhamento histórico aplicável.
+- [x] Atualizar testes e validar visualmente julho, agosto e setembro antes da entrega.
