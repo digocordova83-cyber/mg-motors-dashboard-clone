@@ -3457,3 +3457,12 @@
 - [x] Substituir o símbolo branco deformado por um logo MG completo e proporcional.
 - [x] Atualizar testes para impedir o retorno da assinatura removida e validar a marca correta.
 - [x] Exportar e revisar o PDF real após a correção visual.
+
+## Nome do arquivo — PDF diário de Leads
+
+- [x] Configurar o título de impressão no padrão `MG Motors _ LEADS dashboard_DD Mon`.
+- [x] Usar a data de geração no fuso de Brasília para compor dia e mês.
+- [x] Restaurar o título original da página após o diálogo de impressão.
+- [x] Atualizar testes e validar o nome sugerido pelo navegador ao salvar em PDF.
+
+> Validação em 16/09/2026: o acionamento real do botão aplicou `MG Motors _ LEADS dashboard_16 Sept` no momento da impressão e restaurou o título original após o evento `afterprint`. Foram aprovados 344 testes, TypeScript e build de produção.

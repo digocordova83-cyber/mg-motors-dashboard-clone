@@ -13,6 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { WeeklySalesPanel } from "./WeeklySalesPanel";
 import {
   activateLeadsDailyPrintMode,
+  buildLeadsDailyPdfTitle,
   LeadsDailyPrintReport,
   LeadsDailyReportButton,
 } from "./LeadsDailyPrintReport";
@@ -1185,6 +1186,8 @@ export function LeadsTab({
   function handleDailyReportPrint() {
     activateLeadsDailyPrintMode({
       body: document.body,
+      page: document,
+      pdfTitle: buildLeadsDailyPdfTitle(),
       print: () => window.print(),
       addAfterPrintListener: listener => window.addEventListener("afterprint", listener, { once: true }),
     });

@@ -12,6 +12,7 @@ type Week = 1 | 2 | 3 | 4 | 5;
 
 const MG_LOGO_URL = "/manus-storage/mg-logo-transparent-exact_cdfbeb6c.png";
 const CHANNEL_COLORS = ["#e2212d", "#38bdf8", "#a78bfa", "#f59e0b", "#10b981", "#f472b6"];
+const PDF_MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
 
 function ui(locale: Locale, pt: string, en: string) {
   return locale === "en-US" ? en : pt;
@@ -84,14 +85,31 @@ export function LeadsDailyReportButton({
   );
 }
 
+export function buildLeadsDailyPdfTitle(generatedAt: Date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).formatToParts(generatedAt);
+  const day = parts.find(part => part.type === "day")?.value ?? "00";
+  const monthIndex = Number.parseInt(parts.find(part => part.type === "month")?.value ?? "0", 10) - 1;
+  const month = PDF_MONTH_LABELS[monthIndex] ?? "Mon";
+  return `MG Motors _ LEADS dashboard_${day} ${month}`;
+}
+
 export function activateLeadsDailyPrintMode(input: {
   body: { dataset: DOMStringMap };
+  page?: { title: string };
+  pdfTitle?: string;
   print: () => void;
   addAfterPrintListener?: (listener: () => void) => void;
 }) {
+  const originalTitle = input.page?.title;
   input.body.dataset.printMode = "leads-daily";
+  if (input.page && input.pdfTitle) input.page.title = input.pdfTitle;
   const cleanup = () => {
     if (input.body.dataset.printMode === "leads-daily") delete input.body.dataset.printMode;
+    if (input.page && originalTitle !== undefined) input.page.title = originalTitle;
   };
   input.addAfterPrintListener?.(cleanup);
   input.print();

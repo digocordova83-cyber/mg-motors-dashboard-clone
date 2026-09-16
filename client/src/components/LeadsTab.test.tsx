@@ -25,6 +25,7 @@ import {
 } from "./LeadsTab";
 import {
   activateLeadsDailyPrintMode,
+  buildLeadsDailyPdfTitle,
   LeadsDailyPrintReport,
   LeadsDailyReportButton,
 } from "./LeadsDailyPrintReport";
@@ -402,18 +403,23 @@ describe("interface de Leads", () => {
 
   it("ativa o modo de impressão de Leads e o remove após afterprint", () => {
     const body = { dataset: {} as DOMStringMap };
+    const page = { title: "MG Motor - Dashboard Operacional" };
     let afterPrint: (() => void) | undefined;
     let printCalls = 0;
     activateLeadsDailyPrintMode({
       body,
+      page,
+      pdfTitle: buildLeadsDailyPdfTitle(new Date("2026-09-16T15:00:00.000Z")),
       print: () => { printCalls += 1; },
       addAfterPrintListener: listener => { afterPrint = listener; },
     });
 
     expect(body.dataset.printMode).toBe("leads-daily");
+    expect(page.title).toBe("MG Motors _ LEADS dashboard_16 Sept");
     expect(printCalls).toBe(1);
     afterPrint?.();
     expect(body.dataset.printMode).toBeUndefined();
+    expect(page.title).toBe("MG Motor - Dashboard Operacional");
   });
 
   it("gera relatório operacional com a marca MG correta e sem assinatura ou conteúdo financeiro", () => {
