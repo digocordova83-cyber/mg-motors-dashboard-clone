@@ -3496,3 +3496,12 @@
 > Validação local do CI: `pnpm test:ci` aprovado com 54 arquivos e 340 testes determinísticos; `pnpm check` e `pnpm build` aprovados. A suíte de CI exclui apenas verificações que dependem de banco/Windsor reais (`server/windsor.secret.test.ts` e `server/optimizationWorkflow.test.ts`), mantendo a suíte completa disponível em `pnpm test` no ambiente com integrações.
 
 > GitHub: tag anotada `v2026.09.16` publicada para o checkpoint de aplicação validado `55f1c50f`. Workflow `CI` publicado na branch `main`; execução `35136620942` aprovada no commit `6f700c96`, com testes determinísticos, TypeScript e build concluídos com sucesso.
+
+
+## Atualização da base de Leads — D-1 16/09/2026
+
+- [x] Executar prévia oficial da planilha consolidada, validar 198 registros novos, zero remoções e 20 linhas inválidas já excluídas pelo catálogo de modelos
+- [x] Atualizar a base canônica de 31.009 para 31.207 Leads pelo fluxo transacional oficial
+- [x] Confirmar cobertura até 16/09/2026 e 5.147 Leads em setembro
+- [x] Reexecutar a fonte e confirmar `NO_CHANGES`, preservando idempotência e separação de TikTok Live
+- [x] Registrar a auditoria da atualização sem expor dados pessoais
