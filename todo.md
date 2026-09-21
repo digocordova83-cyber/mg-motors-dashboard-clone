@@ -3541,3 +3541,11 @@
 - [x] Tratar datas finais ainda não fechadas pelo Instagram como `Em apuração`, evitando classificar volume parcial como alta ou queda.
 - [x] Preservar a interface bilíngue em português e inglês e o padrão visual escuro da aba Social Orgânico.
 - [x] Validar com dados reais de 22/08 a 20/09, revisão visual autenticada, 344 testes determinísticos, TypeScript e build de produção.
+
+## Social Orgânico — exportação fiel para PDF
+- [x] Adicionar botão `Exportar PDF` à aba Social Orgânico em português e inglês.
+- [x] Imprimir integralmente a plataforma, o período, os KPIs, gráficos, análises, conteúdos e miniaturas exibidos na tela.
+- [x] Preservar cores, fundo escuro e proporção das miniaturas no PDF 16:9.
+- [x] Ocultar apenas as ações `Atualizar` e `Exportar PDF` durante a impressão.
+- [x] Configurar nome sugerido por plataforma e data de geração em Brasília.
+- [x] Gerar e revisar visualmente um PDF real de 10 páginas, sem cortes ou sobreposição.

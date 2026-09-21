@@ -1,6 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { openNativeDatePicker } from "@/lib/nativeDatePicker";
+import {
+  activateSocialOrganicPrintMode,
+  buildSocialOrganicPdfTitle,
+  SocialOrganicPdfButton,
+} from "./SocialOrganicPrint";
 import { getDashboardCutoffDate } from "@shared/dashboardDates";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
@@ -401,7 +406,7 @@ function OrganicTooltip({ active, payload, label, locale }: { active?: boolean; 
 function ContentImage({ content, alt, unavailable }: { content: Content; alt: string; unavailable: string }) {
   const [failed, setFailed] = useState(false);
   if (!content.thumbnailUrl || failed) return <div className="grid h-[220px] place-items-center bg-[#070c14] text-center"><div><ImageIcon className="mx-auto h-8 w-8 text-slate-700" /><p className="mt-2 text-[9px] text-slate-700">{unavailable}</p></div></div>;
-  return <div className="flex h-[220px] w-full items-center justify-center bg-[#070c14] p-2"><img src={content.thumbnailUrl} alt={alt} loading="lazy" onError={() => setFailed(true)} className="max-h-full max-w-full object-contain" /></div>;
+  return <div className="flex h-[220px] w-full items-center justify-center bg-[#070c14] p-2"><img src={content.thumbnailUrl} alt={alt} loading="eager" onError={() => setFailed(true)} className="max-h-full max-w-full object-contain" /></div>;
 }
 
 function formatSignedPercent(value: number | null, locale: Locale) {
@@ -530,6 +535,17 @@ export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props)
     setDateTo(value);
   }
 
+  function handlePdfExport() {
+    activateSocialOrganicPrintMode({
+      body: document.body,
+      page: document,
+      pdfTitle: buildSocialOrganicPdfTitle(platform),
+      print: () => window.print(),
+      addAfterPrintListener: listener =>
+        window.addEventListener("afterprint", listener, { once: true }),
+    });
+  }
+
   if (query.isLoading || bounds.isLoading) return <main className="mx-auto grid min-h-[620px] max-w-[1680px] place-items-center px-4"><div className="text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-[#e2212d]" /><p className="mt-3 text-xs text-slate-500">{t.loading}</p></div></main>;
   if (query.error) return <main className="mx-auto max-w-[1680px] px-4 py-8"><div className="grid min-h-[480px] place-items-center rounded-2xl border border-red-500/20 bg-red-500/[0.04] px-6 text-center"><div><AlertTriangle className="mx-auto h-9 w-9 text-red-400" /><h1 className="mt-3 text-base font-semibold text-white">{t.errorTitle}</h1><p className="mt-1 text-xs text-slate-500">{t.errorDescription}</p><Button onClick={() => query.refetch()} className="mt-5 bg-[#e2212d] hover:bg-[#c91622]"><RefreshCcw className="mr-2 h-4 w-4" />{t.refresh}</Button></div></div></main>;
   if (!data?.daily.length) return <main className="mx-auto max-w-[1680px] px-4 py-8"><Panel title={t.title} subtitle={t.emptyDescription}><div className="grid min-h-[320px] place-items-center text-xs text-slate-600">{t.emptyTitle}</div></Panel></main>;
@@ -569,14 +585,19 @@ export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props)
   ].filter(Boolean) as Array<{ label: string; value: string; metric: string; icon: ReactNode }>;
 
   return (
-    <main className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6">
+    <main
+      data-social-organic-print-root
+      data-testid="social-organic-print-root"
+      className="mx-auto max-w-[1680px] px-4 pb-12 pt-5 lg:px-6"
+    >
       <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div><div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]"><Share2 className="h-3.5 w-3.5" />{t.eyebrow}</div><h1 className="mt-1 text-xl font-semibold tracking-tight text-white">{t.title}</h1><p className="mt-1 max-w-3xl text-[11px] leading-5 text-slate-600">{t.subtitle}</p></div>
         <div className="flex flex-col gap-2 xl:items-end">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center"><div className="flex rounded-lg border border-[#242f42] bg-[#0d1421] p-1"><button data-testid="social-organic-platform-instagram" type="button" onClick={() => setPlatform("instagram")} className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-[10px] font-semibold ${platform === "instagram" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}><Instagram className="h-3.5 w-3.5" />{t.instagram}</button><button data-testid="social-organic-platform-tiktok" type="button" onClick={() => setPlatform("tiktok")} className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-[10px] font-semibold ${platform === "tiktok" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}><Music2 className="h-3.5 w-3.5" />{t.tiktok}</button></div>
             <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-[#242f42] bg-[#0d1421] p-1">{["7", "14", "30", "60"].map(value => <button key={value} type="button" onClick={() => applyPreset(value)} className={`shrink-0 rounded-md px-3 py-1.5 text-[10px] font-semibold ${preset === value ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{value}d</button>)}<button type="button" onClick={() => applyPreset("month")} className={`rounded-md px-3 py-1.5 text-[10px] font-semibold ${preset === "month" ? "bg-[#e2212d] text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"}`}>{t.month}</button></div>
             <div className="flex items-stretch rounded-lg border border-[#242f42] bg-[#0d1421]"><div className="flex cursor-pointer items-center gap-2 rounded-l-lg px-3 py-1.5 hover:bg-white/[0.03]" onClick={() => openNativeDatePicker(dateFromRef.current)}><CalendarDays className="h-3.5 w-3.5 text-slate-600" /><input ref={dateFromRef} aria-label={`${t.period} start`} type="date" min={bounds.data?.earliestDate} max={dateTo} value={dateFrom} onChange={event => updateFrom(event.target.value)} className="w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /></div><span className="flex items-center text-slate-700">—</span><div className="flex cursor-pointer items-center rounded-r-lg px-3 py-1.5 hover:bg-white/[0.03]" onClick={() => openNativeDatePicker(dateToRef.current)}><input ref={dateToRef} aria-label={`${t.period} end`} type="date" min={dateFrom} max={latestSelectableDate} value={dateTo} onChange={event => updateTo(event.target.value)} className="w-[116px] bg-transparent text-[10px] text-slate-300 outline-none [color-scheme:dark]" /></div></div>
-            <Button variant="outline" size="sm" onClick={() => refresh.mutate(queryInput)} disabled={refresh.isPending} className="h-8 border-[#283349] bg-[#111827] text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><RefreshCcw className={`mr-1.5 h-3.5 w-3.5 ${refresh.isPending ? "animate-spin" : ""}`} />{t.refresh}</Button>
+            <Button variant="outline" size="sm" onClick={() => refresh.mutate(queryInput)} disabled={refresh.isPending} className="social-organic-print-hide h-8 border-[#283349] bg-[#111827] text-[10px] text-slate-400 hover:bg-[#182236] hover:text-white"><RefreshCcw className={`mr-1.5 h-3.5 w-3.5 ${refresh.isPending ? "animate-spin" : ""}`} />{t.refresh}</Button>
+            <SocialOrganicPdfButton locale={locale} onPrint={handlePdfExport} />
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-slate-600"><span className="flex items-center gap-1.5 text-emerald-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />{t.sourceLive}</span><span>{t.cutoff}: {formatLongDate(dateTo, locale)}</span><span>{t.previousPeriod}: {formatLongDate(data.period.previousDateFrom, locale)} — {formatLongDate(data.period.previousDateTo, locale)}</span><span>{t.through}: {formatLongDate(data.metadata.dataThroughDate, locale)}</span></div>
         </div>

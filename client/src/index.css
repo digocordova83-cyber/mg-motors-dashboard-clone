@@ -339,4 +339,52 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     break-inside: avoid;
     page-break-inside: avoid;
   }
+
+  body[data-print-mode="social-organic"] {
+    min-width: 0;
+    margin: 0 !important;
+    background: #080d16 !important;
+    color: #ffffff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body[data-print-mode="social-organic"] #root {
+    min-height: 0 !important;
+    background: #080d16 !important;
+  }
+
+  body[data-print-mode="social-organic"] #root *:not(:has([data-social-organic-print-root])):not([data-social-organic-print-root]):not([data-social-organic-print-root] *) {
+    display: none !important;
+  }
+
+  body[data-print-mode="social-organic"] [data-social-organic-print-root] {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0.24in !important;
+    background: #080d16 !important;
+  }
+
+  body[data-print-mode="social-organic"] .social-organic-print-hide {
+    display: none !important;
+  }
+
+  body[data-print-mode="social-organic"] section,
+  body[data-print-mode="social-organic"] article {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body[data-print-mode="social-organic"] svg {
+    max-width: 100% !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body[data-print-mode="social-organic"] a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
 }

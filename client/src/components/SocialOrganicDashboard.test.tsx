@@ -86,4 +86,22 @@ describe("interface Social Orgânico", () => {
     expect(source).toContain("analysis.strongestCorrelation");
     expect(source).toContain("latestWeekend?.relatedContents");
   });
+
+  it("exporta em PDF o mesmo conteúdo visível da aba", () => {
+    const source = readFileSync(
+      new URL("./SocialOrganicDashboard.tsx", import.meta.url),
+      "utf8",
+    );
+    const styles = readFileSync(
+      new URL("../index.css", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain("SocialOrganicPdfButton");
+    expect(source).toContain("activateSocialOrganicPrintMode");
+    expect(source).toContain("data-social-organic-print-root");
+    expect(styles).toContain('body[data-print-mode="social-organic"]');
+    expect(styles).toContain("print-color-adjust: exact");
+    expect(styles).toContain(".social-organic-print-hide");
+  });
 });
