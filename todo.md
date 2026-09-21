@@ -3514,3 +3514,12 @@
 - [x] Confirmar cobertura até 17/09/2026 e 5.324 Leads em setembro
 - [x] Reexecutar a fonte e confirmar `NO_CHANGES`, preservando idempotência e a separação de TikTok Live
 - [x] Registrar auditoria sem dados pessoais
+
+
+## Atualização da base de Leads — 21/09/2026
+
+- [x] Executada prévia oficial da fonte com cobertura até 20/09/2026 (D-1).
+- [x] Aplicada sincronização transacional e idempotente: 857 novos registros válidos; base canônica de 31.384 para 32.241 Leads.
+- [x] Reexecutada a fonte: `NO_CHANGES`, sem duplicação ou remoção.
+- [x] Reconciliados os indicadores de Leads e registradas as validações em `docs/leads-sync-20260921.md`.
+- [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript.
