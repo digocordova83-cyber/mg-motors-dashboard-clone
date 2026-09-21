@@ -3523,3 +3523,13 @@
 - [x] Reexecutada a fonte: `NO_CHANGES`, sem duplicação ou remoção.
 - [x] Reconciliados os indicadores de Leads e registradas as validações em `docs/leads-sync-20260921.md`.
 - [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript.
+
+
+## Recuperação TikTok Live e atualização da base de Leads — 21/09/2026
+
+- [x] Interrompida a carga que removeria 423 Leads históricos de TikTok Live da fonte.
+- [x] Recuperado o histórico de 423 registros na aba oficial, preservando 30 registros novos sem sobreposição; TikTok Live totaliza 453 Leads na fonte.
+- [x] Executada prévia corrigida com 0 remoções e 231 Leads novos.
+- [x] Atualizada a base canônica de 32.241 para 32.472 Leads e reexecutada a fonte com `NO_CHANGES`.
+- [x] Reconciliados indicadores e registrados os controles em `docs/leads-sync-tiktok-live-recovery-20260921.md`.
+- [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript.
