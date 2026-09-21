@@ -14,6 +14,9 @@ describe("interface Social Orgânico", () => {
       contentTitle: "Conteúdos em destaque",
       netFollowerGrowth: "Crescimento líquido",
       videoTitle: "Vídeos em destaque",
+      followerAnalysisTitle: "Análise de crescimento de seguidores",
+      weekendDiagnosis: "Diagnóstico do último fim de semana",
+      weekendPending: "Em apuração",
     });
     expect(SOCIAL_ORGANIC_COPY["en-US"]).toMatchObject({
       title: "Community and Content Intelligence",
@@ -22,6 +25,9 @@ describe("interface Social Orgânico", () => {
       contentTitle: "Top content",
       netFollowerGrowth: "Net follower growth",
       videoTitle: "Top videos",
+      followerAnalysisTitle: "Follower growth analysis",
+      weekendDiagnosis: "Latest weekend diagnosis",
+      weekendPending: "Pending data",
     });
   });
 
@@ -66,5 +72,18 @@ describe("interface Social Orgânico", () => {
     expect(source).toContain("object-contain");
     expect(source).not.toContain("object-cover");
     expect(source).toContain("Miniatura indisponível");
+  });
+
+  it("inclui análise de dias úteis, fins de semana, qualidade e possíveis sinais", () => {
+    const source = readFileSync(
+      new URL("./SocialOrganicDashboard.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).toContain('data-testid="follower-pattern-analysis"');
+    expect(source).toContain("analysis.weekday.average");
+    expect(source).toContain("analysis.weekend.average");
+    expect(source).toContain("analysis.dataQuality.pendingDates");
+    expect(source).toContain("analysis.strongestCorrelation");
+    expect(source).toContain("latestWeekend?.relatedContents");
   });
 });

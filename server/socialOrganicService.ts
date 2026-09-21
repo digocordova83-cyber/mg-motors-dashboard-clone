@@ -4,6 +4,7 @@ import {
   getDashboardCutoffDate,
   resolveDashboardPeriod,
 } from "@shared/dashboardDates";
+import { buildFollowerAnalysis } from "./socialFollowerAnalysis";
 
 export const INSTAGRAM_ORGANIC_ACCOUNT_ID = "28842093312063059";
 export const INSTAGRAM_ORGANIC_ACCOUNT_NAME = "mgmotorbrasil";
@@ -668,6 +669,7 @@ export function buildSocialOrganicData(
   const topByFollows = [...contents].sort(
     (left, right) => right.follows - left.follows || right.engagements - left.engagements,
   )[0] ?? null;
+  const followerAnalysis = buildFollowerAnalysis(daily, contents, platform);
 
   return {
     platform,
@@ -710,6 +712,7 @@ export function buildSocialOrganicData(
     },
     daily,
     contents,
+    followerAnalysis,
     highlights: {
       topByReach: contents[0] ?? null,
       topByEngagement,

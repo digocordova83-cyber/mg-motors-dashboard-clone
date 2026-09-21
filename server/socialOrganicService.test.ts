@@ -149,6 +149,11 @@ describe("Social Orgânico", () => {
     expect(data.account.followersCurrent).toBe(50_000);
     expect(data.highlights.topByFollows?.id).toBe("post-1");
     expect(data.connection.tiktok.status).toBe("connected");
+    expect(data.followerAnalysis).toMatchObject({
+      available: true,
+      weekday: { days: 2, average: 7.5 },
+      dataQuality: { complete: true, pendingDates: [] },
+    });
     expect(data.metadata.definitions.newFollowers).toContain("não representa crescimento líquido");
     expect(data.metadata.definitions.dailyReach).toContain("não representa alcance único deduplicado");
   });

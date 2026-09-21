@@ -5,6 +5,7 @@ import { getDashboardCutoffDate } from "@shared/dashboardDates";
 import type { inferRouterOutputs } from "@trpc/server";
 import {
   AlertTriangle,
+  Activity,
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
@@ -17,12 +18,14 @@ import {
   Loader2,
   MessageCircle,
   Music2,
+  Radar,
   RefreshCcw,
   Share2,
   Sparkles,
   TrendingUp,
   UserPlus,
   UsersRound,
+  Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -31,6 +34,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Line,
   ResponsiveContainer,
@@ -86,6 +90,61 @@ export const SOCIAL_ORGANIC_COPY = {
     followersTitle: "Aquisição diária de seguidores",
     followersSubtitle: "Novos seguidores reportados por dia; não representa crescimento líquido",
     netFollowersSubtitle: "Ganhos menos perdas de seguidores reportados por dia pelo TikTok",
+    followerAnalysisTitle: "Análise de crescimento de seguidores",
+    followerAnalysisSubtitle: "Compara dias úteis e fins de semana, identifica picos e cruza sinais de alcance, visualizações e conteúdo sem atribuir causalidade",
+    weekdayAverage: "Média por dia útil",
+    weekendAverage: "Média por dia no fim de semana",
+    weekdayMedian: "Mediana em dias úteis",
+    weekendMedian: "Mediana no fim de semana",
+    weekendDifference: "Fim de semana vs dias úteis",
+    latestWeekend: "Último fim de semana",
+    followersReported: "seguidores reportados",
+    reportedDays: "dias fechados",
+    dayOfWeekTitle: "Média por dia da semana",
+    dayOfWeekSubtitle: "Média diária de novos seguidores, excluindo datas ainda em apuração",
+    followerTimelineTitle: "Seguidores por dia",
+    followerTimelineSubtitle: "Dias úteis em azul, fins de semana em rosa e picos em âmbar",
+    weekendDiagnosis: "Diagnóstico do último fim de semana",
+    weekendBenchmark: "Referência de fins de semana anteriores",
+    weekendSpike: "Fora da curva",
+    weekendAbove: "Acima do padrão",
+    weekendTypical: "Dentro do padrão",
+    weekendBelow: "Abaixo do padrão",
+    weekendPending: "Em apuração",
+    weekendInsufficient: "Base insuficiente",
+    weekendPendingDescription: "A origem ainda não fechou todos os dias do fim de semana. O volume exibido é parcial e não deve ser classificado como alta ou queda.",
+    weekendSpikeDescription: "O total de seguidores superou o limiar estatístico calculado com os fins de semana anteriores do período.",
+    weekendAboveDescription: "O resultado ficou acima da mediana histórica do período, mas abaixo do limiar de pico.",
+    weekendTypicalDescription: "O resultado ficou dentro da faixa observada nos fins de semana anteriores.",
+    weekendBelowDescription: "O resultado ficou abaixo da faixa típica observada no período.",
+    weekendInsufficientDescription: "Selecione pelo menos 14 dias para formar uma referência confiável de fins de semana.",
+    evidenceSignals: "Sinais associados",
+    reachChange: "Alcance vs fins de semana anteriores",
+    viewsChange: "Visualizações vs fins de semana anteriores",
+    interactionsChange: "Interações vs fins de semana anteriores",
+    strongestAssociation: "Maior associação histórica",
+    correlationReach: "alcance",
+    correlationViews: "visualizações",
+    correlationInteractions: "interações",
+    correlationNote: "Correlação indica associação, não comprova causa.",
+    relatedContent: "Conteúdos próximos ao período",
+    relatedContentEmpty: "Nenhum conteúdo publicado no fim de semana ou nos dois dias anteriores foi retornado pela origem.",
+    anomalyTitle: "Picos diários detectados",
+    anomalySubtitle: "Dias acima do limiar robusto do período; use os sinais ao lado para investigar o contexto",
+    noAnomalies: "Nenhum pico estatístico de seguidores foi detectado no intervalo selecionado.",
+    dataQualityPending: "Seguidores em apuração",
+    dataQualityThrough: "Série de seguidores fechada até",
+    confidenceHigh: "Alta confiança",
+    confidenceMedium: "Confiança moderada",
+    confidenceLow: "Baixa confiança",
+    useLongerPeriod: "Para uma leitura mais estável, use 30 ou 60 dias.",
+    monday: "Seg",
+    tuesday: "Ter",
+    wednesday: "Qua",
+    thursday: "Qui",
+    friday: "Sex",
+    saturday: "Sáb",
+    sunday: "Dom",
     interactionMix: "Composição das interações",
     interactionMixSubtitle: "Ações dos conteúdos publicados no período, reportadas de forma independente pela origem",
     insights: "Leituras do período",
@@ -157,6 +216,61 @@ export const SOCIAL_ORGANIC_COPY = {
     followersTitle: "Daily follower acquisition",
     followersSubtitle: "New followers reported per day; this is not net follower growth",
     netFollowersSubtitle: "Follower gains minus losses reported daily by TikTok",
+    followerAnalysisTitle: "Follower growth analysis",
+    followerAnalysisSubtitle: "Compares weekdays and weekends, detects spikes, and cross-checks reach, views and content signals without claiming causation",
+    weekdayAverage: "Average per weekday",
+    weekendAverage: "Average per weekend day",
+    weekdayMedian: "Weekday median",
+    weekendMedian: "Weekend median",
+    weekendDifference: "Weekend vs weekdays",
+    latestWeekend: "Latest weekend",
+    followersReported: "followers reported",
+    reportedDays: "closed days",
+    dayOfWeekTitle: "Average by day of week",
+    dayOfWeekSubtitle: "Daily average of new followers, excluding dates still being processed",
+    followerTimelineTitle: "Followers by day",
+    followerTimelineSubtitle: "Weekdays in blue, weekends in pink and spikes in amber",
+    weekendDiagnosis: "Latest weekend diagnosis",
+    weekendBenchmark: "Previous weekend benchmark",
+    weekendSpike: "Outlier spike",
+    weekendAbove: "Above pattern",
+    weekendTypical: "Within pattern",
+    weekendBelow: "Below pattern",
+    weekendPending: "Pending data",
+    weekendInsufficient: "Insufficient baseline",
+    weekendPendingDescription: "The source has not closed every day of the weekend yet. The displayed follower volume is partial and should not be classified as growth or decline.",
+    weekendSpikeDescription: "Follower volume exceeded the statistical threshold calculated from previous weekends in the period.",
+    weekendAboveDescription: "The result was above the period's historical median but below the spike threshold.",
+    weekendTypicalDescription: "The result remained within the range observed on previous weekends.",
+    weekendBelowDescription: "The result was below the typical range observed in the period.",
+    weekendInsufficientDescription: "Select at least 14 days to establish a reliable weekend benchmark.",
+    evidenceSignals: "Associated signals",
+    reachChange: "Reach vs previous weekends",
+    viewsChange: "Views vs previous weekends",
+    interactionsChange: "Interactions vs previous weekends",
+    strongestAssociation: "Strongest historical association",
+    correlationReach: "reach",
+    correlationViews: "views",
+    correlationInteractions: "interactions",
+    correlationNote: "Correlation indicates association and does not prove causation.",
+    relatedContent: "Content around the period",
+    relatedContentEmpty: "The source returned no content published during the weekend or the two preceding days.",
+    anomalyTitle: "Detected daily spikes",
+    anomalySubtitle: "Days above the period's robust threshold; use the signals alongside them to investigate context",
+    noAnomalies: "No statistical follower spikes were detected in the selected interval.",
+    dataQualityPending: "Follower data pending",
+    dataQualityThrough: "Follower series closed through",
+    confidenceHigh: "High confidence",
+    confidenceMedium: "Moderate confidence",
+    confidenceLow: "Low confidence",
+    useLongerPeriod: "For a more stable reading, use 30 or 60 days.",
+    monday: "Mon",
+    tuesday: "Tue",
+    wednesday: "Wed",
+    thursday: "Thu",
+    friday: "Fri",
+    saturday: "Sat",
+    sunday: "Sun",
     interactionMix: "Interaction mix",
     interactionMixSubtitle: "Actions from content published in the period, reported independently by the source",
     insights: "Period insights",
@@ -290,6 +404,75 @@ function ContentImage({ content, alt, unavailable }: { content: Content; alt: st
   return <div className="flex h-[220px] w-full items-center justify-center bg-[#070c14] p-2"><img src={content.thumbnailUrl} alt={alt} loading="lazy" onError={() => setFailed(true)} className="max-h-full max-w-full object-contain" /></div>;
 }
 
+function formatSignedPercent(value: number | null, locale: Locale) {
+  if (value == null) return "—";
+  return `${value > 0 ? "+" : ""}${formatNumber(value, locale, 1)}%`;
+}
+
+function FollowerAnalysisSection({ data, locale, isTikTok }: { data: SocialOrganicData; locale: Locale; isTikTok: boolean }) {
+  const t = SOCIAL_ORGANIC_COPY[locale];
+  const analysis = data.followerAnalysis;
+  const latestWeekend = analysis.latestWeekend;
+  const dayLabels = [t.sunday, t.monday, t.tuesday, t.wednesday, t.thursday, t.friday, t.saturday];
+  const orderedDays = [1, 2, 3, 4, 5, 6, 0]
+    .map(day => analysis.dayOfWeek.find(item => item.day === day))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const maximumDayAverage = Math.max(...orderedDays.map(item => item.average), 1);
+  const status = latestWeekend?.status ?? "insufficient";
+  const statusConfig = {
+    spike: { label: t.weekendSpike, description: t.weekendSpikeDescription, color: "text-amber-300", border: "border-amber-400/25", background: "bg-amber-400/[0.06]", icon: <Zap className="h-4 w-4" /> },
+    above: { label: t.weekendAbove, description: t.weekendAboveDescription, color: "text-emerald-300", border: "border-emerald-400/25", background: "bg-emerald-400/[0.06]", icon: <ArrowUpRight className="h-4 w-4" /> },
+    typical: { label: t.weekendTypical, description: t.weekendTypicalDescription, color: "text-sky-300", border: "border-sky-400/25", background: "bg-sky-400/[0.06]", icon: <Activity className="h-4 w-4" /> },
+    below: { label: t.weekendBelow, description: t.weekendBelowDescription, color: "text-rose-300", border: "border-rose-400/25", background: "bg-rose-400/[0.06]", icon: <ArrowDownRight className="h-4 w-4" /> },
+    pending: { label: t.weekendPending, description: t.weekendPendingDescription, color: "text-violet-300", border: "border-violet-400/25", background: "bg-violet-400/[0.06]", icon: <RefreshCcw className="h-4 w-4" /> },
+    insufficient: { label: t.weekendInsufficient, description: t.weekendInsufficientDescription, color: "text-slate-300", border: "border-slate-400/20", background: "bg-slate-400/[0.04]", icon: <Radar className="h-4 w-4" /> },
+  }[status];
+  const confidenceLabel = analysis.confidence === "high" ? t.confidenceHigh : analysis.confidence === "medium" ? t.confidenceMedium : t.confidenceLow;
+  const strongestMetric = analysis.strongestCorrelation?.metric === "reach" ? t.correlationReach : analysis.strongestCorrelation?.metric === "views" ? t.correlationViews : t.correlationInteractions;
+  const relatedContents = latestWeekend?.relatedContents ?? [];
+  const metricLabel = isTikTok ? t.netFollowerGrowth : t.newFollowers;
+
+  const summaryCards = [
+    { label: t.weekdayAverage, value: analysis.weekday.average, note: `${analysis.weekday.days} ${t.reportedDays}`, accent: "#38bdf8" },
+    { label: t.weekendAverage, value: analysis.weekend.average, note: `${analysis.weekend.days} ${t.reportedDays}`, accent: "#f472b6" },
+    { label: t.weekendDifference, value: analysis.weekendVsWeekdayPercent, note: `${t.weekendMedian}: ${formatNumber(analysis.weekend.median, locale)}`, accent: "#f59e0b", percent: true },
+    { label: t.latestWeekend, value: latestWeekend?.followerTotal ?? 0, note: latestWeekend ? `${latestWeekend.reportedFollowerDays}/2 ${t.reportedDays}` : t.weekendInsufficient, accent: "#a78bfa" },
+  ];
+
+  return (
+    <section className="mt-4 space-y-4" data-testid="follower-pattern-analysis">
+      <Panel title={t.followerAnalysisTitle} subtitle={t.followerAnalysisSubtitle} action={<span className={`rounded-full border px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] ${statusConfig.border} ${statusConfig.background} ${statusConfig.color}`}>{confidenceLabel}</span>}>
+        <div className="grid gap-px bg-[#1b2535] sm:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map(card => <article key={card.label} className="bg-[#0d1421] p-4"><div className="flex items-center justify-between gap-3"><p className="text-[8px] font-semibold uppercase tracking-[0.14em] text-slate-600">{card.label}</p><span className="h-2 w-2 rounded-full" style={{ backgroundColor: card.accent }} /></div><p className="mt-2 text-[22px] font-semibold text-white">{card.percent ? formatSignedPercent(card.value, locale) : formatNumber(card.value ?? 0, locale)}</p><p className="mt-1 text-[9px] text-slate-600">{card.note}</p></article>)}
+        </div>
+        {analysis.dataQuality.pendingDates.length ? <div className="flex items-start gap-2 border-t border-violet-400/15 bg-violet-400/[0.04] px-4 py-3 text-[10px] leading-5 text-violet-100/70"><RefreshCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" /><span><strong className="font-semibold text-violet-200">{t.dataQualityPending}:</strong> {analysis.dataQuality.pendingDates.map(date => formatLongDate(date, locale)).join(", ")}. {t.dataQualityThrough}: {analysis.dataQuality.reliableThroughDate ? formatLongDate(analysis.dataQuality.reliableThroughDate, locale) : "—"}.</span></div> : null}
+      </Panel>
+
+      <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+        <Panel title={t.followerTimelineTitle} subtitle={t.followerTimelineSubtitle}><div className="h-[320px] px-2 pb-4 pt-5"><ResponsiveContainer width="100%" height="100%"><BarChart data={analysis.timeline}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} minTickGap={18} /><YAxis tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={36} /><Tooltip content={<OrganicTooltip locale={locale} />} /><Bar dataKey="newFollowers" name={metricLabel} radius={[4, 4, 0, 0]} maxBarSize={24}>{analysis.timeline.map(item => <Cell key={item.date} fill={item.pending ? "#7c3aed" : item.anomaly ? "#f59e0b" : item.dayType === "weekend" ? "#f472b6" : "#38bdf8"} fillOpacity={item.pending ? 0.45 : 0.9} />)}</Bar></BarChart></ResponsiveContainer></div></Panel>
+        <Panel title={t.dayOfWeekTitle} subtitle={t.dayOfWeekSubtitle}><div className="space-y-3 p-5">{orderedDays.map(item => <div key={item.day}><div className="mb-1.5 flex items-center justify-between gap-3 text-[10px]"><span className={item.day === 0 || item.day === 6 ? "font-semibold text-pink-300" : "text-slate-400"}>{dayLabels[item.day]}</span><span className="font-semibold text-slate-200">{formatNumber(item.average, locale)} <span className="font-normal text-slate-700">• {item.days}d</span></span></div><div className="h-1.5 overflow-hidden rounded-full bg-[#080d16]"><div className={`h-full rounded-full ${item.day === 0 || item.day === 6 ? "bg-pink-400" : "bg-sky-400"}`} style={{ width: `${Math.max(2, (item.average / maximumDayAverage) * 100)}%` }} /></div></div>)}</div></Panel>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <Panel title={t.weekendDiagnosis} subtitle={latestWeekend ? `${formatLongDate(latestWeekend.dateFrom, locale)} — ${formatLongDate(latestWeekend.dateTo, locale)}` : t.weekendInsufficient}>
+          <div className="p-4">
+            <div className={`rounded-xl border p-4 ${statusConfig.border} ${statusConfig.background}`}><div className={`flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] ${statusConfig.color}`}>{statusConfig.icon}{statusConfig.label}</div><p className="mt-2 text-[11px] leading-5 text-slate-400">{statusConfig.description}</p>{latestWeekend ? <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[9px] text-slate-600"><span><strong className="text-slate-300">{formatNumber(latestWeekend.followerTotal, locale)}</strong> {t.followersReported}</span><span>{t.weekendBenchmark}: <strong className="text-slate-300">{formatNumber(latestWeekend.benchmarkDailyAverage, locale)}/dia</strong></span><span>{formatSignedPercent(latestWeekend.followerDifferencePercent, locale)} vs benchmark diário</span></div> : null}</div>
+            <div className="mt-4"><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">{t.evidenceSignals}</p><div className="mt-2 grid gap-2 sm:grid-cols-3">{[
+              { label: t.reachChange, value: latestWeekend?.reachDifferencePercent ?? null },
+              { label: t.viewsChange, value: latestWeekend?.viewsDifferencePercent ?? null },
+              { label: t.interactionsChange, value: latestWeekend?.interactionsDifferencePercent ?? null },
+            ].map(signal => <div key={signal.label} className="rounded-lg border border-[#202b3d] bg-[#0a101b] p-3"><p className="text-[8px] leading-4 text-slate-600">{signal.label}</p><p className="mt-1 text-sm font-semibold text-white">{formatSignedPercent(signal.value, locale)}</p></div>)}</div></div>
+            {analysis.strongestCorrelation ? <div className="mt-3 flex items-start gap-2 rounded-lg border border-[#202b3d] bg-[#0a101b] p-3 text-[9px] leading-4 text-slate-500"><Radar className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" /><span><strong className="text-slate-300">{t.strongestAssociation}:</strong> {strongestMetric} (r = {formatNumber(analysis.strongestCorrelation.coefficient ?? 0, locale, 2)}). {t.correlationNote}</span></div> : null}
+          </div>
+        </Panel>
+        <Panel title={t.relatedContent} subtitle={t.correlationNote}><div className="space-y-2 p-4">{relatedContents.length ? relatedContents.map(content => <article key={content.id} className="rounded-xl border border-[#202b3d] bg-[#0a101b] p-3"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="line-clamp-2 text-[10px] leading-4 text-slate-300">{content.caption || t.contentPublished}</p><p className="mt-1 text-[8px] text-slate-700">{formatLongDate(content.timestamp.slice(0, 10), locale)}</p></div>{content.permalink ? <a href={content.permalink} target="_blank" rel="noreferrer" aria-label={t.openPost} className="shrink-0 text-sky-400"><ExternalLink className="h-3.5 w-3.5" /></a> : null}</div><div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[8px] text-slate-600"><span>{t.reach}: <strong className="text-slate-300">{formatNumber(content.reach, locale)}</strong></span><span>{t.engagement}: <strong className="text-slate-300">{formatNumber(content.engagements, locale)}</strong></span><span>{t.newFollowers}: <strong className="text-slate-300">{formatNumber(content.follows, locale)}</strong></span></div></article>) : <div className="grid min-h-[180px] place-items-center px-5 text-center text-[10px] leading-5 text-slate-600">{t.relatedContentEmpty}</div>}</div></Panel>
+      </div>
+
+      <Panel title={t.anomalyTitle} subtitle={t.anomalySubtitle}>{analysis.anomalies.length ? <div className="grid gap-px bg-[#1b2535] sm:grid-cols-2 xl:grid-cols-5">{analysis.anomalies.map(item => <article key={item.date} className="bg-[#0d1421] p-4"><div className="flex items-center justify-between gap-2"><p className="text-[9px] font-semibold text-amber-300">{formatLongDate(item.date, locale)}</p><Zap className="h-3.5 w-3.5 text-amber-400" /></div><p className="mt-2 text-xl font-semibold text-white">{formatNumber(item.followers, locale)}</p><p className="mt-1 text-[8px] text-slate-600">{t.followersReported} • {formatSignedPercent(item.upliftVsTypicalPercent, locale)}</p><div className="mt-3 space-y-1 text-[8px] text-slate-700"><p>{t.reach}: {formatNumber(item.reach, locale)}</p><p>{t.views}: {formatNumber(item.views, locale)}</p><p>{t.interactions}: {formatNumber(item.interactions, locale)}</p></div></article>)}</div> : <div className="grid min-h-[120px] place-items-center px-6 text-center text-[10px] text-slate-600">{t.noAnomalies}</div>}{analysis.confidence === "low" ? <div className="border-t border-amber-400/15 bg-amber-400/[0.04] px-4 py-3 text-[9px] text-amber-100/65">{t.useLongerPeriod}</div> : null}</Panel>
+    </section>
+  );
+}
+
 export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props) {
   const t = SOCIAL_ORGANIC_COPY[locale];
   const utils = trpc.useUtils();
@@ -412,6 +595,8 @@ export function SocialOrganicDashboard({ locale = "pt-BR", onUpdatedAt }: Props)
           <Panel title={t.followersTitle} subtitle={isTikTok ? t.netFollowersSubtitle : t.followersSubtitle}><div className="h-[310px] px-2 pb-4 pt-5"><ResponsiveContainer width="100%" height="100%"><BarChart data={data.daily}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} minTickGap={18} /><YAxis tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={36} /><Tooltip content={<OrganicTooltip locale={locale} />} /><Bar dataKey="newFollowers" name={isTikTok ? t.netFollowerGrowth : t.newFollowers} fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={22} /></BarChart></ResponsiveContainer></div></Panel>
           <Panel title={t.interactionMix} subtitle={t.interactionMixSubtitle}><div className="grid gap-3 p-4 sm:grid-cols-2">{interactionRows.map(item => <article key={item.key} className="rounded-xl border border-[#202b3d] bg-[#0a101b] p-4"><div className="flex items-center justify-between"><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">{item.label}</p><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} /></div><p className="mt-2 text-xl font-semibold text-white">{formatNumber(item.value, locale)}</p><div className="mt-2"><Delta comparison={data.comparisons[item.key as keyof typeof data.comparisons]} locale={locale} /></div></article>)}</div></Panel>
         </div>
+
+        <FollowerAnalysisSection data={data} locale={locale} isTikTok={isTikTok} />
 
         <Panel title={t.insights} subtitle={t.insightsSubtitle} className="mt-4"><div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">{insightCards.map(card => <article key={card.label} className="min-w-0 rounded-xl border border-[#202b3d] bg-[#0a101b] p-4"><div className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">{card.icon}{card.label}</div><p className="mt-2 line-clamp-2 text-sm font-semibold leading-5 text-white">{card.value}</p><p className="mt-1 text-[10px] text-emerald-400">{card.metric}</p></article>)}</div></Panel>
 

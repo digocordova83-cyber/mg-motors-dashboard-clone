@@ -3533,3 +3533,11 @@
 - [x] Atualizada a base canônica de 32.241 para 32.472 Leads e reexecutada a fonte com `NO_CHANGES`.
 - [x] Reconciliados indicadores e registrados os controles em `docs/leads-sync-tiktok-live-recovery-20260921.md`.
 - [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript.
+
+## Social Orgânico — análise de crescimento de seguidores
+- [x] Comparar médias e medianas de novos seguidores entre dias úteis e fins de semana com dados reais do Windsor.ai.
+- [x] Exibir evolução diária, médias por dia da semana e picos estatísticos sem atribuir causalidade.
+- [x] Diagnosticar o último fim de semana com benchmarks de alcance, visualizações, interações e conteúdos próximos ao período.
+- [x] Tratar datas finais ainda não fechadas pelo Instagram como `Em apuração`, evitando classificar volume parcial como alta ou queda.
+- [x] Preservar a interface bilíngue em português e inglês e o padrão visual escuro da aba Social Orgânico.
+- [x] Validar com dados reais de 22/08 a 20/09, revisão visual autenticada, 344 testes determinísticos, TypeScript e build de produção.
