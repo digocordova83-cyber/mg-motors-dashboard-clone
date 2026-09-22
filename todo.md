@@ -3549,3 +3549,12 @@
 - [x] Ocultar apenas as ações `Atualizar` e `Exportar PDF` durante a impressão.
 - [x] Configurar nome sugerido por plataforma e data de geração em Brasília.
 - [x] Gerar e revisar visualmente um PDF real de 10 páginas, sem cortes ou sobreposição.
+
+## Atualização da base de Leads — 22/09/2026
+- [x] Executar prévia oficial e identificar risco de remoção de 423 Leads históricos de TikTok Live.
+- [x] Preservar a base canônica e restaurar os 423 registros ausentes na fonte oficial.
+- [x] Confirmar 468 registros de TikTok Live e zero remoções na prévia corrigida.
+- [x] Validar cobertura até 21/09/2026 e importar 335 novos Leads.
+- [x] Reexecutar o fluxo oficial e confirmar `NO_CHANGES`, sem duplicações.
+- [x] Reconciliar base, série diária e auditoria de concessionárias em 32.807 Leads.
+- [x] Aprovar 13 testes direcionados e a checagem TypeScript.
