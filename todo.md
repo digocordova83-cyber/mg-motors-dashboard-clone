@@ -3558,3 +3558,10 @@
 - [x] Reexecutar o fluxo oficial e confirmar `NO_CHANGES`, sem duplicações.
 - [x] Reconciliar base, série diária e auditoria de concessionárias em 32.807 Leads.
 - [x] Aprovar 13 testes direcionados e a checagem TypeScript.
+
+## Atualização da base de Leads — 23/09/2026
+- [x] Executar prévia oficial com cobertura validada até 22/09/2026.
+- [x] Confirmar 351 novos Leads, zero remoções e preservação de 468 registros de TikTok Live.
+- [x] Importar a carga idempotente e atualizar a base para 33.158 Leads.
+- [x] Reexecutar o fluxo e confirmar `NO_CHANGES`, sem duplicações.
+- [x] Reconciliar indicadores de setembro em 7.098 Leads e validar 13 testes direcionados e TypeScript.
