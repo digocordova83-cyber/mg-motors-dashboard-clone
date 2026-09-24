@@ -3565,3 +3565,11 @@
 - [x] Importar a carga idempotente e atualizar a base para 33.158 Leads.
 - [x] Reexecutar o fluxo e confirmar `NO_CHANGES`, sem duplicações.
 - [x] Reconciliar indicadores de setembro em 7.098 Leads e validar 13 testes direcionados e TypeScript.
+
+## Atualização do dashboard — 24/09/2026
+- [x] Atualizar Google Ads, Meta Ads e TikTok Ads pela Windsor.ai até 23/09/2026.
+- [x] Importar 332 novos Leads oficiais e confirmar a cobertura até 23/09/2026.
+- [x] Reexecutar a carga de Leads com retorno `NO_CHANGES`.
+- [x] Reconciliar setembro em 7.430 Leads e a base canônica em 33.490 Leads.
+- [x] Preservar o último Retail oficial: 325 MTD Retail Orders, Semana 4, fonte de 21/09/2026; não estimar dias sem arquivo oficial.
+- [x] Aprovar 18 testes direcionados e a checagem TypeScript.
