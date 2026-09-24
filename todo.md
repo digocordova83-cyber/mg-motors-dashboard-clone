@@ -3573,3 +3573,11 @@
 - [x] Reconciliar setembro em 7.430 Leads e a base canônica em 33.490 Leads.
 - [x] Preservar o último Retail oficial: 325 MTD Retail Orders, Semana 4, fonte de 21/09/2026; não estimar dias sem arquivo oficial.
 - [x] Aprovar 18 testes direcionados e a checagem TypeScript.
+
+## Atualização da base de Leads — Webmotors 24/09/2026
+- [x] Executar prévia oficial e preservar apenas dados canônicos da fonte, sem alterações manuais.
+- [x] Detectar a carga Webmotors recebida durante a execução e importar 65 Leads novos, sem remoções de histórico.
+- [x] Atualizar a base canônica de 33.490 para 33.555 Leads; Webmotors totaliza 3.060 no canal operacional.
+- [x] Reexecutar o fluxo oficial com retorno `NO_CHANGES`, confirmando idempotência.
+- [x] Reconciliar a base, a série diária e os indicadores de setembro; aprovar 13 testes direcionados e TypeScript.
+- [x] Registrar auditoria sem dados pessoais em `docs/leads-sync-webmotors-20260924.md`.
