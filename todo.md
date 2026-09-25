@@ -3581,3 +3581,12 @@
 - [x] Reexecutar o fluxo oficial com retorno `NO_CHANGES`, confirmando idempotência.
 - [x] Reconciliar a base, a série diária e os indicadores de setembro; aprovar 13 testes direcionados e TypeScript.
 - [x] Registrar auditoria sem dados pessoais em `docs/leads-sync-webmotors-20260924.md`.
+
+## Atualização da base de Leads — 25/09/2026
+
+- [x] Executada prévia oficial com cobertura até 24/09/2026 (D-1).
+- [x] Aplicada carga transacional e idempotente: 349 novos registros válidos; base canônica de 33.555 para 33.904 Leads.
+- [x] Preservado o histórico: zero remoções; TikTok Live continua distinto de TikTok Ads.
+- [x] Reexecutada a fonte: `NO_CHANGES`, sem duplicidade de registros.
+- [x] Reconciliados total, série diária e concessionárias em 33.904 Leads; setembro fechou 24/09 com 7.844 Leads.
+- [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript; auditoria registrada em `docs/leads-sync-20260925.md`.
