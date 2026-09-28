@@ -3590,3 +3590,12 @@
 - [x] Reexecutada a fonte: `NO_CHANGES`, sem duplicidade de registros.
 - [x] Reconciliados total, série diária e concessionárias em 33.904 Leads; setembro fechou 24/09 com 7.844 Leads.
 - [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript; auditoria registrada em `docs/leads-sync-20260925.md`.
+
+## Atualização da base de Leads — 28/09/2026
+
+- [x] Executada prévia oficial com cobertura até 27/09/2026 (D-1).
+- [x] Aplicada carga transacional e idempotente: 1.071 novos registros válidos; base canônica de 33.904 para 34.975 Leads.
+- [x] Preservado o histórico: zero remoções; TikTok Live continua distinto de TikTok Ads.
+- [x] Reexecutada a fonte: `NO_CHANGES`, sem duplicidade de registros.
+- [x] Reconciliados total, série diária e concessionárias em 34.975 Leads; setembro fechou 27/09 com 8.915 Leads.
+- [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript; auditoria registrada em `docs/leads-sync-20260928.md`.
