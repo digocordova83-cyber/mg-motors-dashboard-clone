@@ -3599,3 +3599,12 @@
 - [x] Reexecutada a fonte: `NO_CHANGES`, sem duplicidade de registros.
 - [x] Reconciliados total, série diária e concessionárias em 34.975 Leads; setembro fechou 27/09 com 8.915 Leads.
 - [x] Aprovados 13 testes direcionados de Leads e a checagem TypeScript; auditoria registrada em `docs/leads-sync-20260928.md`.
+
+## Atualização completa do dashboard — 29/09/2026
+
+- [x] Sincronizada a base oficial de Leads até 28/09/2026 (D-1): 414 registros novos; total canônico de 35.389 Leads.
+- [x] Reexecutada a carga de Leads com resultado `NO_CHANGES`; histórico preservado e sem duplicidade.
+- [x] Atualizados os snapshots Windsor de Google Ads e Meta Ads até 28/09/2026.
+- [x] Mantido TikTok Ads até 27/09/2026: Windsor não retornou 28/09 completo e nenhum dado estimado foi aplicado.
+- [x] Validado o último Retail oficial: import 840001, Semana 5, 466 MTD Retail Orders e 26 dealers conciliados.
+- [x] Executados 18 testes direcionados e checagem TypeScript; auditoria registrada em `docs/dashboard-refresh-20260929.md`.
