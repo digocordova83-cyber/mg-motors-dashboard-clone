@@ -3617,3 +3617,11 @@
 - [x] Mantido TikTok Ads até 27/09/2026: Windsor não retornou os fechamentos de 28 e 29/09 e nenhum dado estimado foi aplicado.
 - [x] Validado o último Retail oficial: import 870001, Semana 5, 529 MTD Retail Orders e 26 dealers conciliados.
 - [x] Executados 18 testes direcionados e checagem TypeScript; auditoria registrada em `docs/dashboard-refresh-20260930.md`.
+
+## Reconciliação de Leads de setembro — 30/09/2026
+
+- [x] Comparada a fonte oficial à base canônica, dia a dia, de 01 a 29/09; 9.659 Leads válidos reconciliados sem divergência.
+- [x] Auditado 29/09: Site bruto 83, dos quais 16 estavam fora do catálogo de modelos e 3 eram duplicatas internas; 64 oportunidades únicas válidas na origem.
+- [x] Auditado 29/09: Meta oficial 190 oportunidades válidas e únicas; 112 MG4 Urban são exibidas em Campanha Urban e 78 permanecem no canal Meta.
+- [x] Nenhum Lead válido ausente foi identificado; não houve redistribuição artificial de datas.
+- [x] Auditoria registrada em `docs/september-leads-reconciliation-20260930.md`.
