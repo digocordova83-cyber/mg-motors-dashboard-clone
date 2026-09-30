@@ -48,7 +48,7 @@ def main() -> None:
     }
     assert import_rows[0]["Canal de Origem"] == "Interlagos"
     assert import_rows[0]["Data Corrigida"] == "27/08/2026"
-    assert master_rows[1]["Modelo"] == "Indisponível"
+    assert master_rows[1]["Modelo"] == "MG4"
     assert master_rows[1]["Concessionaria"] == "Indisponível"
     assert master_rows[1]["Canal"] == "Interlagos"
     assert import_rows[1]["Canal de Origem"] == "Interlagos"

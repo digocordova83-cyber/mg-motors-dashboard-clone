@@ -51,7 +51,9 @@ function containsAlias(campaign: string, alias: string) {
 export function classifyProduct(campaignName: string) {
   const campaign = normalize(campaignName);
   if (campaign.includes("CYBESTER") || campaign.includes("CYBERSTER")) return "MG Cyberster";
+  if (containsAlias(campaign, "IM6") || campaign.includes("IM_6")) return "MG IM6";
   if (containsAlias(campaign, "MGS5") || campaign.includes("MG_S5")) return "MG S5";
+  if (campaign.includes("XPOWER") || campaign.includes("X_POWER")) return "MG4";
   if (containsAlias(campaign, "MG4")) return "MG4";
   if (containsAlias(campaign, "MARCA")) return "Marca MG";
   return "Não classificada";

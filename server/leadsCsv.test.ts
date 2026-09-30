@@ -79,6 +79,24 @@ describe("parseLeadCsv", () => {
     ]));
   });
 
+  it("normaliza XPower como MG4 e mantém IM6 como modelo próprio", () => {
+    const result = parseLeadCsv(
+      csv(
+        "2026-09-29T10:00:00,X Power,SP,São Paulo,Dealer Original,Cliente XPower,xpower@example.com,11999990003,Site,29/09/2026,Dealer A",
+        "2026-09-29T10:01:00,MG IM6,SP,São Paulo,Dealer Original,Cliente IM6,im6@example.com,11999990004,Site,29/09/2026,Dealer A",
+      ),
+    );
+
+    expect(result.records).toEqual(expect.arrayContaining([
+      expect.objectContaining({ model: "MG4", channel: "Site" }),
+      expect.objectContaining({ model: "IM6", channel: "Site" }),
+    ]));
+    expect(result.models).toEqual(expect.arrayContaining([
+      { value: "MG4", count: 1 },
+      { value: "IM6", count: 1 },
+    ]));
+  });
+
   it("preserva Canal de Origem sem alterar a identidade ou o canal normalizado", () => {
     const result = parseLeadCsv(
       csvWithSourceChannel(

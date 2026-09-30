@@ -243,6 +243,14 @@ function normalizeOptionalDimension(value: string): string {
   return normalized || UNAVAILABLE_LEAD_VALUE;
 }
 
+export function normalizeLeadModel(value: string): string {
+  const normalized = normalizeOptionalDimension(value);
+  const key = foldKey(normalized);
+  if (/(^| )IM ?6( |$)/.test(key)) return "IM6";
+  if (key.includes("XPOWER") || /(^| )X POWER( |$)/.test(key)) return "MG4";
+  return normalized;
+}
+
 function normalizeEmail(value: string): string {
   return normalizeWhitespace(value).toLocaleLowerCase("pt-BR");
 }
@@ -385,7 +393,7 @@ function normalizeRow(
   const channelRaw = row.Canal ?? "";
   const sourceChannelRaw = row["Canal de Origem"] ?? channelRaw;
 
-  const model = normalizeOptionalDimension(modelRaw);
+  const model = normalizeLeadModel(modelRaw);
   const region = normalizeLeadRegion(regionRaw);
   const city = normalizeOptionalDimension(cityRaw);
   const dealerName = normalizeLeadDealer(dealerRaw);

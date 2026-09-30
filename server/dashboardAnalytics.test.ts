@@ -65,6 +65,8 @@ describe("taxonomia determinística", () => {
     expect(classifyRegion("MG4_PMax_CUIABA").label).toBe("Cuiabá/MT");
     expect(classifyRegion("Campanha sem sufixo regional").type).toBe("unclassified");
     expect(classifyProduct("MGCybester_PMax_RJ")).toBe("MG Cyberster");
+    expect(classifyProduct("IM6_PMax_SP")).toBe("MG IM6");
+    expect(classifyProduct("MG4_XPower_PMax_SP")).toBe("MG4");
     expect(classifyProduct("Institucional sem modelo")).toBe("Não classificada");
   });
 });

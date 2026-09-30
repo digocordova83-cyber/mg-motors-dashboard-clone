@@ -3625,3 +3625,12 @@
 - [x] Auditado 29/09: Meta oficial 190 oportunidades válidas e únicas; 112 MG4 Urban são exibidas em Campanha Urban e 78 permanecem no canal Meta.
 - [x] Nenhum Lead válido ausente foi identificado; não houve redistribuição artificial de datas.
 - [x] Auditoria registrada em `docs/september-leads-reconciliation-20260930.md`.
+
+## Catálogo de modelos — IM6 e XPower — 30/09/2026
+
+- [x] Cadastrado `IM6` como modelo próprio no consolidado oficial, importador CSV e taxonomia de mídia.
+- [x] Normalizado `XPower`/`X Power` como `MG4`, sem criar um modelo paralelo.
+- [x] Preservado o valor bruto de modelo e concessionária no consolidado de origem; a agregação analítica segue normalizada.
+- [x] Reprocessada a fonte oficial: 46 registros anteriormente rejeitados foram elegíveis; a base passou de 35.719 para 35.764 Leads (+45 líquidos após deduplicação).
+- [x] Confirmada idempotência com `NO_CHANGES`; dois registros sem modelo seguem fora por falta de classificação oficial.
+- [x] Aprovados 349 testes, TypeScript e build; auditoria em `docs/leads-model-catalog-im6-xpower-20260930.md`.

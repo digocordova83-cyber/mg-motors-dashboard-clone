@@ -20,6 +20,9 @@ class GoogleLeadsConsolidatorTest(unittest.TestCase):
         self.assertEqual(normalize_model("Formulário Jul/26 - MG4 Urban"), "MG4 URBAN")
         self.assertEqual(normalize_model("S5"), "MGS5")
         self.assertEqual(normalize_model("MG 4"), "MG4")
+        self.assertEqual(normalize_model("MG4 XPower"), "MG4")
+        self.assertEqual(normalize_model("x power"), "MG4")
+        self.assertEqual(normalize_model("MG IM6"), "IM6")
         self.assertEqual(normalize_model("Cyberster"), "CYBERSTER")
         self.assertEqual(normalize_model("outro"), "")
 

@@ -105,10 +105,14 @@ def normalize_model(value: Any) -> str:
         return ""
     if "CYBERSTER" in key:
         return "CYBERSTER"
+    if re.search(r"(?:^| )IM ?6(?: |$)", key):
+        return "IM6"
     if "URBAN" in key:
         return "MG4 URBAN"
     if re.search(r"(?:^| )MG ?S?5(?: |$)", key) or key == "S5":
         return "MGS5"
+    if "XPOWER" in key or re.search(r"(?:^| )X POWER(?: |$)", key):
+        return "MG4"
     if re.search(r"(?:^| )MG ?4(?: |$)", key) or key == "4":
         return "MG4"
     return ""
@@ -194,7 +198,7 @@ def build_record(
     if allow_unavailable_dimensions and not model:
         model = "Indisponível"
     cleaned_phone = clean_phone(phone)
-    normalized_dealer = dealer.strip() or ("Indisponível" if allow_unavailable_dimensions else "")
+    original_dealer = dealer if dealer.strip() else ("Indisponível" if allow_unavailable_dimensions else "")
     resolved_channel = (
         "TikTok"
         if folded(source_channel) == "TIKTOK"
@@ -209,7 +213,7 @@ def build_record(
         "Modelo": model,
         "Região ou Estado": region,
         "Cidade": city,
-        "Concessionaria": normalized_dealer,
+        "Concessionaria": original_dealer,
         "Nome": name,
         "Email": email,
         "Telefone": cleaned_phone,
@@ -220,13 +224,13 @@ def build_record(
         "Modelo": model,
         "Região/Estado": region,
         "Cidade": city,
-        "Concessionaria": normalized_dealer,
+        "Concessionaria": original_dealer,
         "Nome": name,
         "Email": email,
         "Telefone": cleaned_phone,
         "Canal": resolved_channel,
         "Data Corrigida": corrected_date,
-        "Concessionarias corrijida": normalized_dealer,
+        "Concessionarias corrijida": original_dealer,
         "Canal de Origem": source_channel,
     }
     return master, import_row
@@ -522,11 +526,11 @@ def map_rows(
             row_has_issue = True
             issues.append(
                 MappingIssue(
-                    sheet=sheet,
-                    source_row=source_row,
-                    field="Modelo",
-                    value=model_source(row),
-                    message="Modelo fora de MG4 URBAN, MG4, MGS5 ou CYBERSTER.",
+                  sheet=sheet,
+                  source_row=source_row,
+                  field="Modelo",
+                  value=model_source(row),
+                    message="Modelo fora de IM6, MG4 URBAN, MG4, MGS5 ou CYBERSTER.",
                 )
             )
         if not import_row["Data Corrigida"]:
