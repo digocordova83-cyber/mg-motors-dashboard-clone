@@ -3608,3 +3608,12 @@
 - [x] Mantido TikTok Ads até 27/09/2026: Windsor não retornou 28/09 completo e nenhum dado estimado foi aplicado.
 - [x] Validado o último Retail oficial: import 840001, Semana 5, 466 MTD Retail Orders e 26 dealers conciliados.
 - [x] Executados 18 testes direcionados e checagem TypeScript; auditoria registrada em `docs/dashboard-refresh-20260929.md`.
+
+## Atualização completa do dashboard — 30/09/2026
+
+- [x] Reativada a conta Google autorizada e sincronizada a base oficial de Leads até 29/09/2026 (D-1): 330 registros novos; total canônico de 35.719 Leads.
+- [x] Reexecutada a carga de Leads com resultado `NO_CHANGES`; histórico preservado e sem duplicidade.
+- [x] Atualizados os snapshots Windsor de Google Ads e Meta Ads até 29/09/2026.
+- [x] Mantido TikTok Ads até 27/09/2026: Windsor não retornou os fechamentos de 28 e 29/09 e nenhum dado estimado foi aplicado.
+- [x] Validado o último Retail oficial: import 870001, Semana 5, 529 MTD Retail Orders e 26 dealers conciliados.
+- [x] Executados 18 testes direcionados e checagem TypeScript; auditoria registrada em `docs/dashboard-refresh-20260930.md`.
