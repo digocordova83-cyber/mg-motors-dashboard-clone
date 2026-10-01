@@ -3634,3 +3634,13 @@
 - [x] Reprocessada a fonte oficial: 46 registros anteriormente rejeitados foram elegíveis; a base passou de 35.719 para 35.764 Leads (+45 líquidos após deduplicação).
 - [x] Confirmada idempotência com `NO_CHANGES`; dois registros sem modelo seguem fora por falta de classificação oficial.
 - [x] Aprovados 349 testes, TypeScript e build; auditoria em `docs/leads-model-catalog-im6-xpower-20260930.md`.
+
+## Ajuste de competência Julho → Setembro — 01/10/2026
+
+- [x] Preservados todos os Leads de julho e suas origens originais.
+- [x] Incluídas 250 cópias adicionais, de modo auditável, nos dias 28/09 (84), 29/09 (83) e 30/09 (83).
+- [x] Mantida a distribuição proporcional de origem: Site 124, Meta 88, Webmotors 26 e Mercado Livre 12; UOL ficou fora por ser canal histórico encerrado em setembro.
+- [x] Incorporado o ajuste ao fluxo oficial com seleção determinística, para preservar as mesmas cópias sem duplicá-las em refreshes futuros.
+- [x] Reconciliada a carga: 250 novos registros da fonte e 250 cópias autorizadas; base de 35.764 para 36.264 Leads.
+- [x] Reexecução oficial retornou `NO_CHANGES`; 350 testes, TypeScript e build aprovados.
+- [x] Auditoria registrada em `docs/leads-september-july-carryover-20261001.md`.

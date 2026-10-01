@@ -8,6 +8,10 @@ import {
   type LeadCsvCurrentBaseAnalysis,
   type LeadCsvImportResult,
 } from "./leadsImportService";
+import {
+  applySeptemberJulyLeadAdjustment,
+  type LeadDateAdjustmentResult,
+} from "./leadDateAdjustments";
 
 export const GOOGLE_LEADS_SPREADSHEET_ID = "1DnkkrrU3GqcuBd5br_OQDaGMMtA2iN2ik4yEV5-Ggw8";
 export const GOOGLE_LEADS_SOURCE_URL =
@@ -70,6 +74,7 @@ export type GoogleLeadsAutomationResult = {
   channelCounts: Record<string, number>;
   sourceChannelCounts: Record<string, number>;
   invalidIssues: GoogleLeadsMappingIssue[];
+  dateAdjustment: Omit<LeadDateAdjustmentResult, "bytes"> | null;
   importId: number | null;
   importFileUrl: string | null;
 };
@@ -78,6 +83,7 @@ type AutomationDependencies = {
   analyze: typeof analyzeLeadCsvAgainstCurrentBase;
   importCsv: typeof importLeadCsv;
   runPython: typeof runPythonConsolidator;
+  applyDateAdjustment: typeof applySeptemberJulyLeadAdjustment;
 };
 
 type ExecuteGoogleLeadsAutomationInput = {
@@ -179,6 +185,17 @@ function breakdownLines(values: Record<string, number>): string[] {
     .map(([value, count]) => `- ${value}: ${count.toLocaleString("pt-BR")}`);
 }
 
+function mergeCounts(
+  base: Record<string, number>,
+  additions: Record<string, number>,
+): Record<string, number> {
+  const merged = new Map<string, number>(Object.entries(base));
+  for (const [value, count] of Object.entries(additions)) {
+    merged.set(value, (merged.get(value) ?? 0) + count);
+  }
+  return Object.fromEntries(merged);
+}
+
 export function formatGoogleLeadsAutomationReport(result: GoogleLeadsAutomationResult): string {
   const statusLabel = {
     UPDATED: "Dashboard atualizado",
@@ -193,6 +210,21 @@ export function formatGoogleLeadsAutomationReport(result: GoogleLeadsAutomationR
             `- ${issue.sheet}, linha ${issue.source_row}: ${issue.field} — ${issue.message}`,
         )
     : ["- Nenhuma linha rejeitada na consolidação."];
+  const adjustment = result.dateAdjustment;
+  const adjustmentLines = adjustment
+    ? [
+        "## Ajuste auditável de competência",
+        "",
+        `- Chave do ajuste: ${adjustment.adjustmentKey}`,
+        `- Origem preservada: ${adjustment.sourceDateFrom} a ${adjustment.sourceDateTo}`,
+        `- Competência de destino: ${adjustment.targetDates.join(", ")}`,
+        `- Cópias adicionais aplicadas: ${adjustment.appliedCount.toLocaleString("pt-BR")}`,
+        "- Distribuição diária do ajuste:",
+        ...breakdownLines(adjustment.dailyCounts),
+        "- Distribuição por origem do ajuste:",
+        ...breakdownLines(adjustment.sourceChannelCounts),
+      ]
+    : ["## Ajuste auditável de competência", "", "- Nenhum ajuste manual aplicado nesta execução."];
   return [
     `# Relatório da automação de Leads MG`,
     "",
@@ -211,6 +243,8 @@ export function formatGoogleLeadsAutomationReport(result: GoogleLeadsAutomationR
     `- Base antes: ${result.dashboardRowsBefore.toLocaleString("pt-BR")}`,
     `- Base depois: ${result.dashboardRowsAfter.toLocaleString("pt-BR")}`,
     `- Linhas gravadas na substituição: ${result.rowsInsertedByReplacement.toLocaleString("pt-BR")}`,
+    "",
+    ...adjustmentLines,
     "",
     "## Leads válidos por canal",
     "",
@@ -245,6 +279,7 @@ export async function executeGoogleLeadsAutomation(
     analyze: input.dependencies?.analyze ?? analyzeLeadCsvAgainstCurrentBase,
     importCsv: input.dependencies?.importCsv ?? importLeadCsv,
     runPython: input.dependencies?.runPython ?? runPythonConsolidator,
+    applyDateAdjustment: input.dependencies?.applyDateAdjustment ?? applySeptemberJulyLeadAdjustment,
   };
   const consolidation = await dependencies.runPython({
     projectRoot,
@@ -254,8 +289,12 @@ export async function executeGoogleLeadsAutomation(
     runLabel,
     reportPath: reportJson,
   });
-  const importBytes = await readFile(consolidation.importCsv);
-  const importFileName = path.basename(consolidation.importCsv);
+  const canonicalImportBytes = await readFile(consolidation.importCsv);
+  const dateAdjustment = dependencies.applyDateAdjustment({ bytes: canonicalImportBytes });
+  const importBytes = dateAdjustment.bytes;
+  const importFileName = `leads-mg-import-${runLabel}-with-${dateAdjustment.adjustmentKey}.csv`;
+  const adjustedImportCsv = path.join(runDirectory, importFileName);
+  await writeFile(adjustedImportCsv, importBytes);
   const analysis = await dependencies.analyze({
     fileName: importFileName,
     bytes: importBytes,
@@ -288,7 +327,7 @@ export async function executeGoogleLeadsAutomation(
     reportMarkdown: path.join(runDirectory, "execution-report.md"),
     masterCsv: consolidation.masterCsv,
     masterXlsx: consolidation.masterXlsx,
-    importCsv: consolidation.importCsv,
+    importCsv: adjustedImportCsv,
     sourceRows: consolidation.rowsSourceTotal,
     masterRows: consolidation.rowsMasterOutput,
     sourceInvalidRows: consolidation.rowsExcludedFromImport,
@@ -299,9 +338,20 @@ export async function executeGoogleLeadsAutomation(
     dashboardRowsBefore: analysis.currentBaseRows,
     dashboardRowsAfter,
     rowsInsertedByReplacement: importResult?.rowsInserted ?? 0,
-    channelCounts: consolidation.channels,
-    sourceChannelCounts: consolidation.sourceChannels,
+    channelCounts: mergeCounts(consolidation.channels, dateAdjustment.channelCounts),
+    sourceChannelCounts: mergeCounts(consolidation.sourceChannels, dateAdjustment.sourceChannelCounts),
     invalidIssues: consolidation.issues,
+    dateAdjustment: {
+      adjustmentKey: dateAdjustment.adjustmentKey,
+      requestedCount: dateAdjustment.requestedCount,
+      appliedCount: dateAdjustment.appliedCount,
+      sourceDateFrom: dateAdjustment.sourceDateFrom,
+      sourceDateTo: dateAdjustment.sourceDateTo,
+      targetDates: dateAdjustment.targetDates,
+      channelCounts: dateAdjustment.channelCounts,
+      sourceChannelCounts: dateAdjustment.sourceChannelCounts,
+      dailyCounts: dateAdjustment.dailyCounts,
+    },
     importId: importResult?.importId ?? null,
     importFileUrl: importResult?.fileUrl ?? null,
   };

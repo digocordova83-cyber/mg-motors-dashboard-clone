@@ -8,6 +8,19 @@ import {
 } from "./googleLeadsAutomation";
 import type { LeadCsvCurrentBaseAnalysis, LeadCsvImportResult } from "./leadsImportService";
 
+const dateAdjustment = {
+  bytes: Buffer.from("csv"),
+  adjustmentKey: "september-2026-july-carryover-250",
+  requestedCount: 250,
+  appliedCount: 250,
+  sourceDateFrom: "2026-07-01",
+  sourceDateTo: "2026-07-31",
+  targetDates: ["2026-09-28", "2026-09-29", "2026-09-30"],
+  channelCounts: { Site: 100, Meta: 100, Webmotors: 30, "Mercado Livre": 20 },
+  sourceChannelCounts: { Site: 100, Meta: 100, Webmotors: 30, "Mercado Livre": 20 },
+  dailyCounts: { "2026-09-28": 84, "2026-09-29": 83, "2026-09-30": 83 },
+};
+
 const consolidation: GoogleLeadsConsolidationReport = {
   sourceFile: "/tmp/source.xlsx",
   masterCsv: "/tmp/master.csv",
@@ -94,16 +107,19 @@ describe("automação da planilha Google de Leads", () => {
       }),
     );
     const importCsv = vi.fn();
+    const applyDateAdjustment = vi.fn().mockReturnValue(dateAdjustment);
 
     const result = await executeGoogleLeadsAutomation({
       outputRoot: "/tmp/google-leads-no-change",
       now: new Date("2026-08-05T12:20:00Z"),
-      dependencies: { runPython, analyze, importCsv },
+      dependencies: { runPython, analyze, importCsv, applyDateAdjustment },
     });
 
     expect(result.status).toBe("NO_CHANGES");
     expect(result.dashboardRowsAfter).toBe(11);
     expect(importCsv).not.toHaveBeenCalled();
+    expect(applyDateAdjustment).toHaveBeenCalledOnce();
+    expect(result.dateAdjustment).toMatchObject({ appliedCount: 250 });
   });
 
   it("força a substituição pelo mesmo importador manual quando há mudança", async () => {
@@ -118,7 +134,7 @@ describe("automação da planilha Google de Leads", () => {
     const result = await executeGoogleLeadsAutomation({
       outputRoot: "/tmp/google-leads-updated",
       now: new Date("2026-08-05T13:20:00Z"),
-      dependencies: { runPython, analyze, importCsv },
+      dependencies: { runPython, analyze, importCsv, applyDateAdjustment: vi.fn().mockReturnValue(dateAdjustment) },
     });
 
     expect(result.status).toBe("UPDATED");
@@ -155,6 +171,7 @@ describe("automação da planilha Google de Leads", () => {
       channelCounts: { Meta: 4, Site: 5, UOL: 2 },
       sourceChannelCounts: { Meta: 4, Site: 5, UOL: 1, TikTok: 1 },
       invalidIssues: consolidation.issues,
+      dateAdjustment: { ...dateAdjustment, targetDates: [...dateAdjustment.targetDates] },
       importId: 81,
       importFileUrl: "/manus-storage/import.csv",
     } satisfies GoogleLeadsAutomationResult);
@@ -166,5 +183,7 @@ describe("automação da planilha Google de Leads", () => {
     expect(report).toContain("Leads válidos por canal de origem");
     expect(report).toContain("TikTok: 1");
     expect(report).toContain("Site, linha 9");
+    expect(report).toContain("Ajuste auditável de competência");
+    expect(report).toContain("Cópias adicionais aplicadas: 250");
   });
 });
