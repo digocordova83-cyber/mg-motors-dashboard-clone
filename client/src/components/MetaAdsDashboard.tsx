@@ -29,6 +29,7 @@ import {
   Cell,
   Legend,
   Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -67,6 +68,26 @@ export const META_ADS_COPY = {
     reach: "Alcance",
     ctr: "CTR",
     clicks: "Cliques",
+    pacingTitle: "Pacing de orçamento — Meta Ads",
+    pacingSubtitle: "Orçamento líquido confirmado comparado ao gasto real diário do Meta Ads",
+    monthlyNetBudget: "Verba líquida",
+    plannedSpendToDate: "Plano até D-1",
+    actualSpend: "Gasto real",
+    remainingBudget: "Saldo de verba",
+    dailyPlannedSpend: "Ritmo diário planejado",
+    requiredDailySpend: "Ritmo diário necessário",
+    projectedMonthlySpend: "Projeção de fechamento",
+    pacingDailyTitle: "Evolução diária do pacing",
+    pacingDailySubtitle: "Gasto acumulado real versus o plano acumulado de outubro",
+    actualCumulativeSpend: "Real acumulado",
+    plannedCumulativeSpend: "Plano acumulado",
+    varianceToPlan: "Desvio versus o plano",
+    dataThroughPacing: "Pacing calculado até",
+    daysRemaining: "dias restantes",
+    onTrack: "No ritmo do plano",
+    ahead: "Acima do ritmo",
+    behind: "Abaixo do ritmo",
+    notStarted: "Sem gasto registrado",
     leadsTrendTitle: "Evolução diária de Leads",
     leadsTrendSubtitle: "Volume diário da conta Meta Ads vinculada ao Windsor.ai",
     modelsTitle: "Performance por modelo",
@@ -127,6 +148,26 @@ export const META_ADS_COPY = {
     reach: "Reach",
     ctr: "CTR",
     clicks: "Clicks",
+    pacingTitle: "Budget pacing — Meta Ads",
+    pacingSubtitle: "Confirmed net budget compared with actual daily Meta Ads spend",
+    monthlyNetBudget: "Net budget",
+    plannedSpendToDate: "Plan through D-1",
+    actualSpend: "Actual spend",
+    remainingBudget: "Budget remaining",
+    dailyPlannedSpend: "Planned daily run rate",
+    requiredDailySpend: "Required daily run rate",
+    projectedMonthlySpend: "Projected close",
+    pacingDailyTitle: "Daily pacing evolution",
+    pacingDailySubtitle: "Actual cumulative spend versus October cumulative plan",
+    actualCumulativeSpend: "Actual cumulative",
+    plannedCumulativeSpend: "Planned cumulative",
+    varianceToPlan: "Variance to plan",
+    dataThroughPacing: "Pacing calculated through",
+    daysRemaining: "days remaining",
+    onTrack: "On plan",
+    ahead: "Ahead of plan",
+    behind: "Behind plan",
+    notStarted: "No spend recorded",
     leadsTrendTitle: "Daily Leads trend",
     leadsTrendSubtitle: "Daily volume from the Meta Ads account connected to Windsor.ai",
     modelsTitle: "Performance by model",
@@ -204,6 +245,20 @@ function formatNumber(value: number, locale: Locale, maximumFractionDigits = 1) 
   return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
 }
 
+function formatCurrency(value: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatSignedCurrency(value: number, locale: Locale) {
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}${formatCurrency(Math.abs(value), locale)}`;
+}
+
 export function formatMetaAdsStatus(status: string, locale: Locale) {
   const t = META_ADS_COPY[locale];
   if (status.includes("ACTIVE")) return t.active;
@@ -229,6 +284,17 @@ export function translateMetaAdsTargeting(value: string, locale: Locale) {
     .replace(/^Comportamentos: /, "Behaviors: ")
     .replace(/ cidades segmentadas$/, " targeted cities")
     .replace(/^Plataformas: /, "Platforms: ");
+}
+
+export function formatMetaAdsPacingStatus(
+  status: "ON_TRACK" | "AHEAD" | "BEHIND" | "NOT_STARTED",
+  locale: Locale,
+) {
+  const t = META_ADS_COPY[locale];
+  if (status === "AHEAD") return t.ahead;
+  if (status === "BEHIND") return t.behind;
+  if (status === "NOT_STARTED") return t.notStarted;
+  return t.onTrack;
 }
 
 function Panel({ title, subtitle, action, children, className = "" }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string }) {
@@ -433,6 +499,44 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
       </div>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{metricCards.map(card => <MetricCard key={card.title} {...card} />)}</div>
+
+      {data.pacing ? (() => {
+        const pacing = data.pacing;
+        const statusColor = pacing.status === "BEHIND"
+          ? "#f59e0b"
+          : pacing.status === "AHEAD"
+            ? "#38bdf8"
+            : "#10b981";
+        const statusText = formatMetaAdsPacingStatus(pacing.status, locale);
+        return (
+          <Panel
+            title={t.pacingTitle}
+            subtitle={`${t.pacingSubtitle} • ${formatLongDate(pacing.dataThroughDate, locale)} • ${pacing.daysRemaining} ${t.daysRemaining}`}
+            action={<span className="rounded-full border px-2.5 py-1 text-[9px] font-semibold" style={{ borderColor: `${statusColor}45`, backgroundColor: `${statusColor}12`, color: statusColor }}>{statusText}</span>}
+            className="mb-4"
+          >
+            <div className="grid gap-3 border-b border-[#1b2535] p-4 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricCard title={t.monthlyNetBudget} value={formatCurrency(pacing.monthlyNetBudget, locale)} subtitle={`${pacing.calendarDays} dias em outubro`} icon={<Target className="h-4 w-4" />} accent="#e2212d" />
+              <MetricCard title={t.plannedSpendToDate} value={formatCurrency(pacing.plannedSpendToDate, locale)} subtitle={`${t.dailyPlannedSpend}: ${formatCurrency(pacing.dailyPlannedSpend, locale)}`} icon={<CalendarDays className="h-4 w-4" />} accent="#a78bfa" />
+              <MetricCard title={t.actualSpend} value={formatCurrency(pacing.actualSpend, locale)} subtitle={`${t.varianceToPlan}: ${formatSignedCurrency(pacing.varianceToPlan, locale)}`} icon={<TrendingUp className="h-4 w-4" />} accent={statusColor} />
+              <MetricCard title={t.remainingBudget} value={formatCurrency(pacing.remainingBudget, locale)} subtitle={`${t.requiredDailySpend}: ${formatCurrency(pacing.requiredDailySpend, locale)}`} icon={<BarChart3 className="h-4 w-4" />} accent="#38bdf8" />
+            </div>
+            <div className="grid gap-4 p-4 xl:grid-cols-[1.45fr_0.55fr]">
+              <div>
+                <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                  <div><h3 className="text-[11px] font-semibold text-slate-100">{t.pacingDailyTitle}</h3><p className="mt-1 text-[10px] text-slate-600">{t.pacingDailySubtitle}</p></div>
+                  <p className="text-[10px] text-slate-500">{t.pacingDailyTitle}: <span className="font-semibold" style={{ color: statusColor }}>{formatNumber(pacing.pacingPercent, locale, 1)}%</span></p>
+                </div>
+                <div className="h-[260px]"><ResponsiveContainer width="100%" height="100%"><LineChart data={pacing.daily} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} /><YAxis tickFormatter={value => formatNumber(Number(value), locale, 0)} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={54} /><Tooltip labelFormatter={label => formatLongDate(String(label), locale)} formatter={(value, name) => [formatCurrency(Number(value), locale), name]} contentStyle={{ background: "#080d16", border: "1px solid #2a364b", borderRadius: 8, fontSize: 10 }} /><Legend wrapperStyle={{ fontSize: 10 }} /><Line type="monotone" dataKey="plannedCumulativeSpend" name={t.plannedCumulativeSpend} stroke="#a78bfa" strokeWidth={2.25} strokeDasharray="6 5" dot={false} /><Line type="monotone" dataKey="actualCumulativeSpend" name={t.actualCumulativeSpend} stroke="#e2212d" strokeWidth={2.75} dot={false} /></LineChart></ResponsiveContainer></div>
+              </div>
+              <div className="grid content-start gap-3">
+                <article className="rounded-xl border border-[#202b3d] bg-[#0a101b] p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">{t.projectedMonthlySpend}</p><p className="mt-2 text-lg font-semibold text-white">{formatCurrency(pacing.projectedMonthlySpend, locale)}</p><p className="mt-1 text-[10px]" style={{ color: pacing.projectedVarianceToBudget > 0 ? "#f59e0b" : "#10b981" }}>{formatSignedCurrency(pacing.projectedVarianceToBudget, locale)} vs. {t.monthlyNetBudget.toLowerCase()}</p></article>
+                <article className="rounded-xl border border-[#202b3d] bg-[#0a101b] p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">{t.dataThroughPacing}</p><p className="mt-2 text-sm font-semibold text-white">{formatLongDate(pacing.dataThroughDate, locale)}</p><p className="mt-1 text-[10px] text-slate-600">{t.requiredDailySpend}: {formatCurrency(pacing.requiredDailySpend, locale)}</p></article>
+              </div>
+            </div>
+          </Panel>
+        );
+      })() : null}
 
       <div className="grid gap-4">
         <Panel title={t.leadsTrendTitle} subtitle={t.leadsTrendSubtitle}>

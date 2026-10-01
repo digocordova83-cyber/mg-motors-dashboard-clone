@@ -162,6 +162,29 @@ describe("metaAdsService", () => {
     expect(data.models.map(item => item.model)).toEqual(["MG5", "Cyberster", "MG4"]);
     expect(data.models.reduce((sum, item) => sum + item.leads, 0)).toBe(9);
   });
+
+  it("anexa o pacing do orçamento líquido confirmado quando outubro é consultado desde o primeiro dia", () => {
+    const data = buildMetaAdsData(
+      {
+        daily: [{ date: "2026-10-01", spend: 4_000, actions_lead: 10 }],
+        campaigns: [],
+        adsets: [],
+        creatives: [],
+        demographics: [],
+        regions: [],
+      },
+      { source: "windsor-live", updatedAt: "2026-10-02T10:00:00.000Z", cacheHit: false },
+      "2026-10-01",
+      "2026-10-01",
+    );
+
+    expect(data.pacing).toMatchObject({
+      monthlyNetBudget: 129_296.43,
+      actualSpend: 4_000,
+      plannedSpendToDate: 4_170.85,
+      status: "ON_TRACK",
+    });
+  });
 });
 
 type MetaBundle = Parameters<typeof buildMetaAdsData>[0];

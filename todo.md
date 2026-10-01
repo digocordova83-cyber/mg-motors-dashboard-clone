@@ -3653,3 +3653,11 @@
 - [x] Importado o lote 900001 de outubro com 29 linhas; Semana 6 (632 no TOTAL) registrada como aviso de divergência de uma unidade.
 - [x] Reexecução retornou `NO_CHANGES`; 350 testes, TypeScript e build aprovados.
 - [x] Auditoria registrada em `docs/retail-import-20261001-week6.md`.
+
+## Pacing Meta Ads — outubro de 2026
+
+- [x] Configurada verba líquida exclusiva de Meta Ads: R$ 129.296,43.
+- [x] Implementado cálculo de ritmo diário de R$ 4.170,85, gasto real, plano acumulado, saldo, desvio, projeção e ritmo necessário para fechar o mês.
+- [x] Inserido painel de pacing e gráfico de acumulado real versus plano na aba Meta Ads, com leitura bilíngue e status visual.
+- [x] Mantido o gasto realizado exclusivamente da fonte Windsor.ai; não há mistura de verba bruta, outros canais ou estimativa como realizado.
+- [x] Cobertura de testes e auditoria adicionadas em `docs/meta-ads-pacing-october-2026.md`.

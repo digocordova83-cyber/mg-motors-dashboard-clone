@@ -9,6 +9,7 @@ import {
   getDashboardDataSnapshot,
   upsertDashboardDataSnapshot,
 } from "./db";
+import { buildMetaAdsPacing } from "./metaAdsPacing";
 
 export const META_ADS_ACCOUNT_ID = "1418731006678061";
 export const META_ADS_ACCOUNT_NAME = "Ag. BBRO - MG Motor Brasil - AUT";
@@ -695,6 +696,7 @@ export function buildMetaAdsData(
     .sort((left, right) => right.reach - left.reach || right.spend - left.spend);
 
   const dataThroughDate = daily.at(-1)?.date ?? dateTo;
+  const pacing = buildMetaAdsPacing({ dateFrom, dateTo, daily });
   return {
     account: {
       id: META_ADS_ACCOUNT_ID,
@@ -714,6 +716,7 @@ export function buildMetaAdsData(
       ctr: round(safeDivide(totals.clicks, totals.impressions) * 100),
     },
     daily,
+    pacing,
     models,
     campaigns,
     audiences,

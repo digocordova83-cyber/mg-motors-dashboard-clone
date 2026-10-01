@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   formatMetaAdsGender,
+  formatMetaAdsPacingStatus,
   formatMetaAdsStatus,
   META_ADS_COPY,
   MetaAdsEmptyState,
@@ -22,6 +23,7 @@ describe("interface Meta Ads", () => {
       audienceAnalysisTitle: "Análise do público alcançado",
       cutoff: "Corte D-1",
       through: "Dados disponíveis até",
+      pacingTitle: "Pacing de orçamento — Meta Ads",
     });
     expect(META_ADS_COPY["en-US"]).toMatchObject({
       title: "Social Media Performance",
@@ -31,6 +33,7 @@ describe("interface Meta Ads", () => {
       audienceAnalysisTitle: "Reached audience analysis",
       cutoff: "D-1 cutoff",
       through: "Data available through",
+      pacingTitle: "Budget pacing — Meta Ads",
     });
   });
 
@@ -41,22 +44,24 @@ describe("interface Meta Ads", () => {
     expect(formatMetaAdsGender("female", "pt-BR")).toBe("Mulheres");
     expect(formatMetaAdsGender("male", "en-US")).toBe("Men");
     expect(formatMetaAdsGender("unknown", "en-US")).toBe("Not reported");
+    expect(formatMetaAdsPacingStatus("ON_TRACK", "pt-BR")).toBe("No ritmo do plano");
+    expect(formatMetaAdsPacingStatus("BEHIND", "en-US")).toBe("Behind plan");
 
     const targeting = "Interesses: veículos elétricos";
     expect(translateMetaAdsTargeting(targeting, "pt-BR")).toBe(targeting);
     expect(translateMetaAdsTargeting(targeting, "en-US")).toBe("Interests: veículos elétricos");
   });
 
-  it("não mantém investimento ou CPL na aba Meta, somente métricas de volume e entrega", () => {
+  it("isola valores financeiros no painel explícito de pacing, sem misturá-los às métricas de performance", () => {
     const source = readFileSync(new URL("./MetaAdsDashboard.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('title: t.leads');
     expect(source).toContain('dataKey="leads"');
-    expect(source).not.toContain("t.investment");
+    expect(source).toContain("t.pacingTitle");
+    expect(source).toContain("pacing.monthlyNetBudget");
     expect(source).not.toContain("t.cpl");
     expect(source).not.toContain('dataKey="spend"');
     expect(source).not.toContain('dataKey="cpl"');
-    expect(source).not.toContain("formatCurrency");
     expect(source).not.toContain("Investimento");
     expect(source).not.toContain("CPL");
   });
