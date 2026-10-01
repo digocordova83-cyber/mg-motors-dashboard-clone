@@ -87,10 +87,12 @@ describe("parser XLSX do Daily Sales FUP", () => {
     ).rejects.toThrow("precisa conter a aba WEEKLY_RET");
   });
 
-  it("rejeita dados preenchidos na Semana 6 enquanto o contrato suporta cinco semanas", async () => {
+  it("preserva Semana 6 como evidência e mantém a referência que reconcilia com DAILY_FUP", async () => {
     const preview = await parseWeeklySalesXlsx(await buildWorkbook({ week6Retail: 1 }));
 
-    expect(preview.errors).not.toEqual([]);
-    expect(preview.errors.join(" ")).toContain("Semana 6 possui dados");
+    expect(preview.errors).toEqual([]);
+    expect(preview.summary.referenceWeek).toBe(3);
+    expect(preview.warnings.join(" ")).toContain("Semana 6");
+    expect(preview.warnings.join(" ")).toContain("payload de auditoria");
   });
 });

@@ -3644,3 +3644,12 @@
 - [x] Reconciliada a carga: 250 novos registros da fonte e 250 cópias autorizadas; base de 35.764 para 36.264 Leads.
 - [x] Reexecução oficial retornou `NO_CHANGES`; 350 testes, TypeScript e build aprovados.
 - [x] Auditoria registrada em `docs/leads-september-july-carryover-20261001.md`.
+
+## MTD Retail Order — arquivo de 01/10/2026
+
+- [x] Identificado bloqueio indevido do importador ao encontrar dados de Semana 6 no XLSX oficial.
+- [x] Atualizado o parser para preservar a Semana 6 como evidência auditável, sem substituir a semana que reconcilia com `DAILY_FUP`.
+- [x] Prévia aprovada: 26/26 concessionárias conciliadas, zero sem correspondência e 631 MTD Retail Order na Semana 5.
+- [x] Importado o lote 900001 de outubro com 29 linhas; Semana 6 (632 no TOTAL) registrada como aviso de divergência de uma unidade.
+- [x] Reexecução retornou `NO_CHANGES`; 350 testes, TypeScript e build aprovados.
+- [x] Auditoria registrada em `docs/retail-import-20261001-week6.md`.

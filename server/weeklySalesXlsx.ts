@@ -165,6 +165,9 @@ export async function parseWeeklySalesXlsx(bytes: Buffer): Promise<WeeklySalesCs
 
   const week6RetailColumn = header.columns.get("W6RETAIL") ?? null;
   const week6TargetColumn = header.columns.get("W6TGT") ?? null;
+  const week6AchievementColumn = header.columns.get("W6RET") ?? null;
+  let week6RowsWithData = 0;
+  let week6ReportedRetail: number | null = null;
 
   for (let rowNumber = header.rowNumber + 1; rowNumber <= sheet.rowCount; rowNumber += 1) {
     const row = sheet.getRow(rowNumber);
@@ -214,11 +217,20 @@ export async function parseWeeklySalesXlsx(bytes: Buffer): Promise<WeeklySalesCs
       dealerRowsByRegion.set(region, regionRows);
     }
 
-    if (week6RetailColumn || week6TargetColumn) {
+    if (week6RetailColumn || week6TargetColumn || week6AchievementColumn) {
       const week6Retail = week6RetailColumn ? integerCell(row.getCell(week6RetailColumn)) : null;
       const week6Target = week6TargetColumn ? cellNumber(row.getCell(week6TargetColumn)) : null;
-      if ((week6Retail ?? 0) > 0 || (week6Target ?? 0) > 0) {
-        errors.push(`Linha ${rowNumber}: a Semana 6 possui dados, mas o dashboard suporta até a Semana 5.`);
+      const week6Achievement = week6AchievementColumn
+        ? percentageCell(row.getCell(week6AchievementColumn))
+        : null;
+      if (week6Retail === undefined || week6Target === undefined || week6Achievement === undefined) {
+        errors.push(`Linha ${rowNumber}: valor inválido na Semana 6.`);
+      }
+      if (week6Retail !== null || week6Target !== null || week6Achievement !== null) {
+        week6RowsWithData += 1;
+        if (!dealer && !region && monthlyTarget !== null && typeof week6Retail === "number") {
+          week6ReportedRetail = week6Retail;
+        }
       }
     }
   }
@@ -264,6 +276,15 @@ export async function parseWeeklySalesXlsx(bytes: Buffer): Promise<WeeklySalesCs
   }
 
   const dailyMtdRetail = resolveDailyFupMtdRetail(workbook);
+  if (week6RowsWithData > 0) {
+    const reconciliationNote =
+      dailyMtdRetail !== null && week6ReportedRetail !== null && dailyMtdRetail !== week6ReportedRetail
+        ? ` O TOTAL da Semana 6 (${week6ReportedRetail}) diverge do MTD Retail de ${DAILY_SUMMARY_SHEET} (${dailyMtdRetail}).`
+        : "";
+    warnings.push(
+      `${week6RowsWithData} linha(s) possuem dados na Semana 6. Os valores foram preservados no payload de auditoria; a referência do dashboard continua sendo a última semana que reconcilia com ${DAILY_SUMMARY_SHEET}.${reconciliationNote}`,
+    );
+  }
   const totalRow = rows.find(row => row.rowType === "TOTAL");
   const matchingReferenceWeek = totalRow && dailyMtdRetail !== null
     ? [...SUPPORTED_WEEKS]
