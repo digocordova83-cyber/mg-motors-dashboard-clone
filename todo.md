@@ -3661,3 +3661,14 @@
 - [x] Inserido painel de pacing e gráfico de acumulado real versus plano na aba Meta Ads, com leitura bilíngue e status visual.
 - [x] Mantido o gasto realizado exclusivamente da fonte Windsor.ai; não há mistura de verba bruta, outros canais ou estimativa como realizado.
 - [x] Cobertura de testes e auditoria adicionadas em `docs/meta-ads-pacing-october-2026.md`.
+
+## Atualização completa do dashboard — 02/10/2026
+
+- [x] Sincronizada a base oficial de Leads até 01/10/2026 (D-1): 243 registros novos; total canônico de 36.507 Leads.
+- [x] Reexecutada a carga de Leads com resultado `NO_CHANGES`; 36.507 hashes distintos confirmam ausência de duplicidade.
+- [x] Atualizados os snapshots Windsor de Google Ads e Meta Ads até 01/10/2026.
+- [x] Mantido TikTok Ads em 30/09/2026: a fonte não retornou 01/10 completo e nenhum dado estimado foi aplicado.
+- [x] Confirmado Meta Ads em 01/10: R$ 2.141,16 de gasto real e 137 Leads; pacing calculado pela verba líquida de outubro.
+- [x] Confirmado Retail oficial de outubro: Semana 5, 631 MTD Retail Orders, 26/26 dealers conciliados.
+- [x] ROAS não foi publicado sem receita/conversão atribuída na fonte Windsor; nenhuma inferência foi aplicada.
+- [x] Executados 42 testes direcionados e checagem TypeScript; auditoria registrada em `docs/dashboard-refresh-20261002.md`.
