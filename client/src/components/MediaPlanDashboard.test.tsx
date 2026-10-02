@@ -5,25 +5,47 @@ import { MEDIA_PLANS, getMediaPlan } from "@/data/mediaPlans";
 import { MediaPlanDashboard, MediaPlanEmptyState } from "./MediaPlanDashboard";
 
 describe("Plano de Mídia Digital", () => {
-  it("oferece setembro como competência mais recente e preserva agosto e julho no histórico", () => {
-    const september = MEDIA_PLANS[0];
+  it("oferece outubro como competência mais recente e preserva o histórico", () => {
+    const october = MEDIA_PLANS[0];
+    const september = getMediaPlan("2026-09");
     const august = getMediaPlan("2026-08");
     const july = getMediaPlan("2026-07");
 
-    expect(MEDIA_PLANS.map((plan) => plan.month)).toEqual(["2026-09", "2026-08", "2026-07"]);
-    expect(september).toMatchObject({
-      month: "2026-09",
+    expect(MEDIA_PLANS.map((plan) => plan.month)).toEqual(["2026-10", "2026-09", "2026-08", "2026-07"]);
+    expect(october).toMatchObject({
+      month: "2026-10",
       mode: "HYBRID",
-      sourceFile: "MG-SetembroMidia(1).xlsx",
-      sourceSheet: "Media Plan - Digital",
-      formulaCount: 556,
-      updatedAt: "2026-09-02T22:11:44.533Z",
+      sourceFile: "Quadros MG MEDIA PLAN | DIGITAL + MG MEDIA PLAN | IM",
+      sourceSheet: "Line-up Media + IM6 Media",
     });
+    expect(september?.month).toBe("2026-09");
     expect(august?.month).toBe("2026-08");
     expect(august?.mode).toBe("FINANCIAL");
     expect(july?.month).toBe("2026-07");
     expect(july?.mode).toBe("HYBRID");
     expect(getMediaPlan("2099-12")).toBeNull();
+  });
+
+  it("reconcilia os planos Line-up e IM6 de outubro na mesma competência", () => {
+    const plan = getMediaPlan("2026-10")!;
+    const rowGross = plan.rows.reduce((sum, row) => sum + row.investment, 0);
+    const rowCommission = plan.rows.reduce((sum, row) => sum + (row.commission ?? 0), 0);
+    const rowNet = plan.rows.reduce((sum, row) => sum + (row.netInvestment ?? 0), 0);
+    const rowLeads = plan.rows.reduce((sum, row) => sum + (row.leads ?? 0), 0);
+
+    expect(plan.rows).toHaveLength(10);
+    expect(rowGross).toBe(1_010_000);
+    expect(rowCommission).toBeCloseTo(40_400, 2);
+    expect(rowNet).toBeCloseTo(969_600, 2);
+    expect(rowLeads).toBe(10_923);
+    expect(plan.totals).toEqual([
+      expect.objectContaining({ label: "LINE-UP — MEDIA", product: "Line-up", investment: 750_000, netInvestment: 720_000, leads: 8_844 }),
+      expect.objectContaining({ label: "IM6 — MEDIA", product: "IM6", investment: 260_000, netInvestment: 249_600, leads: 2_079 }),
+    ]);
+    expect(plan.total).toMatchObject({ investment: 1_010_000, commission: 40_400, netInvestment: 969_600, leads: 10_923, cpl: 88.7668223 });
+    expect(plan.rows.find((row) => row.id === "oct-lineup-meta")).toMatchObject({ investment: 330_000, netInvestment: 316_800, leads: 5_280, cpl: 60 });
+    expect(plan.rows.find((row) => row.id === "oct-im6-meta")).toMatchObject({ product: "IM6", investment: 103_907, netInvestment: 99_750.72, leads: 1_814, cpl: 55 });
+    expect(plan.rows.find((row) => row.id === "oct-im6-forbes")).toMatchObject({ funnel: "AWARENESS", leads: null, cpl: null });
   });
 
   it("reconcilia exatamente o plano híbrido de setembro por canal", () => {
@@ -142,8 +164,8 @@ describe("Plano de Mídia Digital", () => {
   });
 
   it("renderiza setembro em modo híbrido com projeção, conciliação e valores complementares", () => {
-    const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" />);
-    const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" />);
+    const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth="2026-09" />);
+    const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" initialMonth="2026-09" />);
 
     expect(portuguese).toContain("Plano de Mídia — Setembro de 2026");
     expect(portuguese).toContain("R$ 800.000");
@@ -200,7 +222,7 @@ describe("Plano de Mídia Digital", () => {
   });
 
   it("mantém exatamente os mesmos quatro cards superiores nas três competências", () => {
-    for (const month of ["2026-09", "2026-08", "2026-07"]) {
+    for (const month of ["2026-10", "2026-09", "2026-08", "2026-07"]) {
       const html = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth={month} />);
       expect(html.match(/data-testid="media-plan-kpi-/g)).toHaveLength(4);
       expect(html).toContain('data-testid="media-plan-kpi-gross"');
@@ -208,6 +230,23 @@ describe("Plano de Mídia Digital", () => {
       expect(html).toContain('data-testid="media-plan-kpi-leads"');
       expect(html).toContain('data-testid="media-plan-kpi-cpl"');
     }
+  });
+
+  it("renderiza outubro com os dois planos aprovados", () => {
+    const portuguese = renderToStaticMarkup(<MediaPlanDashboard locale="pt-BR" initialMonth="2026-10" />);
+    const english = renderToStaticMarkup(<MediaPlanDashboard locale="en-US" initialMonth="2026-10" />);
+
+    expect(portuguese).toContain("Plano de Mídia — Outubro de 2026");
+    expect(portuguese).toContain("LINE-UP — MEDIA");
+    expect(portuguese).toContain("IM6 — MEDIA");
+    expect(portuguese).toContain("Forbes — branded content");
+    expect(portuguese).toContain("R$ 1.010.000");
+    expect(portuguese).toContain("R$ 969.600");
+    expect(portuguese).toContain("10.923");
+    expect(portuguese).toContain("R$ 88,77");
+    expect(english).toContain("Media Plan — October 2026");
+    expect(english).toContain("Line-up plan");
+    expect(english).toContain("IM6 plan");
   });
 
   it("renderiza estado vazio responsivo em português e inglês", () => {

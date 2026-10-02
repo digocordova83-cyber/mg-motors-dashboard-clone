@@ -70,6 +70,40 @@ export type MonthlyMediaPlan = {
   contextItems?: MediaPlanContextItem[];
 };
 
+const OCTOBER_2026: MonthlyMediaPlan = {
+  month: "2026-10",
+  titlePt: "Plano de Mídia — Outubro de 2026",
+  titleEn: "Media Plan — October 2026",
+  sourceFile: "Quadros MG MEDIA PLAN | DIGITAL + MG MEDIA PLAN | IM",
+  sourceSheet: "Line-up Media + IM6 Media",
+  formulaCount: 0,
+  updatedAt: "2026-10-02T12:51:00.000Z",
+  mode: "HYBRID",
+  sourceNotePt: "Fonte: quadros MG MEDIA PLAN | DIGITAL e MG MEDIA PLAN | IM enviados em 2 de outubro de 2026. Os dois planos convivem na mesma competência: Line-up e IM6. Valores e projeções são os aprovados na fonte; a comissão total de cada frente é de 4%.",
+  sourceNoteEn: "Source: MG MEDIA PLAN | DIGITAL and MG MEDIA PLAN | IM tables supplied on October 2, 2026. Both plans coexist in the same month: Line-up and IM6. Values and projections reflect the approved source; the total commission for each stream is 4%.",
+  rows: [
+    { id: "oct-lineup-google", sourceRow: 5, funnel: "CONVERSION", channel: "Google Ads", publisher: "Google", product: "Line-up", objectivePt: "Leads / Conversão", objectiveEn: "Leads / Conversion", investment: 200000, commission: 8000, netInvestment: 192000, status: "NOT_INFORMED", leads: 2133, cpl: 90 },
+    { id: "oct-lineup-globo", sourceRow: 6, funnel: "CONVERSION", channel: "Globo", publisher: "Globo", product: "Line-up", objectivePt: "Leads / Conversão", objectiveEn: "Leads / Conversion", investment: 50000, commission: 2000, netInvestment: 48000, status: "NOT_INFORMED", leads: 343, cpl: 140 },
+    { id: "oct-lineup-webmotors", sourceRow: 7, funnel: "CONVERSION", channel: "Webmotors", publisher: "Webmotors", product: "Line-up", objectivePt: "Leads / Inventário", objectiveEn: "Leads / Inventory", investment: 100000, commission: 4000, netInvestment: 96000, status: "NOT_INFORMED", leads: 640, cpl: 150 },
+    { id: "oct-lineup-meta", sourceRow: 8, funnel: "CONVERSION", channel: "Meta Ads (via Publya)", publisher: "Publya", product: "Line-up", objectivePt: "Leads / Social", objectiveEn: "Leads / Social", investment: 330000, commission: 13200, netInvestment: 316800, status: "NOT_INFORMED", leads: 5280, cpl: 60 },
+    { id: "oct-lineup-mercado-livre", sourceRow: 9, funnel: "CONVERSION", channel: "Mercado Livre Ads", publisher: "Mercado Livre", product: "Line-up", objectivePt: "Leads / Marketplace", objectiveEn: "Leads / Marketplace", investment: 70000, commission: 2800, netInvestment: 67200, status: "NOT_INFORMED", leads: 448, cpl: 150 },
+    { id: "oct-im6-forbes", sourceRow: 15, funnel: "AWARENESS", channel: "Forbes — branded content", publisher: "Forbes", product: "IM6", objectivePt: "Autoridade / Editorial", objectiveEn: "Authority / Editorial", investment: 67708, commission: 2708.32, netInvestment: 64999.68, status: "NOT_INFORMED", leads: null, cpl: null },
+    { id: "oct-im6-cnn", sourceRow: 16, funnel: "AWARENESS", channel: "CNN TV", publisher: "CNN", product: "IM6", objectivePt: "Alcance / Frequência", objectiveEn: "Reach / Frequency", investment: 52968, commission: 2118.72, netInvestment: 50849.28, status: "NOT_INFORMED", leads: null, cpl: null },
+    { id: "oct-im6-meta", sourceRow: 17, funnel: "CONVERSION", channel: "Meta Ads", publisher: "Meta", product: "IM6", objectivePt: "Leads / Social", objectiveEn: "Leads / Social", investment: 103907, commission: 4156.28, netInvestment: 99750.72, status: "NOT_INFORMED", leads: 1814, cpl: 55 },
+    { id: "oct-im6-google-search", sourceRow: 18, funnel: "CONVERSION", channel: "Google Search", publisher: "Google", product: "IM6", objectivePt: "Leads / Busca", objectiveEn: "Leads / Search", investment: 10417, commission: 416.68, netInvestment: 10000.32, status: "NOT_INFORMED", leads: 105, cpl: 95 },
+    { id: "oct-im6-webmotors", sourceRow: 19, funnel: "CONVERSION", channel: "Webmotors", publisher: "Webmotors", product: "IM6", objectivePt: "Leads / Inventário", objectiveEn: "Leads / Inventory", investment: 25000, commission: 1000, netInvestment: 24000, status: "NOT_INFORMED", leads: 160, cpl: 150 },
+  ],
+  totals: [
+    { sourceRow: 11, label: "LINE-UP — MEDIA", product: "Line-up", investment: 750000, commission: 30000, netInvestment: 720000, leads: 8844, cpl: 81.4111262 },
+    { sourceRow: 21, label: "IM6 — MEDIA", product: "IM6", investment: 260000, commission: 10400, netInvestment: 249600, leads: 2079, cpl: 120.0577201 },
+  ],
+  total: { sourceRow: 23, label: "TOTAL DIGITAL + IM6", product: null, investment: 1010000, commission: 40400, netInvestment: 969600, leads: 10923, cpl: 88.7668223 },
+  contextItems: [
+    { id: "oct-lineup-media", labelPt: "Plano Line-up", labelEn: "Line-up plan", value: 750000, notePt: "Incluído no total", noteEn: "Included in total" },
+    { id: "oct-im6-media", labelPt: "Plano IM6", labelEn: "IM6 plan", value: 260000, notePt: "Incluído no total", noteEn: "Included in total" },
+  ],
+};
+
 const SEPTEMBER_2026: MonthlyMediaPlan = {
   month: "2026-09",
   titlePt: "Plano de Mídia — Setembro de 2026",
@@ -169,7 +203,7 @@ const JULY_2026: MonthlyMediaPlan = {
   total: { sourceRow: 25, label: "GERAL DIGITAL", product: null, investment: 1050000, commission: 42000, netInvestment: 1008000, impressions: 81345625, ctr: 0.0176, clicks: 1432512, visits: 524968, cvr: 0.019, leads: 10000, cpl: 105 },
 };
 
-export const MEDIA_PLANS: MonthlyMediaPlan[] = [SEPTEMBER_2026, AUGUST_2026, JULY_2026];
+export const MEDIA_PLANS: MonthlyMediaPlan[] = [OCTOBER_2026, SEPTEMBER_2026, AUGUST_2026, JULY_2026];
 
 export function getMediaPlan(month: string): MonthlyMediaPlan | null {
   return MEDIA_PLANS.find((plan) => plan.month === month) ?? null;

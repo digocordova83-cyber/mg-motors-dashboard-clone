@@ -5,6 +5,7 @@ import dealerTargetAliases from "./data/dealer-target-aliases.json";
 import {
   dealerTargetRecordSetsEqual,
   parseDealerTargetsWorkbook,
+  sanitizeDealerTargetStorageFileName,
   summarizeDealerChannelTargets,
 } from "./dealerTargetsService";
 
@@ -22,23 +23,41 @@ const HEADERS = [
   "CONVERSION INVESTMENT",
 ];
 
-async function createWorkbook(options: { omitLast?: boolean; duplicateFirst?: boolean } = {}) {
+async function createWorkbook(options: { omitLast?: boolean; duplicateFirst?: boolean; omitOptionalChannels?: boolean } = {}) {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Página1");
-  sheet.addRow(HEADERS);
+  const headers = options.omitOptionalChannels
+    ? HEADERS.filter(header => header !== "PUBLYA" && header !== "TIKTOK")
+    : HEADERS;
+  sheet.addRow(headers);
   const mappings = options.omitLast
     ? dealerTargetAliases.mappings.slice(0, -1)
     : [...dealerTargetAliases.mappings];
   mappings.forEach(mapping => {
-    sheet.addRow([mapping.source, 1, 1, 1, 1, 1, 1, 6, 1, 1 / 31, 100]);
+    const values: Record<string, string | number> = {
+      DEALER: mapping.source, GOOGLE: 1, META: 1, PUBLYA: 1, WEBMOTORS: 1,
+      "MERCADO LIVRE": 1, TIKTOK: 1, "TOTAL DEALER": 6, SALES: 1,
+      WEIGHT: 1 / 31, "CONVERSION INVESTMENT": 100,
+    };
+    sheet.addRow(headers.map(header => values[header]));
   });
   if (options.duplicateFirst) {
-    sheet.addRow([dealerTargetAliases.mappings[0].source, 1, 1, 1, 1, 1, 1, 6, 1, 1 / 31, 100]);
+    const values: Record<string, string | number> = {
+      DEALER: dealerTargetAliases.mappings[0].source, GOOGLE: 1, META: 1, PUBLYA: 1, WEBMOTORS: 1,
+      "MERCADO LIVRE": 1, TIKTOK: 1, "TOTAL DEALER": 6, SALES: 1,
+      WEIGHT: 1 / 31, "CONVERSION INVESTMENT": 100,
+    };
+    sheet.addRow(headers.map(header => values[header]));
   }
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
 describe("metas mensais por concessionária", () => {
+  it("sanitiza nomes acentuados apenas para o caminho de armazenamento", () => {
+    expect(sanitizeDealerTargetStorageFileName("Planilhasemtítulo.xlsx")).toBe("Planilhasemtitulo.xlsx");
+    expect(sanitizeDealerTargetStorageFileName("C:\\metas\\Outubro 2026.xlsx")).toBe("Outubro_2026.xlsx");
+  });
+
   it("concilia as 31 linhas em 30 dealers ativos únicos", async () => {
     const preview = await parseDealerTargetsWorkbook({
       fileName: "metas.xlsx",
@@ -80,6 +99,18 @@ describe("metas mensais por concessionária", () => {
     expect(preview.valid).toBe(false);
     expect(preview.summary.missingOfficialDealers).toBe(1);
     expect(preview.errors.join(" ")).toContain("Metas ausentes para");
+  });
+
+  it("aceita Publya e TikTok ausentes como metas de canal zero", async () => {
+    const preview = await parseDealerTargetsWorkbook({
+      fileName: "metas-sem-canais-opcionais.xlsx",
+      bytes: await createWorkbook({ omitOptionalChannels: true }),
+      competence: "2026-10",
+    });
+
+    expect(preview.valid).toBe(true);
+    expect(preview.rows.every(row => row.channelTargets.publya === 0 && row.channelTargets.tiktok === 0)).toBe(true);
+    expect(preview.summary.channelDifference).toBe(-62);
   });
 
   it("rejeita linhas fonte duplicadas mesmo quando o dealer canônico é consolidável", async () => {

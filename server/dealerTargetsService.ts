@@ -18,15 +18,15 @@ const REQUIRED_HEADERS = [
   "DEALER",
   "GOOGLE",
   "META",
-  "PUBLYA",
   "WEBMOTORS",
   "MERCADO LIVRE",
-  "TIKTOK",
   "TOTAL DEALER",
   "SALES",
   "WEIGHT",
   "CONVERSION INVESTMENT",
 ] as const;
+
+const OPTIONAL_CHANNEL_HEADERS = ["PUBLYA", "TIKTOK"] as const;
 
 export type DealerTargetChannelTargets = {
   google: number;
@@ -137,6 +137,18 @@ function assertWorkbook(input: { fileName: string; bytes: Buffer }): void {
   if (!input.bytes.subarray(0, 2).equals(Buffer.from("PK"))) {
     throw new Error("O conteúdo informado não corresponde a um arquivo XLSX válido.");
   }
+}
+
+export function sanitizeDealerTargetStorageFileName(fileName: string): string {
+  const basename = fileName.replace(/\\/g, "/").split("/").at(-1)?.trim() ?? "";
+  const sanitized = basename
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 180);
+  return sanitized || "dealer-targets.xlsx";
 }
 
 function cellText(value: ExcelJS.CellValue): string {
@@ -271,13 +283,17 @@ export async function parseDealerTargetsWorkbook(input: {
         errors.push(`Linha ${rowNumber}: não foi possível resolver a chave ou UF de ${sourceDealerName}.`);
         continue;
       }
+      const optionalChannelTarget = (header: (typeof OPTIONAL_CHANNEL_HEADERS)[number]) => {
+        const column = headerIndex.get(header);
+        return column === undefined ? 0 : integerValue(row.getCell(column).value, header, rowNumber);
+      };
       const channelTargets: DealerTargetChannelTargets = {
         google: integerValue(row.getCell(headerIndex.get("GOOGLE")!).value, "GOOGLE", rowNumber),
         meta: integerValue(row.getCell(headerIndex.get("META")!).value, "META", rowNumber),
-        publya: integerValue(row.getCell(headerIndex.get("PUBLYA")!).value, "PUBLYA", rowNumber),
+        publya: optionalChannelTarget("PUBLYA"),
         webmotors: integerValue(row.getCell(headerIndex.get("WEBMOTORS")!).value, "WEBMOTORS", rowNumber),
         mercadoLivre: integerValue(row.getCell(headerIndex.get("MERCADO LIVRE")!).value, "MERCADO LIVRE", rowNumber),
-        tiktok: integerValue(row.getCell(headerIndex.get("TIKTOK")!).value, "TIKTOK", rowNumber),
+        tiktok: optionalChannelTarget("TIKTOK"),
       };
       const channelTotal = Object.values(channelTargets).reduce((sum, value) => sum + value, 0);
       const withoutHash = {
@@ -402,7 +418,7 @@ export async function importDealerTargets(input: {
   }
 
   const stored = await storagePut(
-    `dealer-targets/${input.competence}/${preview.fileHash.slice(0, 12)}/${preview.fileName}`,
+    `dealer-targets/${input.competence}/${preview.fileHash.slice(0, 12)}/${sanitizeDealerTargetStorageFileName(preview.fileName)}`,
     input.bytes,
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );

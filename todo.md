@@ -3680,3 +3680,13 @@
 - [x] Métricas da referência: 202 Leads, 9 vendas, conversão de 4,46% e 22,44 Leads por venda.
 - [x] Reexecução retornou `NO_CHANGES`; 355 testes, TypeScript e build aprovados.
 - [x] Auditoria registrada em `docs/retail-import-20261002-opening-october.md`.
+
+## Plano de Mídia e metas — outubro de 2026
+
+- [x] Inseridos na mesma competência os dois planos enviados: **Line-up** e **IM6**.
+- [x] Reconciliado o plano: R$ 1.010.000,00 bruto, R$ 969.600,00 líquido, 10.923 Leads projetados e CPL projetado de R$ 88,77.
+- [x] Mantidos sem projeção de Lead/CPL os placements de awareness (Forbes e CNN TV), conforme a fonte.
+- [x] Corrigido o importador de metas: Publya e TikTok são canais opcionais e assumem zero quando ausentes na planilha oficial.
+- [x] Importadas as metas de outubro: 31 linhas de origem, 30 dealers ativos, 10.579 Leads e 591 metas de Retail; desvio de 4 Leads apenas por arredondamento declarado na fonte.
+- [x] Reexecução das metas retornou `NO_CHANGES`; 359 testes, TypeScript e build aprovados.
+- [x] Auditoria registrada em `docs/media-plan-and-dealer-targets-october-20261002.md`.
