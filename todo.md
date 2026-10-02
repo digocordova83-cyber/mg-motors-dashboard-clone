@@ -3690,3 +3690,11 @@
 - [x] Importadas as metas de outubro: 31 linhas de origem, 30 dealers ativos, 10.579 Leads e 591 metas de Retail; desvio de 4 Leads apenas por arredondamento declarado na fonte.
 - [x] Reexecução das metas retornou `NO_CHANGES`; 359 testes, TypeScript e build aprovados.
 - [x] Auditoria registrada em `docs/media-plan-and-dealer-targets-october-20261002.md`.
+
+## Fechamento MTD Retail Order — setembro de 2026
+
+- [x] Importado o PDF oficial `261001DailySalesPlanningReport.pdf` na competência de setembro, apesar da emissão em 01/10.
+- [x] Reconciliados 26 dealers, 2 regiões e TOTAL sem divergências; nenhum dealer do relatório ficou sem correspondência no dashboard.
+- [x] Atualizado o fechamento para 641 MTD Retail Orders na Semana 5; evolução preservada: 140, 259, 390, 555 e 641.
+- [x] Reexecução retornou `NO_CHANGES`; testes Retail direcionados (29) e TypeScript aprovados.
+- [x] Auditoria registrada em `docs/retail-close-september-20261002.md`.
