@@ -7,6 +7,7 @@ type WorkbookOptions = {
   dailyMtdRetail?: number;
   includeRetailSheet?: boolean;
   week6Retail?: number;
+  openingCompetence?: boolean;
 };
 
 async function buildWorkbook(options: WorkbookOptions = {}): Promise<Buffer> {
@@ -16,6 +17,7 @@ async function buildWorkbook(options: WorkbookOptions = {}): Promise<Buffer> {
   daily.addRow([null, "Volume", null, 20, 10, 8, 1, 1, null, 20, options.dailyMtdRetail ?? 12, null, 15, 9]);
 
   if (options.includeRetailSheet !== false) {
+    const priorRetail = options.openingCompetence ? 0 : undefined;
     const sheet = workbook.addWorksheet("WEEKLY_RET");
     sheet.addRow([
       null,
@@ -48,9 +50,9 @@ async function buildWorkbook(options: WorkbookOptions = {}): Promise<Buffer> {
       "W6_Retail",
       "%W6_Others",
     ]);
-    sheet.addRow([null, "R01", 1, "DEALER A", 10, 2, 100, 2, 100, 4, 125, 5, 100, 6, 100, 6, 100, 8, 0, 0, null, 10, 0, 0, null, 0, 0, options.week6Retail ?? 0, null]);
-    sheet.addRow([null, "R02", 2, "DEALER B", 10, 2, 50, 1, 100, 4, 75, 3, 100, 6, 100, 6, 100, 8, 0, 0, null, 10, 0, 0, null, 0, 0, 0, null]);
-    sheet.addRow([null, null, null, null, 20, 4, 75, 3, 100, 8, 100, 8, 100, 12, 100, 12, 100, 16, 0, 0, null, 20, 0, 0, null, 0, 0, options.week6Retail ?? 0, null]);
+    sheet.addRow([null, "R01", 1, "DEALER A", 10, 2, 100, priorRetail ?? 2, 100, 4, 125, priorRetail ?? 5, 100, 6, 100, priorRetail ?? 6, 100, 8, 0, 0, null, 10, 0, 0, null, 0, 0, options.week6Retail ?? 0, null]);
+    sheet.addRow([null, "R02", 2, "DEALER B", 10, 2, 50, priorRetail ?? 1, 100, 4, 75, priorRetail ?? 3, 100, 6, 100, priorRetail ?? 6, 100, 8, 0, 0, null, 10, 0, 0, null, 0, 0, 0, null]);
+    sheet.addRow([null, null, null, null, 20, 4, 75, priorRetail ?? 3, 100, 8, 100, priorRetail ?? 8, 100, 12, 100, priorRetail ?? 12, 100, 16, 0, 0, null, 20, 0, 0, null, 0, 0, options.week6Retail ?? 0, null]);
   }
 
   return Buffer.from(await workbook.xlsx.writeBuffer());
@@ -94,5 +96,23 @@ describe("parser XLSX do Daily Sales FUP", () => {
     expect(preview.summary.referenceWeek).toBe(3);
     expect(preview.warnings.join(" ")).toContain("Semana 6");
     expect(preview.warnings.join(" ")).toContain("payload de auditoria");
+  });
+
+  it("mapeia a Semana 6 para a Semana 1 na primeira atualização de uma nova competência", async () => {
+    const preview = await parseWeeklySalesXlsx(
+      await buildWorkbook({ dailyMtdRetail: 9, week6Retail: 9, openingCompetence: true }),
+    );
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.summary).toMatchObject({
+      referenceWeek: 1,
+      referenceReportedSalesTotal: 9,
+      reconciliationPassed: true,
+    });
+    expect(preview.rows.find(row => row.rowType === "TOTAL")?.weeks).toMatchObject({
+      "1": { retail: 9 },
+      "2": { retail: null },
+    });
+    expect(preview.warnings.join(" ")).toContain("mapeada como Semana 1");
   });
 });

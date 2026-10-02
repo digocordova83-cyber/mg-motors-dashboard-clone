@@ -3672,3 +3672,11 @@
 - [x] Confirmado Retail oficial de outubro: Semana 5, 631 MTD Retail Orders, 26/26 dealers conciliados.
 - [x] ROAS não foi publicado sem receita/conversão atribuída na fonte Windsor; nenhuma inferência foi aplicada.
 - [x] Executados 42 testes direcionados e checagem TypeScript; auditoria registrada em `docs/dashboard-refresh-20261002.md`.
+
+## Primeira atualização MTD Retail Order — outubro de 2026
+
+- [x] Corrigida a prévia do `261002_Daily_Sales_FUP.xlsx`: quando `W6` reconcilia com o MTD do `DAILY_FUP` e `W1`–`W5` estão sem Retail, ela passa a representar a Semana 1 da nova competência.
+- [x] Importada a primeira atualização de outubro: 9 MTD Retail Orders, Semana 1, 26/26 dealers conciliados e nenhuma concessionária sem correspondência.
+- [x] Métricas da referência: 202 Leads, 9 vendas, conversão de 4,46% e 22,44 Leads por venda.
+- [x] Reexecução retornou `NO_CHANGES`; 355 testes, TypeScript e build aprovados.
+- [x] Auditoria registrada em `docs/retail-import-20261002-opening-october.md`.
