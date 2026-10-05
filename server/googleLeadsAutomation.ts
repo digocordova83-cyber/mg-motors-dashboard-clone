@@ -12,6 +12,11 @@ import {
   applySeptemberJulyLeadAdjustment,
   type LeadDateAdjustmentResult,
 } from "./leadDateAdjustments";
+import {
+  preserveMissingCanonicalLeads,
+  type LeadHistoryPreservationResult,
+} from "./leadSourceHistoryPreservation";
+import { getYesterdayInSaoPaulo } from "./leadsCsv";
 
 export const GOOGLE_LEADS_SPREADSHEET_ID = "1DnkkrrU3GqcuBd5br_OQDaGMMtA2iN2ik4yEV5-Ggw8";
 export const GOOGLE_LEADS_SOURCE_URL =
@@ -75,6 +80,7 @@ export type GoogleLeadsAutomationResult = {
   sourceChannelCounts: Record<string, number>;
   invalidIssues: GoogleLeadsMappingIssue[];
   dateAdjustment: Omit<LeadDateAdjustmentResult, "bytes"> | null;
+  sourceHistoryPreservation: Omit<LeadHistoryPreservationResult, "bytes">;
   importId: number | null;
   importFileUrl: string | null;
 };
@@ -84,6 +90,7 @@ type AutomationDependencies = {
   importCsv: typeof importLeadCsv;
   runPython: typeof runPythonConsolidator;
   applyDateAdjustment: typeof applySeptemberJulyLeadAdjustment;
+  preserveHistory: typeof preserveMissingCanonicalLeads;
 };
 
 type ExecuteGoogleLeadsAutomationInput = {
@@ -222,9 +229,27 @@ export function formatGoogleLeadsAutomationReport(result: GoogleLeadsAutomationR
         "- Distribuição diária do ajuste:",
         ...breakdownLines(adjustment.dailyCounts),
         "- Distribuição por origem do ajuste:",
-        ...breakdownLines(adjustment.sourceChannelCounts),
-      ]
+      ...breakdownLines(adjustment.sourceChannelCounts),
+    ]
     : ["## Ajuste auditável de competência", "", "- Nenhum ajuste manual aplicado nesta execução."];
+  const preservation = result.sourceHistoryPreservation;
+  const preservationLines = preservation.preservedCount
+    ? [
+        "## Preservação de histórico da fonte",
+        "",
+        `- Registros preservados da base canônica: ${preservation.preservedCount.toLocaleString("pt-BR")}`,
+        `- Correções de origem reconhecidas: ${preservation.sourceCorrectionCount.toLocaleString("pt-BR")}`,
+        `- Período preservado: ${preservation.preservedDateFrom ?? "N/D"} a ${preservation.preservedDateTo ?? "N/D"}`,
+        "- Distribuição por canal:",
+        ...breakdownLines(preservation.preservedByChannel),
+        "- Distribuição por canal de origem:",
+        ...breakdownLines(preservation.preservedBySourceChannel),
+      ]
+    : [
+        "## Preservação de histórico da fonte",
+        "",
+        `- Nenhum registro histórico ausente foi preservado; correções de origem reconhecidas: ${preservation.sourceCorrectionCount.toLocaleString("pt-BR")}.`,
+      ];
   return [
     `# Relatório da automação de Leads MG`,
     "",
@@ -245,6 +270,8 @@ export function formatGoogleLeadsAutomationReport(result: GoogleLeadsAutomationR
     `- Linhas gravadas na substituição: ${result.rowsInsertedByReplacement.toLocaleString("pt-BR")}`,
     "",
     ...adjustmentLines,
+    "",
+    ...preservationLines,
     "",
     "## Leads válidos por canal",
     "",
@@ -280,6 +307,7 @@ export async function executeGoogleLeadsAutomation(
     importCsv: input.dependencies?.importCsv ?? importLeadCsv,
     runPython: input.dependencies?.runPython ?? runPythonConsolidator,
     applyDateAdjustment: input.dependencies?.applyDateAdjustment ?? applySeptemberJulyLeadAdjustment,
+    preserveHistory: input.dependencies?.preserveHistory ?? preserveMissingCanonicalLeads,
   };
   const consolidation = await dependencies.runPython({
     projectRoot,
@@ -291,8 +319,12 @@ export async function executeGoogleLeadsAutomation(
   });
   const canonicalImportBytes = await readFile(consolidation.importCsv);
   const dateAdjustment = dependencies.applyDateAdjustment({ bytes: canonicalImportBytes });
-  const importBytes = dateAdjustment.bytes;
-  const importFileName = `leads-mg-import-${runLabel}-with-${dateAdjustment.adjustmentKey}.csv`;
+  const sourceHistoryPreservation = await dependencies.preserveHistory({
+    bytes: dateAdjustment.bytes,
+    fallbackDate: getYesterdayInSaoPaulo(),
+  });
+  const importBytes = sourceHistoryPreservation.bytes;
+  const importFileName = `leads-mg-import-${runLabel}-with-${dateAdjustment.adjustmentKey}-history-preserved.csv`;
   const adjustedImportCsv = path.join(runDirectory, importFileName);
   await writeFile(adjustedImportCsv, importBytes);
   const analysis = await dependencies.analyze({
@@ -338,8 +370,14 @@ export async function executeGoogleLeadsAutomation(
     dashboardRowsBefore: analysis.currentBaseRows,
     dashboardRowsAfter,
     rowsInsertedByReplacement: importResult?.rowsInserted ?? 0,
-    channelCounts: mergeCounts(consolidation.channels, dateAdjustment.channelCounts),
-    sourceChannelCounts: mergeCounts(consolidation.sourceChannels, dateAdjustment.sourceChannelCounts),
+    channelCounts: mergeCounts(
+      mergeCounts(consolidation.channels, dateAdjustment.channelCounts),
+      sourceHistoryPreservation.preservedByChannel,
+    ),
+    sourceChannelCounts: mergeCounts(
+      mergeCounts(consolidation.sourceChannels, dateAdjustment.sourceChannelCounts),
+      sourceHistoryPreservation.preservedBySourceChannel,
+    ),
     invalidIssues: consolidation.issues,
     dateAdjustment: {
       adjustmentKey: dateAdjustment.adjustmentKey,
@@ -351,6 +389,14 @@ export async function executeGoogleLeadsAutomation(
       channelCounts: dateAdjustment.channelCounts,
       sourceChannelCounts: dateAdjustment.sourceChannelCounts,
       dailyCounts: dateAdjustment.dailyCounts,
+    },
+    sourceHistoryPreservation: {
+      preservedCount: sourceHistoryPreservation.preservedCount,
+      sourceCorrectionCount: sourceHistoryPreservation.sourceCorrectionCount,
+      preservedByChannel: sourceHistoryPreservation.preservedByChannel,
+      preservedBySourceChannel: sourceHistoryPreservation.preservedBySourceChannel,
+      preservedDateFrom: sourceHistoryPreservation.preservedDateFrom,
+      preservedDateTo: sourceHistoryPreservation.preservedDateTo,
     },
     importId: importResult?.importId ?? null,
     importFileUrl: importResult?.fileUrl ?? null,

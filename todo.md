@@ -3698,3 +3698,13 @@
 - [x] Atualizado o fechamento para 641 MTD Retail Orders na Semana 5; evolução preservada: 140, 259, 390, 555 e 641.
 - [x] Reexecução retornou `NO_CHANGES`; testes Retail direcionados (29) e TypeScript aprovados.
 - [x] Auditoria registrada em `docs/retail-close-september-20261002.md`.
+
+## Atualização completa do dashboard — 05/10/2026
+
+- [x] Sincronizada a base oficial de Leads até 04/10/2026: 707 registros novos e base canônica de 37.214 Leads.
+- [x] Identificada ausência temporária de 45 Leads de 01/10 na fonte Meta (38 MG4 Urban e 7 Cyberster); histórico preservado automaticamente, sem exclusão.
+- [x] Criada regra permanente de preservação: mantém somente registros ausentes sem versão corrigida equivalente e evita duplicação em cargas futuras.
+- [x] Reexecutada a carga com `NO_CHANGES`; 37.214 hashes distintos para 37.214 registros.
+- [x] Atualizados snapshots Windsor de Google Ads e Meta Ads até 04/10; TikTok Ads mantido até 03/10 por ausência de retorno completo em 04/10.
+- [x] Mantido último Retail oficial de outubro: Semana 1, 9 MTD Retail Orders; nenhum novo Daily Sales FUP oficial identificado.
+- [x] Aprovados 361 testes, TypeScript e build; auditoria em `docs/dashboard-refresh-20261005.md`.

@@ -21,6 +21,16 @@ const dateAdjustment = {
   dailyCounts: { "2026-09-28": 84, "2026-09-29": 83, "2026-09-30": 83 },
 };
 
+const sourceHistoryPreservation = {
+  bytes: Buffer.from("preserved-csv"),
+  preservedCount: 0,
+  sourceCorrectionCount: 0,
+  preservedByChannel: {},
+  preservedBySourceChannel: {},
+  preservedDateFrom: null,
+  preservedDateTo: null,
+};
+
 const consolidation: GoogleLeadsConsolidationReport = {
   sourceFile: "/tmp/source.xlsx",
   masterCsv: "/tmp/master.csv",
@@ -108,17 +118,19 @@ describe("automação da planilha Google de Leads", () => {
     );
     const importCsv = vi.fn();
     const applyDateAdjustment = vi.fn().mockReturnValue(dateAdjustment);
+    const preserveHistory = vi.fn().mockResolvedValue(sourceHistoryPreservation);
 
     const result = await executeGoogleLeadsAutomation({
       outputRoot: "/tmp/google-leads-no-change",
       now: new Date("2026-08-05T12:20:00Z"),
-      dependencies: { runPython, analyze, importCsv, applyDateAdjustment },
+      dependencies: { runPython, analyze, importCsv, applyDateAdjustment, preserveHistory },
     });
 
     expect(result.status).toBe("NO_CHANGES");
     expect(result.dashboardRowsAfter).toBe(11);
     expect(importCsv).not.toHaveBeenCalled();
     expect(applyDateAdjustment).toHaveBeenCalledOnce();
+    expect(preserveHistory).toHaveBeenCalledOnce();
     expect(result.dateAdjustment).toMatchObject({ appliedCount: 250 });
   });
 
@@ -130,11 +142,18 @@ describe("automação da planilha Google de Leads", () => {
     });
     const analyze = vi.fn().mockResolvedValue(analysis());
     const importCsv = vi.fn().mockResolvedValue(imported());
+    const preserveHistory = vi.fn().mockResolvedValue(sourceHistoryPreservation);
 
     const result = await executeGoogleLeadsAutomation({
       outputRoot: "/tmp/google-leads-updated",
       now: new Date("2026-08-05T13:20:00Z"),
-      dependencies: { runPython, analyze, importCsv, applyDateAdjustment: vi.fn().mockReturnValue(dateAdjustment) },
+      dependencies: {
+        runPython,
+        analyze,
+        importCsv,
+        applyDateAdjustment: vi.fn().mockReturnValue(dateAdjustment),
+        preserveHistory,
+      },
     });
 
     expect(result.status).toBe("UPDATED");
@@ -172,6 +191,14 @@ describe("automação da planilha Google de Leads", () => {
       sourceChannelCounts: { Meta: 4, Site: 5, UOL: 1, TikTok: 1 },
       invalidIssues: consolidation.issues,
       dateAdjustment: { ...dateAdjustment, targetDates: [...dateAdjustment.targetDates] },
+      sourceHistoryPreservation: {
+        ...sourceHistoryPreservation,
+        preservedCount: 3,
+        preservedByChannel: { Meta: 3 },
+        preservedBySourceChannel: { Meta: 3 },
+        preservedDateFrom: "2026-10-01",
+        preservedDateTo: "2026-10-01",
+      },
       importId: 81,
       importFileUrl: "/manus-storage/import.csv",
     } satisfies GoogleLeadsAutomationResult);
@@ -185,5 +212,6 @@ describe("automação da planilha Google de Leads", () => {
     expect(report).toContain("Site, linha 9");
     expect(report).toContain("Ajuste auditável de competência");
     expect(report).toContain("Cópias adicionais aplicadas: 250");
+    expect(report).toContain("Registros preservados da base canônica: 3");
   });
 });
