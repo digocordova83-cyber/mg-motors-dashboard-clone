@@ -3708,3 +3708,12 @@
 - [x] Atualizados snapshots Windsor de Google Ads e Meta Ads até 04/10; TikTok Ads mantido até 03/10 por ausência de retorno completo em 04/10.
 - [x] Mantido último Retail oficial de outubro: Semana 1, 9 MTD Retail Orders; nenhum novo Daily Sales FUP oficial identificado.
 - [x] Aprovados 361 testes, TypeScript e build; auditoria em `docs/dashboard-refresh-20261005.md`.
+
+## Atualização completa do dashboard — 07/10/2026
+
+- [x] Atualizar snapshots Windsor até D-1 (06/10) para Google Ads, Meta Ads e TikTok Ads.
+- [x] Rodar prévia oficial de Leads, confirmar 330 novos registros, zero remoções e cobertura até 06/10.
+- [x] Aplicar carga canônica de Leads e reexecutar idempotência com `NO_CHANGES`.
+- [x] Confirmar base de 37.544 Leads com 37.544 hashes distintos e registrar o ritmo de outubro no corte de 06/10.
+- [x] Preservar o último Retail oficial disponível: outubro, Semana 1, 9 MTD Retail Orders conciliados em 26 concessionárias; não estimar dados sem nova Daily Sales FUP.
+- [x] Executar testes direcionados, TypeScript e build; auditoria registrada em `docs/dashboard-refresh-20261007.md`.
