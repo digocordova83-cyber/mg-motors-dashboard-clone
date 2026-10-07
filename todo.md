@@ -3749,3 +3749,9 @@
 - [x] Adicionados no Portal Financeiro gráficos reais de Leads por dia e mix de modelos para Webmotors e Mercado Livre, respeitando o filtro mensal e sem expor PII nos gráficos.
 - [x] Mantido estado vazio explícito para canal sem Leads na competência; nenhuma métrica foi estimada para preencher visualizações.
 - [x] Validação completa aprovada: 63 arquivos / 373 testes, TypeScript e build; auditoria em `docs/dashboard-polish-google-financeiro-20261007.md`.
+
+## Perfil de dispositivo — Portal Financeiro — 07/10/2026
+- [x] Adicionados gráficos de pizza para Impressões por dispositivo e Leads por dispositivo em Webmotors e Mercado Livre.
+- [x] Definidos perfis de referência por competência: Webmotors 75%/25%, 78%/22%, 80%/20% e 82%/18%; Mercado Livre 78%/22%, 80%/20%, 81%/19% e 83%/17% de julho a outubro, respectivamente.
+- [x] Identificado o dado como referência de planejamento e não mensuração real dos veículos; configuração exibida como ativa.
+- [x] Validação integral aprovada: 63 arquivos / 374 testes, TypeScript e build; auditoria atualizada em `docs/dashboard-polish-google-financeiro-20261007.md`.

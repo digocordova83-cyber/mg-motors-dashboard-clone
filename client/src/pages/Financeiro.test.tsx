@@ -14,6 +14,10 @@ describe("Portal Financeiro", () => {
     expect(financeiroSource).toContain("Visões financeiras");
     expect(financeiroSource).toContain("Leads por dia");
     expect(financeiroSource).toContain("Mix de modelos");
+    expect(financeiroSource).toContain("Impressões por dispositivo");
+    expect(financeiroSource).toContain("Leads por dispositivo");
+    expect(financeiroSource).toContain("Perfil de referência");
+    expect(financeiroSource).toContain("Configuração ativada");
   });
 
   it("calcula os big numbers da visão selecionada sem converter plano ausente em zero", () => {

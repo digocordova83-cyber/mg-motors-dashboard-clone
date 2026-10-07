@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildFinanceiroLeadCharts, buildFinanceiroPartnerDashboard } from "./financeiroService";
+import {
+  buildFinanceiroDevicePlanning,
+  buildFinanceiroLeadCharts,
+  buildFinanceiroPartnerDashboard,
+} from "./financeiroService";
 
 describe("painel financeiro de parceiros", () => {
   it("calcula Webmotors com CPM de referência de R$ 50 sobre o plano líquido", () => {
@@ -70,6 +74,34 @@ describe("painel financeiro de parceiros", () => {
     expect(charts.models).toEqual([
       { model: "MG4", leads: 2 },
       { model: "IM6", leads: 1 },
+    ]);
+  });
+
+  it("mantém perfil de dispositivos explícito por parceiro e competência", () => {
+    const webmotorsSeptember = buildFinanceiroDevicePlanning({
+      partner: "webmotors",
+      competence: "2026-09",
+      actualLeads: 100,
+      estimatedImpressions: 1_000,
+    });
+    const mercadoLivreOctober = buildFinanceiroDevicePlanning({
+      partner: "mercado-livre",
+      competence: "2026-10",
+      actualLeads: 100,
+      estimatedImpressions: 1_000,
+    });
+
+    expect(webmotorsSeptember).toMatchObject({
+      status: "ATIVA",
+      source: "REFERENCIA_DE_PLANEJAMENTO",
+      devices: [
+        { device: "Mobile", share: 80, estimatedImpressions: 800, modeledLeads: 80 },
+        { device: "Desktop", share: 20, estimatedImpressions: 200, modeledLeads: 20 },
+      ],
+    });
+    expect(mercadoLivreOctober.devices).toEqual([
+      { device: "Mobile", share: 83, estimatedImpressions: 830, modeledLeads: 83 },
+      { device: "Desktop", share: 17, estimatedImpressions: 170, modeledLeads: 17 },
     ]);
   });
 });

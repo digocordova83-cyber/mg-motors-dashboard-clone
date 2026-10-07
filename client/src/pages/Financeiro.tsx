@@ -31,6 +31,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -146,6 +148,17 @@ type FinanceiroPartnerAnalytics = {
   label: string;
   daily: Array<{ date: string; leads: number }>;
   models: Array<{ model: string; leads: number }>;
+  actualLeads: number;
+  devicePlanning: {
+    status: "ATIVA";
+    source: "REFERENCIA_DE_PLANEJAMENTO";
+    devices: Array<{
+      device: "Mobile" | "Desktop";
+      share: number;
+      estimatedImpressions: number | null;
+      modeledLeads: number;
+    }>;
+  };
 };
 
 function PartnerLeadCharts({ partner }: { partner: FinanceiroPartnerAnalytics }) {
@@ -196,6 +209,51 @@ function PartnerLeadCharts({ partner }: { partner: FinanceiroPartnerAnalytics })
           </div>
         </div>
       ) : <div className="grid min-h-[220px] place-items-center px-6 text-center"><div><BarChart3 className="mx-auto h-7 w-7 text-slate-700" /><p className="mt-3 text-sm font-medium text-slate-300">Sem Leads no período</p><p className="mt-1 text-xs text-slate-600">Selecione outra competência para visualizar a evolução do parceiro.</p></div></div>}
+    </section>
+  );
+}
+
+function PartnerDeviceProfileCharts({ partner }: { partner: FinanceiroPartnerAnalytics }) {
+  const devices = partner.devicePlanning.devices;
+  const partnerColor = partner.id === "webmotors" ? "#f05438" : "#f5cf34";
+  const colors = [partnerColor, "#48627f"];
+  const mobile = devices.find(item => item.device === "Mobile");
+  const desktop = devices.find(item => item.device === "Desktop");
+  const totalEstimatedImpressions = devices.reduce((total, item) => total + (item.estimatedImpressions ?? 0), 0);
+
+  function renderDonut(title: string, detail: string, centerLabel: string, centerValue: string) {
+    return (
+      <article className="min-h-[310px] p-4">
+        <div className="mb-1 flex items-start justify-between gap-3"><div><p className="text-[11px] font-semibold text-slate-200">{title}</p><p className="mt-0.5 text-[10px] text-slate-600">{detail}</p></div></div>
+        <div className="relative h-[190px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={devices} dataKey="share" nameKey="device" innerRadius={50} outerRadius={76} paddingAngle={3} stroke="none">
+                {devices.map((item, index) => <Cell key={item.device} fill={colors[index]} />)}
+              </Pie>
+              <Tooltip formatter={(value, _name, item) => [`${NUMBER.format(Number(value))}%`, String(item.payload?.device ?? "")] } contentStyle={{ background: "#080d16", border: "1px solid #2a364b", borderRadius: 8, fontSize: 10 }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-center"><div><p className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-600">{centerLabel}</p><p className="mt-1 text-lg font-semibold text-white">{centerValue}</p></div></div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 border-t border-[#1d283a] pt-3">
+          {devices.map((item, index) => <div key={item.device} className="rounded-lg bg-[#0b111d] px-3 py-2"><p className="flex items-center gap-1.5 text-[10px] text-slate-400"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: colors[index] }} />{item.device}</p><p className="mt-1 text-sm font-semibold text-white">{item.share}%</p></div>)}
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">
+      <div className="flex flex-col gap-3 border-b border-[#223047] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3"><PartnerMark partnerId={partner.id} /><div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Perfil de dispositivo</p><h3 className="mt-0.5 text-sm font-semibold text-white">Impressões e Leads — {partner.label}</h3></div></div>
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-2.5 py-1 text-[9px] font-semibold text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Configuração ativada</span>
+      </div>
+      <div className="grid divide-y divide-[#223047] xl:grid-cols-2 xl:divide-x xl:divide-y-0">
+        {renderDonut("Impressões por dispositivo", "Estimativa de plano por Mobile e Desktop", "Impressões", totalEstimatedImpressions > 0 ? NUMBER.format(totalEstimatedImpressions) : "—")}
+        {renderDonut("Leads por dispositivo", "Rateio de leitura sobre Leads canônicos", "Leads", NUMBER.format(partner.actualLeads))}
+      </div>
+      <div className="border-t border-amber-400/15 bg-amber-400/[0.035] px-5 py-3 text-[10px] leading-5 text-amber-100/75"><strong className="font-semibold text-amber-300">Perfil de referência:</strong> Mobile {mobile?.share ?? 0}% / Desktop {desktop?.share ?? 0}% nesta competência. As impressões e os Leads por dispositivo são uma visualização de planejamento solicitada, não uma mensuração reportada pelos veículos.</div>
     </section>
   );
 }
@@ -361,6 +419,10 @@ function FinanceiroContent() {
 
             <div className={`mb-6 grid gap-4 ${selectedPartners.length > 1 ? "2xl:grid-cols-2" : ""}`}>
               {selectedPartners.map(partner => <PartnerLeadCharts key={`analytics-${partner.id}`} partner={partner} />)}
+            </div>
+
+            <div className={`mb-6 grid gap-4 ${selectedPartners.length > 1 ? "2xl:grid-cols-2" : ""}`}>
+              {selectedPartners.map(partner => <PartnerDeviceProfileCharts key={`devices-${partner.id}`} partner={partner} />)}
             </div>
 
             <section className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">

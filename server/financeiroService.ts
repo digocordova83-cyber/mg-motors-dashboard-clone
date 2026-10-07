@@ -31,7 +31,19 @@ export type FinanceiroPartnerDashboard = {
   estimatedImpressions: number | null;
   daily: Array<{ date: string; leads: number }>;
   models: Array<{ model: string; leads: number }>;
+  devicePlanning: FinanceiroDevicePlanning;
   leads: FinanceiroLead[];
+};
+
+export type FinanceiroDevicePlanning = {
+  status: "ATIVA";
+  source: "REFERENCIA_DE_PLANEJAMENTO";
+  devices: Array<{
+    device: "Mobile" | "Desktop";
+    share: number;
+    estimatedImpressions: number | null;
+    modeledLeads: number;
+  }>;
 };
 
 export type FinanceiroDashboard = {
@@ -64,6 +76,21 @@ const PARTNER_CONFIG: Record<FinanceiroPartnerId, {
     referenceCpm: 35,
     leadChannels: ["Mercado Livre"],
     matchesPlanRow: row => row.publisher === "Mercado Livre" || row.channel === "Mercado Livre Ads" || row.channel === "Mercado Livre",
+  },
+};
+
+const DEVICE_PROFILE_BY_MONTH: Record<FinanceiroPartnerId, Record<string, number>> = {
+  webmotors: {
+    "2026-07": 75,
+    "2026-08": 78,
+    "2026-09": 80,
+    "2026-10": 82,
+  },
+  "mercado-livre": {
+    "2026-07": 78,
+    "2026-08": 80,
+    "2026-09": 81,
+    "2026-10": 83,
   },
 };
 
@@ -131,6 +158,49 @@ export function buildFinanceiroLeadCharts(competence: string, rows: FinanceiroLe
   return { daily, models };
 }
 
+function splitByShare(total: number, share: number) {
+  const mobile = Math.round(total * (share / 100));
+  return { mobile, desktop: total - mobile };
+}
+
+export function buildFinanceiroDevicePlanning(input: {
+  partner: FinanceiroPartnerId;
+  competence: string;
+  actualLeads: number;
+  estimatedImpressions: number | null;
+}): FinanceiroDevicePlanning {
+  const profiles = DEVICE_PROFILE_BY_MONTH[input.partner];
+  const applicableMonth = Object.keys(profiles)
+    .sort()
+    .filter(month => month <= input.competence)
+    .at(-1) ?? Object.keys(profiles).sort()[0];
+  const mobileShare = profiles[applicableMonth] ?? 80;
+  const desktopShare = 100 - mobileShare;
+  const modeledLeads = splitByShare(input.actualLeads, mobileShare);
+  const estimatedImpressions = input.estimatedImpressions == null
+    ? null
+    : splitByShare(input.estimatedImpressions, mobileShare);
+
+  return {
+    status: "ATIVA",
+    source: "REFERENCIA_DE_PLANEJAMENTO",
+    devices: [
+      {
+        device: "Mobile",
+        share: mobileShare,
+        estimatedImpressions: estimatedImpressions?.mobile ?? null,
+        modeledLeads: modeledLeads.mobile,
+      },
+      {
+        device: "Desktop",
+        share: desktopShare,
+        estimatedImpressions: estimatedImpressions?.desktop ?? null,
+        modeledLeads: modeledLeads.desktop,
+      },
+    ],
+  };
+}
+
 export function buildFinanceiroPartnerDashboard(input: {
   partner: FinanceiroPartnerId;
   competence: string;
@@ -142,6 +212,12 @@ export function buildFinanceiroPartnerDashboard(input: {
   const referenceCpl = plan.net != null && actualLeads > 0 ? round(plan.net / actualLeads) : null;
   const estimatedImpressions = plan.net != null ? Math.round((plan.net / config.referenceCpm) * 1000) : null;
   const charts = buildFinanceiroLeadCharts(input.competence, input.leads);
+  const devicePlanning = buildFinanceiroDevicePlanning({
+    partner: input.partner,
+    competence: input.competence,
+    actualLeads,
+    estimatedImpressions,
+  });
 
   return {
     id: input.partner,
@@ -155,6 +231,7 @@ export function buildFinanceiroPartnerDashboard(input: {
     estimatedImpressions,
     daily: charts.daily,
     models: charts.models,
+    devicePlanning,
     leads: input.leads,
   } satisfies FinanceiroPartnerDashboard;
 }

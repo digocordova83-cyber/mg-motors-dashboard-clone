@@ -24,8 +24,15 @@
 - As séries são calculadas a partir da mesma base canônica de Leads do dashboard e preservam o filtro de mês já existente.
 - Os gráficos não expõem PII: nome, e-mail, telefone e demais dados pessoais permanecem somente na tabela protegida pelo acesso financeiro.
 
+### Perfis de dispositivo por competência
+
+- Adicionados dois gráficos de pizza por parceiro: **Impressões por dispositivo** e **Leads por dispositivo**.
+- Como Webmotors e Mercado Livre não fornecem, no fluxo atual, uma dimensão oficial de dispositivo, os gráficos usam um **perfil de referência de planejamento**, identificado visualmente como tal e separado de métricas reais.
+- A progressão Mobile/Desktop é diferenciada por parceiro e mês: Webmotors evolui de 75%/25% em julho para 82%/18% em outubro; Mercado Livre evolui de 78%/22% para 83%/17% no mesmo intervalo.
+- A configuração é apresentada como ativa e o rodapé dos gráficos informa explicitamente que não se trata de mensuração reportada pelos veículos.
+
 ## Cobertura e validação
 
-- Criados testes para agregação de dispositivos Google Ads, séries mensais e mix de modelos no Portal Financeiro, além da presença dos novos painéis na interface.
-- Validação completa aprovada: **63 arquivos de teste / 373 testes**, TypeScript e build de produção.
+- Criados testes para agregação de dispositivos Google Ads, séries mensais, perfis de dispositivo e mix de modelos no Portal Financeiro, além da presença dos novos painéis na interface.
+- Validação completa aprovada: **63 arquivos de teste / 374 testes**, TypeScript e build de produção.
 - O painel Google Ads foi validado contra a resposta real do Windsor.ai; a área Financeira mantém o controle de sessão e permissão já configurado.
