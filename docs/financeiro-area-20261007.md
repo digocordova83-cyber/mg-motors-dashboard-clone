@@ -2,7 +2,7 @@
 
 ## Escopo entregue
 
-Foi criada a rota protegida **`/finaceiro`**, independente da navegação operacional, para compartilhamento controlado da visão financeira e da base de contatos de **Webmotors** e **Mercado Livre**.
+Foi criada a rota protegida **`/financeiro`**, independente da navegação operacional, para compartilhamento controlado da visão financeira e da base de contatos de **Webmotors** e **Mercado Livre**. O endereço legado `/finaceiro` agora redireciona automaticamente para a rota canônica.
 
 A área possui autenticação própria do dashboard e uma permissão específica, `canAccessFinanceiro`. O perfil dedicado `financeiro` tem acesso somente a esta área; não recebe permissões para Google Ads, Meta Ads, Leads, Plano de Mídia, importações ou histórico de acessos. O administrador `rodrigo` recebeu a nova permissão para supervisão.
 
@@ -33,3 +33,15 @@ A estimativa é apresentada de forma explícita como referência de planejamento
 - Sessões anteriores foram invalidadas por incremento da versão da sessão; novas sessões carregam a permissão financeira de forma explícita.
 - Testes unitários cobrem cálculos dos parceiros e bloqueio/aceite da rota tRPC por permissão.
 - Revisão autenticada no navegador confirmou tela de login, filtro mensal, cards financeiros, aviso de estimativa, filtros por parceiro e tabela de contatos.
+
+## Evolução visual e navegação por parceiro
+
+O portal passou a utilizar uma estrutura de sistema com navegação lateral persistente e três visões de dados:
+
+| Visão | Conteúdo |
+|---|---|
+| Visão geral | Consolidado de Webmotors e Mercado Livre |
+| Webmotors | Indicadores e contatos exclusivamente da Webmotors |
+| Mercado Livre | Indicadores e contatos exclusivamente do Mercado Livre |
+
+Foram incorporados os logos de Webmotors e Mercado Livre na navegação, nos cards de parceiro e na tabela de contatos. A seleção de uma visão recalcula os big numbers e restringe a tabela ao parceiro escolhido; nenhuma nova cópia de dados pessoais foi criada.

@@ -3,15 +3,20 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import {
   BadgeDollarSign,
-  Building2,
+  BarChart3,
+  CheckCircle2,
+  ChevronRight,
   CircleDollarSign,
   Eye,
   EyeOff,
+  FileLock2,
+  LayoutDashboard,
   Loader2,
   LockKeyhole,
   LogOut,
   Mail,
   MapPin,
+  PanelLeftClose,
   Phone,
   RefreshCcw,
   Search,
@@ -26,7 +31,54 @@ import { useLocation } from "wouter";
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const NUMBER = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
 
-type PartnerFilter = "all" | "webmotors" | "mercado-livre";
+export type PartnerFilter = "all" | "webmotors" | "mercado-livre";
+
+type FinanceiroPartner = {
+  id: Exclude<PartnerFilter, "all">;
+  plannedNetInvestment: number | null;
+  actualLeads: number;
+  estimatedImpressions: number | null;
+};
+
+export const FINANCEIRO_PARTNERS = {
+  all: {
+    label: "Visão geral",
+    shortLabel: "Todos",
+    description: "Consolidado dos parceiros",
+    logo: null,
+    accent: "border-[#e2212d] bg-[#e2212d] text-white shadow-[0_12px_28px_rgba(226,33,45,0.22)]",
+  },
+  webmotors: {
+    label: "Webmotors",
+    shortLabel: "Webmotors",
+    description: "Portal automotivo",
+    logo: "/manus-storage/webmotors-logo_59a1b39b.png",
+    accent: "border-[#f05438] bg-[#f05438]/10 text-[#ff806c]",
+  },
+  "mercado-livre": {
+    label: "Mercado Livre",
+    shortLabel: "Mercado Livre",
+    description: "Marketplace automotivo",
+    logo: "/manus-storage/mercado-livre-logo_b206cb3b.png",
+    accent: "border-[#f5cf34] bg-[#f5cf34]/10 text-[#ffe477]",
+  },
+} as const;
+
+export function summarizeFinanceiroPartners(partners: FinanceiroPartner[]) {
+  const hasPlan = partners.some(partner => partner.plannedNetInvestment != null);
+  const plannedNetInvestment = hasPlan ? partners.reduce((total, partner) => total + (partner.plannedNetInvestment ?? 0), 0) : null;
+  const actualLeads = partners.reduce((total, partner) => total + partner.actualLeads, 0);
+  const estimatedImpressions = partners.some(partner => partner.estimatedImpressions == null)
+    ? null
+    : partners.reduce((total, partner) => total + (partner.estimatedImpressions ?? 0), 0);
+
+  return {
+    plannedNetInvestment,
+    actualLeads,
+    referenceCpl: plannedNetInvestment != null && actualLeads > 0 ? plannedNetInvestment / actualLeads : null,
+    estimatedImpressions,
+  };
+}
 
 function formatMonth(competence: string) {
   return new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" })
@@ -41,6 +93,15 @@ function formatDate(value: string) {
 
 function formatCurrency(value: number | null) {
   return value == null ? "—" : BRL.format(value);
+}
+
+function PartnerMark({ partnerId, compact = false }: { partnerId: Exclude<PartnerFilter, "all">; compact?: boolean }) {
+  const partner = FINANCEIRO_PARTNERS[partnerId];
+  return (
+    <span className={`grid shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-white ${compact ? "h-7 w-12 p-1" : "h-11 w-16 p-1.5"}`}>
+      <img src={partner.logo} alt={`Logo ${partner.label}`} className="h-full w-full object-contain" />
+    </span>
+  );
 }
 
 function SummaryMetric({
@@ -88,10 +149,10 @@ function FinanceiroLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
           <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#e2212d]/10 text-[#ff5360]"><LockKeyhole className="h-5 w-5" /></span>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#e2212d]">MG Motors</p>
-            <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-white">Área Financeira</h1>
+            <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-white">Portal Financeiro</h1>
           </div>
         </div>
-        <p className="mb-6 text-sm leading-6 text-slate-400">Acesse a visão de Webmotors e Mercado Livre. Esta área contém informações de contatos e é restrita a usuários autorizados.</p>
+        <p className="mb-6 text-sm leading-6 text-slate-400">Acesso restrito aos dados de Webmotors e Mercado Livre, com visão mensal de plano e Leads canônicos.</p>
         <form className="space-y-4" onSubmit={submit}>
           <label className="block">
             <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Usuário</span>
@@ -108,7 +169,7 @@ function FinanceiroLogin({ onAuthenticated }: { onAuthenticated: () => void }) {
           </label>
           {login.error ? <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3 py-2 text-xs text-red-300">{login.error.message}</p> : null}
           <Button type="submit" disabled={login.isPending} className="h-11 w-full bg-[#e2212d] font-semibold text-white hover:bg-[#c91825]">
-            {login.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Entrar na área financeira
+            {login.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Entrar no portal financeiro
           </Button>
         </form>
       </section>
@@ -133,7 +194,7 @@ function FinanceiroContent() {
   const logout = trpc.dashboardAuth.logout.useMutation({
     onSuccess: async () => {
       await utils.dashboardAuth.session.invalidate();
-      setLocation("/finaceiro");
+      setLocation("/financeiro");
     },
   });
 
@@ -141,67 +202,100 @@ function FinanceiroContent() {
     if (!competence && months.data?.[0]) setCompetence(months.data[0]);
   }, [competence, months.data]);
 
-  const visiblePartners = useMemo(() => {
+  const selectedPartners = useMemo(() => {
     if (!data.data) return [];
     return partnerFilter === "all" ? data.data.partners : data.data.partners.filter(partner => partner.id === partnerFilter);
   }, [data.data, partnerFilter]);
+  const summary = useMemo(() => summarizeFinanceiroPartners(selectedPartners), [selectedPartners]);
   const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
-  const leadRows = useMemo(() => visiblePartners.flatMap(partner => partner.leads.map(lead => ({ ...lead, partner: partner.label })))
-    .filter(lead => !normalizedSearch || [lead.name, lead.email, lead.phone, lead.dealer, lead.city, lead.model, lead.partner].some(value => value.toLocaleLowerCase("pt-BR").includes(normalizedSearch))), [visiblePartners, normalizedSearch]);
+  const leadRows = useMemo(() => selectedPartners.flatMap(partner => partner.leads.map(lead => ({ ...lead, partner: partner.label, partnerId: partner.id })))
+    .filter(lead => !normalizedSearch || [lead.name, lead.email, lead.phone, lead.dealer, lead.city, lead.model, lead.partner].some(value => value.toLocaleLowerCase("pt-BR").includes(normalizedSearch))), [selectedPartners, normalizedSearch]);
 
   if (session.isLoading) {
     return <main className="grid min-h-screen place-items-center bg-[#080c15]"><Loader2 className="h-7 w-7 animate-spin text-[#e2212d]" /></main>;
   }
   if (!session.data) return <FinanceiroLogin onAuthenticated={() => session.refetch()} />;
   if (!canAccess) {
-    return <main className="grid min-h-screen place-items-center bg-[#080c15] p-5 text-slate-100"><section className="max-w-md rounded-2xl border border-red-500/20 bg-[#101827] p-7 text-center"><LockKeyhole className="mx-auto h-7 w-7 text-red-400" /><h1 className="mt-4 text-lg font-semibold">Acesso não autorizado</h1><p className="mt-2 text-sm leading-6 text-slate-400">Este usuário não possui acesso à Área Financeira.</p><Button onClick={() => logout.mutate()} variant="outline" className="mt-5 border-[#324058] bg-[#111827] text-slate-200">Sair</Button></section></main>;
+    return <main className="grid min-h-screen place-items-center bg-[#080c15] p-5 text-slate-100"><section className="max-w-md rounded-2xl border border-red-500/20 bg-[#101827] p-7 text-center"><LockKeyhole className="mx-auto h-7 w-7 text-red-400" /><h1 className="mt-4 text-lg font-semibold">Acesso não autorizado</h1><p className="mt-2 text-sm leading-6 text-slate-400">Este usuário não possui acesso ao Portal Financeiro.</p><Button onClick={() => logout.mutate()} variant="outline" className="mt-5 border-[#324058] bg-[#111827] text-slate-200">Sair</Button></section></main>;
   }
 
   return (
     <main className="min-h-screen bg-[#080c15] text-slate-100">
       <header className="border-b border-[#1d2737] bg-[#0b111d]/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1680px] flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-7">
+        <div className="mx-auto flex max-w-[1760px] items-center justify-between gap-4 px-5 py-4 lg:px-7">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e2212d] text-white"><BadgeDollarSign className="h-5 w-5" /></span>
-            <div><p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">MG Motors</p><h1 className="text-lg font-semibold tracking-tight text-white">Área Financeira • Parceiros</h1></div>
+            <div><p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#e2212d]">MG Motors</p><h1 className="text-lg font-semibold tracking-tight text-white">Portal Financeiro</h1></div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block"><p className="text-xs font-medium text-slate-300">{session.data.displayName}</p><p className="mt-0.5 text-[10px] text-emerald-400">Acesso financeiro autorizado</p></div>
+            <div className="hidden text-right sm:block"><p className="text-xs font-medium text-slate-300">{session.data.displayName}</p><p className="mt-0.5 text-[10px] text-emerald-400">Sessão autorizada</p></div>
             <Button onClick={() => logout.mutate()} disabled={logout.isPending} variant="outline" size="sm" className="border-[#2a364a] bg-[#101827] text-slate-300 hover:bg-[#172033] hover:text-white"><LogOut className="mr-1.5 h-3.5 w-3.5" />Sair</Button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1680px] px-5 py-6 lg:px-7">
-        <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#253149] bg-[#101827] p-4 lg:flex-row lg:items-end lg:justify-between">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#e2212d]">Visão mensal</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-white">Webmotors e Mercado Livre</h2><p className="mt-1 text-xs text-slate-500">Investimentos líquidos de plano, Leads canônicos e CPL calculado pela base real.</p></div>
-          <div className="flex flex-wrap gap-2">
-            <label className="flex items-center gap-2 rounded-lg border border-[#2a364a] bg-[#0b111d] px-3 py-2 text-xs text-slate-400"><span>Competência</span><select aria-label="Competência" value={competence} onChange={event => setCompetence(event.target.value)} className="bg-transparent text-xs font-semibold text-white outline-none">{(months.data ?? []).map(month => <option key={month} value={month} className="bg-[#101827]">{formatMonth(month)}</option>)}</select></label>
-            <Button onClick={() => data.refetch()} disabled={data.isFetching || !competence} variant="outline" size="sm" className="h-auto border-[#2a364a] bg-[#0b111d] text-slate-300 hover:bg-[#172033] hover:text-white">{data.isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />} Atualizar</Button>
+      <div className="mx-auto grid max-w-[1760px] gap-6 px-5 py-6 lg:grid-cols-[256px_minmax(0,1fr)] lg:px-7">
+        <aside className="rounded-2xl border border-[#243047] bg-[#101827] p-3 lg:sticky lg:top-5 lg:h-[calc(100vh-104px)]">
+          <div className="border-b border-[#223047] px-3 pb-4 pt-2">
+            <div className="flex items-center gap-2 text-slate-300"><PanelLeftClose className="h-4 w-4 text-[#e2212d]" /><span className="text-[10px] font-semibold uppercase tracking-[0.15em]">Navegação</span></div>
+            <p className="mt-3 text-sm font-semibold text-white">Dados de parceiros</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">Plano financeiro e base canônica de Leads.</p>
           </div>
-        </section>
-
-        {data.isLoading || !data.data ? <section className="grid min-h-[420px] place-items-center rounded-2xl border border-[#243047] bg-[#101827]"><div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-sm text-slate-500">Carregando visão financeira...</p></div></section> : data.error ? <section className="rounded-2xl border border-red-500/20 bg-red-500/[0.05] p-7 text-center"><h2 className="font-semibold text-white">Não foi possível carregar os dados</h2><p className="mt-2 text-sm text-red-200/70">{data.error.message}</p></section> : <>
-          <div className="mb-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <SummaryMetric label="Investimento líquido" value={formatCurrency(data.data.total.plannedNetInvestment)} detail="Soma dos planos aprovados" icon={CircleDollarSign} />
-            <SummaryMetric label="Leads recebidos" value={NUMBER.format(data.data.total.actualLeads)} detail="Base canônica dos dois parceiros" icon={UsersRound} accent="text-sky-300" />
-            <SummaryMetric label="CPL de referência" value={formatCurrency(data.data.total.referenceCpl)} detail="Líquido ÷ Leads recebidos" icon={TrendingUp} accent="text-amber-300" />
-            <SummaryMetric label="Impressões estimadas" value={data.data.total.estimatedImpressions == null ? "—" : NUMBER.format(data.data.total.estimatedImpressions)} detail="Estimativa técnica por CPM de referência" icon={Eye} accent="text-violet-300" />
+          <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:flex-col" aria-label="Visões financeiras">
+            {(Object.keys(FINANCEIRO_PARTNERS) as PartnerFilter[]).map(id => {
+              const partner = FINANCEIRO_PARTNERS[id];
+              const active = partnerFilter === id;
+              return <button key={id} type="button" onClick={() => setPartnerFilter(id)} aria-current={active ? "page" : undefined} className={`group flex min-w-[188px] items-center gap-3 rounded-xl border p-3 text-left transition-all ${active ? partner.accent : "border-transparent text-slate-400 hover:border-[#2b3950] hover:bg-white/[0.025] hover:text-white"}`}>
+                {id === "all" ? <span className={`grid h-10 w-10 place-items-center rounded-lg ${active ? "bg-white/15" : "bg-white/[0.05] text-slate-400"}`}><LayoutDashboard className="h-4 w-4" /></span> : <PartnerMark partnerId={id} />}
+                <span className="min-w-0 flex-1"><span className="block text-xs font-semibold">{partner.label}</span><span className={`mt-1 block truncate text-[10px] ${active ? "text-white/75" : "text-slate-600"}`}>{partner.description}</span></span>
+                <ChevronRight className={`h-3.5 w-3.5 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+              </button>;
+            })}
+          </nav>
+          <div className="mt-5 hidden rounded-xl border border-[#263348] bg-[#0b111d] p-3 lg:block">
+            <div className="flex items-center gap-2 text-emerald-300"><CheckCircle2 className="h-3.5 w-3.5" /><span className="text-[10px] font-semibold">AMBIENTE RESTRITO</span></div>
+            <p className="mt-2 text-[10px] leading-5 text-slate-500">Dados de contato são protegidos e exibidos apenas para usuários autorizados.</p>
           </div>
-          <p className="mb-6 rounded-xl border border-amber-400/15 bg-amber-400/[0.045] px-4 py-3 text-[11px] leading-5 text-amber-100/75"><strong className="font-semibold text-amber-300">Impressões estimadas:</strong> cálculo técnico de plano sobre investimento líquido: Webmotors usa CPM de R$ 50 e Mercado Livre CPM de R$ 35. Não representa entrega real dos veículos.</p>
+        </aside>
 
-          <div className="mb-6 grid gap-4 xl:grid-cols-2">
-            {data.data.partners.map(partner => <section key={partner.id} className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">
-              <div className="flex items-start justify-between gap-4 border-b border-[#223047] px-5 py-4"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.05] text-[#e2212d]"><Building2 className="h-4 w-4" /></span><div><h3 className="text-sm font-semibold text-white">{partner.label}</h3><p className="mt-0.5 text-[10px] text-slate-500">CPM de referência: {BRL.format(partner.referenceCpm)}</p></div></div><span className="rounded-full border border-[#334159] bg-[#172033] px-2.5 py-1 text-[10px] font-semibold text-slate-300">{NUMBER.format(partner.actualLeads)} Leads</span></div>
-              <div className="grid grid-cols-2 divide-x divide-[#223047] sm:grid-cols-4"><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Investimento líquido</p><p className="mt-1 text-sm font-semibold text-white">{formatCurrency(partner.plannedNetInvestment)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads reais</p><p className="mt-1 text-sm font-semibold text-white">{NUMBER.format(partner.actualLeads)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">CPL de referência</p><p className="mt-1 text-sm font-semibold text-white">{formatCurrency(partner.referenceCpl)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Impressões estimadas</p><p className="mt-1 text-sm font-semibold text-white">{partner.estimatedImpressions == null ? "—" : NUMBER.format(partner.estimatedImpressions)}</p></div></div>
-            </section>)}
-          </div>
-
-          <section className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">
-            <div className="flex flex-col gap-4 border-b border-[#223047] p-5 lg:flex-row lg:items-center lg:justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#e2212d]">Base de contatos</p><h2 className="mt-1 text-base font-semibold text-white">Leads por parceiro</h2><p className="mt-1 text-xs text-slate-500">Dados pessoais disponíveis somente nesta área autorizada.</p></div><div className="flex flex-col gap-2 sm:flex-row"><div className="flex rounded-lg border border-[#2a364a] bg-[#0b111d] p-1">{(["all", "webmotors", "mercado-livre"] as const).map(id => <button key={id} type="button" onClick={() => setPartnerFilter(id)} className={`rounded-md px-3 py-1.5 text-[10px] font-semibold transition-colors ${partnerFilter === id ? "bg-[#e2212d] text-white" : "text-slate-500 hover:text-slate-200"}`}>{id === "all" ? "Todos" : id === "webmotors" ? "Webmotors" : "Mercado Livre"}</button>)}</div><label className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600" /><Input aria-label="Buscar Lead" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar contato ou dealer" className="h-9 min-w-[220px] border-[#2a364a] bg-[#0b111d] pl-9 text-xs text-white placeholder:text-slate-700" /></label></div></div>
-            <div className="max-h-[620px] overflow-auto"><table className="min-w-[1180px] w-full text-left"><thead className="sticky top-0 z-10 bg-[#111a29]"><tr className="border-b border-[#263348] text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500">{["Data", "Parceiro", "Nome", "E-mail", "Telefone", "Modelo", "Concessionária", "Cidade", "UF"].map(label => <th key={label} className="whitespace-nowrap px-4 py-3">{label}</th>)}</tr></thead><tbody>{leadRows.map(lead => <tr key={`${lead.partner}-${lead.id}`} className="border-b border-[#1d283a] text-xs text-slate-300 hover:bg-white/[0.025]"><td className="whitespace-nowrap px-4 py-3 font-medium text-slate-400">{formatDate(lead.correctedDate)}</td><td className="whitespace-nowrap px-4 py-3"><span className="rounded-md bg-white/[0.05] px-2 py-1 text-[10px] font-semibold text-slate-300">{lead.partner}</span></td><td className="whitespace-nowrap px-4 py-3 font-medium text-white"><span className="inline-flex items-center gap-1.5"><UserRound className="h-3 w-3 text-slate-600" />{lead.name || "—"}</span></td><td className="whitespace-nowrap px-4 py-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><Mail className="h-3 w-3 text-slate-600" />{lead.email || "—"}</span></td><td className="whitespace-nowrap px-4 py-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><Phone className="h-3 w-3 text-slate-600" />{lead.phone || "—"}</span></td><td className="whitespace-nowrap px-4 py-3">{lead.model}</td><td className="whitespace-nowrap px-4 py-3">{lead.dealer || "—"}</td><td className="whitespace-nowrap px-4 py-3"><span className="inline-flex items-center gap-1.5"><MapPin className="h-3 w-3 text-slate-600" />{lead.city || "—"}</span></td><td className="whitespace-nowrap px-4 py-3 text-slate-400">{lead.region || "—"}</td></tr>)}{!leadRows.length ? <tr><td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-500">Nenhum Lead encontrado para este filtro.</td></tr> : null}</tbody></table></div>
+        <section className="min-w-0">
+          <section className="mb-5 overflow-hidden rounded-2xl border border-[#253149] bg-[#101827]">
+            <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#e2212d]">Painel operacional</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">{FINANCEIRO_PARTNERS[partnerFilter].label}</h2>
+                <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500">Investimento líquido de plano, Leads canônicos e indicadores de referência por parceiro.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-2 rounded-lg border border-[#2a364a] bg-[#0b111d] px-3 py-2 text-xs text-slate-400"><span>Competência</span><select aria-label="Competência" value={competence} onChange={event => setCompetence(event.target.value)} className="bg-transparent text-xs font-semibold text-white outline-none">{(months.data ?? []).map(month => <option key={month} value={month} className="bg-[#101827]">{formatMonth(month)}</option>)}</select></label>
+                <Button onClick={() => data.refetch()} disabled={data.isFetching || !competence} variant="outline" size="sm" className="h-auto border-[#2a364a] bg-[#0b111d] text-slate-300 hover:bg-[#172033] hover:text-white">{data.isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />} Atualizar</Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 border-t border-[#223047] bg-white/[0.015] px-5 py-3 text-[10px] text-slate-500"><FileLock2 className="h-3.5 w-3.5 text-[#e2212d]" />Competência selecionada: <strong className="font-semibold text-slate-300">{competence ? formatMonth(competence) : "Carregando"}</strong><span className="ml-auto hidden items-center gap-1 text-slate-600 sm:flex"><BarChart3 className="h-3.5 w-3.5" />Atualização sob demanda</span></div>
           </section>
-        </>}
+
+          {data.isLoading || !data.data ? <section className="grid min-h-[420px] place-items-center rounded-2xl border border-[#243047] bg-[#101827]"><div className="text-center"><Loader2 className="mx-auto h-7 w-7 animate-spin text-[#e2212d]" /><p className="mt-3 text-sm text-slate-500">Carregando visão financeira...</p></div></section> : data.error ? <section className="rounded-2xl border border-red-500/20 bg-red-500/[0.05] p-7 text-center"><h2 className="font-semibold text-white">Não foi possível carregar os dados</h2><p className="mt-2 text-sm text-red-200/70">{data.error.message}</p></section> : <>
+            <div className="mb-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <SummaryMetric label="Investimento líquido" value={formatCurrency(summary.plannedNetInvestment)} detail={partnerFilter === "all" ? "Soma dos planos aprovados" : `Plano de ${FINANCEIRO_PARTNERS[partnerFilter].label}`} icon={CircleDollarSign} />
+              <SummaryMetric label="Leads recebidos" value={NUMBER.format(summary.actualLeads)} detail={partnerFilter === "all" ? "Base canônica dos parceiros" : `Base canônica ${FINANCEIRO_PARTNERS[partnerFilter].label}`} icon={UsersRound} accent="text-sky-300" />
+              <SummaryMetric label="CPL de referência" value={formatCurrency(summary.referenceCpl)} detail="Líquido ÷ Leads recebidos" icon={TrendingUp} accent="text-amber-300" />
+              <SummaryMetric label="Impressões estimadas" value={summary.estimatedImpressions == null ? "—" : NUMBER.format(summary.estimatedImpressions)} detail="Estimativa técnica por CPM" icon={Eye} accent="text-violet-300" />
+            </div>
+            <p className="mb-6 rounded-xl border border-amber-400/15 bg-amber-400/[0.045] px-4 py-3 text-[11px] leading-5 text-amber-100/75"><strong className="font-semibold text-amber-300">Impressões estimadas:</strong> cálculo técnico de plano sobre investimento líquido. Webmotors utiliza CPM de R$ 50 e Mercado Livre CPM de R$ 35. Não representa entrega real dos veículos.</p>
+
+            <div className={`mb-6 grid gap-4 ${selectedPartners.length > 1 ? "xl:grid-cols-2" : ""}`}>
+              {selectedPartners.map(partner => <section key={partner.id} className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">
+                <div className="flex items-start justify-between gap-4 border-b border-[#223047] px-5 py-4"><div className="flex items-center gap-3"><PartnerMark partnerId={partner.id} /><div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Parceiro</p><h3 className="mt-0.5 text-sm font-semibold text-white">{partner.label}</h3><p className="mt-0.5 text-[10px] text-slate-500">CPM de referência: {BRL.format(partner.referenceCpm)}</p></div></div><span className="rounded-full border border-[#334159] bg-[#172033] px-2.5 py-1 text-[10px] font-semibold text-slate-300">{NUMBER.format(partner.actualLeads)} Leads</span></div>
+                <div className="grid grid-cols-2 divide-x divide-y divide-[#223047] sm:grid-cols-4 sm:divide-y-0"><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Investimento líquido</p><p className="mt-1 text-sm font-semibold text-white">{formatCurrency(partner.plannedNetInvestment)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads reais</p><p className="mt-1 text-sm font-semibold text-white">{NUMBER.format(partner.actualLeads)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">CPL de referência</p><p className="mt-1 text-sm font-semibold text-white">{formatCurrency(partner.referenceCpl)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Impressões estimadas</p><p className="mt-1 text-sm font-semibold text-white">{partner.estimatedImpressions == null ? "—" : NUMBER.format(partner.estimatedImpressions)}</p></div></div>
+              </section>)}
+            </div>
+
+            <section className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">
+              <div className="flex flex-col gap-4 border-b border-[#223047] p-5 lg:flex-row lg:items-center lg:justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#e2212d]">Base de contatos</p><h2 className="mt-1 text-base font-semibold text-white">{partnerFilter === "all" ? "Leads por parceiro" : `Leads ${FINANCEIRO_PARTNERS[partnerFilter].label}`}</h2><p className="mt-1 text-xs text-slate-500">Dados pessoais disponíveis somente nesta área autorizada.</p></div><label className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600" /><Input aria-label="Buscar Lead" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar contato ou dealer" className="h-9 min-w-[220px] border-[#2a364a] bg-[#0b111d] pl-9 text-xs text-white placeholder:text-slate-700" /></label></div>
+              <div className="max-h-[620px] overflow-auto"><table className="min-w-[1180px] w-full text-left"><thead className="sticky top-0 z-10 bg-[#111a29]"><tr className="border-b border-[#263348] text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500">{["Data", "Parceiro", "Nome", "E-mail", "Telefone", "Modelo", "Concessionária", "Cidade", "UF"].map(label => <th key={label} className="whitespace-nowrap px-4 py-3">{label}</th>)}</tr></thead><tbody>{leadRows.map(lead => <tr key={`${lead.partner}-${lead.id}`} className="border-b border-[#1d283a] text-xs text-slate-300 hover:bg-white/[0.025]"><td className="whitespace-nowrap px-4 py-3 font-medium text-slate-400">{formatDate(lead.correctedDate)}</td><td className="whitespace-nowrap px-4 py-3"><span className="inline-flex items-center gap-2"><PartnerMark partnerId={lead.partnerId} compact /><span className="font-medium text-slate-300">{lead.partner}</span></span></td><td className="whitespace-nowrap px-4 py-3 font-medium text-white"><span className="inline-flex items-center gap-1.5"><UserRound className="h-3 w-3 text-slate-600" />{lead.name || "—"}</span></td><td className="whitespace-nowrap px-4 py-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><Mail className="h-3 w-3 text-slate-600" />{lead.email || "—"}</span></td><td className="whitespace-nowrap px-4 py-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><Phone className="h-3 w-3 text-slate-600" />{lead.phone || "—"}</span></td><td className="whitespace-nowrap px-4 py-3">{lead.model}</td><td className="whitespace-nowrap px-4 py-3">{lead.dealer || "—"}</td><td className="whitespace-nowrap px-4 py-3"><span className="inline-flex items-center gap-1.5"><MapPin className="h-3 w-3 text-slate-600" />{lead.city || "—"}</span></td><td className="whitespace-nowrap px-4 py-3 text-slate-400">{lead.region || "—"}</td></tr>)}{!leadRows.length ? <tr><td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-500">Nenhum Lead encontrado para esta visão.</td></tr> : null}</tbody></table></div>
+            </section>
+          </>}
+        </section>
       </div>
     </main>
   );

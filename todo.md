@@ -3727,3 +3727,13 @@
 - [x] Disponibilizada tabela pesquisável dos Leads canônicos por parceiro, contendo dados pessoais somente dentro do ambiente autenticado.
 - [x] Aplicada migração `0015_familiar_skin.sql`; sessões anteriores foram invalidadas para carregar a nova permissão.
 - [x] Validados acesso no navegador, 366 testes, TypeScript e build; auditoria em `docs/financeiro-area-20261007.md`.
+
+
+## Portal Financeiro — sistema e visões por parceiro — 07/10/2026
+
+- [x] Definida a rota canônica `/financeiro`; `/finaceiro` redireciona automaticamente para o novo endereço.
+- [x] Reestruturada a interface como sistema com navegação lateral persistente, sessão autorizada e contexto de competência.
+- [x] Criadas as visões **Visão geral**, **Webmotors** e **Mercado Livre**; cada seleção restringe cards e tabela ao parceiro correspondente.
+- [x] Inseridos logos de Webmotors e Mercado Livre na navegação, nos cards de parceiro e na tabela de Leads.
+- [x] Mantidos os controles de segurança: dados pessoais continuam somente na rota autenticada e a sessão de revisão foi encerrada após validação.
+- [x] Validados redirecionamento, três visões, filtro mensal, busca de contatos, 369 testes, TypeScript e build.
