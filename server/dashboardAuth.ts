@@ -9,7 +9,7 @@ import { getDashboardAccountByUsername, updateDashboardAccountLastSignIn } from 
 export const DASHBOARD_SESSION_COOKIE = "mg_motors_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
 const SESSION_SCOPE = "mg-motors-dashboard";
-const SESSION_VERSION = 3;
+const SESSION_VERSION = 4;
 const SCRYPT_KEY_LENGTH = 64;
 const SCRYPT_PARAMS = { N: 16_384, r: 8, p: 1 } as const;
 const SCRYPT_MAX_MEMORY = 64 * 1024 * 1024;
@@ -25,6 +25,7 @@ export type DashboardPermissions = {
   canAccessHistory: boolean;
   canImportLeads: boolean;
   canAccessAccessHistory: boolean;
+  canAccessFinanceiro: boolean;
 };
 
 export type DashboardIdentity = {
@@ -49,6 +50,7 @@ const MG_SALES_READ_ONLY_PERMISSIONS: DashboardPermissions = {
   canAccessHistory: false,
   canImportLeads: false,
   canAccessAccessHistory: false,
+  canAccessFinanceiro: false,
 };
 
 export function isMgSalesReadOnlyUsername(username: string) {
@@ -148,6 +150,7 @@ function mapDashboardIdentity(account: DashboardAccount): DashboardIdentity {
       canAccessHistory: account.canAccessHistory,
       canImportLeads: account.canImportLeads,
       canAccessAccessHistory: account.canAccessAccessHistory,
+      canAccessFinanceiro: account.canAccessFinanceiro,
     },
   });
 }
@@ -199,6 +202,7 @@ function parsePermissions(value: unknown): DashboardPermissions | null {
     "canAccessHistory",
     "canImportLeads",
     "canAccessAccessHistory",
+    "canAccessFinanceiro",
   ] as const;
 
   if (keys.some(key => typeof candidate[key] !== "boolean")) return null;

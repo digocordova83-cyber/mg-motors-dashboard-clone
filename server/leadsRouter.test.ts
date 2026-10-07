@@ -46,6 +46,7 @@ describe("rotas protegidas de Leads", () => {
         canAccessHistory: true,
         canImportLeads: true,
         canAccessAccessHistory: true,
+        canAccessFinanceiro: false,
       },
     });
     const caller = appRouter.createCaller(createContext(token));

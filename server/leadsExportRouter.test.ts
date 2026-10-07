@@ -23,6 +23,7 @@ const basePermissions = {
   canAccessHistory: false,
   canImportLeads: false,
   canAccessAccessHistory: false,
+  canAccessFinanceiro: false,
 };
 
 const exportResult = {

@@ -34,6 +34,7 @@ const basePermissions = {
   canAccessHistory: false,
   canImportLeads: false,
   canAccessAccessHistory: false,
+  canAccessFinanceiro: false,
 };
 
 function createContext(token?: string): TrpcContext {

@@ -3717,3 +3717,13 @@
 - [x] Confirmar base de 37.544 Leads com 37.544 hashes distintos e registrar o ritmo de outubro no corte de 06/10.
 - [x] Preservar o último Retail oficial disponível: outubro, Semana 1, 9 MTD Retail Orders conciliados em 26 concessionárias; não estimar dados sem nova Daily Sales FUP.
 - [x] Executar testes direcionados, TypeScript e build; auditoria registrada em `docs/dashboard-refresh-20261007.md`.
+
+## Área Financeira de parceiros — 07/10/2026
+
+- [x] Criada a rota protegida `/finaceiro`, separada da navegação operacional, com login próprio do dashboard.
+- [x] Criada a permissão específica `canAccessFinanceiro`; o perfil dedicado `financeiro` acessa somente esta área e `rodrigo` recebeu supervisão.
+- [x] Disponibilizados filtro mensal julho–outubro, cards de investimento líquido, Leads reais, CPL de referência e impressões estimadas para Webmotors e Mercado Livre.
+- [x] Aplicadas referências de CPM: Webmotors R$ 50 e Mercado Livre R$ 35; a interface identifica explicitamente que as impressões são estimativas de plano, não entrega real.
+- [x] Disponibilizada tabela pesquisável dos Leads canônicos por parceiro, contendo dados pessoais somente dentro do ambiente autenticado.
+- [x] Aplicada migração `0015_familiar_skin.sql`; sessões anteriores foram invalidadas para carregar a nova permissão.
+- [x] Validados acesso no navegador, 366 testes, TypeScript e build; auditoria em `docs/financeiro-area-20261007.md`.

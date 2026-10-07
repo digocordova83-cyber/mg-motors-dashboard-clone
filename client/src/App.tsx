@@ -4,11 +4,13 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import Financeiro from "./pages/Financeiro";
 import Home from "./pages/Home";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/finaceiro" component={Financeiro} />
       <Route path="/" component={Home} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

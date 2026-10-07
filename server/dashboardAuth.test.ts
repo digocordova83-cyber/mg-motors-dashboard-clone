@@ -35,6 +35,7 @@ const mgMotorIdentity: DashboardIdentity = {
     canAccessHistory: false,
     canImportLeads: false,
     canAccessAccessHistory: false,
+    canAccessFinanceiro: false,
   },
 };
 
@@ -52,6 +53,7 @@ const mgSalesIdentity: DashboardIdentity = {
     canAccessHistory: false,
     canImportLeads: false,
     canAccessAccessHistory: false,
+    canAccessFinanceiro: false,
   },
 };
 
@@ -69,6 +71,7 @@ const danielIdentity: DashboardIdentity = {
     canAccessHistory: true,
     canImportLeads: true,
     canAccessAccessHistory: false,
+    canAccessFinanceiro: false,
   },
 };
 
@@ -132,6 +135,7 @@ describe("autenticação do dashboard", () => {
       canAccessHistory: false,
       canImportLeads: false,
       canAccessAccessHistory: false,
+      canAccessFinanceiro: false,
     });
     expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("mgsales");
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(4);
@@ -152,6 +156,7 @@ describe("autenticação do dashboard", () => {
       canAccessHistory: true,
       canImportLeads: true,
       canAccessAccessHistory: false,
+      canAccessFinanceiro: false,
     });
     expect(dbMocks.getDashboardAccountByUsername).toHaveBeenCalledWith("daniel");
     expect(dbMocks.updateDashboardAccountLastSignIn).toHaveBeenCalledWith(3);
@@ -195,6 +200,7 @@ describe("autenticação do dashboard", () => {
         canAccessHistory: true,
         canImportLeads: true,
         canAccessAccessHistory: true,
+        canAccessFinanceiro: false,
       },
     });
     const req = {

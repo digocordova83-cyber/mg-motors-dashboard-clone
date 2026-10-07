@@ -53,6 +53,7 @@ export const dashboardAccounts = mysqlTable(
     canAccessHistory: boolean("canAccessHistory").default(false).notNull(),
     canImportLeads: boolean("canImportLeads").default(false).notNull(),
     canAccessAccessHistory: boolean("canAccessAccessHistory").default(false).notNull(),
+    canAccessFinanceiro: boolean("canAccessFinanceiro").default(false).notNull(),
     createdAt: bigint("createdAt", { mode: "number" }).notNull(),
     updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
     lastSignedInAt: bigint("lastSignedInAt", { mode: "number" }),

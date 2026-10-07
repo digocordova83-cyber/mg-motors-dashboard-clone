@@ -61,10 +61,13 @@ import { buildLeadGeographicCplReference } from "./leadGeographicCplService";
 import { loadMetaCreativeInventory } from "./metaCreativeInventory";
 import { getMetaAdsBounds, loadMetaAdsData } from "./metaAdsService";
 import { getTikTokAdsBounds, loadTikTokAdsData } from "./tiktokAdsService";
-import {
-  getSocialOrganicBounds,
+import { getSocialOrganicBounds,
   loadSocialOrganicData,
 } from "./socialOrganicService";
+import {
+  getFinanceiroAvailableMonths,
+  getFinanceiroDashboard,
+} from "./financeiroService";
 import {
   getWeeklySalesImportHistory,
   getWeeklySalesMetrics,
@@ -101,6 +104,7 @@ const leadsProcedure = createPermissionProcedure("canAccessLeads");
 const optimizationsProcedure = createPermissionProcedure("canAccessOptimizations");
 const historyProcedure = createPermissionProcedure("canAccessHistory");
 const importLeadsProcedure = createPermissionProcedure("canImportLeads");
+const financeiroProcedure = createPermissionProcedure("canAccessFinanceiro");
 const mutableLeadsProcedure = leadsProcedure.use(({ ctx, next }) => {
   if (isMgSalesReadOnlyUsername(ctx.dashboardSession.username)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Este usuário possui acesso somente para visualização de Leads" });
@@ -330,6 +334,12 @@ export const appRouter = router({
       }
       return { success: true } as const;
     }),
+  }),
+  financeiro: router({
+    months: financeiroProcedure.query(() => getFinanceiroAvailableMonths()),
+    dashboard: financeiroProcedure
+      .input(z.object({ competence: competenceSchema }))
+      .query(({ input }) => getFinanceiroDashboard(input.competence)),
   }),
   accessHistory: router({
     list: accessHistoryProcedure
