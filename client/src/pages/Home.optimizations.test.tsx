@@ -22,6 +22,13 @@ describe("interface de campanhas Google Ads ativas", () => {
     expect(homeSource).toContain("const topCampaigns = data.campaigns.slice(0, 15)");
     expect(homeSource).toContain("[...data.daily].reverse()");
   });
+
+  it("exibe o mix real de impressões por dispositivo com fonte Windsor", () => {
+    expect(homeSource).toContain("Impressões por Dispositivo");
+    expect(homeSource).toContain("Distribuição real por dispositivo registrada no Google Ads");
+    expect(homeSource).toContain("trpc.dashboard.deviceMix.useQuery");
+    expect(routerSource).toContain("deviceMix: googleAdsProcedure");
+  });
 });
 
 describe("interface aprofundada de Otimizações", () => {

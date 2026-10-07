@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFinanceiroPartnerDashboard } from "./financeiroService";
+import { buildFinanceiroLeadCharts, buildFinanceiroPartnerDashboard } from "./financeiroService";
 
 describe("painel financeiro de parceiros", () => {
   it("calcula Webmotors com CPM de referência de R$ 50 sobre o plano líquido", () => {
@@ -52,5 +52,24 @@ describe("painel financeiro de parceiros", () => {
     expect(result.plannedNetInvestment).toBeNull();
     expect(result.referenceCpl).toBeNull();
     expect(result.estimatedImpressions).toBeNull();
+  });
+
+  it("preenche a série diária e agrupa os modelos com dados canônicos", () => {
+    const charts = buildFinanceiroLeadCharts("2026-10", [
+      { id: 1, correctedDate: "2026-10-01", model: "MG4", name: "", email: "", phone: "", dealer: "A", city: "A", region: "SP", channel: "Webmotors" },
+      { id: 2, correctedDate: "2026-10-01", model: "MG4", name: "", email: "", phone: "", dealer: "A", city: "A", region: "SP", channel: "Webmotors" },
+      { id: 3, correctedDate: "2026-10-03", model: "IM6", name: "", email: "", phone: "", dealer: "B", city: "B", region: "RJ", channel: "Webmotors" },
+    ]);
+
+    expect(charts.daily).toHaveLength(31);
+    expect(charts.daily.slice(0, 3)).toEqual([
+      { date: "2026-10-01", leads: 2 },
+      { date: "2026-10-02", leads: 0 },
+      { date: "2026-10-03", leads: 1 },
+    ]);
+    expect(charts.models).toEqual([
+      { model: "MG4", leads: 2 },
+      { model: "IM6", leads: 1 },
+    ]);
   });
 });

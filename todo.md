@@ -3743,3 +3743,9 @@
 - [x] Habilitada a permissão `canAccessFinanceiro` para a conta ativa `daniel`.
 - [x] Mantidas todas as demais permissões da conta; senha não foi modificada nem exposta.
 - [x] Registrada a auditoria em `docs/financeiro-access-grant-daniel-20261007.md`.
+
+## Aperfeiçoamento visual — Google Ads e Portal Financeiro — 07/10/2026
+- [x] Adicionado na visão geral de Google Ads o gráfico de rosca de impressões por dispositivo, com participação, cliques e dispositivo líder vindos do Windsor.ai no período selecionado.
+- [x] Adicionados no Portal Financeiro gráficos reais de Leads por dia e mix de modelos para Webmotors e Mercado Livre, respeitando o filtro mensal e sem expor PII nos gráficos.
+- [x] Mantido estado vazio explícito para canal sem Leads na competência; nenhuma métrica foi estimada para preencher visualizações.
+- [x] Validação completa aprovada: 63 arquivos / 373 testes, TypeScript e build; auditoria em `docs/dashboard-polish-google-financeiro-20261007.md`.

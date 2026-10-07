@@ -16,6 +16,7 @@ import {
 } from "./dashboardAuth";
 import { recordDashboardAccessSafely } from "./dashboardAccessAudit";
 import { loadDashboardData, MG_MOTORS_ACCOUNT_ID } from "./dashboardService";
+import { loadGoogleAdsDeviceMix } from "./googleAdsDeviceService";
 import {
   completeOptimizationTask,
   getOptimizationWorkspace,
@@ -539,6 +540,9 @@ export const appRouter = router({
     getData: googleAdsProcedure
       .input(dashboardPeriodSchema)
       .query(({ input }) => loadDashboardDataWithOptimizationPolicy(input.dateFrom, input.dateTo)),
+    deviceMix: googleAdsProcedure
+      .input(dashboardPeriodSchema)
+      .query(({ input }) => loadGoogleAdsDeviceMix(input.dateFrom, input.dateTo)),
     updateMonthlyBudgetGoal: googleAdsProcedure
       .input(
         z.object({

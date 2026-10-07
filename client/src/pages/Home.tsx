@@ -60,6 +60,7 @@ import {
   LogOut,
   Megaphone,
   MousePointerClick,
+  MonitorSmartphone,
   PencilLine,
   RefreshCcw,
   RotateCcw,
@@ -84,6 +85,8 @@ import {
   Legend,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -96,6 +99,7 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type DashboardData = RouterOutputs["dashboard"]["getData"];
 type DashboardSession = NonNullable<RouterOutputs["dashboardAuth"]["session"]>;
 type DailyPoint = DashboardData["daily"][number];
+type GoogleDeviceMix = RouterOutputs["dashboard"]["deviceMix"];
 type Campaign = DashboardData["campaigns"][number];
 type OptimizationTask = RouterOutputs["dashboard"]["optimizationWorkspace"]["tasks"][number];
 type TaskStatusFilter = "ALL" | OptimizationTask["status"];
@@ -438,6 +442,55 @@ function TimeSeriesChart({
   );
 }
 
+function GoogleDeviceMixChart({ data, locale }: { data: GoogleDeviceMix; locale: DashboardLocale }) {
+  const colors = ["#38bdf8", "#e2212d", "#a78bfa", "#f59e0b", "#10b981"];
+  const dominant = data.devices[0];
+  const sourceLabel = data.source === "windsor-live"
+    ? ui(locale, "Windsor.ai ao vivo", "Windsor.ai live")
+    : ui(locale, "Windsor.ai em cache", "Windsor.ai cached");
+
+  return (
+    <Panel
+      title={ui(locale, "Impressões por Dispositivo", "Impressions by Device")}
+      subtitle={ui(locale, "Distribuição real por dispositivo registrada no Google Ads", "Actual device distribution recorded in Google Ads")}
+      action={<span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[9px] font-semibold text-sky-300">{sourceLabel}</span>}
+    >
+      <div className="grid min-h-[310px] xl:grid-cols-[0.75fr_1.25fr]">
+        <div className="relative min-h-[270px] border-b border-[#1b2535] p-3 xl:border-b-0 xl:border-r">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={data.devices} dataKey="impressions" nameKey="label" innerRadius={62} outerRadius={96} paddingAngle={3} stroke="none">
+                {data.devices.map((item, index) => <Cell key={item.device} fill={colors[index % colors.length]} />)}
+              </Pie>
+              <Tooltip formatter={(value, _name, item) => [formatNumber(Number(value), locale), String(item.payload?.label ?? "")] } contentStyle={{ background: "#0a101b", border: "1px solid #2a364b", borderRadius: 8, fontSize: 11 }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
+            <div><p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600">Impressões</p><p className="mt-1 text-xl font-semibold text-white">{formatNumber(data.totals.impressions, locale)}</p></div>
+          </div>
+        </div>
+        <div className="divide-y divide-[#182231]">
+          <div className="grid gap-3 p-4 sm:grid-cols-3">
+            <div><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Dispositivo líder", "Leading device")}</p><p className="mt-1 text-sm font-semibold text-white">{dominant?.label ?? "—"}</p></div>
+            <div><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Participação", "Share")}</p><p className="mt-1 text-sm font-semibold text-sky-300">{dominant ? `${formatNumber(dominant.impressionShare, locale)}%` : "—"}</p></div>
+            <div><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">{ui(locale, "Cliques", "Clicks")}</p><p className="mt-1 text-sm font-semibold text-white">{formatNumber(data.totals.clicks, locale)}</p></div>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-4 sm:grid-cols-4">
+            {data.devices.map((item, index) => (
+              <div key={item.device} className="min-w-0">
+                <p className="flex items-center gap-1.5 truncate text-[10px] font-medium text-slate-400"><span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />{item.label}</p>
+                <p className="mt-1 text-sm font-semibold text-white">{formatNumber(item.impressions, locale)}</p>
+                <p className="mt-0.5 text-[10px] text-slate-600">{formatNumber(item.impressionShare, locale)}% {ui(locale, "das impressões", "of impressions")}</p>
+              </div>
+            ))}
+          </div>
+          <p className="flex items-start gap-2 border-t border-[#182231] px-4 py-3 text-[10px] leading-5 text-slate-600"><MonitorSmartphone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />{ui(locale, "Dispositivos observados no período selecionado; sem projeções ou percentuais estimados.", "Devices observed in the selected period; no projections or estimated shares.")}</p>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
 function StatusBadge({ status, locale = "pt-BR" }: { status: Campaign["status"]; locale?: DashboardLocale }) {
   const styles = {
     Saudável: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
@@ -465,7 +518,17 @@ function EmptyState({ title, description }: { title: string; description: string
   );
 }
 
-function OverviewTab({ data, correctionVisible, locale }: { data: DashboardData; correctionVisible: boolean; locale: DashboardLocale }) {
+function OverviewTab({
+  data,
+  deviceMix,
+  correctionVisible,
+  locale,
+}: {
+  data: DashboardData;
+  deviceMix?: GoogleDeviceMix;
+  correctionVisible: boolean;
+  locale: DashboardLocale;
+}) {
   const rankingPanels = [
     { title: ui(locale, "Top 10 — Melhor CPA", "Top 10 — Best CPA"), subtitle: ui(locale, "Menor custo por aquisição entre campanhas elegíveis", "Lowest cost per acquisition among eligible campaigns"), rows: data.rankings.best, tone: "emerald" as const },
     { title: ui(locale, "Top 10 — Pior CPA", "Top 10 — Worst CPA"), subtitle: ui(locale, "Maior custo por aquisição entre campanhas elegíveis", "Highest cost per acquisition among eligible campaigns"), rows: data.rankings.worst, tone: "red" as const },
@@ -483,6 +546,8 @@ function OverviewTab({ data, correctionVisible, locale }: { data: DashboardData;
         <TimeSeriesChart data={data.daily} title={ui(locale, "Conversões Diárias", "Daily Conversions")} subtitle={ui(locale, "Conversões registradas pelo Google Ads", "Conversions recorded by Google Ads")} dataKey="conversions" type="number" color="#38bdf8" correctionVisible={correctionVisible} locale={locale} />
         <TimeSeriesChart data={data.daily} title={ui(locale, "CPA Diário", "Daily CPA")} subtitle={ui(locale, "Custo por aquisição ao longo do tempo", "Cost per acquisition over time")} dataKey="cpa" type="currency" color="#a78bfa" correctionVisible={correctionVisible} locale={locale} />
       </div>
+
+      {deviceMix?.devices.length ? <GoogleDeviceMixChart data={deviceMix} locale={locale} /> : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
         {rankingPanels.map(panel => (
@@ -1380,6 +1445,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
     onSuccess: async () => {
       await utils.dashboardAuth.session.invalidate();
       utils.dashboard.getData.reset();
+      utils.dashboard.deviceMix.reset();
       utils.metaAds.data.reset();
       utils.metaAds.bounds.reset();
       utils.tiktokAds.data.reset();
@@ -1401,6 +1467,12 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     enabled: activeModule === "google-ads" && permissions.canAccessGoogleAds,
+  });
+  const googleDeviceMix = trpc.dashboard.deviceMix.useQuery(googleQueryInput, {
+    retry: 1,
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: activeModule === "google-ads" && activeGoogleTab === "overview" && permissions.canAccessGoogleAds,
   });
   const leadsBounds = trpc.leads.bounds.useQuery(undefined, {
     retry: 1,
@@ -1671,7 +1743,7 @@ function DashboardScreen({ session }: { session: DashboardSession }) {
               <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 {metricCards.map(card => <MetricCard key={card.title} {...card} />)}
               </div>
-              {activeGoogleTab === "overview" ? <OverviewTab data={data} correctionVisible={correctionVisible} locale={locale} /> : null}
+              {activeGoogleTab === "overview" ? <OverviewTab data={data} deviceMix={googleDeviceMix.data} correctionVisible={correctionVisible} locale={locale} /> : null}
               {activeGoogleTab === "daily" ? <DailyTab data={data} correctionVisible={correctionVisible} locale={locale} /> : null}
               {activeGoogleTab === "investment" ? <InvestmentTab data={data} correctionVisible={correctionVisible} locale={locale} /> : null}
               {activeGoogleTab === "optimizations" ? <OptimizationsTab data={data} dateFrom={googleDateFrom} dateTo={googleDateTo} /> : null}

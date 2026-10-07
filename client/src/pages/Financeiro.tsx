@@ -26,6 +26,16 @@ import {
   UsersRound,
 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useLocation } from "wouter";
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -127,6 +137,65 @@ function SummaryMetric({
         </div>
         <span className={`grid h-9 w-9 place-items-center rounded-xl bg-white/[0.04] ${accent}`}><Icon className="h-4 w-4" /></span>
       </div>
+    </section>
+  );
+}
+
+type FinanceiroPartnerAnalytics = {
+  id: Exclude<PartnerFilter, "all">;
+  label: string;
+  daily: Array<{ date: string; leads: number }>;
+  models: Array<{ model: string; leads: number }>;
+};
+
+function PartnerLeadCharts({ partner }: { partner: FinanceiroPartnerAnalytics }) {
+  const color = partner.id === "webmotors" ? "#f05438" : "#f5cf34";
+  const hasLeads = partner.daily.some(item => item.leads > 0);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">
+      <div className="flex items-center justify-between gap-3 border-b border-[#223047] px-5 py-4">
+        <div className="flex items-center gap-3">
+          <PartnerMark partnerId={partner.id} />
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Visão analítica</p>
+            <h3 className="mt-0.5 text-sm font-semibold text-white">Entrega de Leads — {partner.label}</h3>
+          </div>
+        </div>
+        <span className="rounded-full border border-[#334159] bg-[#0b111d] px-2.5 py-1 text-[9px] font-semibold text-slate-400">Dados canônicos</span>
+      </div>
+      {hasLeads ? (
+        <div className="grid xl:grid-cols-2">
+          <div className="min-h-[300px] border-b border-[#223047] p-4 xl:border-b-0 xl:border-r">
+            <div className="mb-2"><p className="text-[10px] font-semibold text-slate-300">Leads por dia</p><p className="text-[10px] text-slate-600">Competência selecionada</p></div>
+            <div className="h-[245px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={partner.daily} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
+                  <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" tickFormatter={value => formatDate(String(value)).slice(0, 5)} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} minTickGap={22} />
+                  <YAxis allowDecimals={false} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={34} />
+                  <Tooltip labelFormatter={value => formatDate(String(value))} formatter={value => [NUMBER.format(Number(value)), "Leads"]} contentStyle={{ background: "#080d16", border: "1px solid #2a364b", borderRadius: 8, fontSize: 10 }} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                  <Bar dataKey="leads" name="Leads" fill={color} radius={[4, 4, 0, 0]} maxBarSize={26} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="min-h-[300px] p-4">
+            <div className="mb-2"><p className="text-[10px] font-semibold text-slate-300">Mix de modelos</p><p className="text-[10px] text-slate-600">Distribuição dos Leads recebidos</p></div>
+            <div className="h-[245px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={partner.models.slice(0, 8)} layout="vertical" margin={{ top: 8, right: 26, left: 10, bottom: 0 }}>
+                  <CartesianGrid stroke="#1d2737" strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="model" width={78} tick={{ fill: "#94a3b8", fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <Tooltip formatter={value => [NUMBER.format(Number(value)), "Leads"]} contentStyle={{ background: "#080d16", border: "1px solid #2a364b", borderRadius: 8, fontSize: 10 }} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                  <Bar dataKey="leads" name="Leads" radius={[0, 4, 4, 0]} maxBarSize={24}>{partner.models.slice(0, 8).map((item, index) => <Cell key={item.model} fill={index === 0 ? color : `${color}9c`} />)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      ) : <div className="grid min-h-[220px] place-items-center px-6 text-center"><div><BarChart3 className="mx-auto h-7 w-7 text-slate-700" /><p className="mt-3 text-sm font-medium text-slate-300">Sem Leads no período</p><p className="mt-1 text-xs text-slate-600">Selecione outra competência para visualizar a evolução do parceiro.</p></div></div>}
     </section>
   );
 }
@@ -288,6 +357,10 @@ function FinanceiroContent() {
                 <div className="flex items-start justify-between gap-4 border-b border-[#223047] px-5 py-4"><div className="flex items-center gap-3"><PartnerMark partnerId={partner.id} /><div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Parceiro</p><h3 className="mt-0.5 text-sm font-semibold text-white">{partner.label}</h3><p className="mt-0.5 text-[10px] text-slate-500">CPM de referência: {BRL.format(partner.referenceCpm)}</p></div></div><span className="rounded-full border border-[#334159] bg-[#172033] px-2.5 py-1 text-[10px] font-semibold text-slate-300">{NUMBER.format(partner.actualLeads)} Leads</span></div>
                 <div className="grid grid-cols-2 divide-x divide-y divide-[#223047] sm:grid-cols-4 sm:divide-y-0"><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Investimento líquido</p><p className="mt-1 text-sm font-semibold text-white">{formatCurrency(partner.plannedNetInvestment)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Leads reais</p><p className="mt-1 text-sm font-semibold text-white">{NUMBER.format(partner.actualLeads)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">CPL de referência</p><p className="mt-1 text-sm font-semibold text-white">{formatCurrency(partner.referenceCpl)}</p></div><div className="p-4"><p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">Impressões estimadas</p><p className="mt-1 text-sm font-semibold text-white">{partner.estimatedImpressions == null ? "—" : NUMBER.format(partner.estimatedImpressions)}</p></div></div>
               </section>)}
+            </div>
+
+            <div className={`mb-6 grid gap-4 ${selectedPartners.length > 1 ? "2xl:grid-cols-2" : ""}`}>
+              {selectedPartners.map(partner => <PartnerLeadCharts key={`analytics-${partner.id}`} partner={partner} />)}
             </div>
 
             <section className="overflow-hidden rounded-2xl border border-[#243047] bg-[#101827]">

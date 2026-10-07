@@ -29,6 +29,8 @@ export type FinanceiroPartnerDashboard = {
   actualLeads: number;
   referenceCpl: number | null;
   estimatedImpressions: number | null;
+  daily: Array<{ date: string; leads: number }>;
+  models: Array<{ model: string; leads: number }>;
   leads: FinanceiroLead[];
 };
 
@@ -104,6 +106,31 @@ function partnerCondition(partner: FinanceiroPartnerId) {
   );
 }
 
+export function buildFinanceiroLeadCharts(competence: string, rows: FinanceiroLead[]) {
+  const period = monthBounds(competence);
+  const dailyCounts = new Map<string, number>();
+  const modelCounts = new Map<string, number>();
+
+  for (const row of rows) {
+    dailyCounts.set(row.correctedDate, (dailyCounts.get(row.correctedDate) ?? 0) + 1);
+    const model = row.model.trim() || "Não informado";
+    modelCounts.set(model, (modelCounts.get(model) ?? 0) + 1);
+  }
+
+  const daily: Array<{ date: string; leads: number }> = [];
+  for (let cursor = period.dateFrom; cursor <= period.dateTo; ) {
+    daily.push({ date: cursor, leads: dailyCounts.get(cursor) ?? 0 });
+    const date = new Date(`${cursor}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + 1);
+    cursor = date.toISOString().slice(0, 10);
+  }
+
+  const models = Array.from(modelCounts, ([model, leads]) => ({ model, leads }))
+    .sort((left, right) => right.leads - left.leads || left.model.localeCompare(right.model, "pt-BR"));
+
+  return { daily, models };
+}
+
 export function buildFinanceiroPartnerDashboard(input: {
   partner: FinanceiroPartnerId;
   competence: string;
@@ -114,6 +141,7 @@ export function buildFinanceiroPartnerDashboard(input: {
   const actualLeads = input.leads.length;
   const referenceCpl = plan.net != null && actualLeads > 0 ? round(plan.net / actualLeads) : null;
   const estimatedImpressions = plan.net != null ? Math.round((plan.net / config.referenceCpm) * 1000) : null;
+  const charts = buildFinanceiroLeadCharts(input.competence, input.leads);
 
   return {
     id: input.partner,
@@ -125,6 +153,8 @@ export function buildFinanceiroPartnerDashboard(input: {
     actualLeads,
     referenceCpl,
     estimatedImpressions,
+    daily: charts.daily,
+    models: charts.models,
     leads: input.leads,
   } satisfies FinanceiroPartnerDashboard;
 }

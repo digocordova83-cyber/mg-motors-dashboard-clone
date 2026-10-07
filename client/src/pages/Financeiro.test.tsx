@@ -12,6 +12,8 @@ describe("Portal Financeiro", () => {
     expect(FINANCEIRO_PARTNERS["mercado-livre"].logo).toContain("mercado-livre-logo");
     expect(financeiroSource).toContain("function PartnerMark");
     expect(financeiroSource).toContain("Visões financeiras");
+    expect(financeiroSource).toContain("Leads por dia");
+    expect(financeiroSource).toContain("Mix de modelos");
   });
 
   it("calcula os big numbers da visão selecionada sem converter plano ausente em zero", () => {
