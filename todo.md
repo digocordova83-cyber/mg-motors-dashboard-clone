@@ -3737,3 +3737,9 @@
 - [x] Inseridos logos de Webmotors e Mercado Livre na navegação, nos cards de parceiro e na tabela de Leads.
 - [x] Mantidos os controles de segurança: dados pessoais continuam somente na rota autenticada e a sessão de revisão foi encerrada após validação.
 - [x] Validados redirecionamento, três visões, filtro mensal, busca de contatos, 369 testes, TypeScript e build.
+
+## Acesso ao Portal Financeiro — 07/10/2026
+
+- [x] Habilitada a permissão `canAccessFinanceiro` para a conta ativa `daniel`.
+- [x] Mantidas todas as demais permissões da conta; senha não foi modificada nem exposta.
+- [x] Registrada a auditoria em `docs/financeiro-access-grant-daniel-20261007.md`.
