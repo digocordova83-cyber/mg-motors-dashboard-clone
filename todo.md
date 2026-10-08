@@ -3755,3 +3755,13 @@
 - [x] Definidos perfis de referência por competência: Webmotors 75%/25%, 78%/22%, 80%/20% e 82%/18%; Mercado Livre 78%/22%, 80%/20%, 81%/19% e 83%/17% de julho a outubro, respectivamente.
 - [x] Identificado o dado como referência de planejamento e não mensuração real dos veículos; configuração exibida como ativa.
 - [x] Validação integral aprovada: 63 arquivos / 374 testes, TypeScript e build; auditoria atualizada em `docs/dashboard-polish-google-financeiro-20261007.md`.
+
+## Atualização completa do dashboard — 08/10/2026
+
+- [x] Sincronizada a base oficial de Leads até 07/10/2026: 333 registros novos; total canônico de 37.877 Leads.
+- [x] Reexecutada a carga de Leads com `NO_CHANGES`; validação confirmou 37.877 hashes distintos.
+- [x] Preservada a proteção histórica já ativa para 45 registros Meta de 01/10 ausentes temporariamente na fonte; nenhum registro foi duplicado.
+- [x] Atualizados snapshots Windsor de Google Ads, Meta Ads e TikTok Ads até 07/10/2026.
+- [x] Mantido o último Retail oficial: `261007_Daily_Sales_FUP.xlsx`, Semana 2, 96 MTD Retail Orders, com conciliação aprovada.
+- [x] Google Analytics não estava conectado nesta sessão; nenhuma métrica de receita, ROAS ou projeção foi criada sem fonte oficial.
+- [x] Aprovados 15 testes direcionados e TypeScript; auditoria em `docs/dashboard-refresh-20261008.md`.
