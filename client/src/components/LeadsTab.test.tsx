@@ -105,6 +105,15 @@ describe("interface de Leads", () => {
     expect(source).not.toContain("h-[350px] min-w-[760px]");
   });
 
+  it("destaca a série Meta da planilha-base no gráfico diário sem ocultar a origem", () => {
+    const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain("data.dailyMetaBase.appliedDays > 0 ? data.dailyMetaBase.daily : data.daily");
+    expect(source).toContain('data-testid="meta-base-daily-badge"');
+    expect(source).toContain("data.dailyMetaBase.sourceLabel");
+    expect(source).toContain("Total exibido no gráfico");
+  });
+
   it("separa investimento/CPL das metas e exibe os sete canais líquidos em agosto", () => {
     const source = readFileSync(new URL("./LeadsTab.tsx", import.meta.url), "utf8");
 

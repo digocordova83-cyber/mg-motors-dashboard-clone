@@ -333,6 +333,58 @@ function buildDaily(
   });
 }
 
+export type MetaBaseDailyLeadMetric = {
+  date: string;
+  leads: number;
+};
+
+/**
+ * Recompõe exclusivamente a faixa diária de Meta a partir da planilha-base
+ * de Leads. Os demais canais seguem a série canônica; o retorno deixa a
+ * diferença explícita para que a UI não misture as duas regras sem contexto.
+ */
+export function buildDailyWithMetaBase(
+  daily: readonly LeadDailyPoint[],
+  metaBaseDaily: readonly MetaBaseDailyLeadMetric[],
+) {
+  const metaByDate = new Map(metaBaseDaily.map(item => [item.date, Math.max(0, Math.trunc(item.leads))]));
+  let canonicalMetaLeads = 0;
+  let sourceMetaLeads = 0;
+  let appliedDays = 0;
+
+  const reconciled = daily.map(point => {
+    const sourceMetaLeadsForDay = metaByDate.get(point.date);
+    if (sourceMetaLeadsForDay === undefined) return { ...point, values: { ...point.values } };
+
+    const canonicalMetaLeadsForDay = point.values.Meta ?? 0;
+    canonicalMetaLeads += canonicalMetaLeadsForDay;
+    sourceMetaLeads += sourceMetaLeadsForDay;
+    appliedDays += 1;
+
+    return {
+      ...point,
+      total: point.total - canonicalMetaLeadsForDay + sourceMetaLeadsForDay,
+      values: { ...point.values, Meta: sourceMetaLeadsForDay },
+    };
+  });
+
+  const dailyWithRollingAverage = reconciled.map((point, index) => {
+    const window = reconciled.slice(Math.max(0, index - 6), index + 1);
+    return {
+      ...point,
+      rollingAverage7d: round(window.reduce((sum, item) => sum + item.total, 0) / window.length),
+    };
+  });
+
+  return {
+    daily: dailyWithRollingAverage,
+    appliedDays,
+    canonicalMetaLeads,
+    sourceMetaLeads,
+    adjustmentLeads: sourceMetaLeads - canonicalMetaLeads,
+  };
+}
+
 function buildDealerAudit(
   rows: LeadAnalyticsRow[],
   dateFrom: string,

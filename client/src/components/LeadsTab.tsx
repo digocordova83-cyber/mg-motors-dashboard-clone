@@ -1199,12 +1199,15 @@ export function LeadsTab({
 
   const data = analytics.data;
   const channelHistoryDealerNames = new Set(data.dealerAudit.dealers.map(dealer => dealer.dealerName));
-  const stackedDaily = buildCumulativeLeadPaceSeries(data.daily, data.pacing.goal, data.pacing.daysInMonth);
+  const chartDaily = data.dailyMetaBase.appliedDays > 0 ? data.dailyMetaBase.daily : data.daily;
+  const stackedDaily = buildCumulativeLeadPaceSeries(chartDaily, data.pacing.goal, data.pacing.daysInMonth);
   const finalPacePoint = stackedDaily.at(-1);
+  const chartTotal = chartDaily.reduce((sum, point) => sum + point.total, 0);
+  const chartDailyAverage = chartDaily.length ? chartTotal / chartDaily.length : 0;
   const paceDifference = finalPacePoint?.accumulatedPace == null
     ? null
     : Math.round((finalPacePoint.accumulatedActual - finalPacePoint.accumulatedPace) * 100) / 100;
-  const peakDailyTotal = data.daily.reduce((peak, point) => Math.max(peak, point.total), 0);
+  const peakDailyTotal = chartDaily.reduce((peak, point) => Math.max(peak, point.total), 0);
   const activeChannelCount = data.channels.filter(item => item.leads > 0).length;
   const uploadError = clientUploadError ?? previewMutation.error?.message ?? importMutation.error?.message ?? null;
 
@@ -1299,10 +1302,13 @@ export function LeadsTab({
         <LeadPanel
           className="flex flex-col"
           title={ui(locale, "Leads por dia e canal", "Leads by day and channel")}
-          subtitle={ui(locale, "Volume diário por canal com acumulado Real versus Pace planejado no período.", "Daily channel volume with cumulative Actual versus Planned pace for the period.")}
+          subtitle={data.dailyMetaBase.appliedDays > 0
+            ? ui(locale, `Meta usa ${data.dailyMetaBase.sourceLabel}; demais canais usam a base canônica. O acumulado do gráfico segue essa composição por origem.`, `Meta uses ${data.dailyMetaBase.sourceLabel}; other channels use the canonical database. The chart cumulative follows this source composition.`)
+            : ui(locale, "Volume diário por canal com acumulado Real versus Pace planejado no período.", "Daily channel volume with cumulative Actual versus Planned pace for the period.")}
           action={(
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${data.daily.length} dias`, `${data.daily.length} days`)}</span>
+              {data.dailyMetaBase.appliedDays > 0 ? <span data-testid="meta-base-daily-badge" className="rounded-full border border-[#e2212d]/30 bg-[#e2212d]/10 px-2.5 py-1 text-[9px] font-semibold text-[#ff9aa1]">Meta · {ui(locale, "fonte-base", "source base")}</span> : null}
+              <span className="rounded-full border border-[#263247] bg-[#101827] px-2.5 py-1 text-[9px] font-semibold text-slate-400">{ui(locale, `${chartDaily.length} dias`, `${chartDaily.length} days`)}</span>
               <span className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold ${paceDifference === null ? "border-slate-500/20 bg-slate-500/10 text-slate-400" : paceDifference >= 0 ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-amber-500/20 bg-amber-500/10 text-amber-300"}`}>
                 {paceDifference === null
                   ? ui(locale, "Pace indisponível", "Pace unavailable")
@@ -1311,7 +1317,7 @@ export function LeadsTab({
             </div>
           )}
         >
-          {data.daily.length ? (
+          {chartDaily.length ? (
             <div className="flex flex-1 overflow-x-auto">
               <div className="h-[320px] min-w-[720px] flex-1 px-3 pb-2 pt-5 2xl:h-auto 2xl:min-h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1348,8 +1354,8 @@ export function LeadsTab({
           ) : <div className="grid min-h-[320px] place-items-center text-xs text-slate-600">{ui(locale, "Nenhum Lead no período.", "No Leads in this period.")}</div>}
           <div data-testid="daily-channel-summary" className="grid grid-cols-2 border-t border-[#172131] bg-[#0a111d]/45 sm:grid-cols-4">
             {[
-              [ui(locale, "Total no período", "Period total"), formatInteger(data.summary.totalLeads, locale)],
-              [ui(locale, "Média por dia", "Daily average"), formatNumber(data.pacing.averagePerDay, locale)],
+              [ui(locale, data.dailyMetaBase.appliedDays > 0 ? "Total exibido no gráfico" : "Total no período", data.dailyMetaBase.appliedDays > 0 ? "Chart total shown" : "Period total"), formatInteger(chartTotal, locale)],
+              [ui(locale, "Média por dia", "Daily average"), formatNumber(chartDailyAverage, locale)],
               [ui(locale, "Pico diário", "Daily peak"), formatInteger(peakDailyTotal, locale)],
               [ui(locale, "Canais ativos", "Active channels"), formatInteger(activeChannelCount, locale)],
             ].map(([label, value]) => (

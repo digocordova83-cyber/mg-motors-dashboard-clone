@@ -3784,3 +3784,11 @@
 - [x] Atualizar a aba Meta Ads para usar a série da planilha-base no card de Leads e no gráfico diário; métricas de mídia da plataforma permanecem Windsor.ai.
 - [x] Confirmar 243 Leads em 07/10 e 179 em 08/10 na fonte; outubro de 01 a 08 soma 1.557 Leads Meta na planilha-base.
 - [x] Aplicar a migração `0016_real_wallow.sql`, executar testes, TypeScript e build; auditoria em `docs/meta-base-leads-reconciliation-20261009.md`.
+
+## Reconciliação visual de Meta na aba Leads — 09/10/2026
+
+- [x] Corrigir o gráfico diário da aba Leads para que a faixa Meta siga a mesma planilha-base já usada na aba Meta Ads.
+- [x] Manter Site, Mercado Livre, Webmotors, TikTok e demais canais na base canônica; não alterar dados de contatos, modelos, concessionárias ou exportações.
+- [x] Exibir selo `Meta · fonte-base`, legenda de origem e total do gráfico calculado pela composição reconciliada.
+- [x] Validar 243 Leads Meta em 07/10 e 179 em 08/10; período 01–08/10 passa de 1.007 Meta canônicos para 1.557 na fonte-base.
+- [x] Executar validação integral: 64 arquivos / 378 testes, TypeScript e build aprovados; auditoria em `docs/leads-chart-meta-base-reconciliation-20261009.md`.

@@ -50,6 +50,7 @@ import {
   getLeadMonthlyGoal,
   upsertLeadMonthlyGoal,
 } from "./leadsService";
+import { buildDailyWithMetaBase } from "./leadsAnalytics";
 import { getMetaBaseLeadMetrics } from "./metaBaseLeadMetricsService";
 import { exportLeadsBase } from "./leadsExportService";
 import {
@@ -365,8 +366,9 @@ export const appRouter = router({
         const canAccessPaidMedia =
           ctx.dashboardSession.permissions.canAccessGoogleAds &&
           ctx.dashboardSession.permissions.canAccessMetaAds;
-        const [analytics, measurements, dealerTargets] = await Promise.all([
+        const [analytics, metaBaseLeads, measurements, dealerTargets] = await Promise.all([
           getLeadAnalytics(input),
+          getMetaBaseLeadMetrics(input.dateFrom, input.dateTo),
           canAccessPaidMedia
             ? loadPaidMediaInvestmentMeasurements(input.dateFrom, input.dateTo)
             : Promise.resolve(null),
@@ -400,7 +402,20 @@ export const appRouter = router({
               metaBudgetPlan,
             })
           : null;
-        return { ...analytics, mediaInvestment, geographicCpl };
+        return {
+          ...analytics,
+          dailyMetaBase: {
+            ...buildDailyWithMetaBase(analytics.daily, metaBaseLeads.daily),
+            source: metaBaseLeads.source,
+            sourceLabel: metaBaseLeads.sourceLabel,
+            dateField: metaBaseLeads.dateField,
+            timeZone: metaBaseLeads.timeZone,
+            dataThroughDate: metaBaseLeads.dataThroughDate,
+            refreshedAt: metaBaseLeads.refreshedAt,
+          },
+          mediaInvestment,
+          geographicCpl,
+        };
       }),
     exportBase: mutableLeadsProcedure
       .input(leadsExportSchema)

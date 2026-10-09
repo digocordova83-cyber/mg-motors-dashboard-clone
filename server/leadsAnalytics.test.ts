@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   LEADS_UNAVAILABLE,
   buildLeadAnalytics,
+  buildDailyWithMetaBase,
   type LeadAnalyticsRow,
 } from "./leadsAnalytics";
 
@@ -17,6 +18,43 @@ function row(
 }
 
 describe("buildLeadAnalytics", () => {
+  it("reconcilia apenas a faixa diária Meta com a fonte-base e preserva os demais canais", () => {
+    const reconciled = buildDailyWithMetaBase([
+      {
+        date: "2026-10-07",
+        total: 279,
+        rollingAverage7d: 279,
+        values: { Meta: 155, Site: 108, Webmotors: 16 },
+      },
+      {
+        date: "2026-10-08",
+        total: 221,
+        rollingAverage7d: 250,
+        values: { Meta: 117, Site: 90, Webmotors: 14 },
+      },
+    ], [
+      { date: "2026-10-07", leads: 243 },
+      { date: "2026-10-08", leads: 179 },
+    ]);
+
+    expect(reconciled.appliedDays).toBe(2);
+    expect(reconciled.canonicalMetaLeads).toBe(272);
+    expect(reconciled.sourceMetaLeads).toBe(422);
+    expect(reconciled.adjustmentLeads).toBe(150);
+    expect(reconciled.daily).toEqual([
+      expect.objectContaining({
+        date: "2026-10-07",
+        total: 367,
+        values: { Meta: 243, Site: 108, Webmotors: 16 },
+      }),
+      expect.objectContaining({
+        date: "2026-10-08",
+        total: 283,
+        values: { Meta: 179, Site: 90, Webmotors: 14 },
+      }),
+    ]);
+  });
+
   it("redistribui MG4 URBAN aos canais originais e reconcilia total e série diária", () => {
     const rows = [
       row("2026-08-01", "Campanha Urban", "Dealer A", "MG4 URBAN", "SP", "Site"),
