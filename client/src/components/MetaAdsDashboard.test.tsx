@@ -24,6 +24,8 @@ describe("interface Meta Ads", () => {
       cutoff: "Corte D-1",
       through: "Dados disponíveis até",
       pacingTitle: "Pacing de orçamento — Meta Ads",
+      baseLeads: "Leads — planilha-base",
+      baseLeadsSubtitle: "Aba Meta · created_time em horário de Brasília",
     });
     expect(META_ADS_COPY["en-US"]).toMatchObject({
       title: "Social Media Performance",
@@ -34,6 +36,7 @@ describe("interface Meta Ads", () => {
       cutoff: "D-1 cutoff",
       through: "Data available through",
       pacingTitle: "Budget pacing — Meta Ads",
+      baseLeads: "Leads — source spreadsheet",
     });
   });
 
@@ -55,7 +58,9 @@ describe("interface Meta Ads", () => {
   it("isola valores financeiros no painel explícito de pacing, sem misturá-los às métricas de performance", () => {
     const source = readFileSync(new URL("./MetaAdsDashboard.tsx", import.meta.url), "utf8");
 
-    expect(source).toContain('title: t.leads');
+    expect(source).toContain('title: displayedLeadTitle');
+    expect(source).toContain("data.baseLeads.daily");
+    expect(source).toContain("data.baseLeads.total");
     expect(source).toContain('dataKey="leads"');
     expect(source).toContain("t.pacingTitle");
     expect(source).toContain("pacing.monthlyNetBudget");

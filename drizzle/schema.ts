@@ -144,6 +144,25 @@ export const dashboardDataSnapshots = mysqlTable(
   ],
 );
 
+export const metaBaseLeadDailyMetrics = mysqlTable(
+  "meta_base_lead_daily_metrics",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    metricDate: date("metricDate", { mode: "string" }).notNull(),
+    sourceRows: int("sourceRows").notNull(),
+    uniqueLeadIds: int("uniqueLeadIds").notNull(),
+    sourceRunLabel: varchar("sourceRunLabel", { length: 32 }).notNull(),
+    sourceTimeZone: varchar("sourceTimeZone", { length: 64 }).notNull(),
+    refreshedAt: bigint("refreshedAt", { mode: "number" }).notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  },
+  table => [
+    uniqueIndex("meta_base_lead_daily_metrics_date_unique").on(table.metricDate),
+    index("meta_base_lead_daily_metrics_refresh_idx").on(table.refreshedAt),
+  ],
+);
+
 export const campaignGoals = mysqlTable(
   "campaign_goals",
   {

@@ -3775,3 +3775,12 @@
 - [x] Mantido o último Retail oficial disponível: `261007_Daily_Sales_FUP.xlsx`, Outubro / Semana 2, 96 MTD Retail Orders.
 - [x] Mantida a ausência de dados de receita/ROAS porque Google Analytics não está conectado; não foram criadas métricas estimadas.
 - [x] Aprovados 15 testes direcionados e TypeScript; auditoria em `docs/dashboard-refresh-20261009.md`.
+
+## Reconciliação de Leads Meta — 09/10/2026
+
+- [x] Identificar divergência entre `actions_lead` do Windsor.ai e geração na aba Meta da planilha-base de Leads.
+- [x] Preservar a base canônica: prévia final confirmou 0 novos registros e 0 remoções; sincronização retornou `NO_CHANGES` com 38.098 Leads.
+- [x] Criar série diária agregada sem PII a partir de `created_time` da aba Meta, com competência em `America/Sao_Paulo`.
+- [x] Atualizar a aba Meta Ads para usar a série da planilha-base no card de Leads e no gráfico diário; métricas de mídia da plataforma permanecem Windsor.ai.
+- [x] Confirmar 243 Leads em 07/10 e 179 em 08/10 na fonte; outubro de 01 a 08 soma 1.557 Leads Meta na planilha-base.
+- [x] Aplicar a migração `0016_real_wallow.sql`, executar testes, TypeScript e build; auditoria em `docs/meta-base-leads-reconciliation-20261009.md`.

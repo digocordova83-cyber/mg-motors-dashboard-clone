@@ -65,6 +65,8 @@ export const META_ADS_COPY = {
     period: "Período",
     month: "Mês",
     leads: "Leads",
+    baseLeads: "Leads — planilha-base",
+    baseLeadsSubtitle: "Aba Meta · created_time em horário de Brasília",
     reach: "Alcance",
     ctr: "CTR",
     clicks: "Cliques",
@@ -89,7 +91,7 @@ export const META_ADS_COPY = {
     behind: "Abaixo do ritmo",
     notStarted: "Sem gasto registrado",
     leadsTrendTitle: "Evolução diária de Leads",
-    leadsTrendSubtitle: "Volume diário da conta Meta Ads vinculada ao Windsor.ai",
+    leadsTrendSubtitle: "Volume diário da planilha-base de Leads — aba Meta",
     modelsTitle: "Performance por modelo",
     modelsSubtitle: "Modelo identificado no nome dos criativos, conjuntos e campanhas",
     model: "Modelo",
@@ -145,6 +147,8 @@ export const META_ADS_COPY = {
     period: "Period",
     month: "Month",
     leads: "Leads",
+    baseLeads: "Leads — source spreadsheet",
+    baseLeadsSubtitle: "Meta tab · created_time in Brasília time",
     reach: "Reach",
     ctr: "CTR",
     clicks: "Clicks",
@@ -169,7 +173,7 @@ export const META_ADS_COPY = {
     behind: "Behind plan",
     notStarted: "No spend recorded",
     leadsTrendTitle: "Daily Leads trend",
-    leadsTrendSubtitle: "Daily volume from the Meta Ads account connected to Windsor.ai",
+    leadsTrendSubtitle: "Daily volume from the source Leads spreadsheet — Meta tab",
     modelsTitle: "Performance by model",
     modelsSubtitle: "Vehicle model identified from creative, ad set and campaign names",
     model: "Model",
@@ -453,8 +457,18 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
 
   if (!data?.daily.length) return <main className="mx-auto max-w-[1680px] px-4 py-8"><Panel title={t.title} subtitle={`${t.period}: ${formatLongDate(dateFrom, locale)} — ${formatLongDate(dateTo, locale)} • ${t.cutoff}: ${formatLongDate(FALLBACK_TO, locale)}`}><MetaAdsEmptyState title={t.emptyTitle} description={t.emptyDescription} /></Panel></main>;
 
+  const baseLeadDaily = new Map(data.baseLeads.daily.map(item => [item.date, item.leads]));
+  const hasBaseLeadSeries = data.baseLeads.daily.length > 0;
+  const leadSeries = data.daily.map(item => ({
+    ...item,
+    leads: baseLeadDaily.get(item.date) ?? item.leads,
+  }));
+  const displayedLeadTotal = hasBaseLeadSeries ? data.baseLeads.total : data.summary.leads;
+  const displayedLeadTitle = hasBaseLeadSeries ? t.baseLeads : t.leads;
+  const displayedLeadSubtitle = hasBaseLeadSeries ? t.baseLeadsSubtitle : "actions_lead";
+
   const metricCards = [
-    { title: t.leads, value: formatNumber(data.summary.leads, locale), subtitle: "actions_lead", icon: <Target className="h-4 w-4" />, accent: "#38bdf8" },
+    { title: displayedLeadTitle, value: formatNumber(displayedLeadTotal, locale), subtitle: displayedLeadSubtitle, icon: <Target className="h-4 w-4" />, accent: "#38bdf8" },
     { title: t.reach, value: formatNumber(data.summary.reach, locale), subtitle: currencySubtitle, icon: <Eye className="h-4 w-4" />, accent: "#10b981" },
     { title: t.ctr, value: `${formatNumber(data.summary.ctr, locale, 2)}%`, subtitle: `${formatNumber(data.summary.clicks, locale)} ${t.clicks.toLowerCase()}`, icon: <MousePointerClick className="h-4 w-4" />, accent: "#f59e0b" },
     { title: t.clicks, value: formatNumber(data.summary.clicks, locale), subtitle: `${formatNumber(data.summary.impressions, locale)} ${t.impressions.toLowerCase()}`, icon: <TrendingUp className="h-4 w-4" />, accent: "#60a5fa" },
@@ -540,7 +554,7 @@ export function MetaAdsDashboard({ locale = "pt-BR", onUpdatedAt }: MetaAdsDashb
 
       <div className="grid gap-4">
         <Panel title={t.leadsTrendTitle} subtitle={t.leadsTrendSubtitle}>
-          <div className="h-[350px] px-2 pb-4 pt-5 sm:px-4"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data.daily} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} /><YAxis tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={48} /><Tooltip content={<MetaTooltip locale={locale} />} /><Area type="monotone" dataKey="leads" name={t.leads} stroke="#38bdf8" strokeWidth={2.5} fill="#38bdf8" fillOpacity={0.12} connectNulls /></AreaChart></ResponsiveContainer></div>
+          <div className="h-[350px] px-2 pb-4 pt-5 sm:px-4"><ResponsiveContainer width="100%" height="100%"><AreaChart data={leadSeries} margin={{ top: 10, right: 14, left: 0, bottom: 0 }}><CartesianGrid stroke="#1d2737" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tickFormatter={value => formatDate(value, locale)} tick={{ fill: "#64748b", fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} /><YAxis tick={{ fill: "#64748b", fontSize: 9 }} tickLine={false} axisLine={false} width={48} /><Tooltip content={<MetaTooltip locale={locale} />} /><Area type="monotone" dataKey="leads" name={displayedLeadTitle} stroke="#38bdf8" strokeWidth={2.5} fill="#38bdf8" fillOpacity={0.12} connectNulls /></AreaChart></ResponsiveContainer></div>
         </Panel>
       </div>
 

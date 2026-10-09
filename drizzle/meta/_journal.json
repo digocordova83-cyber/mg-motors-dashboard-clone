@@ -113,6 +113,13 @@
       "when": 1791403528268,
       "tag": "0015_familiar_skin",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1791550458380,
+      "tag": "0016_real_wallow",
+      "breakpoints": true
     }
   ]
 }

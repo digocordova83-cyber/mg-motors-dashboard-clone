@@ -50,6 +50,7 @@ import {
   getLeadMonthlyGoal,
   upsertLeadMonthlyGoal,
 } from "./leadsService";
+import { getMetaBaseLeadMetrics } from "./metaBaseLeadMetricsService";
 import { exportLeadsBase } from "./leadsExportService";
 import {
   applyAugustMetaBudget,
@@ -507,7 +508,13 @@ export const appRouter = router({
     bounds: metaAdsProcedure.query(() => getMetaAdsBounds()),
     data: metaAdsProcedure
       .input(dashboardPeriodSchema)
-      .query(({ input }) => loadMetaAdsData(input.dateFrom, input.dateTo)),
+      .query(async ({ input }) => {
+        const [media, baseLeads] = await Promise.all([
+          loadMetaAdsData(input.dateFrom, input.dateTo),
+          getMetaBaseLeadMetrics(input.dateFrom, input.dateTo),
+        ]);
+        return { ...media, baseLeads };
+      }),
     creativeInventory: metaAdsProcedure.query(() => loadMetaCreativeInventory()),
   }),
   tiktokAds: router({

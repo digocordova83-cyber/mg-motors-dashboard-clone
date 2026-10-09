@@ -16,6 +16,7 @@ import {
   preserveMissingCanonicalLeads,
   type LeadHistoryPreservationResult,
 } from "./leadSourceHistoryPreservation";
+import { replaceMetaBaseLeadDailyMetrics } from "./metaBaseLeadMetricsService";
 import { getYesterdayInSaoPaulo } from "./leadsCsv";
 
 export const GOOGLE_LEADS_SPREADSHEET_ID = "1DnkkrrU3GqcuBd5br_OQDaGMMtA2iN2ik4yEV5-Ggw8";
@@ -45,6 +46,12 @@ export type GoogleLeadsConsolidationReport = {
   channels: Record<string, number>;
   sourceChannels: Record<string, number>;
   models: Record<string, number>;
+  metaBaseDailyMetrics: Array<{
+    date: string;
+    sourceRows: number;
+    uniqueLeadIds: number;
+  }>;
+  metaBaseTimeZone: string;
   sheets: Array<{
     sheet: string;
     rows_read: number;
@@ -81,6 +88,7 @@ export type GoogleLeadsAutomationResult = {
   invalidIssues: GoogleLeadsMappingIssue[];
   dateAdjustment: Omit<LeadDateAdjustmentResult, "bytes"> | null;
   sourceHistoryPreservation: Omit<LeadHistoryPreservationResult, "bytes">;
+  metaBaseDailyMetricCount: number;
   importId: number | null;
   importFileUrl: string | null;
 };
@@ -91,6 +99,7 @@ type AutomationDependencies = {
   runPython: typeof runPythonConsolidator;
   applyDateAdjustment: typeof applySeptemberJulyLeadAdjustment;
   preserveHistory: typeof preserveMissingCanonicalLeads;
+  replaceMetaBaseMetrics: typeof replaceMetaBaseLeadDailyMetrics;
 };
 
 type ExecuteGoogleLeadsAutomationInput = {
@@ -281,6 +290,12 @@ export function formatGoogleLeadsAutomationReport(result: GoogleLeadsAutomationR
     "",
     ...breakdownLines(result.sourceChannelCounts),
     "",
+    "## Série Meta da planilha-base",
+    "",
+    `- Métricas diárias agregadas atualizadas: ${result.metaBaseDailyMetricCount.toLocaleString("pt-BR")}`,
+    "- Fonte: aba Meta da planilha-base; campo `created_time` convertido para America/Sao_Paulo.",
+    "- A série preserva o volume de origem, inclusive registros que a base canônica não aceita por dados obrigatórios ausentes.",
+    "",
     "## Linhas rejeitadas",
     "",
     ...invalidLines,
@@ -308,6 +323,8 @@ export async function executeGoogleLeadsAutomation(
     runPython: input.dependencies?.runPython ?? runPythonConsolidator,
     applyDateAdjustment: input.dependencies?.applyDateAdjustment ?? applySeptemberJulyLeadAdjustment,
     preserveHistory: input.dependencies?.preserveHistory ?? preserveMissingCanonicalLeads,
+    replaceMetaBaseMetrics:
+      input.dependencies?.replaceMetaBaseMetrics ?? replaceMetaBaseLeadDailyMetrics,
   };
   const consolidation = await dependencies.runPython({
     projectRoot,
@@ -350,6 +367,12 @@ export async function executeGoogleLeadsAutomation(
       forceReplace: true,
     });
   }
+  const metaBaseMetrics = input.dryRun
+    ? { metricCount: 0 }
+    : await dependencies.replaceMetaBaseMetrics({
+        runLabel,
+        daily: consolidation.metaBaseDailyMetrics,
+      });
   const dashboardRowsAfter = importResult?.rowsInserted ?? analysis.currentBaseRows;
   const result: GoogleLeadsAutomationResult = {
     status,
@@ -398,6 +421,7 @@ export async function executeGoogleLeadsAutomation(
       preservedDateFrom: sourceHistoryPreservation.preservedDateFrom,
       preservedDateTo: sourceHistoryPreservation.preservedDateTo,
     },
+    metaBaseDailyMetricCount: metaBaseMetrics.metricCount,
     importId: importResult?.importId ?? null,
     importFileUrl: importResult?.fileUrl ?? null,
   };

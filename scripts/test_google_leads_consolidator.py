@@ -5,8 +5,10 @@ import pandas as pd
 
 from googleLeadsConsolidator import (
     clean_phone,
+    collect_meta_base_daily_metrics,
     map_mercado_livre,
     map_meta,
+    parse_meta_created_time,
     map_site,
     map_tiktok,
     map_uol,
@@ -16,6 +18,26 @@ from googleLeadsConsolidator import (
 
 
 class GoogleLeadsConsolidatorTest(unittest.TestCase):
+    def test_meta_created_time_uses_sao_paulo_competence(self):
+        self.assertEqual(parse_meta_created_time("2026-10-08T02:30:00Z"), "07/10/2026")
+        self.assertEqual(parse_meta_created_time("2026-10-08T03:30:00Z"), "08/10/2026")
+
+    def test_meta_daily_metrics_count_source_rows_without_pii(self):
+        frame = pd.DataFrame(
+            [
+                {"id": "lead-a", "created_time": "2026-10-08T02:30:00Z"},
+                {"id": "lead-b", "created_time": "2026-10-08T03:30:00Z"},
+                {"id": "lead-b", "created_time": "2026-10-08T03:45:00Z"},
+            ]
+        )
+        self.assertEqual(
+            collect_meta_base_daily_metrics(frame),
+            [
+                {"date": "2026-10-07", "sourceRows": 1, "uniqueLeadIds": 1},
+                {"date": "2026-10-08", "sourceRows": 2, "uniqueLeadIds": 1},
+            ],
+        )
+
     def test_normalizes_only_the_allowed_models(self):
         self.assertEqual(normalize_model("Formulário Jul/26 - MG4 Urban"), "MG4 URBAN")
         self.assertEqual(normalize_model("S5"), "MGS5")

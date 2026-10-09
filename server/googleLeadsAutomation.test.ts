@@ -45,6 +45,11 @@ const consolidation: GoogleLeadsConsolidationReport = {
   channels: { Site: 5, Meta: 4, UOL: 2 },
   sourceChannels: { Site: 5, Meta: 4, UOL: 1, TikTok: 1 },
   models: { MG4: 7, MGS5: 4 },
+  metaBaseDailyMetrics: [
+    { date: "2026-08-04", sourceRows: 18, uniqueLeadIds: 18 },
+    { date: "2026-08-05", sourceRows: 20, uniqueLeadIds: 20 },
+  ],
+  metaBaseTimeZone: "America/Sao_Paulo",
   sheets: [],
   issues: [
     {
@@ -119,11 +124,19 @@ describe("automação da planilha Google de Leads", () => {
     const importCsv = vi.fn();
     const applyDateAdjustment = vi.fn().mockReturnValue(dateAdjustment);
     const preserveHistory = vi.fn().mockResolvedValue(sourceHistoryPreservation);
+    const replaceMetaBaseMetrics = vi.fn().mockResolvedValue({ metricCount: 2 });
 
     const result = await executeGoogleLeadsAutomation({
       outputRoot: "/tmp/google-leads-no-change",
       now: new Date("2026-08-05T12:20:00Z"),
-      dependencies: { runPython, analyze, importCsv, applyDateAdjustment, preserveHistory },
+      dependencies: {
+        runPython,
+        analyze,
+        importCsv,
+        applyDateAdjustment,
+        preserveHistory,
+        replaceMetaBaseMetrics,
+      },
     });
 
     expect(result.status).toBe("NO_CHANGES");
@@ -131,6 +144,10 @@ describe("automação da planilha Google de Leads", () => {
     expect(importCsv).not.toHaveBeenCalled();
     expect(applyDateAdjustment).toHaveBeenCalledOnce();
     expect(preserveHistory).toHaveBeenCalledOnce();
+    expect(replaceMetaBaseMetrics).toHaveBeenCalledWith({
+      runLabel: "20260805-092000",
+      daily: consolidation.metaBaseDailyMetrics,
+    });
     expect(result.dateAdjustment).toMatchObject({ appliedCount: 250 });
   });
 
@@ -143,6 +160,7 @@ describe("automação da planilha Google de Leads", () => {
     const analyze = vi.fn().mockResolvedValue(analysis());
     const importCsv = vi.fn().mockResolvedValue(imported());
     const preserveHistory = vi.fn().mockResolvedValue(sourceHistoryPreservation);
+    const replaceMetaBaseMetrics = vi.fn().mockResolvedValue({ metricCount: 2 });
 
     const result = await executeGoogleLeadsAutomation({
       outputRoot: "/tmp/google-leads-updated",
@@ -153,6 +171,7 @@ describe("automação da planilha Google de Leads", () => {
         importCsv,
         applyDateAdjustment: vi.fn().mockReturnValue(dateAdjustment),
         preserveHistory,
+        replaceMetaBaseMetrics,
       },
     });
 
@@ -165,6 +184,10 @@ describe("automação da planilha Google de Leads", () => {
         forceReplace: true,
       }),
     );
+    expect(replaceMetaBaseMetrics).toHaveBeenCalledWith({
+      runLabel: "20260805-102000",
+      daily: consolidation.metaBaseDailyMetrics,
+    });
   });
 
   it("gera um relatório completo de duplicatas, inválidos e canais", () => {
@@ -199,6 +222,7 @@ describe("automação da planilha Google de Leads", () => {
         preservedDateFrom: "2026-10-01",
         preservedDateTo: "2026-10-01",
       },
+      metaBaseDailyMetricCount: 2,
       importId: 81,
       importFileUrl: "/manus-storage/import.csv",
     } satisfies GoogleLeadsAutomationResult);

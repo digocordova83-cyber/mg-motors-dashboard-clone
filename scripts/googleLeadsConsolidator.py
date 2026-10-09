@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -140,6 +141,17 @@ def parse_date(value: Any, *, dayfirst: bool) -> str:
     if pd.isna(parsed):
         return ""
     return parsed.strftime("%d/%m/%Y")
+
+
+def parse_meta_created_time(value: Any) -> str:
+    """Converte `created_time` da Meta para a competência no fuso de São Paulo."""
+    raw = text(value).strip()
+    if not raw:
+        return ""
+    parsed = pd.to_datetime(raw, errors="coerce", utc=True)
+    if pd.isna(parsed):
+        return ""
+    return parsed.tz_convert(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y")
 
 
 def parse_dealer_location(value: Any) -> tuple[str, str]:
@@ -336,6 +348,32 @@ def map_meta(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, 
         model_source=lambda row: row_value(row, form_name),
         corrected_date_source=lambda row: row_value(row, source_date),
     )
+
+
+def collect_meta_base_daily_metrics(frame: pd.DataFrame) -> list[dict[str, int | str]]:
+    """Retorna somente métricas agregadas da aba Meta, sem dados pessoais."""
+    created_time = resolve_column(frame, "created_time")
+    lead_id = optional_column(frame, "id")
+    rows_by_date: Counter[str] = Counter()
+    ids_by_date: dict[str, set[str]] = {}
+    for _, row in frame.iterrows():
+        metric_date_br = parse_meta_created_time(row_value(row, created_time))
+        if not metric_date_br:
+            continue
+        metric_date = datetime.strptime(metric_date_br, "%d/%m/%Y").strftime("%Y-%m-%d")
+        rows_by_date[metric_date] += 1
+        if lead_id is not None:
+            value = row_value(row, lead_id).strip()
+            if value:
+                ids_by_date.setdefault(metric_date, set()).add(value)
+    return [
+        {
+            "date": metric_date,
+            "sourceRows": count,
+            "uniqueLeadIds": len(ids_by_date.get(metric_date, set())),
+        }
+        for metric_date, count in sorted(rows_by_date.items())
+    ]
 
 
 def map_tiktok_live(frame: pd.DataFrame) -> tuple[list[dict[str, str]], list[dict[str, str]], list[MappingIssue], int]:
@@ -623,6 +661,7 @@ def consolidate(source_file: Path, output_dir: Path, run_label: str) -> dict[str
     all_import: list[dict[str, str]] = []
     all_issues: list[MappingIssue] = []
     sheet_stats: list[SheetStats] = []
+    meta_base_daily_metrics: list[dict[str, int | str]] = []
 
     for logical_sheet, source_sheet in sheet_plan:
         frame = normalize_columns(
@@ -635,6 +674,8 @@ def consolidate(source_file: Path, output_dir: Path, run_label: str) -> dict[str
                 engine="openpyxl",
             )
         )
+        if logical_sheet == "Meta":
+            meta_base_daily_metrics = collect_meta_base_daily_metrics(frame)
         master_rows, import_rows, issues, empty_rows = SHEET_MAPPERS[logical_sheet](frame)
         all_master.extend(master_rows)
         all_import.extend(import_rows)
@@ -670,6 +711,8 @@ def consolidate(source_file: Path, output_dir: Path, run_label: str) -> dict[str
         "channels": dict(channels.most_common()),
         "sourceChannels": dict(source_channels.most_common()),
         "models": dict(models.most_common()),
+        "metaBaseDailyMetrics": meta_base_daily_metrics,
+        "metaBaseTimeZone": "America/Sao_Paulo",
         "sheets": [asdict(stats) for stats in sheet_stats],
         "issues": [asdict(issue) for issue in all_issues[:100]],
     }
