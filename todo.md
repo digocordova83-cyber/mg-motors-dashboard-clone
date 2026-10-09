@@ -3765,3 +3765,13 @@
 - [x] Mantido o último Retail oficial: `261007_Daily_Sales_FUP.xlsx`, Semana 2, 96 MTD Retail Orders, com conciliação aprovada.
 - [x] Google Analytics não estava conectado nesta sessão; nenhuma métrica de receita, ROAS ou projeção foi criada sem fonte oficial.
 - [x] Aprovados 15 testes direcionados e TypeScript; auditoria em `docs/dashboard-refresh-20261008.md`.
+
+## Atualização completa do dashboard — 09/10/2026
+
+- [x] Atualizada a base oficial de Leads até 08/10/2026 (D-1): 221 registros novos; total canônico de 38.098 Leads.
+- [x] Confirmada cobertura da planilha-base até 08/10 e preservado todo o histórico; nenhuma remoção de fonte foi aplicada.
+- [x] Reexecutada a automação com `NO_CHANGES`; 38.098 hashes distintos para 38.098 registros.
+- [x] Atualizados snapshots Windsor de Google Ads, Meta Ads e TikTok Ads até 08/10/2026.
+- [x] Mantido o último Retail oficial disponível: `261007_Daily_Sales_FUP.xlsx`, Outubro / Semana 2, 96 MTD Retail Orders.
+- [x] Mantida a ausência de dados de receita/ROAS porque Google Analytics não está conectado; não foram criadas métricas estimadas.
+- [x] Aprovados 15 testes direcionados e TypeScript; auditoria em `docs/dashboard-refresh-20261009.md`.
