@@ -1,1 +1,0 @@
-ALTER TABLE `dashboard_accounts` ADD `canAccessFinanceiro` boolean DEFAULT false NOT NULL;
