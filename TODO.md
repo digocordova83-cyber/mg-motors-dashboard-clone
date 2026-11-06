@@ -72,3 +72,19 @@ Evidência — novembro: 3 fontes reais configuradas, meta de Leads 16.600 (31 g
 - [x] Entregar estudo heurístico de UX sob o nome MG Sales, com melhorias priorizadas e distinção entre recomendações e a renomeação efetivamente implementada; não alegar teste com usuários ou redesign já entregue.
 
 Evidência — MG Sales: título HTML, descrição, cabeçalho, login, navegação, manifesto de rotas e mensagens públicas atualizados; nenhum V2 visível nesses textos. Identificadores internos, dados, sessão e branch preservados. TypeScript, 79 testes e build aprovados; health e manifesto retornam HTTP 200. Estudo heurístico entregue separadamente, sem implementar as demais propostas. Publicação automática segue desligada.
+
+## Dealers oficiais e metas conciliadas
+
+- [x] Cadastro oficial de 40 unidades exatamente como informado, com de-para separado para grafias, abreviações e aliases de Leads/MetaLeads/MetaVendas/WEEKLY_REG. Preservar todos os nomes originais nos dados e manter pendências ambíguas visíveis.
+- [x] Quadro comercial por unidade oficial, incluindo unidades sem Leads no recorte, metas individuais corretas e vendas de snapshot compatível; não usar UF do cliente para decidir a unidade. Somar aliases sem duplicar Leads nem modificar registros, checks ou meta global manual.
+- [x] Vincular grupos de metas a todas as unidades correspondentes, mantendo meta coletiva única, sem repetir por loja ou criar rateio não fornecido; mostrar a diferença entre meta por loja e meta por grupo. Preservar os totais dos três arquivos e informar quaisquer pendências restantes.
+- [x] Reutilizar a conciliação nos próximos uploads e registrar revisão auditável de novembro; preservar snapshots originais, demais competências, fonte/semana/data de vendas e dashboard original. Verificar tipos, regressões e reconciliação real; salvar somente no recurso MG Sales e dashboard-v2, sem publicar automaticamente.
+
+Evidências da conciliação: 40 unidades oficiais; 31/31 linhas de MetaLeads, 33/34 de MetaVendas e 33/33 de WEEKLY_REG vinculadas ao cadastro. Totais preservados: 16.600 de MetaLeads (15.759 individuais + 841 coletivas) e 722 de MetaVendas (602 individuais + 113 coletivas + 7 fora do cadastro). Snapshot W1_Reg em 04/11/2026 permanece 0. A soma de 1.353 Leads de novembro e mais cinco recortes reconciliam com a Visão Geral. Três revisões imutáveis de vínculo gravadas; repetição no-op; checksum/contagem dos Leads, checks, auditorias e metas globais intactos. TypeScript, 94 testes e build aprovados.
+
+## Dealer novo autorizado: Sinal Av. Indianópolis
+
+- [x] Cadastro com 41 unidades oficiais, incluindo Sinal Av. Indianópolis separada de Sinal Av. Europa, com a meta de vendas 7 do arquivo já importado. Reutilizar o vínculo nos próximos uploads; todas as linhas comerciais conciliadas sem mudar os totais 16.600/722 ou ratear grupos.
+- [x] Incluir a unidade no controle por dealer com células Manual pendentes até D-1; metadados CRM/SYONET não configurados permanecem indisponíveis. Não fabricar MetaLeads ou vendas realizadas da nova unidade. Preservar os demais registros/checks, validar e salvar a atualização no MG Sales e dashboard-v2, sem publicação automática.
+
+Evidências da inclusão: 41 unidades; 34/34 linhas de MetaVendas, 31/31 de MetaLeads e 33/33 de WEEKLY_REG com vínculo. Indianópolis recebe meta de vendas 7; Av. Europa conserva 29. Nenhuma MetaLeads, venda realizada ou integração CRM foi fabricada para a nova unidade. Quatro células Manual pendentes criadas até D-1; Leads, checks, auditorias e metas globais preservados. 95 testes e TypeScript aprovados.
